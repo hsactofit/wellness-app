@@ -1,61 +1,198 @@
 import 'package:flutter/material.dart';
-import '../glass_card.dart';
 import 'fade_slide_transition.dart';
 
-class ProfileStep extends StatefulWidget {
+class ProfileStep extends StatelessWidget {
   final GlobalKey<FormState> formKey;
+  final TextEditingController fullNameController;
   final TextEditingController dobController;
   final TextEditingController heightController;
   final TextEditingController weightController;
-  final TextEditingController diseaseController;
   final String gender;
-  final ValueChanged<String?> onGenderChanged;
-  /// null = not answered yet, true = has disease(s), false = no disease
-  final bool? hasDisease;
-  final ValueChanged<bool> onHasDiseaseChanged;
-  final VoidCallback onBack;
+  final ValueChanged<String> onGenderChanged;
+  final String heightUnit;
+  final ValueChanged<String> onHeightUnitChanged;
+  final String weightUnit;
+  final ValueChanged<String> onWeightUnitChanged;
   final VoidCallback onNext;
 
   const ProfileStep({
     super.key,
     required this.formKey,
+    required this.fullNameController,
     required this.dobController,
     required this.heightController,
     required this.weightController,
-    required this.diseaseController,
     required this.gender,
     required this.onGenderChanged,
-    required this.hasDisease,
-    required this.onHasDiseaseChanged,
-    required this.onBack,
+    required this.heightUnit,
+    required this.onHeightUnitChanged,
+    required this.weightUnit,
+    required this.onWeightUnitChanged,
     required this.onNext,
   });
 
-  @override
-  State<ProfileStep> createState() => _ProfileStepState();
-}
-
-class _ProfileStepState extends State<ProfileStep> with SingleTickerProviderStateMixin {
-  late AnimationController _avatarController;
-  late Animation<double> _scaleAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _avatarController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 2000),
-    )..repeat(reverse: true);
-
-    _scaleAnimation = Tween<double>(begin: 0.94, end: 1.06).animate(
-      CurvedAnimation(parent: _avatarController, curve: Curves.easeInOut),
+  void _showGenderPicker(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return Container(
+          color: isDark ? const Color(0xFF1E293B) : Colors.white,
+          padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                "Select Gender",
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white : const Color(0xFF0F172A),
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 20),
+              ...["Female", "Male", "Other"].map((g) {
+                final isSelected = gender == g;
+                return ListTile(
+                  leading: Icon(
+                    g == "Female"
+                        ? Icons.female_rounded
+                        : g == "Male"
+                            ? Icons.male_rounded
+                            : Icons.transgender_rounded,
+                    color: isSelected ? const Color(0xFF006D5B) : Colors.grey,
+                  ),
+                  title: Text(
+                    g,
+                    style: TextStyle(
+                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                      color: isSelected
+                          ? const Color(0xFF006D5B)
+                          : (isDark ? Colors.white70 : Colors.black87),
+                    ),
+                  ),
+                  trailing: isSelected
+                      ? const Icon(Icons.check_circle_rounded, color: Color(0xFF006D5B))
+                      : null,
+                  onTap: () {
+                    onGenderChanged(g);
+                    Navigator.pop(context);
+                  },
+                );
+              }),
+            ],
+          ),
+        );
+      },
     );
   }
 
-  @override
-  void dispose() {
-    _avatarController.dispose();
-    super.dispose();
+  Widget _buildUnitToggle(
+      String currentUnit, List<String> options, ValueChanged<String> onChanged) {
+    return Container(
+      padding: const EdgeInsets.all(2),
+      decoration: BoxDecoration(
+        color: const Color(0xFFE2E8F0),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: options.map((opt) {
+          final isSelected = currentUnit.toLowerCase() == opt.toLowerCase();
+          return GestureDetector(
+            onTap: () => onChanged(opt.toLowerCase()),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 150),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: isSelected ? const Color(0xFF006D5B) : Colors.transparent,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Text(
+                opt,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color: isSelected ? Colors.white : const Color(0xFF64748B),
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  InputDecoration _inputDecoration({
+    required String hintText,
+    required IconData prefixIcon,
+    Widget? suffixIcon,
+    required bool isDark,
+  }) {
+    return InputDecoration(
+      hintText: hintText,
+      hintStyle: TextStyle(
+        color: isDark ? Colors.white38 : Colors.grey.withOpacity(0.6),
+        fontWeight: FontWeight.w400,
+        fontSize: 15,
+      ),
+      prefixIcon: Icon(prefixIcon, color: const Color(0xFF64748B), size: 22),
+      suffixIcon: suffixIcon,
+      filled: true,
+      fillColor: isDark ? Colors.white.withOpacity(0.04) : Colors.white,
+      contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(
+          color: isDark ? Colors.white.withOpacity(0.12) : Colors.grey.withOpacity(0.22),
+          width: 1.2,
+        ),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(
+          color: isDark ? Colors.white.withOpacity(0.12) : Colors.grey.withOpacity(0.22),
+          width: 1.2,
+        ),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: const BorderSide(color: Color(0xFF006D5B), width: 2.0),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: const BorderSide(color: Colors.redAccent, width: 1.2),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: const BorderSide(color: Colors.redAccent, width: 2.0),
+      ),
+    );
+  }
+
+  Widget _buildFieldLabel(String labelText, {Widget? trailing, required bool isDark}) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 4.0, bottom: 8.0, top: 16.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            labelText,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+              color: isDark ? Colors.white70 : const Color(0xFF475569),
+            ),
+          ),
+          if (trailing != null) trailing,
+        ],
+      ),
+    );
   }
 
   @override
@@ -66,417 +203,295 @@ class _ProfileStepState extends State<ProfileStep> with SingleTickerProviderStat
     return Center(
       child: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
-        child: GlassCard(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
-          child: Form(
-            key: widget.formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                FadeSlideTransition(
-                  delay: Duration.zero,
-                  child: Column(
-                    children: [
-                      ScaleTransition(
-                        scale: _scaleAnimation,
-                        child: const Text(
-                          "👤",
-                          style: TextStyle(fontSize: 66),
-                        ),
+        padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
+        child: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              FadeSlideTransition(
+                delay: Duration.zero,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      "Tell Us About Yourself",
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: -0.6,
+                        color: Color(0xFF0F172A),
                       ),
-                      const SizedBox(height: 16),
-                      const Text(
-                        "Basic Profile",
-                        textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, letterSpacing: -0.5),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        "Let's customize your profile preferences",
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: isDark ? Colors.grey[400] : Colors.grey[600], 
-                          fontSize: 13,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 24),
-
-                // Birth Date
-                FadeSlideTransition(
-                  delay: const Duration(milliseconds: 150),
-                  child: TextFormField(
-                    controller: widget.dobController,
-                    readOnly: true,
-                    style: TextStyle(
-                      color: isDark ? Colors.white : Colors.black87,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 15,
                     ),
-                    decoration: _inputDecoration("Date of Birth", Icons.calendar_today_outlined, isDark),
-                    validator: (v) => (v == null || v.isEmpty) ? "Please select your date of birth" : null,
-                    onTap: () async {
-                      final selectedDate = await showDatePicker(
-                        context: context,
-                        initialDate: DateTime(1998, 1, 1),
-                        firstDate: DateTime(1920),
-                        lastDate: DateTime.now(),
-                      );
-                      if (selectedDate != null) {
-                        widget.dobController.text = "${selectedDate.year}-${selectedDate.month.toString().padLeft(2, '0')}-${selectedDate.day.toString().padLeft(2, '0')}";
-                      }
-                    },
-                  ),
+                    const SizedBox(height: 8),
+                    Text(
+                      "We use this data to calculate your personalized wellness scores and recovery goals.",
+                      style: TextStyle(
+                        color: isDark ? Colors.grey[400] : Colors.grey[600],
+                        fontSize: 14,
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 20),
+              ),
+              const SizedBox(height: 12),
 
-                // Gender Selector
-                FadeSlideTransition(
-                  delay: const Duration(milliseconds: 300),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.only(left: 4.0, bottom: 8.0),
-                        child: Text(
-                          "Gender", 
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold, 
-                            fontSize: 13,
-                            color: isDark ? Colors.white.withOpacity(0.8) : Colors.black87,
-                          ),
-                        ),
+              // Full Name
+              FadeSlideTransition(
+                delay: const Duration(milliseconds: 100),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildFieldLabel("Full Name", isDark: isDark),
+                    TextFormField(
+                      controller: fullNameController,
+                      style: TextStyle(
+                        color: isDark ? Colors.white : const Color(0xFF0F172A),
+                        fontWeight: FontWeight.w500,
+                        fontSize: 15,
                       ),
-                      Row(
-                        children: [
-                          _buildGenderCard("Female", "👩", isDark),
-                          const SizedBox(width: 10),
-                          _buildGenderCard("Male", "👨", isDark),
-                          const SizedBox(width: 10),
-                          _buildGenderCard("Other", "🧑", isDark),
-                        ],
+                      textCapitalization: TextCapitalization.words,
+                      decoration: _inputDecoration(
+                        hintText: "John Doe",
+                        prefixIcon: Icons.person_outline_rounded,
+                        isDark: isDark,
                       ),
-                    ],
-                  ),
+                      validator: (v) => (v == null || v.trim().isEmpty)
+                          ? "Please enter your full name"
+                          : null,
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 20),
-                FadeSlideTransition(
-                  delay: const Duration(milliseconds: 450),
-                  child: Column(
-                    children: [
-                      Divider(height: 20, color: isDark ? Colors.white10 : Colors.black12),
-                      const SizedBox(height: 10),
-                    ],
-                  ),
-                ),
+              ),
 
-                // Medical conditions / diseases
-                FadeSlideTransition(
-                  delay: const Duration(milliseconds: 500),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.only(left: 4.0, bottom: 8.0),
-                        child: Text(
-                          "Do you have any medical conditions?",
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 13,
-                            color: isDark ? Colors.white.withOpacity(0.8) : Colors.black87,
-                          ),
-                        ),
+              // Date of Birth
+              FadeSlideTransition(
+                delay: const Duration(milliseconds: 150),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildFieldLabel("Date of Birth", isDark: isDark),
+                    TextFormField(
+                      controller: dobController,
+                      readOnly: true,
+                      style: TextStyle(
+                        color: isDark ? Colors.white : const Color(0xFF0F172A),
+                        fontWeight: FontWeight.w500,
+                        fontSize: 15,
                       ),
-                      Row(
-                        children: [
-                          _buildYesNoCard(
-                            label: "No",
-                            emoji: "✅",
-                            isSelected: widget.hasDisease == false,
-                            isDark: isDark,
-                            onTap: () => widget.onHasDiseaseChanged(false),
-                          ),
-                          const SizedBox(width: 10),
-                          _buildYesNoCard(
-                            label: "Yes",
-                            emoji: "🩺",
-                            isSelected: widget.hasDisease == true,
-                            isDark: isDark,
-                            onTap: () => widget.onHasDiseaseChanged(true),
-                          ),
-                        ],
+                      decoration: _inputDecoration(
+                        hintText: "dd-mm-yyyy",
+                        prefixIcon: Icons.calendar_today_outlined,
+                        suffixIcon: const Icon(Icons.calendar_month_outlined,
+                            color: Color(0xFF64748B), size: 20),
+                        isDark: isDark,
                       ),
-                      if (widget.hasDisease == true) ...[
-                        const SizedBox(height: 14),
-                        TextFormField(
-                          controller: widget.diseaseController,
-                          textCapitalization: TextCapitalization.sentences,
+                      validator: (v) => (v == null || v.isEmpty)
+                          ? "Please select your date of birth"
+                          : null,
+                      onTap: () async {
+                        final selectedDate = await showDatePicker(
+                          context: context,
+                          initialDate: DateTime(1998, 1, 1),
+                          firstDate: DateTime(1920),
+                          lastDate: DateTime.now(),
+                          builder: (context, child) {
+                            return Theme(
+                              data: Theme.of(context).copyWith(
+                                colorScheme: const ColorScheme.light(
+                                  primary: Color(0xFF006D5B),
+                                  onPrimary: Colors.white,
+                                  onSurface: Color(0xFF0F172A),
+                                ),
+                              ),
+                              child: child!,
+                            );
+                          },
+                        );
+                        if (selectedDate != null) {
+                          final day = selectedDate.day.toString().padLeft(2, '0');
+                          final month = selectedDate.month.toString().padLeft(2, '0');
+                          final year = selectedDate.year.toString();
+                          dobController.text = "$day-$month-$year";
+                        }
+                      },
+                    ),
+                  ],
+                ),
+              ),
+
+              // Gender Selector
+              FadeSlideTransition(
+                delay: const Duration(milliseconds: 200),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildFieldLabel("Gender", isDark: isDark),
+                    GestureDetector(
+                      onTap: () => _showGenderPicker(context),
+                      child: AbsorbPointer(
+                        child: TextFormField(
                           style: TextStyle(
-                            color: isDark ? Colors.white : Colors.black87,
-                            fontWeight: FontWeight.w600,
+                            color: gender.isEmpty || gender == "Select Gender"
+                                ? (isDark ? Colors.white38 : Colors.grey)
+                                : (isDark ? Colors.white : const Color(0xFF0F172A)),
+                            fontWeight: FontWeight.w500,
                             fontSize: 15,
                           ),
                           decoration: _inputDecoration(
-                            "What condition(s)? (e.g. Diabetes)",
-                            Icons.medical_services_outlined,
-                            isDark,
+                            hintText: gender.isEmpty ? "Select Gender" : gender,
+                            prefixIcon: Icons.people_outline_rounded,
+                            suffixIcon: const Icon(Icons.keyboard_arrow_down_rounded,
+                                color: Color(0xFF64748B), size: 22),
+                            isDark: isDark,
                           ),
-                          validator: (v) {
-                            if (widget.hasDisease == true &&
-                                (v == null || v.trim().isEmpty)) {
-                              return "Please specify your medical condition";
-                            }
-                            return null;
-                          },
+                          validator: (v) => (gender.isEmpty || gender == "Select Gender")
+                              ? "Please select your gender"
+                              : null,
                         ),
-                      ],
-                    ],
-                  ),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 20),
-                FadeSlideTransition(
-                  delay: const Duration(milliseconds: 550),
-                  child: Column(
-                    children: [
-                      Divider(height: 20, color: isDark ? Colors.white10 : Colors.black12),
-                      const SizedBox(height: 10),
-                    ],
-                  ),
-                ),
+              ),
 
-                // Optional details header
-                FadeSlideTransition(
-                  delay: const Duration(milliseconds: 600),
-                  child: Text(
-                    "Optional Details",
-                    style: TextStyle(
-                      fontSize: 14, 
-                      fontWeight: FontWeight.bold, 
-                      color: isDark ? Colors.white.withOpacity(0.8) : Colors.black87,
+              // Height
+              FadeSlideTransition(
+                delay: const Duration(milliseconds: 250),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildFieldLabel(
+                      "Height",
+                      trailing: _buildUnitToggle(heightUnit, ["CM", "IN"], onHeightUnitChanged),
+                      isDark: isDark,
+                    ),
+                    TextFormField(
+                      controller: heightController,
+                      keyboardType: TextInputType.number,
+                      style: TextStyle(
+                        color: isDark ? Colors.white : const Color(0xFF0F172A),
+                        fontWeight: FontWeight.w500,
+                        fontSize: 15,
+                      ),
+                      decoration: _inputDecoration(
+                        hintText: heightUnit.toLowerCase() == "cm" ? "180" : "71",
+                        prefixIcon: Icons.straighten_rounded,
+                        isDark: isDark,
+                      ),
+                      validator: (v) {
+                        if (v == null || v.trim().isEmpty) return "Please enter your height";
+                        if (double.tryParse(v) == null) return "Please enter a valid number";
+                        return null;
+                      },
+                    ),
+                  ],
+                ),
+              ),
+
+              // Weight
+              FadeSlideTransition(
+                delay: const Duration(milliseconds: 300),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildFieldLabel(
+                      "Weight",
+                      trailing: _buildUnitToggle(weightUnit, ["KG", "LBS"], onWeightUnitChanged),
+                      isDark: isDark,
+                    ),
+                    TextFormField(
+                      controller: weightController,
+                      keyboardType: TextInputType.number,
+                      style: TextStyle(
+                        color: isDark ? Colors.white : const Color(0xFF0F172A),
+                        fontWeight: FontWeight.w500,
+                        fontSize: 15,
+                      ),
+                      decoration: _inputDecoration(
+                        hintText: weightUnit.toLowerCase() == "kg" ? "75" : "165",
+                        prefixIcon: Icons.scale_outlined,
+                        isDark: isDark,
+                      ),
+                      validator: (v) {
+                        if (v == null || v.trim().isEmpty) return "Please enter your weight";
+                        if (double.tryParse(v) == null) return "Please enter a valid number";
+                        return null;
+                      },
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 36),
+
+              // Next Button
+              FadeSlideTransition(
+                delay: const Duration(milliseconds: 350),
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF006D5B),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 18),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+                    elevation: 3,
+                    shadowColor: const Color(0xFF006D5B).withOpacity(0.3),
+                  ),
+                  onPressed: () {
+                    if (formKey.currentState!.validate()) {
+                      onNext();
+                    }
+                  },
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text(
+                        "Next",
+                        style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, letterSpacing: 0.5),
+                      ),
+                      const SizedBox(width: 8),
+                      const Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 18),
+                    ],
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
+              // Privacy Policy Footer
+              FadeSlideTransition(
+                delay: const Duration(milliseconds: 400),
+                child: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 12.0),
+                    child: Text.rich(
+                      TextSpan(
+                        text: "By continuing, you agree to our ",
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: isDark ? Colors.grey[400] : const Color(0xFF64748B),
+                        ),
+                        children: [
+                          TextSpan(
+                            text: "Privacy Policy",
+                            style: const TextStyle(
+                              decoration: TextDecoration.underline,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF64748B),
+                            ),
+                          ),
+                        ],
+                      ),
+                      textAlign: TextAlign.center,
                     ),
                   ),
                 ),
-                const SizedBox(height: 12),
-                FadeSlideTransition(
-                  delay: const Duration(milliseconds: 700),
-                  child: Column(
-                    children: [
-                      TextFormField(
-                        controller: widget.heightController,
-                        keyboardType: TextInputType.number,
-                        style: TextStyle(
-                          color: isDark ? Colors.white : Colors.black87,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 15,
-                        ),
-                        decoration: _inputDecoration("Height (cm)", Icons.straighten_outlined, isDark),
-                      ),
-                      const SizedBox(height: 14),
-                      TextFormField(
-                        controller: widget.weightController,
-                        keyboardType: TextInputType.number,
-                        style: TextStyle(
-                          color: isDark ? Colors.white : Colors.black87,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 15,
-                        ),
-                        decoration: _inputDecoration("Weight (kg)", Icons.scale_outlined, isDark),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 30),
-
-                FadeSlideTransition(
-                  delay: const Duration(milliseconds: 800),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                            side: BorderSide(color: isDark ? Colors.white24 : Colors.black12),
-                          ),
-                          onPressed: widget.onBack,
-                          child: Text("Back", style: TextStyle(color: isDark ? Colors.white70 : Colors.black87)),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blueAccent,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                            shadowColor: Colors.blueAccent.withOpacity(0.3),
-                            elevation: 4,
-                          ),
-                          onPressed: () {
-                            if (widget.hasDisease == null) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                    "Please tell us if you have any medical conditions",
-                                  ),
-                                  backgroundColor: Colors.orange,
-                                ),
-                              );
-                              return;
-                            }
-                            if (widget.formKey.currentState!.validate()) {
-                              widget.onNext();
-                            }
-                          },
-                          child: const Text("Next", style: TextStyle(fontWeight: FontWeight.bold)),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildGenderCard(String label, String emoji, bool isDark) {
-    final isSelected = widget.gender == label;
-    return Expanded(
-      child: GestureDetector(
-        onTap: () => widget.onGenderChanged(label),
-        child: AnimatedScale(
-          scale: isSelected ? 1.03 : 1.0,
-          duration: const Duration(milliseconds: 150),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
-            decoration: BoxDecoration(
-              color: isSelected
-                  ? Colors.blueAccent.withOpacity(0.20)
-                  : (isDark ? Colors.white.withOpacity(0.07) : Colors.black.withOpacity(0.035)),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: isSelected
-                    ? Colors.blueAccent
-                    : (isDark ? Colors.white.withOpacity(0.18) : Colors.black.withOpacity(0.10)),
-                width: isSelected ? 2.0 : 1.2,
               ),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(emoji, style: const TextStyle(fontSize: 26)),
-                const SizedBox(height: 6),
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                    color: isSelected 
-                        ? Colors.blueAccent 
-                        : (isDark ? Colors.white.withOpacity(0.8) : Colors.black.withOpacity(0.75)),
-                  ),
-                ),
-              ],
-            ),
+            ],
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildYesNoCard({
-    required String label,
-    required String emoji,
-    required bool isSelected,
-    required bool isDark,
-    required VoidCallback onTap,
-  }) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: AnimatedScale(
-          scale: isSelected ? 1.03 : 1.0,
-          duration: const Duration(milliseconds: 150),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
-            decoration: BoxDecoration(
-              color: isSelected
-                  ? Colors.blueAccent.withOpacity(0.20)
-                  : (isDark ? Colors.white.withOpacity(0.07) : Colors.black.withOpacity(0.035)),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: isSelected
-                    ? Colors.blueAccent
-                    : (isDark ? Colors.white.withOpacity(0.18) : Colors.black.withOpacity(0.10)),
-                width: isSelected ? 2.0 : 1.2,
-              ),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(emoji, style: const TextStyle(fontSize: 20)),
-                const SizedBox(width: 8),
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                    color: isSelected
-                        ? Colors.blueAccent
-                        : (isDark ? Colors.white.withOpacity(0.8) : Colors.black.withOpacity(0.75)),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  InputDecoration _inputDecoration(String label, IconData icon, bool isDark) {
-    return InputDecoration(
-      labelText: label,
-      labelStyle: TextStyle(
-        color: isDark ? Colors.white.withOpacity(0.7) : Colors.black.withOpacity(0.65), 
-        fontSize: 14,
-        fontWeight: FontWeight.w500,
-      ),
-      floatingLabelStyle: const TextStyle(
-        color: Colors.blueAccent, 
-        fontWeight: FontWeight.bold,
-      ),
-      prefixIcon: Icon(icon, color: Colors.blueAccent, size: 22),
-      filled: true,
-      fillColor: isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.03),
-      contentPadding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(
-          color: isDark ? Colors.white.withOpacity(0.22) : Colors.black.withOpacity(0.12),
-          width: 1.2,
-        ),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(
-          color: isDark ? Colors.white.withOpacity(0.22) : Colors.black.withOpacity(0.12),
-          width: 1.2,
-        ),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: const BorderSide(color: Colors.blueAccent, width: 2.0),
       ),
     );
   }

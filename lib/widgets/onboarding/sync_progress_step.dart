@@ -74,7 +74,7 @@ class _SyncProgressStepState extends State<SyncProgressStep> with SingleTickerPr
                             shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.blueAccent.withOpacity(isDark ? 0.18 : 0.12),
+                                color: const Color(0xFF006D5B).withOpacity(isDark ? 0.18 : 0.12),
                                 blurRadius: 24,
                                 spreadRadius: 4,
                               ),
@@ -88,7 +88,7 @@ class _SyncProgressStepState extends State<SyncProgressStep> with SingleTickerPr
                             value: widget.progress,
                             strokeWidth: 6,
                             strokeCap: StrokeCap.round,
-                            color: Colors.blueAccent,
+                            color: const Color(0xFF006D5B),
                             backgroundColor: isDark 
                                 ? Colors.white.withOpacity(0.08) 
                                 : Colors.black.withOpacity(0.05),
