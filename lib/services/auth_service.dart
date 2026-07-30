@@ -136,8 +136,11 @@ class AuthService {
     await prefs.remove(_refreshTokenKey);
   }
 
-  // Base API URL
-  static const String apiBaseUrl = 'http://api.prabhash.site';
+  // Base API URL — wellness-server (see medifit-kb/MEDIFIT_KB.md).
+  // NOTE: 10.0.2.2 is the Android emulator's alias for the host machine's
+  // localhost; a physical device needs the host's real LAN IP instead.
+  // iOS simulator can use localhost directly.
+  static const String apiBaseUrl = 'http://localhost:8000';
 
   // Signup API
   Future<Map<String, dynamic>> signUpWithEmail(
@@ -326,7 +329,9 @@ class AuthService {
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'provider': provider.toLowerCase(),
-          'token': token,
+          // wellness-server's field is `id_token` (see app/schemas/auth.py
+          // SocialLoginIn) — the old prototype backend called it `token`.
+          'id_token': token,
           'name': name,
         }),
       );

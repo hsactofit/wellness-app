@@ -171,13 +171,21 @@ class _GymCheckinScreenState extends State<GymCheckinScreen> with TickerProvider
     });
 
     try {
-      // Expect QR code JSON format: {"name":"xyz_gym","place":"abc, xyz"}
+      // wellness-server identifies the facility by its short code (e.g.
+      // "BLR1", see Facility.code in wellness-server), not a freeform
+      // name/place pair. Until the physical/demo QR codes are regenerated
+      // to encode that code directly (tracked in medifit-kb/MEDIFIT_KB.md
+      // §7), this treats the QR's "name" field (or the raw scanned string)
+      // as a best-effort facility code candidate — the backend replies 404
+      // "Unknown facility code" if it doesn't match a real one.
       String gymName = 'Gym';
       String gymPlace = 'Gym Place';
+      String facilityCode = qrString.trim();
       try {
         final Map<String, dynamic> qrData = jsonDecode(qrString);
         gymName = qrData['name'] as String? ?? 'Gym';
         gymPlace = qrData['place'] as String? ?? 'Gym Place';
+        facilityCode = gymName;
       } catch (_) {
         // Fallback: If not JSON, use the raw QR string itself as gym name
         gymName = qrString;
@@ -188,15 +196,16 @@ class _GymCheckinScreenState extends State<GymCheckinScreen> with TickerProvider
           } catch (_) {}
         }
       }
+      facilityCode = facilityCode.trim().toUpperCase();
 
       final token = await AuthService.instance.getAccessToken();
-      final url = '${AuthService.apiBaseUrl}/api/gym/check-in';
+      final url = '${AuthService.apiBaseUrl}/api/attendance/checkin';
 
       debugPrint("================ GYM CHECKIN API REQUEST ================");
       debugPrint("URL: $url");
       debugPrint("Method: POST");
       debugPrint("Headers: ${token != null ? 'Authorization: Bearer [token]' : 'None'}");
-      debugPrint("Body: {'qr_data': '$qrString', 'gym_name': '$gymName'}");
+      debugPrint("Body: {'facility_code': '$facilityCode', 'method': 'QR scan'}");
       debugPrint("=========================================================");
 
       final response = await http.post(
@@ -206,8 +215,8 @@ class _GymCheckinScreenState extends State<GymCheckinScreen> with TickerProvider
           if (token != null) 'Authorization': 'Bearer $token',
         },
         body: jsonEncode({
-          'qr_data': qrString,
-          'gym_name': gymName,
+          'facility_code': facilityCode,
+          'method': 'QR scan',
         }),
       );
 
@@ -221,7 +230,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen> with TickerProvider
         _scannerController = null;
         final data = jsonDecode(response.body);
         final sessId = data['id'] as String? ?? '';
-        final checkinTimeStr = data['check_in_time'] as String? ?? DateTime.now().toIso8601String();
+        final checkinTimeStr = data['check_in_at'] as String? ?? DateTime.now().toIso8601String();
         final checkInTime = DateTime.tryParse(checkinTimeStr) ?? DateTime.now();
 
         final prefs = await SharedPreferences.getInstance();
@@ -292,14 +301,16 @@ class _GymCheckinScreenState extends State<GymCheckinScreen> with TickerProvider
 
     try {
       final token = await AuthService.instance.getAccessToken();
-      final url = '${AuthService.apiBaseUrl}/api/gym/check-out';
+      final url = '${AuthService.apiBaseUrl}/api/attendance/checkout';
 
-      final checkoutPayload = {
-        "exercises": _loggedExercises.map((e) => {
-          "name": e['name'],
-          "sets": e['sets'],
-        }).toList(),
-      };
+      // NOTE: wellness-server's /attendance/checkout doesn't accept a
+      // workout/exercise breakdown yet — WorkoutSession is modeled
+      // server-side but not wired to any endpoint (see
+      // medifit-kb/MEDIFIT_KB.md §3 "modeled but not yet wired"). The
+      // locally-logged exercises below are kept in SharedPreferences for
+      // the in-session UI but aren't persisted server-side until that
+      // endpoint exists.
+      final checkoutPayload = <String, dynamic>{};
 
       debugPrint("================ GYM CHECKOUT API REQUEST ================");
       debugPrint("URL: $url");
@@ -324,7 +335,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen> with TickerProvider
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = jsonDecode(response.body);
-        final checkoutTimeStr = data['check_out_time'] as String? ?? DateTime.now().toIso8601String();
+        final checkoutTimeStr = data['check_out_at'] as String? ?? DateTime.now().toIso8601String();
 
         final prefs = await SharedPreferences.getInstance();
         await prefs.remove('gym_checked_in');
