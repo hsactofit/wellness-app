@@ -120,41 +120,13 @@ class ApiService {
     throw Exception('User email not found. Please sign in again.');
   }
 
-  /// GET /api/health/data/{email} (Trends Data)
-  Future<List<Map<String, dynamic>>> fetchTrends(String email, String period) async {
-    final periodParam = period.toLowerCase() == 'daily'
-        ? 'days'
-        : period.toLowerCase() == 'weekly'
-            ? 'weeks'
-            : 'month';
-
-    final encodedEmail = Uri.encodeComponent(email);
-    final response = await _get(
-      '/api/health/data/$encodedEmail',
-      queryParams: {'period': periodParam},
-    );
-
-    if (response.statusCode == 200) {
-      final List<dynamic> list = jsonDecode(response.body);
-      return list.map((item) => Map<String, dynamic>.from(item)).toList();
-    } else {
-      throw Exception("Failed to load trends data: ${response.statusCode}");
-    }
-  }
-
-  /// GET /api/health/trends/{email} (Health Trends Data)
-  Future<Map<String, dynamic>> fetchProgressTrends(String email, String period) async {
-    final periodParam = period.toLowerCase(); // 'daily', 'weekly', 'monthly'
-    final encodedEmail = Uri.encodeComponent(email);
-    final response = await _get(
-      '/api/health/trends/$encodedEmail',
-      queryParams: {'period': periodParam},
-    );
-
+  /// GET /api/health/goals
+  Future<Map<String, dynamic>> fetchGoals() async {
+    final response = await _get('/api/health/goals');
     if (response.statusCode == 200) {
       return Map<String, dynamic>.from(jsonDecode(response.body));
     } else {
-      throw Exception("Failed to load progress trends: ${response.statusCode}");
+      throw Exception("Failed to load goals: ${response.statusCode}");
     }
   }
 

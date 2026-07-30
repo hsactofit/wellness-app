@@ -38,9 +38,115 @@ class _ProgressScreenState extends State<ProgressScreen>
     super.dispose();
   }
 
+  // wellness-server has no combined trends endpoint — this composes the
+  // shape the UI below expects from real, already-built pieces: goals for
+  // targets, and one /api/health/graph call per metric for series +
+  // averages. Days are merged by date; a day only appears if at least one
+  // metric has real synced/logged data for it (no fabricated zero-fill).
   Future<Map<String, dynamic>> _fetchTrendsFromServer() async {
     final email = await ApiService.instance.getUserEmail();
-    return ApiService.instance.fetchProgressTrends(email, _selectedPeriod);
+    final periodParam = _selectedPeriod == "Daily"
+        ? 'days'
+        : _selectedPeriod == "Weekly"
+            ? 'weeks'
+            : 'month';
+
+    final results = await Future.wait([
+      ApiService.instance.fetchGoals(),
+      ApiService.instance.fetchGraphData(
+          email: email, metric: 'steps', period: periodParam, title: 'Steps'),
+      ApiService.instance.fetchGraphData(
+          email: email,
+          metric: 'calories',
+          period: periodParam,
+          title: 'Calories'),
+      ApiService.instance.fetchGraphData(
+          email: email, metric: 'sleep', period: periodParam, title: 'Sleep'),
+      ApiService.instance.fetchGraphData(
+          email: email, metric: 'water', period: periodParam, title: 'Water'),
+    ]);
+
+    final goals = results[0];
+    final stepsRes = results[1];
+    final caloriesRes = results[2];
+    final sleepRes = results[3];
+    final waterRes = results[4];
+
+    double avgOf(Map<String, dynamic> r) =>
+        (r['average'] as num?)?.toDouble() ?? 0.0;
+
+    final Map<String, Map<String, double>> byDate = {};
+    void mergeIn(Map<String, dynamic> res, String key) {
+      final points = res['data'] as List<dynamic>? ?? [];
+      for (final raw in points) {
+        final p = raw as Map<String, dynamic>;
+        final label = p['label'] as String? ?? '';
+        if (label.isEmpty) continue;
+        final row = byDate.putIfAbsent(label, () => {});
+        row[key] = (p['value'] as num?)?.toDouble() ?? 0.0;
+      }
+    }
+
+    mergeIn(stepsRes, 'steps');
+    mergeIn(caloriesRes, 'calories');
+    mergeIn(sleepRes, 'sleep');
+    mergeIn(waterRes, 'water');
+
+    final sortedDates = byDate.keys.toList()..sort();
+
+    final targetSteps = (goals['step_goal'] as num?)?.toDouble() ?? 10000;
+    final targetCalories = (goals['calorie_goal'] as num?)?.toDouble() ?? 2000;
+    final targetSleep = (goals['sleep_goal'] as num?)?.toDouble() ?? 8;
+    final targetWater = (goals['water_goal'] as num?)?.toDouble() ?? 2500;
+
+    final history = sortedDates.reversed.map((d) {
+      final row = byDate[d]!;
+      final steps = row['steps'] ?? 0.0;
+      final calories = row['calories'] ?? 0.0;
+      final sleep = row['sleep'] ?? 0.0;
+      final water = row['water'] ?? 0.0;
+      return {
+        'date': d,
+        'steps': steps,
+        'calories': calories,
+        'sleep': sleep,
+        'water': water,
+        'targets_completed': {
+          'steps': steps >= targetSteps ? 'yes' : 'no',
+          'calories': calories >= targetCalories ? 'yes' : 'no',
+          'sleep': sleep >= targetSleep ? 'yes' : 'no',
+          'hydration': water >= targetWater ? 'yes' : 'no',
+        },
+      };
+    }).toList();
+
+    final graphData = sortedDates.map((d) {
+      final row = byDate[d]!;
+      return {
+        'label': d,
+        'steps': row['steps'] ?? 0.0,
+        'calories': row['calories'] ?? 0.0,
+        'sleep': row['sleep'] ?? 0.0,
+        'water': row['water'] ?? 0.0,
+      };
+    }).toList();
+
+    return {
+      'averages': {
+        'steps': avgOf(stepsRes),
+        'calories': avgOf(caloriesRes),
+        'sleep': avgOf(sleepRes),
+        'hydration': avgOf(waterRes),
+      },
+      'targets': {
+        'steps': targetSteps,
+        'calories': targetCalories,
+        'sleep': targetSleep,
+        'hydration': targetWater,
+      },
+      'history': history,
+      'graph_data': graphData,
+    };
   }
 
   @override
