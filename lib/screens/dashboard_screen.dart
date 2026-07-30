@@ -14,7 +14,6 @@ import '../widgets/metric_card.dart';
 import '../widgets/concentric_rings_chart.dart';
 import '../widgets/medical/medical_records_section.dart';
 import '../widgets/medical/medical_consent_sheet.dart';
-import 'package:http/http.dart' as http;
 import '../services/auth_service.dart';
 import 'onboarding_screen.dart';
 import 'water_logging_screen.dart';
@@ -264,16 +263,16 @@ class DashboardScreenState extends State<DashboardScreen>
     final isGymCompletedToday = _activeChallenges.any(
       (c) =>
           (c.metricType == 'workouts' ||
-              c.title.toLowerCase().contains('gym') ||
-              c.title.toLowerCase().contains('workout')) &&
-          c.completedToday,
+              c.name.toLowerCase().contains('gym') ||
+              c.name.toLowerCase().contains('workout')) &&
+          (c.progressPct ?? 0) >= 100,
     );
 
     final otherChallengesCount = _activeChallenges.where((c) {
       final isGym =
           c.metricType == 'workouts' ||
-          c.title.toLowerCase().contains('gym') ||
-          c.title.toLowerCase().contains('workout');
+          c.name.toLowerCase().contains('gym') ||
+          c.name.toLowerCase().contains('workout');
       if (isGym && isGymCompletedToday) {
         return false;
       }
@@ -507,46 +506,16 @@ class DashboardScreenState extends State<DashboardScreen>
 
   Future<void> _syncManualWaterToApi(int amount) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final jsonStr = prefs.getString('onboarding_data');
-      if (jsonStr != null) {
-        final Map<String, dynamic> onboarding = jsonDecode(jsonStr);
-        final email = onboarding['auth']?['email'];
-        if (email != null) {
-          final token = await AuthService.instance.getAccessToken();
-          final url =
-              '${AuthService.apiBaseUrl}/api/water/log/${Uri.encodeComponent(email)}';
-          final now = DateTime.now();
-
-          var response = await http.post(
-            Uri.parse(url),
-            headers: {
-              'Content-Type': 'application/json',
-              if (token != null) 'Authorization': 'Bearer $token',
-            },
-            body: jsonEncode({
-              'amount': amount,
-              'timestamp': now.toIso8601String(),
-            }),
-          );
-
-          if (response.statusCode == 401) {
-            await AuthService.instance.refreshSessionToken();
-            final newToken = await AuthService.instance.getAccessToken();
-            response = await http.post(
-              Uri.parse(url),
-              headers: {
-                'Content-Type': 'application/json',
-                if (newToken != null) 'Authorization': 'Bearer $newToken',
-              },
-              body: jsonEncode({
-                'amount': amount,
-                'timestamp': now.toIso8601String(),
-              }),
-            );
-          }
-        }
-      }
+      // Route through the real, already-verified water-log call (matches
+      // wellness-server's WaterLogIn: amount_ml + timestamp, member
+      // identified by Bearer token) instead of a hand-rolled request —
+      // this used to hit a nonexistent /api/water/log/{email} route with
+      // the wrong body field ('amount' instead of 'amount_ml').
+      final email = await ApiService.instance.getUserEmail();
+      await ApiService.instance.addWaterLog(email, {
+        'amount_ml': amount,
+        'timestamp': DateTime.now().toUtc().toIso8601String(),
+      });
     } catch (e) {
       debugPrint("Error syncing manual logged water: $e");
     }
@@ -675,38 +644,18 @@ class DashboardScreenState extends State<DashboardScreen>
     }
   }
 
+  // Workout/nutrition plan generation has no backend yet (member-facing
+  // plan CRUD doesn't exist on wellness-server — only staff can manage
+  // TrainingPlan/WorkoutSession records). Rather than firing two calls that
+  // always fail, always show the "coming soon" empty snapshot; PlanScreen
+  // shown on tap explains the same thing.
   Future<void> _fetchTodayPlans(String email) async {
     if (!mounted) return;
-    setState(() => _plansLoading = true);
-    final today = todayDateString();
-    try {
-      WorkoutDaySchedule? workoutDay;
-      NutritionDaySchedule? nutritionDay;
-
-      try {
-        final w = await ApiService.instance.getWorkoutForDay(email, today);
-        if (w != null) workoutDay = WorkoutDaySchedule.fromJson(w);
-      } catch (e) {
-        debugPrint("Today workout day: $e");
-      }
-
-      try {
-        final n = await ApiService.instance.getNutritionForDay(email, today);
-        if (n != null) nutritionDay = NutritionDaySchedule.fromJson(n);
-      } catch (e) {
-        debugPrint("Today nutrition day: $e");
-      }
-
-      if (!mounted) return;
-      setState(() {
-        _todayWorkoutSnap = TodayPlanSnapshot.fromWorkout(workoutDay);
-        _todayNutritionSnap = TodayPlanSnapshot.fromNutrition(nutritionDay);
-        _plansLoading = false;
-      });
-    } catch (e) {
-      debugPrint("Error fetching today plans: $e");
-      if (mounted) setState(() => _plansLoading = false);
-    }
+    setState(() {
+      _todayWorkoutSnap = TodayPlanSnapshot.fromWorkout(null);
+      _todayNutritionSnap = TodayPlanSnapshot.fromNutrition(null);
+      _plansLoading = false;
+    });
   }
 
   Future<void> _syncAndRefreshDashboard(
@@ -715,8 +664,6 @@ class DashboardScreenState extends State<DashboardScreen>
   ) async {
     final future = () async {
       try {
-        final prefs = await SharedPreferences.getInstance();
-
         // 1. POST sync — uploads health data, returns score/summary/macros (NO widgets)
         final syncRes = await ApiService.instance.syncDashboard(
           email,
@@ -752,12 +699,30 @@ class DashboardScreenState extends State<DashboardScreen>
         final int nutriSub = syncData['nutrition_subscore'] ?? 0;
         final int mindSub = syncData['mindfulness_subscore'] ?? 0;
 
-        // Nutrition macros (top-level fields)
-        final double apiProtein =
-            (resData['protein_today'] as num?)?.toDouble() ?? 0.0;
-        final double apiCarbs =
-            (resData['carbs_today'] as num?)?.toDouble() ?? 0.0;
-        final double apiFat = (resData['fat_today'] as num?)?.toDouble() ?? 0.0;
+        // Nutrition macros — wellness-server's dashboard response has no
+        // macro-aggregate fields (there's no protein_today/carbs_today/
+        // fat_today anywhere in DashboardOut), so derive today's totals
+        // from the member's real meal logs instead of reading fields that
+        // don't exist.
+        double apiProtein = 0.0;
+        double apiCarbs = 0.0;
+        double apiFat = 0.0;
+        try {
+          final logsRes = await ApiService.instance.fetchNutritionLogs(email);
+          final logs = logsRes['logs'] as List<dynamic>? ?? [];
+          final todayStr = DateTime.now().toIso8601String().substring(0, 10);
+          for (final log in logs) {
+            final loggedAt =
+                (log['logged_at'] ?? log['timestamp'])?.toString() ?? '';
+            if (!loggedAt.startsWith(todayStr)) continue;
+            final macros = log['macros'] as Map<String, dynamic>? ?? {};
+            apiProtein += (macros['protein'] as num?)?.toDouble() ?? 0.0;
+            apiCarbs += (macros['carbs'] as num?)?.toDouble() ?? 0.0;
+            apiFat += (macros['fats'] as num?)?.toDouble() ?? 0.0;
+          }
+        } catch (e) {
+          debugPrint("Failed to derive today's macros from nutrition logs: $e");
+        }
         final double apiNutriCal = apiProtein * 4 + apiCarbs * 4 + apiFat * 9;
 
         // ── Parse widgets[] array ─────────────────────────────────────────────
@@ -877,36 +842,12 @@ class DashboardScreenState extends State<DashboardScreen>
           parsedBuddyStatus = buddyW['status']?.toString();
         }
 
-        // ── Parse gym session from API response ───────────────────────────────
-        if (resData['latest_gym_session'] != null) {
-          final gym = resData['latest_gym_session'];
-          final checkInTimeStr = gym['check_in_time']?.toString();
-          final checkOutTimeStr = gym['check_out_time']?.toString();
-          final gymName = gym['gym_name']?.toString() ?? "Gym";
-          final gymId = gym['id']?.toString() ?? "";
-
-          if (checkOutTimeStr == null || checkOutTimeStr.isEmpty) {
-            await prefs.setBool('gym_checked_in', true);
-            await prefs.setString('gym_name', gymName);
-            await prefs.setString('gym_place', gymName);
-            if (checkInTimeStr != null) {
-              await prefs.setString('gym_check_in_time', checkInTimeStr);
-            }
-            await prefs.setString('gym_session_id', gymId);
-            await prefs.remove('gym_check_out_time');
-          } else {
-            await prefs.remove('gym_checked_in');
-            await prefs.remove('gym_name');
-            await prefs.remove('gym_place');
-            await prefs.remove('gym_check_in_time');
-            await prefs.remove('gym_session_id');
-            await prefs.remove('gym_logged_exercises');
-            await prefs.setString('gym_check_out_time', checkOutTimeStr);
-            final checkOutDate = checkOutTimeStr.substring(0, 10);
-            await prefs.setString('gym_done_today_date', checkOutDate);
-          }
-          await _loadGymState();
-        }
+        // NOTE: there is no member-facing "current attendance session"
+        // endpoint on wellness-server (the /attendance/* read routes are
+        // all staff-only) — gym check-in/out state is already tracked
+        // correctly and independently by gym_checkin_screen.dart writing
+        // straight to SharedPreferences off its own checkin/checkout
+        // calls, so there is nothing to reconcile here.
 
         // ── Commit all API data to state ──────────────────────────────────────
         setState(() {
@@ -3900,9 +3841,9 @@ class DashboardScreenState extends State<DashboardScreen>
                   // ),
 
                   // Quick Access Section
-                  // SliverToBoxAdapter(
-                  //   child: _buildQuickAccessSection(theme, isDark),
-                  // ),
+                  SliverToBoxAdapter(
+                    child: _buildQuickAccessSection(theme, isDark),
+                  ),
 
                   // Active Challenge Card
                   // SliverToBoxAdapter(
@@ -5098,17 +5039,17 @@ class DashboardScreenState extends State<DashboardScreen>
     final isGymCompletedToday = _activeChallenges.any(
       (c) =>
           (c.metricType == 'workouts' ||
-              c.title.toLowerCase().contains('gym') ||
-              c.title.toLowerCase().contains('workout')) &&
-          c.completedToday,
+              c.name.toLowerCase().contains('gym') ||
+              c.name.toLowerCase().contains('workout')) &&
+          (c.progressPct ?? 0) >= 100,
     );
 
     // Gym check-in is always in the top priority row; only list challenges here.
     final otherChallenges = _activeChallenges.where((c) {
       final isGym =
           c.metricType == 'workouts' ||
-          c.title.toLowerCase().contains('gym') ||
-          c.title.toLowerCase().contains('workout');
+          c.name.toLowerCase().contains('gym') ||
+          c.name.toLowerCase().contains('workout');
       if (isGym && isGymCompletedToday) {
         return false;
       }
@@ -5351,11 +5292,11 @@ class DashboardScreenState extends State<DashboardScreen>
     else if (challenge.metricType == 'heart_rate')
       emoji = "❤️";
     else if (challenge.metricType == 'workouts' ||
-        challenge.title.toLowerCase().contains('gym') ||
-        challenge.title.toLowerCase().contains('workout'))
+        challenge.name.toLowerCase().contains('gym') ||
+        challenge.name.toLowerCase().contains('workout'))
       emoji = "🏋️‍♂️";
 
-    final progressVal = (challenge.progress / challenge.target).clamp(0.0, 1.0);
+    final progressVal = ((challenge.progressPct ?? 0.0) / 100).clamp(0.0, 1.0);
     final pct = (progressVal * 100).round();
 
     return Container(
@@ -5385,8 +5326,8 @@ class DashboardScreenState extends State<DashboardScreen>
                 ),
               );
             } else if (challenge.metricType == 'workouts' ||
-                challenge.title.toLowerCase().contains('gym') ||
-                challenge.title.toLowerCase().contains('workout')) {
+                challenge.name.toLowerCase().contains('gym') ||
+                challenge.name.toLowerCase().contains('workout')) {
               Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -5398,15 +5339,13 @@ class DashboardScreenState extends State<DashboardScreen>
                   ),
                 ),
               );
-            } else {
+            } else if (challenge.metricType != null) {
               Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (context) => MetricDetailScreen(
-                    metric: challenge.metricType.toLowerCase() == 'fitness'
-                        ? 'workouts'
-                        : challenge.metricType,
-                    title: challenge.title,
+                    metric: challenge.metricType!,
+                    title: challenge.name,
                     icon: emoji,
                     color: color,
                     email: _userEmail,
@@ -5445,7 +5384,7 @@ class DashboardScreenState extends State<DashboardScreen>
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        challenge.title,
+                        challenge.name,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(

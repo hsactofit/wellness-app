@@ -1,150 +1,100 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import '../widgets/glass_card.dart';
 import '../widgets/concentric_rings_chart.dart';
 import '../services/health_service.dart';
 import '../services/auth_service.dart';
 
-class LeaderboardPlayer {
-  String name;
-  double progress;
-  final String progressTextPattern;
-  final bool isUser;
-  final String avatarUrl;
-
-  LeaderboardPlayer({
-    required this.name,
-    required this.progress,
-    required this.progressTextPattern,
-    this.isUser = false,
-    this.avatarUrl = "",
-  });
-
-  String get progressText {
-    return progressTextPattern.replaceAll('%s', progress.round().toString());
-  }
-}
-
-class DailyHistoryItem {
-  final String date;
-  final String status;
-  final double progress;
-  final double target;
-
-  DailyHistoryItem({
-    required this.date,
-    required this.status,
-    required this.progress,
-    required this.target,
-  });
-
-  factory DailyHistoryItem.fromJson(Map<String, dynamic> json) {
-    return DailyHistoryItem(
-      date: json['date'] as String? ?? '',
-      status: json['status'] as String? ?? '',
-      progress: (json['progress'] as num?)?.toDouble() ?? 0.0,
-      target: (json['target'] as num?)?.toDouble() ?? 1.0,
-    );
-  }
-}
-
 class Challenge {
   final String id;
-  final String title;
-  final String desc;
-  double progress;
-  final double target;
-  final String progressTextPattern;
-  final int points;
-  final String timeLeft;
-  final Color color;
-  final String metricType;
-  bool isJoined;
-  List<LeaderboardPlayer> leaderboard;
-  bool isExpanded;
-  final int participantsCount;
-  bool completed;
-  final bool completedToday;
-  final String? infoText;
-  final List<DailyHistoryItem> dailyHistory;
+  final String name;
+  final String type;
+  final String prize;
+  final String status;
+  final DateTime? startsAt;
+  final DateTime? endsAt;
+  final int participantCount;
+  bool joined;
+  double? progressPct;
+  final String? metricType;
+  final double? targetValue;
 
   Challenge({
     required this.id,
-    required this.title,
-    required this.desc,
-    required this.progress,
-    required this.target,
-    required this.progressTextPattern,
-    required this.points,
-    required this.timeLeft,
-    required this.color,
+    required this.name,
+    required this.type,
+    required this.prize,
+    required this.status,
+    required this.startsAt,
+    required this.endsAt,
+    required this.participantCount,
+    required this.joined,
+    required this.progressPct,
     required this.metricType,
-    required this.isJoined,
-    required this.leaderboard,
-    required this.participantsCount,
-    required this.completed,
-    required this.completedToday,
-    this.isExpanded = false,
-    this.infoText,
-    required this.dailyHistory,
+    required this.targetValue,
   });
 
-  factory Challenge.fromJson(Map<String, dynamic> json) {
-    final category = json['category'] as String? ?? 'steps';
-    final target = (json['targetValue'] as num?)?.toDouble() ?? 1.0;
-    final unit = json['unit'] as String? ?? '';
+  bool get hasAutoTracking => metricType != null && targetValue != null && targetValue! > 0;
 
-    Color cColor = Colors.blue;
-    if (category == 'water')
-      cColor = Colors.blueAccent;
-    else if (category == 'steps')
-      cColor = Colors.green;
-    else if (category == 'sleep')
-      cColor = Colors.purple;
-    else if (category == 'calories')
-      cColor = Colors.orange;
-    else if (category == 'workouts')
-      cColor = Colors.indigoAccent;
-
-    final endStr = json['endDate'] as String? ?? '';
-    String timeRemaining = "Active";
-    if (endStr.isNotEmpty) {
-      final end = DateTime.tryParse(endStr);
-      if (end != null) {
-        final diff = end.difference(DateTime.now());
-        timeRemaining = diff.inDays > 0
-            ? "${diff.inDays} days left"
-            : "Ends today";
-      }
+  Color get color {
+    switch (metricType) {
+      case 'water':
+        return Colors.blueAccent;
+      case 'steps':
+        return Colors.green;
+      case 'sleep':
+        return Colors.purple;
+      case 'calories':
+        return Colors.orange;
+      default:
+        return Colors.indigoAccent;
     }
+  }
 
-    final historyList = json['dailyHistory'] as List<dynamic>? ?? [];
-    final dailyHistory = historyList.map((item) => DailyHistoryItem.fromJson(item)).toList();
+  String get timeLeft {
+    if (status == 'Ended') return "Ended";
+    if (status == 'Scheduled') {
+      if (startsAt == null) return "Upcoming";
+      final diff = startsAt!.difference(DateTime.now());
+      return diff.inDays > 0 ? "Starts in ${diff.inDays}d" : "Starting soon";
+    }
+    if (endsAt == null) return "Active";
+    final diff = endsAt!.difference(DateTime.now());
+    return diff.inDays > 0 ? "${diff.inDays} days left" : "Ends today";
+  }
 
+  String get metricLabel {
+    if (!hasAutoTracking) return '';
+    final target = targetValue!.round();
+    switch (metricType) {
+      case 'water':
+        return "$target ml/day";
+      case 'steps':
+        return "$target steps/day";
+      case 'sleep':
+        return "$target hrs/day";
+      case 'calories':
+        return "$target kcal/day";
+      default:
+        return "$target";
+    }
+  }
+
+  factory Challenge.fromJson(Map<String, dynamic> json) {
     return Challenge(
       id: json['id'] as String? ?? '',
-      title: json['title'] as String? ?? '',
-      desc:
-          json['shortDescription'] as String? ??
-          json['description'] as String? ??
-          '',
-      progress: (json['currentProgress'] as num?)?.toDouble() ?? 0.0,
-      target: target,
-      progressTextPattern: "Progress: %s/${target.round()} $unit",
-      points: json['rewardPoints'] as int? ?? 0,
-      timeLeft: timeRemaining,
-      color: cColor,
-      metricType: category,
-      isJoined: json['joined'] as bool? ?? false,
-      leaderboard: [],
-      participantsCount: json['participantsCount'] as int? ?? 0,
-      completed: json['completed'] as bool? ?? false,
-      completedToday: json['completedToday'] as bool? ?? false,
-      isExpanded: false,
-      infoText: json['infoText'] as String?,
-      dailyHistory: dailyHistory,
+      name: json['name'] as String? ?? '',
+      type: json['type'] as String? ?? 'Individual',
+      prize: json['prize'] as String? ?? '',
+      status: json['status'] as String? ?? 'Scheduled',
+      startsAt: DateTime.tryParse(json['starts_at'] as String? ?? ''),
+      endsAt: DateTime.tryParse(json['ends_at'] as String? ?? ''),
+      participantCount: json['participant_count'] as int? ?? 0,
+      joined: json['joined'] as bool? ?? false,
+      progressPct: (json['progress_pct'] as num?)?.toDouble(),
+      metricType: json['metric_type'] as String?,
+      targetValue: (json['target_value'] as num?)?.toDouble(),
     );
   }
 }
@@ -158,13 +108,10 @@ class ChallengesScreen extends StatefulWidget {
 
 class _ChallengesScreenState extends State<ChallengesScreen> {
   int _userPoints = 0;
-  String _userName = "User";
   bool _isLoading = true;
   String? _errorMessage;
   HealthData _healthData = HealthData();
   List<Challenge> _challenges = [];
-  final Map<String, bool> _leaderboardLoading = {};
-  List<String> _claimedRewards = [];
 
   @override
   void initState() {
@@ -172,44 +119,16 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
     _loadData();
   }
 
-  void _updateUserPoints() {
-    int total = 0;
-    for (var c in _challenges) {
-      if (_claimedRewards.contains(c.id)) {
-        total += c.points;
-      }
+  Future<void> _waitForHomeSync() async {
+    if (HealthService.instance.homeSyncFuture != null) {
+      await HealthService.instance.homeSyncFuture;
     }
-    setState(() {
-      _userPoints = total;
-    });
   }
 
   Future<void> _loadData({
     bool showLoadingIndicator = true,
     bool forceRefresh = false,
   }) async {
-    final prefs = await SharedPreferences.getInstance();
-    String name = "User";
-    final localName = prefs.getString('user_name');
-    if (localName != null && localName.isNotEmpty) {
-      name = localName;
-    } else {
-      final jsonStr = prefs.getString('onboarding_data');
-      if (jsonStr != null) {
-        try {
-          final Map<String, dynamic> onboarding = jsonDecode(jsonStr);
-          final n = onboarding['auth']?['name'];
-          if (n != null && n.isNotEmpty) {
-            name = n;
-          }
-        } catch (e) {
-          debugPrint("Error parsing onboarding data: $e");
-        }
-      }
-    }
-
-    final claimed = prefs.getStringList('claimed_challenge_rewards') ?? [];
-
     HealthData healthData = HealthData();
     try {
       healthData = await HealthService.instance.fetchHealthData(
@@ -221,10 +140,9 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
 
     if (mounted) {
       setState(() {
-        _userName = name;
         _healthData = healthData;
-        _claimedRewards = claimed;
       });
+      await _fetchPointsBalance();
       await _fetchChallenges(
         showLoadingIndicator: showLoadingIndicator,
         forceRefresh: forceRefresh,
@@ -232,13 +150,23 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
     }
   }
 
-  Future<void> _waitForHomeSync() async {
-    if (HealthService.instance.homeSyncFuture != null) {
-      debugPrint(
-        "Merged Home Sync is in progress. Waiting for completion before calling other APIs...",
+  Future<void> _fetchPointsBalance() async {
+    try {
+      final token = await AuthService.instance.getAccessToken();
+      final response = await http.get(
+        Uri.parse('${AuthService.apiBaseUrl}/api/rewards/balance'),
+        headers: {if (token != null) 'Authorization': 'Bearer $token'},
       );
-      await HealthService.instance.homeSyncFuture;
-      debugPrint("Merged Home Sync completed. Resuming API request flow.");
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (mounted) {
+          setState(() {
+            _userPoints = data['balance'] as int? ?? 0;
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint("Error fetching points balance: $e");
     }
   }
 
@@ -259,18 +187,6 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
       final token = await AuthService.instance.getAccessToken();
       final url = '${AuthService.apiBaseUrl}/api/challenges';
 
-      debugPrint(
-        "================ GET CHALLENGES API REQUEST ================",
-      );
-      debugPrint("URL: $url");
-      debugPrint("Method: GET");
-      debugPrint(
-        "Headers: ${token != null ? 'Authorization: Bearer [$token]' : 'None'}",
-      );
-      debugPrint(
-        "============================================================",
-      );
-
       var response = await http.get(
         Uri.parse(url),
         headers: {if (token != null) 'Authorization': 'Bearer $token'},
@@ -285,24 +201,14 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
         );
       }
 
-      debugPrint(
-        "================ GET CHALLENGES API RESPONSE ================",
-      );
-      debugPrint("Status Code: ${response.statusCode}");
-      debugPrint("Response Body: ${response.body}");
-      debugPrint(
-        "=============================================================",
-      );
-
       if (response.statusCode == 200) {
         final List<dynamic> list = jsonDecode(response.body);
         final fetched = list.map((json) => Challenge.fromJson(json)).toList();
         setState(() {
           _challenges = fetched;
         });
-        _updateUserPoints();
         if (!preventSync) {
-          await _calculateAndSyncProgress(forceRefresh: forceRefresh);
+          await _syncAutoProgress();
         }
       } else {
         setState(() {
@@ -324,77 +230,38 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
     }
   }
 
-  Future<void> _calculateAndSyncProgress({bool forceRefresh = false}) async {
-    await _waitForHomeSync();
-    final dailyRecords = await HealthService.instance
-        .fetchDailyHealthDataForPeriod(days: 7, forceRefresh: forceRefresh);
+  double? _todayValueFor(String metricType) {
+    switch (metricType) {
+      case 'water':
+        return _healthData.waterIntake;
+      case 'steps':
+        return _healthData.steps;
+      case 'sleep':
+        return _healthData.sleepDuration;
+      case 'calories':
+        return _healthData.activeCalories;
+      default:
+        return null;
+    }
+  }
 
+  Future<void> _syncAutoProgress() async {
     bool didSyncAny = false;
+
     for (var challenge in _challenges) {
-      if (!challenge.isJoined) continue;
+      if (!challenge.joined || !challenge.hasAutoTracking) continue;
+      final todayValue = _todayValueFor(challenge.metricType!);
+      if (todayValue == null) continue;
 
-      double calculatedProgress = 0.0;
-
-      if (challenge.metricType == 'water') {
-        calculatedProgress = dailyRecords
-            .where((r) {
-              final waterVal = ((r['water_intake_ml'] ?? 0) as num).toDouble();
-              return waterVal >= 2000.0;
-            })
-            .length
-            .toDouble();
-      } else if (challenge.metricType == 'steps') {
-        calculatedProgress = dailyRecords
-            .where((r) {
-              final stepsVal = ((r['steps'] ?? 0) as num).toDouble();
-              return stepsVal >= 10000.0;
-            })
-            .length
-            .toDouble();
-      } else if (challenge.metricType == 'sleep') {
-        calculatedProgress = dailyRecords
-            .where((r) {
-              final sleepVal = ((r['sleep_duration_hours'] ?? 0.0) as num)
-                  .toDouble();
-              return sleepVal >= 7.5;
-            })
-            .length
-            .toDouble();
-      } else if (challenge.metricType == 'calories') {
-        calculatedProgress = dailyRecords
-            .where((r) {
-              final calVal = ((r['calories'] ?? 0) as num).toDouble();
-              return calVal >= 500.0;
-            })
-            .length
-            .toDouble();
+      final computedPct = (todayValue / challenge.targetValue! * 100).clamp(0.0, 100.0);
+      if (challenge.progressPct != null && (challenge.progressPct! - computedPct).abs() < 1.0) {
+        continue;
       }
-
-      if (calculatedProgress > challenge.target) {
-        calculatedProgress = challenge.target;
-      }
-
-      setState(() {
-        challenge.progress = calculatedProgress;
-      });
 
       try {
         final token = await AuthService.instance.getAccessToken();
         final syncUrl =
             '${AuthService.apiBaseUrl}/api/challenges/${challenge.id}/progress';
-
-        debugPrint(
-          "================ UPDATE PROGRESS API REQUEST ================",
-        );
-        debugPrint("URL: $syncUrl");
-        debugPrint("Method: POST");
-        debugPrint(
-          "Headers: ${token != null ? 'Authorization: Bearer [token]' : 'None'}",
-        );
-        debugPrint("Body: {'progress': $calculatedProgress}");
-        debugPrint(
-          "=============================================================",
-        );
 
         final response = await http.post(
           Uri.parse(syncUrl),
@@ -402,30 +269,20 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
             'Content-Type': 'application/json',
             if (token != null) 'Authorization': 'Bearer $token',
           },
-          body: jsonEncode({'progress': calculatedProgress}),
-        );
-
-        debugPrint(
-          "================ UPDATE PROGRESS API RESPONSE ================",
-        );
-        debugPrint("Challenge: ${challenge.title}");
-        debugPrint("Status Code: ${response.statusCode}");
-        debugPrint("Response Body: ${response.body}");
-        debugPrint(
-          "=============================================================",
+          body: jsonEncode({'progress_pct': computedPct}),
         );
 
         if (response.statusCode == 200) {
           didSyncAny = true;
         }
       } catch (e) {
-        debugPrint("Failed to sync progress for ${challenge.title}: $e");
+        debugPrint("Failed to sync progress for ${challenge.name}: $e");
       }
     }
 
     if (didSyncAny) {
-      // Re-fetch challenges to update state from server (completed flags, rank, participantsCount, etc.)
       await _fetchChallenges(preventSync: true, showLoadingIndicator: false);
+      await _fetchPointsBalance();
     }
   }
 
@@ -439,18 +296,6 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
       final url =
           '${AuthService.apiBaseUrl}/api/challenges/${challenge.id}/join';
 
-      debugPrint(
-        "================ JOIN CHALLENGE API REQUEST ================",
-      );
-      debugPrint("URL: $url");
-      debugPrint("Method: POST");
-      debugPrint(
-        "Headers: ${token != null ? 'Authorization: Bearer [token]' : 'None'}",
-      );
-      debugPrint(
-        "============================================================",
-      );
-
       var response = await http.post(
         Uri.parse(url),
         headers: {if (token != null) 'Authorization': 'Bearer $token'},
@@ -465,197 +310,30 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
         );
       }
 
-      debugPrint(
-        "================ JOIN CHALLENGE API RESPONSE ================",
-      );
-      debugPrint("Status Code: ${response.statusCode}");
-      debugPrint("Response Body: ${response.body}");
-      debugPrint(
-        "=============================================================",
-      );
-
       if (response.statusCode == 200 || response.statusCode == 201) {
         setState(() {
-          challenge.isJoined = true;
+          challenge.joined = true;
         });
-        await _calculateAndSyncProgress();
+        await _syncAutoProgress();
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text("Joined ${challenge.title} challenge!"),
+            content: Text("Joined ${challenge.name} challenge!"),
             backgroundColor: challenge.color,
           ),
         );
       } else {
+        final detail = jsonDecode(response.body)['detail']?.toString();
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text("Failed to join challenge: ${response.statusCode}"),
+            content: Text(detail ?? "Failed to join challenge: ${response.statusCode}"),
             backgroundColor: Colors.redAccent,
           ),
         );
       }
     } catch (e) {
       debugPrint("Error joining challenge: $e");
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Network error: $e"),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
-    }
-  }
-
-  Future<void> _fetchLeaderboard(Challenge challenge) async {
-    await _waitForHomeSync();
-    setState(() {
-      _leaderboardLoading[challenge.id] = true;
-    });
-    try {
-      final token = await AuthService.instance.getAccessToken();
-      final url =
-          '${AuthService.apiBaseUrl}/api/challenges/${challenge.id}/leaderboard?page=1&limit=10&leaderboardType=GLOBAL';
-
-      debugPrint(
-        "================ GET LEADERBOARD API REQUEST ================",
-      );
-      debugPrint("URL: $url");
-      debugPrint("Method: GET");
-      debugPrint(
-        "Headers: ${token != null ? 'Authorization: Bearer [token]' : 'None'}",
-      );
-      debugPrint(
-        "=============================================================",
-      );
-
-      var response = await http.get(
-        Uri.parse(url),
-        headers: {if (token != null) 'Authorization': 'Bearer $token'},
-      );
-
-      if (response.statusCode == 401) {
-        await AuthService.instance.refreshSessionToken();
-        final newToken = await AuthService.instance.getAccessToken();
-        response = await http.get(
-          Uri.parse(url),
-          headers: {if (newToken != null) 'Authorization': 'Bearer $newToken'},
-        );
-      }
-
-      debugPrint(
-        "================ GET LEADERBOARD API RESPONSE ================",
-      );
-      debugPrint("Status Code: ${response.statusCode}");
-      debugPrint("Response Body: ${response.body}");
-      debugPrint(
-        "=============================================================",
-      );
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final List<dynamic> leadersJson = data['leaders'] ?? [];
-
-        final List<LeaderboardPlayer> players = leadersJson.map((l) {
-          final name = l['name'] as String? ?? 'User';
-          final progress = (l['progress'] as num?)?.toDouble() ?? 0.0;
-          return LeaderboardPlayer(
-            name: name == _userName ? "$name (You)" : name,
-            progress: progress,
-            progressTextPattern:
-                "%s ${challenge.progressTextPattern.split(' ').last}",
-            isUser: name == _userName,
-          );
-        }).toList();
-
-        players.sort((a, b) => b.progress.compareTo(a.progress));
-
-        setState(() {
-          challenge.leaderboard = players;
-        });
-      }
-    } catch (e) {
-      debugPrint("Error fetching leaderboard: $e");
-    } finally {
-      setState(() {
-        _leaderboardLoading[challenge.id] = false;
-      });
-    }
-  }
-
-  Future<void> _claimReward(Challenge challenge) async {
-    await _waitForHomeSync();
-    setState(() {
-      _isLoading = true;
-    });
-    try {
-      final token = await AuthService.instance.getAccessToken();
-      final url =
-          '${AuthService.apiBaseUrl}/api/challenges/${challenge.id}/claim-reward';
-
-      debugPrint("================ CLAIM REWARD API REQUEST ================");
-      debugPrint("URL: $url");
-      debugPrint("Method: POST");
-      debugPrint(
-        "Headers: ${token != null ? 'Authorization: Bearer [token]' : 'None'}",
-      );
-      debugPrint("==========================================================");
-
-      var response = await http.post(
-        Uri.parse(url),
-        headers: {if (token != null) 'Authorization': 'Bearer $token'},
-      );
-
-      if (response.statusCode == 401) {
-        await AuthService.instance.refreshSessionToken();
-        final newToken = await AuthService.instance.getAccessToken();
-        response = await http.post(
-          Uri.parse(url),
-          headers: {if (newToken != null) 'Authorization': 'Bearer $newToken'},
-        );
-      }
-
-      debugPrint("================ CLAIM REWARD API RESPONSE ================");
-      debugPrint("Status Code: ${response.statusCode}");
-      debugPrint("Response Body: ${response.body}");
-      debugPrint("===========================================================");
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final int rewardPoints = data['rewardPoints'] ?? challenge.points;
-
-        final prefs = await SharedPreferences.getInstance();
-        setState(() {
-          _claimedRewards.add(challenge.id);
-        });
-
-        await prefs.setStringList('claimed_challenge_rewards', _claimedRewards);
-        _updateUserPoints();
-
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              "🎉 Claimed $rewardPoints points for completing ${challenge.title}!",
-            ),
-            backgroundColor: Colors.amber,
-          ),
-        );
-      } else {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("Failed to claim reward: ${response.statusCode}"),
-            backgroundColor: Colors.redAccent,
-          ),
-        );
-      }
-    } catch (e) {
-      debugPrint("Error claiming reward: $e");
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -730,7 +408,6 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
     return Scaffold(
       body: Stack(
         children: [
-          // Background Glows
           Positioned.fill(
             child: Container(
               color: isDark ? const Color(0xFF0F0F12) : const Color(0xFFF6F8FC),
@@ -774,7 +451,6 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // Title Area
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -797,7 +473,6 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
                             ),
                           ],
                         ),
-                        // Points Container
                         Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 14,
@@ -828,11 +503,9 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
                     ),
                     const SizedBox(height: 24),
 
-                    // Progress Rings Chart
                     _buildProgressCard(isDark),
                     const SizedBox(height: 24),
 
-                    // Active Challenges Section Header
                     Text(
                       "Active Challenges",
                       style: TextStyle(
@@ -843,8 +516,7 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
                     ),
                     const SizedBox(height: 12),
 
-                    // Active challenges list
-                    if (_challenges.where((c) => c.isJoined).isEmpty)
+                    if (_challenges.where((c) => c.joined).isEmpty)
                       GlassCard(
                         padding: const EdgeInsets.symmetric(
                           vertical: 32,
@@ -882,7 +554,7 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
                       )
                     else
                       ..._challenges
-                          .where((c) => c.isJoined)
+                          .where((c) => c.joined)
                           .map(
                             (c) => Column(
                               children: [
@@ -894,7 +566,6 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
 
                     const SizedBox(height: 12),
 
-                    // Explore Section Header
                     Text(
                       "Explore New Challenges",
                       style: TextStyle(
@@ -905,8 +576,7 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
                     ),
                     const SizedBox(height: 12),
 
-                    // Explore/Upcoming challenges list
-                    if (_challenges.where((c) => !c.isJoined).isEmpty)
+                    if (_challenges.where((c) => !c.joined).isEmpty)
                       GlassCard(
                         padding: const EdgeInsets.symmetric(
                           vertical: 24,
@@ -927,7 +597,7 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                "Stay tuned for new weekly events.",
+                                "Stay tuned for new events.",
                                 style: TextStyle(
                                   color: secondaryTextColor,
                                   fontSize: 12,
@@ -939,7 +609,7 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
                       )
                     else
                       ..._challenges
-                          .where((c) => !c.isJoined)
+                          .where((c) => !c.joined)
                           .map(
                             (c) => Column(
                               children: [
@@ -949,9 +619,7 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
                             ),
                           ),
 
-                    const SizedBox(
-                      height: 80,
-                    ), // Padding to clear bottom navigation bar
+                    const SizedBox(height: 80),
                   ],
                 ),
               ),
@@ -963,7 +631,7 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
   }
 
   Widget _buildProgressCard(bool isDark) {
-    final activeChallenges = _challenges.where((c) => c.isJoined).toList();
+    final activeChallenges = _challenges.where((c) => c.joined).toList();
     final ringsData = activeChallenges.isEmpty
         ? [
             ConcentricRingData(
@@ -974,9 +642,9 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
           ]
         : activeChallenges.map((c) {
             return ConcentricRingData(
-              value: (c.progress / c.target).clamp(0.0, 1.0),
+              value: ((c.progressPct ?? 0.0) / 100).clamp(0.0, 1.0),
               color: c.color,
-              label: c.title,
+              label: c.name,
             );
           }).toList();
 
@@ -1036,7 +704,6 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
             ],
           ),
           const SizedBox(height: 16),
-          // Centered Stack combining the concentric rings chart and points inside the gap
           SizedBox(
             width: 170,
             height: 145,
@@ -1048,8 +715,7 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
                   child: ConcentricRingsChart(rings: ringsData),
                 ),
                 Positioned(
-                  left:
-                      82, // Positioned inside the bottom-right gap (x > 70, y > 70)
+                  left: 82,
                   top: 76,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -1100,15 +766,14 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
             height: 32,
             thickness: 1,
           ),
-          // Bottom Legend
           Wrap(
             spacing: 20,
             runSpacing: 10,
             alignment: WrapAlignment.center,
             children: activeChallenges.map((c) {
-              final pct = ((c.progress / c.target) * 100).round();
+              final pct = (c.progressPct ?? 0.0).round();
               return _buildLegendItem(
-                "${c.title.split(' ').first}: $pct%",
+                "${c.name.split(' ').first}: $pct%",
                 c.color,
                 isDark,
               );
@@ -1141,233 +806,83 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
     );
   }
 
-  String _formatHistoryDate(String dateStr) {
-    try {
-      final dt = DateTime.parse(dateStr);
-      const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-      const weekdays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-      return "${weekdays[dt.weekday - 1]}, ${months[dt.month - 1]} ${dt.day}";
-    } catch (e) {
-      return dateStr;
-    }
-  }
-
-  Widget _buildDailyHistorySection(Challenge challenge, bool isDark, Color color) {
-    final textColor = isDark ? Colors.white : Colors.black87;
-    final secondaryTextColor = isDark ? Colors.grey[400] : Colors.grey[600];
-
-    if (challenge.dailyHistory.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const SizedBox(height: 12),
-        Text(
-          "Daily Progress History",
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 13,
-            color: textColor,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          decoration: BoxDecoration(
-            color: isDark ? Colors.white.withValues(alpha: 0.03) : Colors.black.withValues(alpha: 0.02),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05),
-              width: 1.0,
-            ),
-          ),
-          child: ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: challenge.dailyHistory.length,
-            separatorBuilder: (context, index) => Divider(
-              height: 1,
-              thickness: 0.5,
-              color: isDark ? Colors.white10 : Colors.black12,
-            ),
-            itemBuilder: (context, index) {
-              final item = challenge.dailyHistory[index];
-              final dateStr = _formatHistoryDate(item.date);
-              final statusLower = item.status.toLowerCase();
-              final isCompleted = statusLower == 'completed' || statusLower == 'success' || statusLower == 'done';
-              final isMissed = statusLower == 'missed' || statusLower == 'fail' || statusLower == 'failed';
-
-              Color statusColor = Colors.grey;
-              IconData statusIcon = Icons.pending_actions_rounded;
-              String statusLabel = "Active";
-
-              if (isCompleted) {
-                statusColor = Colors.green;
-                statusIcon = Icons.check_circle_rounded;
-                statusLabel = "Completed";
-              } else if (isMissed) {
-                statusColor = Colors.redAccent;
-                statusIcon = Icons.cancel_rounded;
-                statusLabel = "Missed";
-              }
-
-              // Format progress/target based on challenge metric
-              String unit = challenge.progressTextPattern.split(' ').last;
-              String progressText = "${item.progress.round()} / ${item.target.round()} $unit";
-              if (challenge.metricType == 'sleep') {
-                progressText = "${item.progress.toStringAsFixed(1)} / ${item.target.toStringAsFixed(1)} hrs";
-              }
-
-              return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                child: Row(
-                  children: [
-                    Icon(statusIcon, color: statusColor, size: 18),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            dateStr,
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: textColor,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            progressText,
-                            style: TextStyle(
-                              fontSize: 10.5,
-                              color: secondaryTextColor,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: statusColor.withOpacity(0.12),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: statusColor.withOpacity(0.3), width: 1),
-                      ),
-                      child: Text(
-                        statusLabel,
-                        style: TextStyle(
-                          color: statusColor,
-                          fontSize: 9.5,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 0.3,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _buildChallengeCard(Challenge challenge, bool isDark) {
     final textColor = isDark ? Colors.white : Colors.black87;
     final secondaryTextColor = isDark ? Colors.grey[400] : Colors.grey[600];
     final color = challenge.color;
+    final progressPct = challenge.progressPct;
+    final progressVal = ((progressPct ?? 0.0) / 100).clamp(0.0, 1.0);
+    final isCompleted = (progressPct ?? 0.0) >= 100.0;
 
-    final progressVal = (challenge.progress / challenge.target).clamp(0.0, 1.0);
-    final formattedProgressText = challenge.progressTextPattern.replaceAll(
-      '%s',
-      challenge.progress.round().toString(),
-    );
-
-    // Calculate user rank
-    final userRankIndex = challenge.leaderboard.indexWhere((p) => p.isUser);
-    final userRank = userRankIndex != -1 ? userRankIndex + 1 : 1;
-    final isClaimed = _claimedRewards.contains(challenge.id);
-
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          challenge.isExpanded = !challenge.isExpanded;
-        });
-        if (challenge.isExpanded && challenge.leaderboard.isEmpty) {
-          _fetchLeaderboard(challenge);
-        }
-      },
-      child: GlassCard(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Text(
-                    challenge.title,
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 15,
-                      color: textColor,
-                    ),
+    return GlassCard(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  challenge.name,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                    color: textColor,
                   ),
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(8),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  challenge.timeLeft,
+                  style: TextStyle(
+                    color: color,
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
                   ),
-                  child: Text(
-                    challenge.timeLeft,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            challenge.hasAutoTracking
+                ? "${challenge.type} · Goal: ${challenge.metricLabel}"
+                : challenge.type,
+            style: TextStyle(
+              color: secondaryTextColor,
+              fontSize: 12,
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  const Text("👥 ", style: TextStyle(fontSize: 12)),
+                  Text(
+                    "${challenge.participantCount} participants",
                     style: TextStyle(
                       color: color,
-                      fontSize: 11,
                       fontWeight: FontWeight.bold,
+                      fontSize: 12,
                     ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              challenge.desc,
-              style: TextStyle(
-                color: secondaryTextColor,
-                fontSize: 12,
-                height: 1.4,
+                ],
               ),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
+              if (challenge.prize.isNotEmpty)
                 Row(
                   children: [
                     const Text("🏆 ", style: TextStyle(fontSize: 12)),
                     Text(
-                      challenge.leaderboard.isNotEmpty
-                          ? "Rank #$userRank of ${challenge.participantsCount}"
-                          : "${challenge.participantsCount} participants",
-                      style: TextStyle(
-                        color: color,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
-                Row(
-                  children: [
-                    const Text("🪙 ", style: TextStyle(fontSize: 12)),
-                    Text(
-                      "+${challenge.points} pts",
+                      challenge.prize,
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 12,
@@ -1376,9 +891,10 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
                     ),
                   ],
                 ),
-              ],
-            ),
-            const SizedBox(height: 8),
+            ],
+          ),
+          const SizedBox(height: 8),
+          if (progressPct != null || challenge.hasAutoTracking) ...[
             ClipRRect(
               borderRadius: BorderRadius.circular(6),
               child: LinearProgressIndicator(
@@ -1395,7 +911,7 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  formattedProgressText,
+                  isCompleted ? "Completed! 🎉" : "In progress",
                   style: TextStyle(color: secondaryTextColor, fontSize: 11),
                 ),
                 Text(
@@ -1408,202 +924,21 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
                 ),
               ],
             ),
-            const SizedBox(height: 12),
-            const Divider(height: 1, thickness: 0.5),
-            const SizedBox(height: 8),
-            // View Leaderboard Button
-            if (challenge.progress >= challenge.target) ...[
-              ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: isClaimed
-                      ? Colors.green.withValues(alpha: 0.15)
-                      : Colors.amber,
-                  foregroundColor: isClaimed ? Colors.green : Colors.black87,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                ),
-                onPressed: isClaimed ? null : () => _claimReward(challenge),
-                icon: Icon(
-                  isClaimed ? Icons.check_circle_outline : Icons.card_giftcard,
-                ),
-                label: Text(
-                  isClaimed
-                      ? "Reward Claimed"
-                      : "Claim Reward (${challenge.points} Pts) 🎉",
-                  style: const TextStyle(fontWeight: FontWeight.w900),
-                ),
-              ),
-              const SizedBox(height: 12),
-            ],
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  challenge.isExpanded
-                      ? Icons.keyboard_arrow_up
-                      : Icons.keyboard_arrow_down,
-                  color: color,
-                  size: 16,
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  challenge.isExpanded
-                      ? "Show Less"
-                      : "Show Details",
-                  style: TextStyle(
-                    color: color,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
+          ] else
+            Text(
+              "Manual challenge — progress is set by your wellness team.",
+              style: TextStyle(color: secondaryTextColor, fontSize: 11.5),
             ),
-            if (challenge.isExpanded) ...[
-              _buildDailyHistorySection(challenge, isDark, color),
-              const SizedBox(height: 16),
-              Text(
-                "Leaderboard Competition",
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 13,
-                  color: textColor,
-                ),
-              ),
-              const SizedBox(height: 8),
-            if (_leaderboardLoading[challenge.id] ?? false)
-              const Center(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(vertical: 20),
-                  child: CircularProgressIndicator(color: Colors.blueAccent),
-                ),
-              )
-            else if (challenge.leaderboard.isEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                child: Center(
-                  child: Text(
-                    "No competition data available yet.",
-                    style: TextStyle(color: secondaryTextColor, fontSize: 11),
-                  ),
-                ),
-              )
-            else
-              ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: challenge.leaderboard.length,
-                itemBuilder: (context, index) {
-                  final player = challenge.leaderboard[index];
-                  final isCurrentUser = player.isUser;
-
-                  Widget rankWidget;
-                  if (index == 0) {
-                    rankWidget = const Text(
-                      "🥇",
-                      style: TextStyle(fontSize: 14),
-                    );
-                  } else if (index == 1) {
-                    rankWidget = const Text(
-                      "🥈",
-                      style: TextStyle(fontSize: 14),
-                    );
-                  } else if (index == 2) {
-                    rankWidget = const Text(
-                      "🥉",
-                      style: TextStyle(fontSize: 14),
-                    );
-                  } else {
-                    rankWidget = Text(
-                      "#${index + 1}",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: secondaryTextColor,
-                        fontSize: 12,
-                      ),
-                    );
-                  }
-
-                  return Container(
-                    margin: const EdgeInsets.symmetric(vertical: 4),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: isCurrentUser
-                          ? color.withValues(alpha: 0.12)
-                          : Colors.transparent,
-                      borderRadius: BorderRadius.circular(10),
-                      border: isCurrentUser
-                          ? Border.all(
-                              color: color.withValues(alpha: 0.3),
-                              width: 1,
-                            )
-                          : null,
-                    ),
-                    child: Row(
-                      children: [
-                        SizedBox(width: 24, child: Center(child: rankWidget)),
-                        const SizedBox(width: 8),
-                        CircleAvatar(
-                          radius: 12,
-                          backgroundColor: isCurrentUser
-                              ? color.withValues(alpha: 0.2)
-                              : Colors.grey.withValues(alpha: 0.2),
-                          child: Text(
-                            player.name.isNotEmpty
-                                ? player.name[0].toUpperCase()
-                                : "?",
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                              color: isCurrentUser ? color : textColor,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            player.name,
-                            style: TextStyle(
-                              fontWeight: isCurrentUser
-                                  ? FontWeight.bold
-                                  : FontWeight.normal,
-                              color: isCurrentUser
-                                  ? textColor
-                                  : textColor.withValues(alpha: 0.9),
-                              fontSize: 12,
-                            ),
-                          ),
-                        ),
-                        Text(
-                          player.progressText,
-                          style: TextStyle(
-                            fontWeight: isCurrentUser
-                                ? FontWeight.bold
-                                : FontWeight.normal,
-                            color: isCurrentUser ? color : secondaryTextColor,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              ),
-          ],
         ],
       ),
-    ),
-  );
-}
+    );
+  }
 
   Widget _buildUpcomingChallengeCard(Challenge challenge, bool isDark) {
     final textColor = isDark ? Colors.white : Colors.black87;
     final secondaryTextColor = isDark ? Colors.grey[400] : Colors.grey[600];
     final color = challenge.color;
+    final canJoin = challenge.status == 'Live';
 
     return GlassCard(
       padding: const EdgeInsets.all(20),
@@ -1614,35 +949,13 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Expanded(
-                child: Row(
-                  children: [
-                    Flexible(
-                      child: Text(
-                        challenge.title,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 15,
-                          color: textColor,
-                        ),
-                      ),
-                    ),
-                    if (challenge.infoText != null &&
-                        challenge.infoText!.isNotEmpty) ...[
-                      const SizedBox(width: 8),
-                      GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            challenge.isExpanded = !challenge.isExpanded;
-                          });
-                        },
-                        child: Icon(
-                          Icons.info_outline_rounded,
-                          size: 16,
-                          color: color,
-                        ),
-                      ),
-                    ],
-                  ],
+                child: Text(
+                  challenge.name,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                    color: textColor,
+                  ),
                 ),
               ),
               Text(
@@ -1657,66 +970,47 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            challenge.desc,
+            challenge.hasAutoTracking
+                ? "${challenge.type} · Goal: ${challenge.metricLabel}"
+                : challenge.type,
             style: TextStyle(
               color: secondaryTextColor,
               fontSize: 12,
               height: 1.4,
             ),
           ),
-          if (challenge.isExpanded &&
-              challenge.infoText != null &&
-              challenge.infoText!.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                  color: color.withValues(alpha: 0.2),
-                  width: 1,
-                ),
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(Icons.lightbulb_outline_rounded, size: 16, color: color),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      challenge.infoText!,
-                      style: TextStyle(
-                        color: textColor.withValues(alpha: 0.9),
-                        fontSize: 11.5,
-                        height: 1.4,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
           const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Row(
                 children: [
-                  const Text("🪙 ", style: TextStyle(fontSize: 12)),
+                  const Text("👥 ", style: TextStyle(fontSize: 12)),
                   Text(
-                    "Earn ${challenge.points} pts",
-                    style: const TextStyle(
+                    "${challenge.participantCount} joined",
+                    style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 12,
-                      color: Colors.amber,
+                      color: color,
                     ),
                   ),
+                  if (challenge.prize.isNotEmpty) ...[
+                    const SizedBox(width: 10),
+                    const Text("🏆 ", style: TextStyle(fontSize: 12)),
+                    Text(
+                      challenge.prize,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                        color: Colors.amber,
+                      ),
+                    ),
+                  ],
                 ],
               ),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: color,
+                  backgroundColor: canJoin ? color : Colors.grey.withValues(alpha: 0.3),
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
@@ -1729,10 +1023,10 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   elevation: 0,
                 ),
-                onPressed: () => _joinChallenge(challenge),
-                child: const Text(
-                  "Join Challenge",
-                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                onPressed: canJoin ? () => _joinChallenge(challenge) : null,
+                child: Text(
+                  canJoin ? "Join Challenge" : challenge.timeLeft,
+                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
                 ),
               ),
             ],

@@ -49,6 +49,9 @@ class _GoalsConfigurationScreenState extends State<GoalsConfigurationScreen>
 
   Future<void> _loadGoals() async {
     final prefs = await SharedPreferences.getInstance();
+
+    // Local cache first so the sliders aren't stuck at hardcoded defaults
+    // while the network call is in flight.
     setState(() {
       _stepGoal = prefs.getDouble('goal_steps') ?? 10000.0;
       _waterGoal = prefs.getDouble('goal_water') ?? 2500.0;
@@ -57,6 +60,44 @@ class _GoalsConfigurationScreenState extends State<GoalsConfigurationScreen>
       _sleepGoal = prefs.getDouble('goal_sleep') ?? 8.0;
       _isLoading = false;
     });
+
+    try {
+      final token = await AuthService.instance.getAccessToken();
+      final url = '${AuthService.apiBaseUrl}/api/health/goals';
+
+      var response = await http.get(
+        Uri.parse(url),
+        headers: {if (token != null) 'Authorization': 'Bearer $token'},
+      );
+
+      if (response.statusCode == 401) {
+        await AuthService.instance.refreshSessionToken();
+        final newToken = await AuthService.instance.getAccessToken();
+        response = await http.get(
+          Uri.parse(url),
+          headers: {if (newToken != null) 'Authorization': 'Bearer $newToken'},
+        );
+      }
+
+      if (response.statusCode == 200 && mounted) {
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        setState(() {
+          _stepGoal = (data['step_goal'] as num?)?.toDouble() ?? _stepGoal;
+          _waterGoal = (data['water_goal'] as num?)?.toDouble() ?? _waterGoal;
+          _calorieGoal = (data['calorie_goal'] as num?)?.toDouble() ?? _calorieGoal;
+          _exerciseGoal = (data['exercise_goal'] as num?)?.toDouble() ?? _exerciseGoal;
+          _sleepGoal = (data['sleep_goal'] as num?)?.toDouble() ?? _sleepGoal;
+        });
+
+        await prefs.setDouble('goal_steps', _stepGoal);
+        await prefs.setDouble('goal_water', _waterGoal);
+        await prefs.setDouble('goal_calories', _calorieGoal);
+        await prefs.setDouble('goal_exercise', _exerciseGoal);
+        await prefs.setDouble('goal_sleep', _sleepGoal);
+      }
+    } catch (e) {
+      debugPrint("Failed to load goals from server, using local cache: $e");
+    }
   }
 
   Future<void> _saveGoals() async {
@@ -67,48 +108,61 @@ class _GoalsConfigurationScreenState extends State<GoalsConfigurationScreen>
     await prefs.setDouble('goal_exercise', _exerciseGoal);
     await prefs.setDouble('goal_sleep', _sleepGoal);
 
-    // Sync custom goals to FastAPI backend server
+    bool syncFailed = false;
     try {
-      final jsonStr = prefs.getString('onboarding_data');
-      if (jsonStr != null) {
-        final Map<String, dynamic> onboarding = jsonDecode(jsonStr);
-        final email = onboarding['auth']?['email'];
-        if (email != null) {
-          final token = await AuthService.instance.getAccessToken();
-          final syncUrl = '${AuthService.apiBaseUrl}/api/goals/update/${Uri.encodeComponent(email)}';
-          
-          final response = await http.post(
-            Uri.parse(syncUrl),
-            headers: {
-              'Content-Type': 'application/json',
-              if (token != null) 'Authorization': 'Bearer $token',
-            },
-            body: jsonEncode({
-              'step_goal': _stepGoal,
-              'sleep_goal': _sleepGoal,
-              'water_goal': _waterGoal,
-              'calorie_goal': _calorieGoal,
-              'exercise_goal': _exerciseGoal,
-            }),
-          );
+      final token = await AuthService.instance.getAccessToken();
+      final syncUrl = '${AuthService.apiBaseUrl}/api/health/goals';
 
-          // Debug log the goals update API response
-          debugPrint("================ GOALS UPDATE API RESPONSE ================");
-          debugPrint("Status Code: ${response.statusCode}");
-          debugPrint("Response Body: ${response.body}");
-          debugPrint("===========================================================");
-        }
+      var response = await http.put(
+        Uri.parse(syncUrl),
+        headers: {
+          'Content-Type': 'application/json',
+          if (token != null) 'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({
+          'step_goal': _stepGoal,
+          'sleep_goal': _sleepGoal,
+          'water_goal': _waterGoal,
+          'calorie_goal': _calorieGoal,
+          'exercise_goal': _exerciseGoal,
+        }),
+      );
+
+      if (response.statusCode == 401) {
+        await AuthService.instance.refreshSessionToken();
+        final newToken = await AuthService.instance.getAccessToken();
+        response = await http.put(
+          Uri.parse(syncUrl),
+          headers: {
+            'Content-Type': 'application/json',
+            if (newToken != null) 'Authorization': 'Bearer $newToken',
+          },
+          body: jsonEncode({
+            'step_goal': _stepGoal,
+            'sleep_goal': _sleepGoal,
+            'water_goal': _waterGoal,
+            'calorie_goal': _calorieGoal,
+            'exercise_goal': _exerciseGoal,
+          }),
+        );
       }
+
+      syncFailed = response.statusCode != 200;
     } catch (e) {
       debugPrint("Error syncing custom goals to backend server: $e");
+      syncFailed = true;
     }
 
     if (!mounted) return;
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("Goals saved successfully!"),
-        backgroundColor: Colors.green,
+      SnackBar(
+        content: Text(
+          syncFailed
+              ? "Goals saved on this device, but couldn't sync to the server."
+              : "Goals saved successfully!",
+        ),
+        backgroundColor: syncFailed ? Colors.orange : Colors.green,
       ),
     );
 
