@@ -11,6 +11,8 @@ class SignupStep extends StatefulWidget {
   final TextEditingController passwordController;
   final void Function(String provider) onSocialAuth;
   final void Function(bool isLogin) onEmailSubmit;
+  final Future<void> Function(Map<String, dynamic> res, String email)
+  onLoginWithCode;
 
   const SignupStep({
     super.key,
@@ -20,6 +22,7 @@ class SignupStep extends StatefulWidget {
     required this.passwordController,
     required this.onSocialAuth,
     required this.onEmailSubmit,
+    required this.onLoginWithCode,
   });
 
   @override
@@ -438,6 +441,22 @@ class _SignupStepState extends State<SignupStep> {
                         ),
                       ),
                     ),
+                    if (_isLogin) ...[
+                      const SizedBox(height: 12),
+                      Center(
+                        child: GestureDetector(
+                          onTap: () => _showLoginCodeDialog(context),
+                          child: Text(
+                            "Or sign in with a code instead",
+                            style: TextStyle(
+                              color: isDark ? Colors.white70 : Colors.black54,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 24),
 
                     // Social Login Section
@@ -842,7 +861,7 @@ class _SignupStepState extends State<SignupStep> {
                         ),
                       ] else if (currentStep == 1) ...[
                         Text(
-                          "Enter the 6-digit code. Check your server logs/console for the OTP code.",
+                          "Enter the 6-digit code we emailed you. It expires in 15 minutes.",
                           style: TextStyle(
                             fontSize: 13,
                             color: isDark ? Colors.grey[400] : Colors.grey[600],
@@ -1084,6 +1103,308 @@ class _SignupStepState extends State<SignupStep> {
                             "Done",
                             style: TextStyle(fontWeight: FontWeight.bold),
                           ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showLoginCodeDialog(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    final TextEditingController codeEmailController = TextEditingController(
+      text: widget.emailController.text,
+    );
+    final TextEditingController otpController = TextEditingController();
+
+    int currentStep = 0;
+    bool isDialogLoading = false;
+    String errorMessage = '';
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return Dialog(
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              child: GlassCard(
+                padding: const EdgeInsets.all(24),
+                margin: EdgeInsets.zero,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            currentStep == 0
+                                ? "Sign In With a Code"
+                                : "Enter the Code",
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: isDark ? Colors.white : Colors.black87,
+                            ),
+                          ),
+                          if (!isDialogLoading)
+                            IconButton(
+                              icon: const Icon(Icons.close, size: 20),
+                              color: isDark ? Colors.white54 : Colors.black54,
+                              onPressed: () {
+                                codeEmailController.dispose();
+                                otpController.dispose();
+                                Navigator.of(context).pop();
+                              },
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+
+                      if (errorMessage.isNotEmpty) ...[
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: Colors.redAccent.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: Colors.redAccent.withOpacity(0.3),
+                            ),
+                          ),
+                          child: Text(
+                            errorMessage,
+                            style: const TextStyle(
+                              color: Colors.redAccent,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+
+                      if (currentStep == 0) ...[
+                        Text(
+                          "We'll email a one-time code — no password needed.",
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: isDark ? Colors.grey[400] : Colors.grey[600],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: codeEmailController,
+                          keyboardType: TextInputType.emailAddress,
+                          style: TextStyle(
+                            color: isDark ? Colors.white : Colors.black87,
+                          ),
+                          decoration: _mockupInputDecoration(
+                            "alex@vitality.pro",
+                            isDark,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF0F52BA),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                          ),
+                          onPressed: isDialogLoading
+                              ? null
+                              : () async {
+                                  final email = codeEmailController.text
+                                      .trim();
+                                  if (email.isEmpty || !email.contains('@')) {
+                                    setDialogState(() {
+                                      errorMessage =
+                                          'Please enter a valid email address.';
+                                    });
+                                    return;
+                                  }
+                                  setDialogState(() {
+                                    isDialogLoading = true;
+                                    errorMessage = '';
+                                  });
+                                  try {
+                                    await AuthService.instance
+                                        .requestLoginCode(email);
+                                    setDialogState(() {
+                                      currentStep = 1;
+                                    });
+                                  } catch (e) {
+                                    setDialogState(() {
+                                      errorMessage = e.toString().replaceAll(
+                                        'Exception: ',
+                                        '',
+                                      );
+                                    });
+                                  } finally {
+                                    setDialogState(() {
+                                      isDialogLoading = false;
+                                    });
+                                  }
+                                },
+                          child: isDialogLoading
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Text(
+                                  "Send Code",
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                        ),
+                      ] else ...[
+                        Text(
+                          "Enter the 6-digit code we emailed you. It expires in 15 minutes.",
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: isDark ? Colors.grey[400] : Colors.grey[600],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: otpController,
+                          keyboardType: TextInputType.number,
+                          maxLength: 6,
+                          style: TextStyle(
+                            color: isDark ? Colors.white : Colors.black87,
+                            letterSpacing: 8.0,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                          decoration: _mockupInputDecoration("••••••", isDark),
+                        ),
+                        const SizedBox(height: 24),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton(
+                                style: OutlinedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 14,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                  side: BorderSide(
+                                    color: isDark
+                                        ? Colors.white24
+                                        : Colors.grey[300]!,
+                                  ),
+                                ),
+                                onPressed: isDialogLoading
+                                    ? null
+                                    : () {
+                                        setDialogState(() {
+                                          currentStep = 0;
+                                          errorMessage = '';
+                                        });
+                                      },
+                                child: Text(
+                                  "Back",
+                                  style: TextStyle(
+                                    color: isDark
+                                        ? Colors.white
+                                        : Colors.black87,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF0F52BA),
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 14,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                ),
+                                onPressed: isDialogLoading
+                                    ? null
+                                    : () async {
+                                        final email = codeEmailController.text
+                                            .trim();
+                                        final otp = otpController.text.trim();
+                                        if (otp.length != 6) {
+                                          setDialogState(() {
+                                            errorMessage =
+                                                'Please enter the 6-digit code.';
+                                          });
+                                          return;
+                                        }
+                                        setDialogState(() {
+                                          isDialogLoading = true;
+                                          errorMessage = '';
+                                        });
+                                        try {
+                                          final res = await AuthService
+                                              .instance
+                                              .loginWithCode(email, otp);
+                                          codeEmailController.dispose();
+                                          otpController.dispose();
+                                          if (!context.mounted) return;
+                                          // Pop first: the dialog (and this
+                                          // StatefulBuilder) is gone after
+                                          // this call, so no further
+                                          // setDialogState may follow it —
+                                          // that's why loading isn't reset
+                                          // here on the success path.
+                                          Navigator.of(context).pop();
+                                          await widget.onLoginWithCode(
+                                            res,
+                                            email,
+                                          );
+                                        } catch (e) {
+                                          setDialogState(() {
+                                            isDialogLoading = false;
+                                            errorMessage = e
+                                                .toString()
+                                                .replaceAll('Exception: ', '');
+                                          });
+                                        }
+                                      },
+                                child: isDialogLoading
+                                    ? const SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: Colors.white,
+                                        ),
+                                      )
+                                    : const Text(
+                                        "Sign In",
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ],

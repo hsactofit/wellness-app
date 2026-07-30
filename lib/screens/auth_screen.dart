@@ -62,50 +62,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
     try {
       if (isLogin) {
         final res = await AuthService.instance.loginWithEmail(email, password);
-        final backendUser = res['user'];
-        final bool isCompleted = backendUser['onboarding_completed'] ?? false;
-
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('user_email', backendUser['email'] ?? email);
-        await prefs.setString('user_name', backendUser['name'] ?? '');
-        await prefs.setString('user_provider', 'email');
-
-        if (isCompleted) {
-          final permissions = backendUser['permissions'] ?? {};
-          final bool healthSyncEnabled = permissions['health_connect_connected'] ?? false;
-          await prefs.setBool('health_sync_enabled', healthSyncEnabled);
-
-          if (backendUser['last_sync_date'] != null) {
-            await prefs.setString('last_sync_timestamp', backendUser['last_sync_date']);
-          }
-
-          // Save onboarding completed in SharedPreferences
-          await prefs.setString('onboarding_data', jsonEncode({
-            'onboarding_completed': true,
-            'completed_at': backendUser['completed_at'] ?? DateTime.now().toUtc().toIso8601String(),
-            'auth': {
-              'provider': 'email',
-              'name': backendUser['name'] ?? '',
-              'email': backendUser['email'] ?? email,
-            },
-            'profile': backendUser['profile'] ?? {},
-            'goals': backendUser['goals'] ?? [],
-            'permissions': backendUser['permissions'] ?? {},
-          }));
-          await prefs.setBool('onboarding_completed', true);
-
-          if (!mounted) return;
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const MainShell()),
-          );
-        } else {
-          if (!mounted) return;
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const OnboardingScreen(initialPage: 0)),
-          );
-        }
+        await _completeLogin(res, email, provider: 'email');
       } else {
         final res = await AuthService.instance.signUpWithEmail(name, email, password);
         final backendUser = res['user'];
@@ -134,6 +91,71 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
         setState(() => _isSigningIn = false);
       }
     }
+  }
+
+  // Shared post-login handling for every path that ends in real tokens
+  // (email+password, code, and — via its own copy below, since social auth
+  // also carries a Firebase display name/photo — social login): persist the
+  // session-scoped prefs and route to the shell or onboarding depending on
+  // whether the backend already has a completed profile for this user.
+  Future<void> _completeLogin(
+    Map<String, dynamic> res,
+    String emailFallback, {
+    required String provider,
+  }) async {
+    final backendUser = res['user'];
+    final bool isCompleted = backendUser['onboarding_completed'] ?? false;
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('user_email', backendUser['email'] ?? emailFallback);
+    await prefs.setString('user_name', backendUser['name'] ?? '');
+    await prefs.setString('user_provider', provider);
+
+    if (isCompleted) {
+      final permissions = backendUser['permissions'] ?? {};
+      final bool healthSyncEnabled = permissions['health_connect_connected'] ?? false;
+      await prefs.setBool('health_sync_enabled', healthSyncEnabled);
+
+      if (backendUser['last_sync_date'] != null) {
+        await prefs.setString('last_sync_timestamp', backendUser['last_sync_date']);
+      }
+
+      await prefs.setString('onboarding_data', jsonEncode({
+        'onboarding_completed': true,
+        'completed_at': backendUser['completed_at'] ?? DateTime.now().toUtc().toIso8601String(),
+        'auth': {
+          'provider': provider,
+          'name': backendUser['name'] ?? '',
+          'email': backendUser['email'] ?? emailFallback,
+        },
+        'profile': backendUser['profile'] ?? {},
+        'goals': backendUser['goals'] ?? [],
+        'permissions': backendUser['permissions'] ?? {},
+      }));
+      await prefs.setBool('onboarding_completed', true);
+
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const MainShell()),
+      );
+    } else {
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const OnboardingScreen(initialPage: 0)),
+      );
+    }
+  }
+
+  // Called by SignupStep once its login-with-code dialog has already
+  // exchanged the OTP for real tokens — just needs the shared post-login
+  // routing.
+  Future<void> _handleCodeLoginSuccess(
+    Map<String, dynamic> res,
+    String email,
+  ) async {
+    await _completeLogin(res, email, provider: 'email');
   }
 
   // Handle Social Login (Google & Apple)
@@ -295,6 +317,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
               passwordController: _passwordController,
               onSocialAuth: _selectSocialAuth,
               onEmailSubmit: _handleEmailAuth,
+              onLoginWithCode: _handleCodeLoginSuccess,
             ),
           ),
 

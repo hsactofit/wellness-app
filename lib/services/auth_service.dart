@@ -208,6 +208,55 @@ class AuthService {
     }
   }
 
+  // Passwordless login, step 1: emails a one-time code.
+  Future<String> requestLoginCode(String email) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$apiBaseUrl/api/auth/login-code/request'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'email': email}),
+      );
+
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 200) {
+        return data['message'] ?? 'Sign-in code sent to email';
+      } else {
+        throw Exception(_extractErrorMessage(data));
+      }
+    } catch (e) {
+      print("Request Login Code API error: $e");
+      rethrow;
+    }
+  }
+
+  // Passwordless login, step 2: exchanges the code for real tokens, same
+  // response shape as loginWithEmail.
+  Future<Map<String, dynamic>> loginWithCode(String email, String otp) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$apiBaseUrl/api/auth/login-code/verify'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'email': email, 'otp': otp}),
+      );
+
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 200) {
+        final accessToken = data['access_token'];
+        final refreshToken = data['refresh_token'];
+        if (accessToken != null && refreshToken != null) {
+          await _saveTokens(accessToken, refreshToken);
+        }
+        return data;
+      } else {
+        final errorMsg = _extractErrorMessage(data);
+        throw AuthException(errorMsg);
+      }
+    } catch (e) {
+      print("Login With Code API error: $e");
+      rethrow;
+    }
+  }
+
   // Refresh Tokens / Validate Session API
   Future<Map<String, dynamic>> refreshSessionToken() async {
     try {
