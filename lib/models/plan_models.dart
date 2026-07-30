@@ -1,452 +1,256 @@
 enum PlanKind { workout, nutrition }
 
-// ── Shared helpers ──────────────────────────────────────────────
+const List<String> _weekdayNames = [
+  'Monday',
+  'Tuesday',
+  'Wednesday',
+  'Thursday',
+  'Friday',
+  'Saturday',
+  'Sunday',
+];
 
-String _dateOnly(DateTime d) =>
-    '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+String currentWeekdayName() => _weekdayNames[DateTime.now().weekday - 1];
 
-DateTime? _parseDate(dynamic v) {
-  if (v == null) return null;
-  try {
-    return DateTime.parse(v.toString());
-  } catch (_) {
-    return null;
-  }
-}
-
-// ── Workout models ──────────────────────────────────────────────
+// ── Workout ──────────────────────────────────────────────────────
 
 class WorkoutExercise {
   final String name;
-  final String howTo;
   final int? sets;
   final String? reps;
-  final double? durationMinutes;
-  final int? restSeconds;
-  final String? equipment;
-  final List<String> muscleGroups;
-  final String? imageUrl;
+  final int? restSec;
+  final String? notes;
 
   const WorkoutExercise({
     required this.name,
-    required this.howTo,
     this.sets,
     this.reps,
-    this.durationMinutes,
-    this.restSeconds,
-    this.equipment,
-    this.muscleGroups = const [],
-    this.imageUrl,
+    this.restSec,
+    this.notes,
   });
 
   factory WorkoutExercise.fromJson(Map<String, dynamic> json) {
     return WorkoutExercise(
       name: json['name']?.toString() ?? 'Exercise',
-      howTo: json['how_to']?.toString() ?? '',
       sets: (json['sets'] as num?)?.toInt(),
       reps: json['reps']?.toString(),
-      durationMinutes: (json['duration_minutes'] as num?)?.toDouble(),
-      restSeconds: (json['rest_seconds'] as num?)?.toInt(),
-      equipment: json['equipment']?.toString(),
-      muscleGroups: (json['muscle_groups'] as List<dynamic>?)
-              ?.map((e) => e.toString())
-              .toList() ??
-          const [],
-      imageUrl: json['image_url']?.toString(),
+      restSec: (json['rest_sec'] as num?)?.toInt(),
+      notes: json['notes']?.toString(),
     );
   }
 
   String get dosageLabel {
     final parts = <String>[];
-    if (sets != null) parts.add('${sets}×');
-    if (reps != null && reps!.isNotEmpty) {
-      parts.add(parts.isEmpty ? '$reps reps' : reps!);
-    }
-    if (durationMinutes != null) {
-      parts.add('${durationMinutes!.round()} min');
-    }
-    if (restSeconds != null) parts.add('${restSeconds}s rest');
-    return parts.isEmpty ? 'See details' : parts.join(' · ');
-  }
-}
-
-class WorkoutDay {
-  final String date;
-  final String? focus;
-  final bool isRestDay;
-  final String? notes;
-  final List<WorkoutExercise> exercises;
-
-  const WorkoutDay({
-    required this.date,
-    this.focus,
-    this.isRestDay = false,
-    this.notes,
-    this.exercises = const [],
-  });
-
-  factory WorkoutDay.fromJson(Map<String, dynamic> json) {
-    return WorkoutDay(
-      date: json['date']?.toString() ?? '',
-      focus: json['focus']?.toString(),
-      isRestDay: json['is_rest_day'] as bool? ?? false,
-      notes: json['notes']?.toString(),
-      exercises: (json['exercises'] as List<dynamic>?)
-              ?.map((e) =>
-                  WorkoutExercise.fromJson(Map<String, dynamic>.from(e as Map)))
-              .toList() ??
-          const [],
-    );
-  }
-
-  int get exerciseCount => exercises.length;
-}
-
-class WorkoutDaySchedule {
-  final String date;
-  final int? planId;
-  final String? planTitle;
-  final String? focus;
-  final bool isRestDay;
-  final String? notes;
-  final List<WorkoutExercise> exercises;
-
-  const WorkoutDaySchedule({
-    required this.date,
-    this.planId,
-    this.planTitle,
-    this.focus,
-    this.isRestDay = false,
-    this.notes,
-    this.exercises = const [],
-  });
-
-  factory WorkoutDaySchedule.fromJson(Map<String, dynamic> json) {
-    return WorkoutDaySchedule(
-      date: json['date']?.toString() ?? '',
-      planId: (json['plan_id'] as num?)?.toInt(),
-      planTitle: json['plan_title']?.toString(),
-      focus: json['focus']?.toString(),
-      isRestDay: json['is_rest_day'] as bool? ?? false,
-      notes: json['notes']?.toString(),
-      exercises: (json['exercises'] as List<dynamic>?)
-              ?.map((e) =>
-                  WorkoutExercise.fromJson(Map<String, dynamic>.from(e as Map)))
-              .toList() ??
-          const [],
-    );
-  }
-
-  bool get hasContent =>
-      planId != null || exercises.isNotEmpty || isRestDay || (focus != null);
-}
-
-class WorkoutPlan {
-  final int id;
-  final int userId;
-  final String title;
-  final String? goal;
-  final String? notes;
-  final String startDate;
-  final String endDate;
-  final List<WorkoutDay> days;
-  final String createdAt;
-  final String? updatedAt;
-
-  const WorkoutPlan({
-    required this.id,
-    required this.userId,
-    required this.title,
-    this.goal,
-    this.notes,
-    required this.startDate,
-    required this.endDate,
-    this.days = const [],
-    required this.createdAt,
-    this.updatedAt,
-  });
-
-  factory WorkoutPlan.fromJson(Map<String, dynamic> json) {
-    return WorkoutPlan(
-      id: (json['id'] as num?)?.toInt() ?? 0,
-      userId: (json['user_id'] as num?)?.toInt() ?? 0,
-      title: json['title']?.toString() ?? 'Workout Plan',
-      goal: json['goal']?.toString(),
-      notes: json['notes']?.toString(),
-      startDate: json['start_date']?.toString() ?? '',
-      endDate: json['end_date']?.toString() ?? '',
-      days: (json['days'] as List<dynamic>?)
-              ?.map((d) =>
-                  WorkoutDay.fromJson(Map<String, dynamic>.from(d as Map)))
-              .toList() ??
-          const [],
-      createdAt: json['created_at']?.toString() ?? '',
-      updatedAt: json['updated_at']?.toString(),
-    );
-  }
-
-  int get dayCount => days.length;
-  int get totalExercises =>
-      days.fold(0, (sum, d) => sum + d.exercises.length);
-
-  String get dateRangeLabel {
-    if (startDate.isEmpty) return '';
-    if (startDate == endDate) return startDate;
-    return '$startDate → $endDate';
-  }
-
-  String get preview {
-    if (goal != null && goal!.trim().isNotEmpty) return goal!.trim();
-    if (notes != null && notes!.trim().isNotEmpty) return notes!.trim();
-    return '$dayCount days · $totalExercises exercises';
-  }
-
-  bool coversDate(String date) {
-    final d = _parseDate(date);
-    final s = _parseDate(startDate);
-    final e = _parseDate(endDate);
-    if (d == null || s == null || e == null) return false;
-    final day = DateTime(d.year, d.month, d.day);
-    final start = DateTime(s.year, s.month, s.day);
-    final end = DateTime(e.year, e.month, e.day);
-    return !day.isBefore(start) && !day.isAfter(end);
-  }
-
-  WorkoutDay? dayFor(String date) {
-    for (final d in days) {
-      if (d.date == date) return d;
-    }
-    return null;
-  }
-}
-
-// ── Nutrition models ────────────────────────────────────────────
-
-class NutritionMeal {
-  final String mealType;
-  final String name;
-  final String? howTo;
-  final String? portion;
-  final double? calories;
-  final double? proteinG;
-  final double? carbsG;
-  final double? fatG;
-  final List<String> ingredients;
-  final String? imageUrl;
-
-  const NutritionMeal({
-    required this.mealType,
-    required this.name,
-    this.howTo,
-    this.portion,
-    this.calories,
-    this.proteinG,
-    this.carbsG,
-    this.fatG,
-    this.ingredients = const [],
-    this.imageUrl,
-  });
-
-  factory NutritionMeal.fromJson(Map<String, dynamic> json) {
-    return NutritionMeal(
-      mealType: json['meal_type']?.toString() ?? 'meal',
-      name: json['name']?.toString() ?? 'Meal',
-      howTo: json['how_to']?.toString(),
-      portion: json['portion']?.toString(),
-      calories: (json['calories'] as num?)?.toDouble(),
-      proteinG: (json['protein_g'] as num?)?.toDouble(),
-      carbsG: (json['carbs_g'] as num?)?.toDouble(),
-      fatG: (json['fat_g'] as num?)?.toDouble(),
-      ingredients: (json['ingredients'] as List<dynamic>?)
-              ?.map((e) => e.toString())
-              .toList() ??
-          const [],
-      imageUrl: json['image_url']?.toString(),
-    );
-  }
-
-  String get mealTypeLabel {
-    switch (mealType.toLowerCase()) {
-      case 'breakfast':
-        return 'Breakfast';
-      case 'lunch':
-        return 'Lunch';
-      case 'dinner':
-        return 'Dinner';
-      case 'snack':
-        return 'Snack';
-      default:
-        return mealType;
-    }
-  }
-
-  String get mealEmoji {
-    switch (mealType.toLowerCase()) {
-      case 'breakfast':
-        return '🌅';
-      case 'lunch':
-        return '☀️';
-      case 'dinner':
-        return '🌙';
-      case 'snack':
-        return '🍎';
-      default:
-        return '🍽️';
-    }
-  }
-
-  String get macrosLabel {
-    final parts = <String>[];
-    if (calories != null) parts.add('${calories!.round()} kcal');
-    if (proteinG != null) parts.add('P ${proteinG!.round()}g');
-    if (carbsG != null) parts.add('C ${carbsG!.round()}g');
-    if (fatG != null) parts.add('F ${fatG!.round()}g');
+    if (sets != null) parts.add('$sets sets');
+    if (reps != null && reps!.isNotEmpty) parts.add('$reps reps');
+    if (restSec != null) parts.add('${restSec}s rest');
     return parts.join(' · ');
   }
 }
 
-class NutritionDay {
-  final String date;
-  final String? notes;
-  final List<NutritionMeal> meals;
+class WorkoutPlanDay {
+  final String day;
+  final String? focus;
+  final bool isRestDay;
+  final List<WorkoutExercise> exercises;
 
-  const NutritionDay({
-    required this.date,
-    this.notes,
-    this.meals = const [],
+  const WorkoutPlanDay({
+    required this.day,
+    this.focus,
+    this.isRestDay = false,
+    this.exercises = const [],
   });
 
-  factory NutritionDay.fromJson(Map<String, dynamic> json) {
-    return NutritionDay(
-      date: json['date']?.toString() ?? '',
-      notes: json['notes']?.toString(),
-      meals: (json['meals'] as List<dynamic>?)
-              ?.map((m) =>
-                  NutritionMeal.fromJson(Map<String, dynamic>.from(m as Map)))
+  factory WorkoutPlanDay.fromJson(Map<String, dynamic> json) {
+    return WorkoutPlanDay(
+      day: json['day']?.toString() ?? '',
+      focus: json['focus']?.toString(),
+      isRestDay: json['is_rest_day'] as bool? ?? false,
+      exercises: (json['exercises'] as List<dynamic>?)
+              ?.map((e) => WorkoutExercise.fromJson(Map<String, dynamic>.from(e as Map)))
               .toList() ??
           const [],
     );
   }
-
-  double get totalCalories =>
-      meals.fold(0.0, (s, m) => s + (m.calories ?? 0));
 }
 
-class NutritionDaySchedule {
-  final String date;
-  final int? planId;
-  final String? planTitle;
-  final String? notes;
+class WorkoutPlan {
+  final String id;
+  final String title;
+  final String? summary;
+  final String? goal;
+  final String? experience;
+  final String? location;
+  final List<String> equipment;
+  final int sessionMinutes;
+  final int daysPerWeek;
+  final List<WorkoutPlanDay> days;
+  final DateTime createdAt;
+
+  const WorkoutPlan({
+    required this.id,
+    required this.title,
+    this.summary,
+    this.goal,
+    this.experience,
+    this.location,
+    this.equipment = const [],
+    required this.sessionMinutes,
+    required this.daysPerWeek,
+    this.days = const [],
+    required this.createdAt,
+  });
+
+  factory WorkoutPlan.fromJson(Map<String, dynamic> json) {
+    return WorkoutPlan(
+      id: json['id']?.toString() ?? '',
+      title: json['title']?.toString() ?? 'Workout Plan',
+      summary: json['summary']?.toString(),
+      goal: json['goal']?.toString(),
+      experience: json['experience']?.toString(),
+      location: json['location']?.toString(),
+      equipment: (json['equipment'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? const [],
+      sessionMinutes: (json['session_minutes'] as num?)?.toInt() ?? 45,
+      daysPerWeek: (json['days_per_week'] as num?)?.toInt() ?? 4,
+      days: (json['days'] as List<dynamic>?)
+              ?.map((d) => WorkoutPlanDay.fromJson(Map<String, dynamic>.from(d as Map)))
+              .toList() ??
+          const [],
+      createdAt: DateTime.tryParse(json['created_at']?.toString() ?? '') ?? DateTime.now(),
+    );
+  }
+
+  WorkoutPlanDay? dayFor(String weekdayName) {
+    for (final d in days) {
+      if (d.day.toLowerCase() == weekdayName.toLowerCase()) return d;
+    }
+    return null;
+  }
+
+  int get totalExercises => days.fold(0, (s, d) => s + d.exercises.length);
+}
+
+// ── Nutrition ────────────────────────────────────────────────────
+
+class NutritionMeal {
+  final String name;
+  final String items;
+  final int? calories;
+  final int? proteinG;
+  final int? carbsG;
+  final int? fatG;
+
+  const NutritionMeal({
+    required this.name,
+    required this.items,
+    this.calories,
+    this.proteinG,
+    this.carbsG,
+    this.fatG,
+  });
+
+  factory NutritionMeal.fromJson(Map<String, dynamic> json) {
+    return NutritionMeal(
+      name: json['name']?.toString() ?? 'Meal',
+      items: json['items']?.toString() ?? '',
+      calories: (json['calories'] as num?)?.toInt(),
+      proteinG: (json['protein_g'] as num?)?.toInt(),
+      carbsG: (json['carbs_g'] as num?)?.toInt(),
+      fatG: (json['fat_g'] as num?)?.toInt(),
+    );
+  }
+
+  String get macrosLabel {
+    final parts = <String>[];
+    if (calories != null) parts.add('$calories kcal');
+    if (proteinG != null) parts.add('P ${proteinG}g');
+    if (carbsG != null) parts.add('C ${carbsG}g');
+    if (fatG != null) parts.add('F ${fatG}g');
+    return parts.join(' · ');
+  }
+}
+
+class NutritionPlanDay {
+  final String day;
+  final int? totalCalories;
   final List<NutritionMeal> meals;
 
-  const NutritionDaySchedule({
-    required this.date,
-    this.planId,
-    this.planTitle,
-    this.notes,
+  const NutritionPlanDay({
+    required this.day,
+    this.totalCalories,
     this.meals = const [],
   });
 
-  factory NutritionDaySchedule.fromJson(Map<String, dynamic> json) {
-    return NutritionDaySchedule(
-      date: json['date']?.toString() ?? '',
-      planId: (json['plan_id'] as num?)?.toInt(),
-      planTitle: json['plan_title']?.toString(),
-      notes: json['notes']?.toString(),
+  factory NutritionPlanDay.fromJson(Map<String, dynamic> json) {
+    return NutritionPlanDay(
+      day: json['day']?.toString() ?? '',
+      totalCalories: (json['total_calories'] as num?)?.toInt(),
       meals: (json['meals'] as List<dynamic>?)
-              ?.map((m) =>
-                  NutritionMeal.fromJson(Map<String, dynamic>.from(m as Map)))
+              ?.map((m) => NutritionMeal.fromJson(Map<String, dynamic>.from(m as Map)))
               .toList() ??
           const [],
     );
   }
-
-  bool get hasContent => planId != null || meals.isNotEmpty;
-
-  double get totalCalories =>
-      meals.fold(0.0, (s, m) => s + (m.calories ?? 0));
 }
 
 class NutritionPlan {
-  final int id;
-  final int userId;
+  final String id;
   final String title;
-  final String? goal;
-  final String? notes;
-  final String startDate;
-  final String endDate;
-  final int? dailyCaloriesTarget;
-  final List<NutritionDay> days;
-  final String createdAt;
-  final String? updatedAt;
+  final String? summary;
+  final String? dietary;
+  final List<String> allergies;
+  final int mealsPerDay;
+  final int? calorieTarget;
+  final String? cuisine;
+  final List<NutritionPlanDay> days;
+  final DateTime createdAt;
 
   const NutritionPlan({
     required this.id,
-    required this.userId,
     required this.title,
-    this.goal,
-    this.notes,
-    required this.startDate,
-    required this.endDate,
-    this.dailyCaloriesTarget,
+    this.summary,
+    this.dietary,
+    this.allergies = const [],
+    required this.mealsPerDay,
+    this.calorieTarget,
+    this.cuisine,
     this.days = const [],
     required this.createdAt,
-    this.updatedAt,
   });
 
   factory NutritionPlan.fromJson(Map<String, dynamic> json) {
     return NutritionPlan(
-      id: (json['id'] as num?)?.toInt() ?? 0,
-      userId: (json['user_id'] as num?)?.toInt() ?? 0,
+      id: json['id']?.toString() ?? '',
       title: json['title']?.toString() ?? 'Nutrition Plan',
-      goal: json['goal']?.toString(),
-      notes: json['notes']?.toString(),
-      startDate: json['start_date']?.toString() ?? '',
-      endDate: json['end_date']?.toString() ?? '',
-      dailyCaloriesTarget: (json['daily_calories_target'] as num?)?.toInt(),
+      summary: json['summary']?.toString(),
+      dietary: json['dietary']?.toString(),
+      allergies: (json['allergies'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? const [],
+      mealsPerDay: (json['meals_per_day'] as num?)?.toInt() ?? 3,
+      calorieTarget: (json['calorie_target'] as num?)?.toInt(),
+      cuisine: json['cuisine']?.toString(),
       days: (json['days'] as List<dynamic>?)
-              ?.map((d) =>
-                  NutritionDay.fromJson(Map<String, dynamic>.from(d as Map)))
+              ?.map((d) => NutritionPlanDay.fromJson(Map<String, dynamic>.from(d as Map)))
               .toList() ??
           const [],
-      createdAt: json['created_at']?.toString() ?? '',
-      updatedAt: json['updated_at']?.toString(),
+      createdAt: DateTime.tryParse(json['created_at']?.toString() ?? '') ?? DateTime.now(),
     );
   }
 
-  int get dayCount => days.length;
-  int get totalMeals => days.fold(0, (s, d) => s + d.meals.length);
-
-  String get dateRangeLabel {
-    if (startDate.isEmpty) return '';
-    if (startDate == endDate) return startDate;
-    return '$startDate → $endDate';
-  }
-
-  String get preview {
-    if (goal != null && goal!.trim().isNotEmpty) return goal!.trim();
-    if (dailyCaloriesTarget != null) {
-      return '$dailyCaloriesTarget kcal/day · $dayCount days';
+  NutritionPlanDay? dayFor(String weekdayName) {
+    for (final d in days) {
+      if (d.day.toLowerCase() == weekdayName.toLowerCase()) return d;
     }
-    return '$dayCount days · $totalMeals meals';
+    return null;
   }
 
-  bool coversDate(String date) {
-    final d = _parseDate(date);
-    final s = _parseDate(startDate);
-    final e = _parseDate(endDate);
-    if (d == null || s == null || e == null) return false;
-    final day = DateTime(d.year, d.month, d.day);
-    final start = DateTime(s.year, s.month, s.day);
-    final end = DateTime(e.year, e.month, e.day);
-    return !day.isBefore(start) && !day.isAfter(end);
-  }
+  int get totalMeals => days.fold(0, (s, d) => s + d.meals.length);
 }
 
-/// Dashboard-friendly snapshot for either plan type.
+/// Dashboard-friendly snapshot for either plan type, derived from today's
+/// weekday slice of the member's latest generated plan — reads the already-
+/// fetched plan, no extra network or LLM call.
 class TodayPlanSnapshot {
   final PlanKind kind;
-  final int? planId;
   final String? planTitle;
   final String? subtitle;
   final int itemCount;
@@ -455,7 +259,6 @@ class TodayPlanSnapshot {
 
   const TodayPlanSnapshot({
     required this.kind,
-    this.planId,
     this.planTitle,
     this.subtitle,
     this.itemCount = 0,
@@ -469,8 +272,8 @@ class TodayPlanSnapshot {
   String get preview {
     if (!hasPlan) {
       return kind == PlanKind.workout
-          ? 'Build a plan for today'
-          : 'Plan meals & macros';
+          ? 'Generate a plan for today'
+          : 'Generate a meal plan';
     }
     if (isRestDay) return 'Rest day — recover well';
     if (subtitle != null && subtitle!.isNotEmpty) return subtitle!;
@@ -479,43 +282,38 @@ class TodayPlanSnapshot {
           ? 'View today\'s session'
           : '$itemCount exercises lined up';
     }
-    return itemCount == 0
-        ? 'View today\'s meals'
-        : '$itemCount meals planned';
+    return itemCount == 0 ? 'View today\'s meals' : '$itemCount meals planned';
   }
 
-  factory TodayPlanSnapshot.fromWorkout(WorkoutDaySchedule? day) {
-    if (day == null || !day.hasContent) {
-      return const TodayPlanSnapshot(kind: PlanKind.workout);
+  factory TodayPlanSnapshot.fromWorkout(WorkoutPlan? plan) {
+    if (plan == null) return const TodayPlanSnapshot(kind: PlanKind.workout);
+    final today = plan.dayFor(currentWeekdayName());
+    if (today == null) {
+      return TodayPlanSnapshot(kind: PlanKind.workout, planTitle: plan.title, hasPlan: true);
     }
     return TodayPlanSnapshot(
       kind: PlanKind.workout,
-      planId: day.planId,
-      planTitle: day.planTitle,
-      subtitle: day.focus ??
-          (day.isRestDay ? 'Rest day' : null),
-      itemCount: day.exercises.length,
-      isRestDay: day.isRestDay,
+      planTitle: plan.title,
+      subtitle: today.focus ?? (today.isRestDay ? 'Rest day' : null),
+      itemCount: today.exercises.length,
+      isRestDay: today.isRestDay,
       hasPlan: true,
     );
   }
 
-  factory TodayPlanSnapshot.fromNutrition(NutritionDaySchedule? day) {
-    if (day == null || !day.hasContent) {
-      return const TodayPlanSnapshot(kind: PlanKind.nutrition);
+  factory TodayPlanSnapshot.fromNutrition(NutritionPlan? plan) {
+    if (plan == null) return const TodayPlanSnapshot(kind: PlanKind.nutrition);
+    final today = plan.dayFor(currentWeekdayName());
+    if (today == null) {
+      return TodayPlanSnapshot(kind: PlanKind.nutrition, planTitle: plan.title, hasPlan: true);
     }
-    final kcal = day.totalCalories;
+    final kcal = today.totalCalories ?? today.meals.fold<int>(0, (s, m) => s + (m.calories ?? 0));
     return TodayPlanSnapshot(
       kind: PlanKind.nutrition,
-      planId: day.planId,
-      planTitle: day.planTitle,
-      subtitle: kcal > 0
-          ? '${kcal.round()} kcal across ${day.meals.length} meals'
-          : null,
-      itemCount: day.meals.length,
+      planTitle: plan.title,
+      subtitle: kcal > 0 ? '$kcal kcal across ${today.meals.length} meals' : null,
+      itemCount: today.meals.length,
       hasPlan: true,
     );
   }
 }
-
-String todayDateString() => _dateOnly(DateTime.now());

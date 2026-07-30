@@ -547,4 +547,94 @@ class ApiService {
     }
   }
 
+  // ── AI (nutrition/workout plan generation, chat) ─────────────────
+  //
+  // Member is identified by the Bearer token throughout — no email path
+  // segments. Errors surface the backend's real `detail` message (e.g. a
+  // rate-limit cooldown or "AI features are not configured") instead of a
+  // generic failure string, so the UI can show it directly.
+
+  String _aiErrorDetail(http.Response response) {
+    try {
+      final decoded = jsonDecode(response.body);
+      if (decoded is Map && decoded['detail'] != null) {
+        return decoded['detail'].toString();
+      }
+    } catch (_) {
+      // fall through to generic message below
+    }
+    return "Request failed (${response.statusCode})";
+  }
+
+  /// GET /api/ai/nutrition-plan/latest — null if none generated yet.
+  Future<Map<String, dynamic>?> getLatestNutritionPlan() async {
+    final response = await _get('/api/ai/nutrition-plan/latest');
+    if (response.statusCode == 200) {
+      if (response.body.trim() == 'null') return null;
+      return Map<String, dynamic>.from(jsonDecode(response.body));
+    }
+    throw Exception(_aiErrorDetail(response));
+  }
+
+  /// POST /api/ai/nutrition-plan/generate — throws with the real backend
+  /// message on 429 (cooldown) / 503 (not configured) / 502 (AI failure).
+  Future<Map<String, dynamic>> generateNutritionPlan(Map<String, dynamic> body) async {
+    final response = await _post('/api/ai/nutrition-plan/generate', body: body);
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return Map<String, dynamic>.from(jsonDecode(response.body));
+    }
+    throw Exception(_aiErrorDetail(response));
+  }
+
+  /// GET /api/ai/workout-plan/latest — null if none generated yet.
+  Future<Map<String, dynamic>?> getLatestWorkoutPlan() async {
+    final response = await _get('/api/ai/workout-plan/latest');
+    if (response.statusCode == 200) {
+      if (response.body.trim() == 'null') return null;
+      return Map<String, dynamic>.from(jsonDecode(response.body));
+    }
+    throw Exception(_aiErrorDetail(response));
+  }
+
+  /// POST /api/ai/workout-plan/generate
+  Future<Map<String, dynamic>> generateWorkoutPlan(Map<String, dynamic> body) async {
+    final response = await _post('/api/ai/workout-plan/generate', body: body);
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return Map<String, dynamic>.from(jsonDecode(response.body));
+    }
+    throw Exception(_aiErrorDetail(response));
+  }
+
+  /// POST /api/ai/chat
+  Future<Map<String, dynamic>> sendAiChatMessage({
+    required String message,
+    String? conversationId,
+  }) async {
+    final response = await _post('/api/ai/chat', body: {
+      'message': message,
+      if (conversationId != null) 'conversation_id': conversationId,
+    });
+    if (response.statusCode == 200) {
+      return Map<String, dynamic>.from(jsonDecode(response.body));
+    }
+    throw Exception(_aiErrorDetail(response));
+  }
+
+  /// GET /api/ai/chat/conversations
+  Future<List<dynamic>> listAiChatConversations() async {
+    final response = await _get('/api/ai/chat/conversations');
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body) as List<dynamic>;
+    }
+    throw Exception(_aiErrorDetail(response));
+  }
+
+  /// GET /api/ai/chat/conversations/{id}
+  Future<List<dynamic>> getAiChatConversationMessages(String conversationId) async {
+    final response = await _get('/api/ai/chat/conversations/$conversationId');
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body) as List<dynamic>;
+    }
+    throw Exception(_aiErrorDetail(response));
+  }
 }

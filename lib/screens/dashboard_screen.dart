@@ -644,16 +644,34 @@ class DashboardScreenState extends State<DashboardScreen>
     }
   }
 
-  // Workout/nutrition plan generation has no backend yet (member-facing
-  // plan CRUD doesn't exist on wellness-server — only staff can manage
-  // TrainingPlan/WorkoutSession records). Rather than firing two calls that
-  // always fail, always show the "coming soon" empty snapshot; PlanScreen
-  // shown on tap explains the same thing.
+  // Reads the member's latest AI-generated plans (cached from their last
+  // /api/ai/*-plan/generate call) and slices out today's weekday entry —
+  // no LLM call here, just a lookup against already-fetched data.
   Future<void> _fetchTodayPlans(String email) async {
     if (!mounted) return;
+    setState(() => _plansLoading = true);
+
+    WorkoutPlan? workoutPlan;
+    NutritionPlan? nutritionPlan;
+
+    try {
+      final w = await ApiService.instance.getLatestWorkoutPlan();
+      if (w != null) workoutPlan = WorkoutPlan.fromJson(w);
+    } catch (e) {
+      debugPrint("Today workout plan: $e");
+    }
+
+    try {
+      final n = await ApiService.instance.getLatestNutritionPlan();
+      if (n != null) nutritionPlan = NutritionPlan.fromJson(n);
+    } catch (e) {
+      debugPrint("Today nutrition plan: $e");
+    }
+
+    if (!mounted) return;
     setState(() {
-      _todayWorkoutSnap = TodayPlanSnapshot.fromWorkout(null);
-      _todayNutritionSnap = TodayPlanSnapshot.fromNutrition(null);
+      _todayWorkoutSnap = TodayPlanSnapshot.fromWorkout(workoutPlan);
+      _todayNutritionSnap = TodayPlanSnapshot.fromNutrition(nutritionPlan);
       _plansLoading = false;
     });
   }
