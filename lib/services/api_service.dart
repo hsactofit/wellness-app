@@ -440,6 +440,26 @@ class ApiService {
     }
   }
 
+  // ── Mental Wellness API ────────────────────────────────────────
+
+  /// POST /api/mind/checkin
+  Future<Map<String, dynamic>> submitMoodCheckin({
+    required int moodScore,
+    required int stressScore,
+    required bool anonymous,
+  }) async {
+    final response = await _post('/api/mind/checkin', body: {
+      'mood_score': moodScore,
+      'stress_score': stressScore,
+      'anonymous': anonymous,
+    });
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return Map<String, dynamic>.from(jsonDecode(response.body));
+    }
+    throw Exception(
+        "Failed to submit mood check-in: ${response.statusCode} - ${response.body}");
+  }
+
   // ── SOS & Emergency API ────────────────────────────────────────
   // wellness-server identifies the caller via the Bearer token, not an
   // {email} path segment (the old prototype backend's convention) — every

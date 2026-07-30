@@ -23,6 +23,7 @@ import 'gym_checkin_screen.dart';
 import 'challenges_screen.dart';
 import 'nutrition_logging_screen.dart';
 import 'sos_screen.dart';
+import 'mood_checkin_screen.dart';
 import 'plan_screen.dart';
 import '../models/plan_models.dart';
 import '../widgets/water/wave_painter.dart';
@@ -4645,9 +4646,17 @@ class DashboardScreenState extends State<DashboardScreen>
                       },
                     ),
                     _buildQuickAccessItem(
-                      "✨",
-                      "Buddy",
+                      "🧠",
+                      "Mood",
                       const Color(0xFF8F6BFF),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const MoodCheckinScreen(),
+                          ),
+                        );
+                      },
                     ),
                   ],
                 ),
