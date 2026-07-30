@@ -6,27 +6,30 @@ import '../services/api_service.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/water/wave_painter.dart';
 
-/// Matches OpenAPI `WaterLogResponse`: id (int), amount (int), timestamp (date-time).
+/// Matches wellness-server's WaterLogRead: id (UUID string), amount_ml
+/// (int), logged_at (date-time). `amount`/`timestamp` fallbacks kept for
+/// the old prototype backend's field names, in case anything still sends them.
 class WaterLog {
-  final int? id;
+  final String? id;
   final int amount;
   final DateTime timestamp;
 
   WaterLog({this.id, required this.amount, required this.timestamp});
 
   factory WaterLog.fromJson(Map<String, dynamic> json) {
-    final amountRaw = json['amount'];
+    final amountRaw = json['amount_ml'] ?? json['amount'];
     final amount = amountRaw is num
         ? amountRaw.round()
         : int.tryParse('$amountRaw') ?? 0;
-    final idRaw = json['id'];
-    final id = idRaw is num ? idRaw.toInt() : int.tryParse('$idRaw');
+    final id = json['id']?.toString();
 
     return WaterLog(
       id: id,
       amount: amount,
       timestamp:
-          DateTime.tryParse(json['timestamp']?.toString() ?? '') ??
+          DateTime.tryParse(
+            (json['logged_at'] ?? json['timestamp'])?.toString() ?? '',
+          ) ??
           DateTime.now(),
     );
   }
@@ -136,10 +139,8 @@ class _WaterLoggingScreenState extends State<WaterLoggingScreen>
 
     try {
       final email = await ApiService.instance.getUserEmail();
-      final encodedEmail = Uri.encodeComponent(email);
       final period = _selectedGraphPeriod;
-      final url =
-          '${ApiService.baseUrl}/api/water/graph/$encodedEmail?period=$period';
+      final url = '${ApiService.baseUrl}/api/water/graph?period=$period';
 
       _logApiRequest(name: 'WATER GRAPH', method: 'GET', url: url);
 
@@ -162,7 +163,8 @@ class _WaterLoggingScreenState extends State<WaterLoggingScreen>
         for (final item in raw) {
           if (item is! Map) continue;
           final m = Map<String, dynamic>.from(item);
-          final amountRaw = m['amount'] ?? m['value'] ?? m['water'] ?? 0;
+          final amountRaw =
+              m['amount_ml'] ?? m['amount'] ?? m['value'] ?? m['water'] ?? 0;
           final amount = amountRaw is num
               ? amountRaw.toDouble()
               : double.tryParse('$amountRaw') ?? 0.0;
@@ -200,8 +202,7 @@ class _WaterLoggingScreenState extends State<WaterLoggingScreen>
 
     try {
       final email = await ApiService.instance.getUserEmail();
-      final encodedEmail = Uri.encodeComponent(email);
-      final url = '${ApiService.baseUrl}/api/water/logs/$encodedEmail';
+      final url = '${ApiService.baseUrl}/api/water/logs';
 
       _logApiRequest(name: 'WATER LOGS', method: 'GET', url: url);
 
@@ -210,7 +211,8 @@ class _WaterLoggingScreenState extends State<WaterLoggingScreen>
 
       _logApiResponse(name: 'WATER LOGS', data: resData);
 
-      final totalRaw = resData['water_intake_today'] ?? 0;
+      final totalRaw =
+          resData['water_intake_today_ml'] ?? resData['water_intake_today'] ?? 0;
       final totalToday = totalRaw is num
           ? totalRaw.round()
           : int.tryParse('$totalRaw') ?? 0;
@@ -310,14 +312,13 @@ class _WaterLoggingScreenState extends State<WaterLoggingScreen>
     }
 
     try {
-      // POST /api/water/log/{email} — WaterLogCreate
+      // POST /api/water/log — WaterLogIn (member identified by Bearer token)
       final email = await ApiService.instance.getUserEmail();
-      final encodedEmail = Uri.encodeComponent(email);
       final body = {
-        'amount': amount,
+        'amount_ml': amount,
         'timestamp': DateTime.now().toUtc().toIso8601String(),
       };
-      final url = '${ApiService.baseUrl}/api/water/log/$encodedEmail';
+      final url = '${ApiService.baseUrl}/api/water/log';
 
       _logApiRequest(
         name: 'WATER ADD LOG',
@@ -485,9 +486,9 @@ class _WaterLoggingScreenState extends State<WaterLoggingScreen>
     setState(() => _isSyncing = true);
 
     try {
-      // PUT /api/water/log/{log_id} — WaterLogCreate body
+      // PUT /api/water/log/{log_id} — WaterLogIn body
       final body = {
-        'amount': newAmount,
+        'amount_ml': newAmount,
         'timestamp': log.timestamp.toUtc().toIso8601String(),
       };
       final url = '${ApiService.baseUrl}/api/water/log/${log.id}';
@@ -504,9 +505,13 @@ class _WaterLoggingScreenState extends State<WaterLoggingScreen>
       _logApiResponse(name: 'WATER UPDATE LOG', data: result);
 
       // Prefer server values when present
-      final serverAmount = (result['amount'] as num?)?.round() ?? newAmount;
+      final serverAmount =
+          ((result['amount_ml'] ?? result['amount']) as num?)?.round() ??
+          newAmount;
       final serverTs =
-          DateTime.tryParse(result['timestamp']?.toString() ?? '') ??
+          DateTime.tryParse(
+            (result['logged_at'] ?? result['timestamp'])?.toString() ?? '',
+          ) ??
           log.timestamp;
 
       final delta = (serverAmount - log.amount).toDouble();

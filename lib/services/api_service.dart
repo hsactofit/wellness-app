@@ -226,11 +226,21 @@ class ApiService {
   }
 
   // ── Hydration / Water API ──────────────────────────────────────
+  //
+  // wellness-server identifies the member from the Bearer token, not an
+  // email path segment, and log IDs are UUID strings, not ints. `email` is
+  // kept as a parameter (unused) so call sites in the screens don't need to
+  // change yet — only this file's routing does.
+  //
+  // NOT fixed here (needs the calling screen's request-body keys checked,
+  // which this pass didn't read): wellness-server's WaterLogIn/WaterLogRead
+  // use `amount_ml`, not `amount` — if water_logging_screen.dart builds
+  // `{'amount': ...}` bodies or reads `decoded['amount']`, those will come
+  // back null/absent until reconciled. See medifit-kb/MEDIFIT_KB.md §5/§6.
 
-  /// GET /api/water/logs/{email}
+  /// GET /water/logs (current member, via Bearer token)
   Future<Map<String, dynamic>> fetchWaterLogs(String email) async {
-    final encodedEmail = Uri.encodeComponent(email);
-    final response = await _get('/api/water/logs/$encodedEmail');
+    final response = await _get('/api/water/logs');
 
     if (response.statusCode == 200) {
       final decoded = jsonDecode(response.body);
@@ -242,13 +252,11 @@ class ApiService {
         "Failed to load water logs: ${response.statusCode} - ${response.body}");
   }
 
-  /// POST /api/water/log/{email}
-  /// body: { amount: int, timestamp?: ISO date-time }
+  /// POST /water/log — body must use wellness-server's field names:
+  /// { amount_ml: int, timestamp?: ISO date-time }
   Future<Map<String, dynamic>> addWaterLog(
       String email, Map<String, dynamic> body) async {
-    final encodedEmail = Uri.encodeComponent(email);
-    final response =
-        await _post('/api/water/log/$encodedEmail', body: body);
+    final response = await _post('/api/water/log', body: body);
 
     if (response.statusCode == 200 || response.statusCode == 201) {
       final decoded = jsonDecode(response.body);
@@ -260,9 +268,9 @@ class ApiService {
         "Failed to add water log: ${response.statusCode} - ${response.body}");
   }
 
-  /// PUT /api/water/log/{logId}
+  /// PUT /water/log/{logId} — logId is a UUID string on wellness-server.
   Future<Map<String, dynamic>> updateWaterLog(
-      int logId, Map<String, dynamic> body) async {
+      String logId, Map<String, dynamic> body) async {
     final response = await _put('/api/water/log/$logId', body: body);
 
     if (response.statusCode == 200) {
@@ -275,8 +283,8 @@ class ApiService {
         "Failed to update water log: ${response.statusCode} - ${response.body}");
   }
 
-  /// DELETE /api/water/log/{logId}
-  Future<void> deleteWaterLog(int logId) async {
+  /// DELETE /water/log/{logId} — logId is a UUID string on wellness-server.
+  Future<void> deleteWaterLog(String logId) async {
     final response = await _delete('/api/water/log/$logId');
 
     if (response.statusCode != 200) {
@@ -285,11 +293,10 @@ class ApiService {
     }
   }
 
-  /// GET /api/water/graph/{email}?period=
+  /// GET /water/graph?period= (current member, via Bearer token)
   /// period: day | week | month
   Future<Map<String, dynamic>> fetchWaterGraph(
       String email, String period) async {
-    final encodedEmail = Uri.encodeComponent(email);
     final periodParam = switch (period.toLowerCase()) {
       'days' || 'daily' => 'day',
       'weeks' || 'weekly' => 'week',
@@ -298,7 +305,7 @@ class ApiService {
     };
 
     final response = await _get(
-      '/api/water/graph/$encodedEmail',
+      '/api/water/graph',
       queryParams: {'period': periodParam},
     );
 
@@ -316,27 +323,36 @@ class ApiService {
   }
 
   // ── Nutrition API ──────────────────────────────────────────────
+  //
+  // Same routing note as water above: member comes from the Bearer token,
+  // not an email path segment; `email` param kept but unused so screen call
+  // sites don't need to change.
 
-  /// GET /api/nutrition/logs/{email}
+  /// GET /nutrition/logs (current member). Response is a bare JSON array on
+  /// wellness-server, not an object — wrapped here so callers built against
+  /// the old object-shaped response keep working.
   Future<Map<String, dynamic>> fetchNutritionLogs(String email) async {
-    final encodedEmail = Uri.encodeComponent(email);
-    final response = await _get('/api/nutrition/logs/$encodedEmail');
+    final response = await _get('/api/nutrition/logs');
 
     if (response.statusCode == 200) {
-      return Map<String, dynamic>.from(jsonDecode(response.body));
+      final decoded = jsonDecode(response.body);
+      if (decoded is List) return {'logs': decoded};
+      if (decoded is Map<String, dynamic>) return decoded;
+      if (decoded is Map) return Map<String, dynamic>.from(decoded);
+      throw Exception('Unexpected nutrition logs response format');
     } else {
       throw Exception(
           "Failed to load nutrition logs: ${response.statusCode} - ${response.body}");
     }
   }
 
-  /// POST /api/nutrition/log/{email}
+  /// POST /nutrition/log — body must use wellness-server's field names:
+  /// { food: string, calories?: int, macros?: {protein, carbs, fats, fiber} }
   Future<Map<String, dynamic>> addNutritionLog(
       String email, Map<String, dynamic> body) async {
-    final encodedEmail = Uri.encodeComponent(email);
-    final response = await _post('/api/nutrition/log/$encodedEmail', body: body);
+    final response = await _post('/api/nutrition/log', body: body);
 
-    if (response.statusCode == 200) {
+    if (response.statusCode == 200 || response.statusCode == 201) {
       return Map<String, dynamic>.from(jsonDecode(response.body));
     } else {
       throw Exception(
@@ -344,21 +360,17 @@ class ApiService {
     }
   }
 
-  /// PUT /api/nutrition/log/{logId}
+  /// NOT IMPLEMENTED on wellness-server — there is no PUT endpoint for meal
+  /// logs yet (see medifit-kb/MEDIFIT_KB.md §3). Left in place so callers
+  /// compile, but this will always fail until that endpoint exists.
   Future<Map<String, dynamic>> updateNutritionLog(
-      int logId, Map<String, dynamic> body) async {
-    final response = await _put('/api/nutrition/log/$logId', body: body);
-
-    if (response.statusCode == 200) {
-      return Map<String, dynamic>.from(jsonDecode(response.body));
-    } else {
-      throw Exception(
-          "Failed to update nutrition log: ${response.statusCode} - ${response.body}");
-    }
+      String logId, Map<String, dynamic> body) async {
+    throw Exception(
+        'Updating a nutrition log is not supported by the backend yet.');
   }
 
-  /// DELETE /api/nutrition/log/{logId}
-  Future<void> deleteNutritionLog(int logId) async {
+  /// DELETE /nutrition/log/{logId} — logId is a UUID string on wellness-server.
+  Future<void> deleteNutritionLog(String logId) async {
     final response = await _delete('/api/nutrition/log/$logId');
 
     if (response.statusCode != 200) {
@@ -367,41 +379,13 @@ class ApiService {
     }
   }
 
-  /// GET /api/nutrition/graph/{email}?period=
-  /// period: day | week | month
+  /// NOT IMPLEMENTED on wellness-server — there is no nutrition trend/graph
+  /// endpoint yet (see medifit-kb/MEDIFIT_KB.md §3). Left in place so
+  /// callers compile, but this will always fail until that endpoint exists.
   Future<Map<String, dynamic>> fetchNutritionGraph(
       String email, String period) async {
-    final encodedEmail = Uri.encodeComponent(email);
-    // Normalize period aliases the backend might accept
-    final periodParam = switch (period.toLowerCase()) {
-      'days' || 'daily' => 'day',
-      'weeks' || 'weekly' => 'week',
-      'months' || 'monthly' => 'month',
-      _ => period.toLowerCase(),
-    };
-
-    final response = await _get(
-      '/api/nutrition/graph/$encodedEmail',
-      queryParams: {'period': periodParam},
-    );
-
-    if (response.statusCode == 200) {
-      final decoded = jsonDecode(response.body);
-      if (decoded is Map<String, dynamic>) {
-        return decoded;
-      }
-      if (decoded is Map) {
-        return Map<String, dynamic>.from(decoded);
-      }
-      // Unexpected list-only payload
-      if (decoded is List) {
-        return {'period': periodParam, 'data': decoded};
-      }
-      throw Exception('Unexpected nutrition graph response format');
-    } else {
-      throw Exception(
-          "Failed to load nutrition graph: ${response.statusCode} - ${response.body}");
-    }
+    throw Exception(
+        'Nutrition trend graphs are not supported by the backend yet.');
   }
 
   /// GET /api/profile
@@ -424,19 +408,31 @@ class ApiService {
     }
   }
 
-  /// POST /api/dashboard/sync/{email}
+  /// wellness-server splits what the old prototype backend did in one call
+  /// (`POST /api/dashboard/sync/{email}` — upload + return the scored
+  /// dashboard) into two: `POST /health/sync` (ingest only, member from the
+  /// Bearer token) and `GET /health/dashboard` (the actual score/summary/
+  /// recommendations). Rather than touch every call site in
+  /// dashboard_screen.dart, this method does both calls internally and
+  /// returns the dashboard payload — so `syncDashboard(...)` still behaves
+  /// like one combined "upload and get me the scored dashboard back" call.
+  ///
+  /// `dailyRecords` must already be shaped like wellness-server's
+  /// DailyHealthRecordIn per entry: {date, steps, calories,
+  /// sleep_duration_hours, workouts_count, heart_rate_bpm}. Extra fields
+  /// (e.g. water_intake_ml, carried over from the old backend's per-day
+  /// shape) are harmless — the server ignores unknown keys.
   Future<Map<String, dynamic>> syncDashboard(String email, List<Map<String, dynamic>> dailyRecords) async {
-    final response = await _post('/api/dashboard/sync/${Uri.encodeComponent(email)}', body: dailyRecords);
-    if (response.statusCode == 200) {
-      return Map<String, dynamic>.from(jsonDecode(response.body));
-    } else {
-      throw Exception("Failed to sync dashboard: ${response.statusCode} - ${response.body}");
+    final syncResponse = await _post('/api/health/sync', body: {'records': dailyRecords});
+    if (syncResponse.statusCode != 200) {
+      throw Exception("Failed to sync dashboard: ${syncResponse.statusCode} - ${syncResponse.body}");
     }
+    return getDashboard(email);
   }
 
-  /// GET /api/dashboard/{email}
+  /// GET /health/dashboard (current member, via Bearer token).
   Future<Map<String, dynamic>> getDashboard(String email) async {
-    final response = await _get('/api/dashboard/${Uri.encodeComponent(email)}');
+    final response = await _get('/api/health/dashboard');
     if (response.statusCode == 200) {
       return Map<String, dynamic>.from(jsonDecode(response.body));
     } else {

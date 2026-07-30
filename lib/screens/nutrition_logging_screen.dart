@@ -3,8 +3,12 @@ import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../widgets/glass_card.dart';
 
+/// Matches wellness-server's MealLogRead: id (UUID string), food, calories,
+/// macros (nested {protein, carbs, fats, fiber}), logged_at. Falls back to
+/// the old prototype backend's flat food_name/protein/fat/carbs/timestamp
+/// fields in case anything still sends them.
 class NutritionLog {
-  final int? id;
+  final String? id;
   final String foodName;
   final double calories;
   final double protein;
@@ -23,14 +27,20 @@ class NutritionLog {
   });
 
   factory NutritionLog.fromJson(Map<String, dynamic> json) {
+    final macros = json['macros'];
+    final macrosMap = macros is Map ? macros : const <String, dynamic>{};
+    num? macro(String key) => macrosMap[key] as num?;
+
     return NutritionLog(
-      id: json['id'] as int?,
-      foodName: json['food_name'] as String? ?? '',
+      id: json['id']?.toString(),
+      foodName: (json['food'] ?? json['food_name']) as String? ?? '',
       calories: (json['calories'] as num?)?.toDouble() ?? 0,
-      protein: (json['protein'] as num?)?.toDouble() ?? 0,
-      fat: (json['fat'] as num?)?.toDouble() ?? 0,
-      carbs: (json['carbs'] as num?)?.toDouble() ?? 0,
-      timestamp: DateTime.tryParse(json['timestamp'] as String? ?? '') ??
+      protein: (macro('protein') ?? json['protein'] as num?)?.toDouble() ?? 0,
+      fat: (macro('fats') ?? json['fat'] as num?)?.toDouble() ?? 0,
+      carbs: (macro('carbs') ?? json['carbs'] as num?)?.toDouble() ?? 0,
+      timestamp: DateTime.tryParse(
+            (json['logged_at'] ?? json['timestamp'])?.toString() ?? '',
+          ) ??
           DateTime.now(),
     );
   }
@@ -196,11 +206,9 @@ class _NutritionLoggingScreenState extends State<NutritionLoggingScreen>
     try {
       final email = await ApiService.instance.getUserEmail();
       await ApiService.instance.addNutritionLog(email, {
-        'food_name': foodName,
+        'food': foodName,
         'calories': calories,
-        'protein': protein,
-        'fat': fat,
-        'carbs': carbs,
+        'macros': {'protein': protein, 'fats': fat, 'carbs': carbs},
       });
       widget.onFoodLogged?.call();
       await _fetchData();
@@ -217,7 +225,7 @@ class _NutritionLoggingScreenState extends State<NutritionLoggingScreen>
     }
   }
 
-  Future<void> _deleteLog(int logId) async {
+  Future<void> _deleteLog(String logId) async {
     try {
       await ApiService.instance.deleteNutritionLog(logId);
       widget.onFoodLogged?.call();
