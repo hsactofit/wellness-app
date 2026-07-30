@@ -441,39 +441,36 @@ class ApiService {
   }
 
   // ── SOS & Emergency API ────────────────────────────────────────
+  // wellness-server identifies the caller via the Bearer token, not an
+  // {email} path segment (the old prototype backend's convention) — every
+  // path below matches app/api/v1/sos.py exactly. Emergency numbers are
+  // fixed India defaults server-side (no per-member override column
+  // exists), so there is no update/reset call here — the old edit/reset UI
+  // was removed from sos_screen.dart rather than left pointing at an
+  // endpoint that was never real.
 
-  /// GET /api/sos/{email} — full SOS setup (contacts + emergency numbers)
-  Future<Map<String, dynamic>> getSos(String email) async {
-    final encodedEmail = Uri.encodeComponent(email);
-    final response = await _get('/api/sos/$encodedEmail');
-
-    if (response.statusCode == 200) {
-      return Map<String, dynamic>.from(jsonDecode(response.body));
-    } else {
+  /// Combines GET /api/sos/contacts + GET /api/sos/emergency-numbers into
+  /// the {contacts, emergency_numbers} shape the SOS screen expects.
+  Future<Map<String, dynamic>> getSos() async {
+    final contactsRes = await _get('/api/sos/contacts');
+    if (contactsRes.statusCode != 200) {
       throw Exception(
-          "Failed to load SOS data: ${response.statusCode} - ${response.body}");
+          "Failed to load SOS contacts: ${contactsRes.statusCode} - ${contactsRes.body}");
     }
+    final numbersRes = await _get('/api/sos/emergency-numbers');
+    if (numbersRes.statusCode != 200) {
+      throw Exception(
+          "Failed to load emergency numbers: ${numbersRes.statusCode} - ${numbersRes.body}");
+    }
+    return {
+      'contacts': jsonDecode(contactsRes.body),
+      'emergency_numbers': jsonDecode(numbersRes.body),
+    };
   }
 
-  /// GET /api/sos/contacts/{email}
-  Future<Map<String, dynamic>> listSosContacts(String email) async {
-    final encodedEmail = Uri.encodeComponent(email);
-    final response = await _get('/api/sos/contacts/$encodedEmail');
-
-    if (response.statusCode == 200) {
-      return Map<String, dynamic>.from(jsonDecode(response.body));
-    } else {
-      throw Exception(
-          "Failed to list SOS contacts: ${response.statusCode} - ${response.body}");
-    }
-  }
-
-  /// POST /api/sos/contacts/{email}
-  Future<Map<String, dynamic>> createSosContact(
-      String email, Map<String, dynamic> body) async {
-    final encodedEmail = Uri.encodeComponent(email);
-    final response =
-        await _post('/api/sos/contacts/$encodedEmail', body: body);
+  /// POST /api/sos/contacts
+  Future<Map<String, dynamic>> createSosContact(Map<String, dynamic> body) async {
+    final response = await _post('/api/sos/contacts', body: body);
 
     if (response.statusCode == 200 || response.statusCode == 201) {
       return Map<String, dynamic>.from(jsonDecode(response.body));
@@ -485,7 +482,7 @@ class ApiService {
 
   /// PUT /api/sos/contacts/{contactId}
   Future<Map<String, dynamic>> updateSosContact(
-      int contactId, Map<String, dynamic> body) async {
+      String contactId, Map<String, dynamic> body) async {
     final response = await _put('/api/sos/contacts/$contactId', body: body);
 
     if (response.statusCode == 200) {
@@ -497,7 +494,7 @@ class ApiService {
   }
 
   /// DELETE /api/sos/contacts/{contactId}
-  Future<void> deleteSosContact(int contactId) async {
+  Future<void> deleteSosContact(String contactId) async {
     final response = await _delete('/api/sos/contacts/$contactId');
 
     if (response.statusCode != 200) {
@@ -506,60 +503,18 @@ class ApiService {
     }
   }
 
-  /// GET /api/sos/emergency/{email}
-  Future<Map<String, dynamic>> getEmergencyNumbers(String email) async {
-    final encodedEmail = Uri.encodeComponent(email);
-    final response = await _get('/api/sos/emergency/$encodedEmail');
-
-    if (response.statusCode == 200) {
-      return Map<String, dynamic>.from(jsonDecode(response.body));
-    } else {
-      throw Exception(
-          "Failed to load emergency numbers: ${response.statusCode} - ${response.body}");
-    }
-  }
-
-  /// PUT /api/sos/emergency/{email}
-  Future<Map<String, dynamic>> updateEmergencyNumbers(
-      String email, Map<String, dynamic> body) async {
-    final encodedEmail = Uri.encodeComponent(email);
-    final response =
-        await _put('/api/sos/emergency/$encodedEmail', body: body);
-
-    if (response.statusCode == 200) {
-      return Map<String, dynamic>.from(jsonDecode(response.body));
-    } else {
-      throw Exception(
-          "Failed to update emergency numbers: ${response.statusCode} - ${response.body}");
-    }
-  }
-
-  /// DELETE /api/sos/emergency/{email} — reset to defaults (112 / 102 / 101)
-  Future<Map<String, dynamic>> resetEmergencyNumbers(String email) async {
-    final encodedEmail = Uri.encodeComponent(email);
-    final response = await _delete('/api/sos/emergency/$encodedEmail');
-
-    if (response.statusCode == 200) {
-      return Map<String, dynamic>.from(jsonDecode(response.body));
-    } else {
-      throw Exception(
-          "Failed to reset emergency numbers: ${response.statusCode} - ${response.body}");
-    }
-  }
-
-  /// POST /api/sos/trigger/{email}
-  Future<Map<String, dynamic>> triggerSos(
-    String email, {
+  /// POST /api/sos/trigger — real GPS coordinates are captured in
+  /// sos_screen.dart before calling this, so the Emergency Response Lead's
+  /// dashboard can show exactly where the member is.
+  Future<Map<String, dynamic>> triggerSos({
     double? latitude,
     double? longitude,
   }) async {
-    final encodedEmail = Uri.encodeComponent(email);
     final body = <String, dynamic>{
       if (latitude != null) 'latitude': latitude,
       if (longitude != null) 'longitude': longitude,
     };
-    final response =
-        await _post('/api/sos/trigger/$encodedEmail', body: body);
+    final response = await _post('/api/sos/trigger', body: body);
 
     if (response.statusCode == 200) {
       return Map<String, dynamic>.from(jsonDecode(response.body));

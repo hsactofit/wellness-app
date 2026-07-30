@@ -1,12 +1,13 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../services/api_service.dart';
 import '../widgets/glass_card.dart';
 
 class SosContact {
-  final int id;
+  final String id;
   final String name;
   final String phone;
 
@@ -14,7 +15,7 @@ class SosContact {
 
   factory SosContact.fromJson(Map<String, dynamic> json) {
     return SosContact(
-      id: json['id'] as int,
+      id: json['id'] as String,
       name: json['name'] as String? ?? '',
       phone: json['phone'] as String? ?? '',
     );
@@ -72,7 +73,7 @@ class _SosScreenState extends State<SosScreen>
 
     try {
       final email = await ApiService.instance.getUserEmail();
-      final data = await ApiService.instance.getSos(email);
+      final data = await ApiService.instance.getSos();
 
       final contactsRaw = data['contacts'] as List<dynamic>? ?? [];
       final emergency =
@@ -185,7 +186,7 @@ class _SosScreenState extends State<SosScreen>
                     ),
                     const SizedBox(height: 10),
                     Text(
-                      'This alerts all emergency contacts and shares your emergency numbers. Only use in a real emergency.',
+                      "This notifies Medifit's emergency response team with your live location and current vitals. Only use in a real emergency.",
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 13.5,
@@ -229,6 +230,34 @@ class _SosScreenState extends State<SosScreen>
     }
   }
 
+  /// Best-effort GPS fix — SOS must still fire even if location is denied,
+  /// disabled, or times out, so every failure path here returns null rather
+  /// than throwing.
+  Future<Position?> _captureLocation() async {
+    try {
+      if (!await Geolocator.isLocationServiceEnabled()) return null;
+
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        return null;
+      }
+
+      return await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 8),
+        ),
+      );
+    } catch (e) {
+      debugPrint('SOS location capture failed: $e');
+      return null;
+    }
+  }
+
   Future<void> _triggerSos() async {
     if (_email == null) {
       _showSnack('User email not available', isError: true);
@@ -239,9 +268,12 @@ class _SosScreenState extends State<SosScreen>
     HapticFeedback.heavyImpact();
 
     try {
-      final result = await ApiService.instance.triggerSos(_email!);
+      final position = await _captureLocation();
+      final result = await ApiService.instance.triggerSos(
+        latitude: position?.latitude,
+        longitude: position?.longitude,
+      );
       final message = result['message'] as String? ?? 'SOS alert sent';
-      final notified = result['notified_contacts'] as List<dynamic>? ?? [];
 
       if (!mounted) return;
       await showDialog(
@@ -306,66 +338,6 @@ class _SosScreenState extends State<SosScreen>
                           color: isDark ? Colors.white60 : Colors.black54,
                         ),
                       ),
-                      if (notified.isNotEmpty) ...[
-                        const SizedBox(height: 16),
-                        Text(
-                          'Notified (${notified.length})',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w800,
-                            fontSize: 12,
-                            letterSpacing: 0.3,
-                            color: isDark ? Colors.white70 : Colors.black54,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        ...notified.map((c) {
-                          final map = Map<String, dynamic>.from(c as Map);
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 6),
-                            child: Row(
-                              children: [
-                                Container(
-                                  width: 28,
-                                  height: 28,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: _sosRed.withOpacity(0.12),
-                                  ),
-                                  child: Center(
-                                    child: Text(
-                                      () {
-                                        final n =
-                                            map['name'] as String? ?? '?';
-                                        return n.isNotEmpty
-                                            ? n[0].toUpperCase()
-                                            : '?';
-                                      }(),
-                                      style: const TextStyle(
-                                        color: _sosRed,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: Text(
-                                    '${map['name']}  ·  ${map['phone']}',
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w600,
-                                      color: isDark
-                                          ? Colors.white70
-                                          : Colors.black87,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        }),
-                      ],
                       const SizedBox(height: 16),
                       _MorphButton(
                         label: 'Done',
@@ -401,7 +373,6 @@ class _SosScreenState extends State<SosScreen>
       builder: (ctx) {
         return _SosContactSheet(
           contact: contact,
-          email: _email,
           inputDecoration: _morphInput,
         );
       },
@@ -502,119 +473,11 @@ class _SosScreenState extends State<SosScreen>
     }
   }
 
-  Future<void> _showEmergencyNumbersSheet() async {
-    final saved = await showModalBottomSheet<bool>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      barrierColor: Colors.black.withOpacity(0.4),
-      builder: (ctx) {
-        return _SosEmergencyNumbersSheet(
-          email: _email,
-          policeNumber: _policeNumber,
-          ambulanceNumber: _ambulanceNumber,
-          fireNumber: _fireNumber,
-          inputDecoration: _morphInput,
-        );
-      },
-    );
-
-    if (saved == true) {
-      await _loadSosData();
-      _showSnack('Emergency numbers updated');
-    }
-  }
-
-  Future<void> _resetEmergencyNumbers() async {
-    if (_email == null) return;
-
-    final confirmed = await showDialog<bool>(
-      context: context,
-      barrierColor: Colors.black.withOpacity(0.45),
-      builder: (ctx) {
-        final isDark = Theme.of(ctx).brightness == Brightness.dark;
-        return Dialog(
-          backgroundColor: Colors.transparent,
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(24),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-              child: Container(
-                padding: const EdgeInsets.all(22),
-                decoration: BoxDecoration(
-                  color: isDark
-                      ? const Color(0xFF16161C).withOpacity(0.9)
-                      : Colors.white.withOpacity(0.92),
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(
-                    color: isDark
-                        ? Colors.white.withOpacity(0.1)
-                        : Colors.black.withOpacity(0.05),
-                  ),
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'Reset numbers?',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w900,
-                        color: isDark ? Colors.white : Colors.black87,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Reset police / ambulance / fire to defaults (112 / 102 / 101)?',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: isDark ? Colors.white60 : Colors.black54,
-                      ),
-                    ),
-                    const SizedBox(height: 18),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _MorphButton(
-                            label: 'Cancel',
-                            isDark: isDark,
-                            onTap: () => Navigator.pop(ctx, false),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: _MorphButton(
-                            label: 'Reset',
-                            isDark: isDark,
-                            filled: true,
-                            fillColor: _sosCoral,
-                            onTap: () => Navigator.pop(ctx, true),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        );
-      },
-    );
-
-    if (confirmed != true) return;
-
-    try {
-      await ApiService.instance.resetEmergencyNumbers(_email!);
-      await _loadSosData();
-      _showSnack('Emergency numbers reset to defaults');
-    } catch (e) {
-      _showSnack(
-        e.toString().replaceFirst('Exception: ', ''),
-        isError: true,
-      );
-    }
-  }
+  // Emergency numbers (police/ambulance/fire) are fixed India defaults
+  // served by GET /sos/emergency-numbers — wellness-server has no
+  // per-member override column for them, so there's no edit/reset
+  // capability here (removed rather than left pointing at a nonexistent
+  // endpoint).
 
   InputDecoration _morphInput(String label, bool isDark) {
     return InputDecoration(
@@ -740,25 +603,7 @@ class _SosScreenState extends State<SosScreen>
                               const SizedBox(height: 28),
                               _buildSosTrigger(isDark, secondaryText),
                               const SizedBox(height: 32),
-                              _buildSectionLabel(
-                                'EMERGENCY SERVICES',
-                                theme,
-                                actions: [
-                                  _MorphIconButton(
-                                    icon: Icons.restart_alt_rounded,
-                                    tooltip: 'Reset defaults',
-                                    isDark: isDark,
-                                    onTap: _resetEmergencyNumbers,
-                                  ),
-                                  const SizedBox(width: 6),
-                                  _MorphIconButton(
-                                    icon: Icons.tune_rounded,
-                                    tooltip: 'Edit numbers',
-                                    isDark: isDark,
-                                    onTap: _showEmergencyNumbersSheet,
-                                  ),
-                                ],
-                              ),
+                              _buildSectionLabel('EMERGENCY SERVICES', theme),
                               const SizedBox(height: 12),
                               Row(
                                 children: [
@@ -1561,12 +1406,10 @@ class _ContactMorphCard extends StatelessWidget {
 /// Contact form sheet — owns controllers so they dispose after route unmount.
 class _SosContactSheet extends StatefulWidget {
   final SosContact? contact;
-  final String? email;
   final InputDecoration Function(String label, bool isDark) inputDecoration;
 
   const _SosContactSheet({
     required this.contact,
-    required this.email,
     required this.inputDecoration,
   });
 
@@ -1598,12 +1441,11 @@ class _SosContactSheetState extends State<_SosContactSheet> {
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
-    if (widget.email == null) return;
 
     setState(() => _saving = true);
     try {
       if (widget.contact == null) {
-        await ApiService.instance.createSosContact(widget.email!, {
+        await ApiService.instance.createSosContact({
           'name': _nameCtrl.text.trim(),
           'phone': _phoneCtrl.text.trim(),
         });
@@ -1730,171 +1572,3 @@ class _SosContactSheetState extends State<_SosContactSheet> {
   }
 }
 
-/// Emergency numbers sheet — owns controllers safely across dismiss animation.
-class _SosEmergencyNumbersSheet extends StatefulWidget {
-  final String? email;
-  final String policeNumber;
-  final String ambulanceNumber;
-  final String fireNumber;
-  final InputDecoration Function(String label, bool isDark) inputDecoration;
-
-  const _SosEmergencyNumbersSheet({
-    required this.email,
-    required this.policeNumber,
-    required this.ambulanceNumber,
-    required this.fireNumber,
-    required this.inputDecoration,
-  });
-
-  @override
-  State<_SosEmergencyNumbersSheet> createState() =>
-      _SosEmergencyNumbersSheetState();
-}
-
-class _SosEmergencyNumbersSheetState extends State<_SosEmergencyNumbersSheet> {
-  static const Color _sosRed = Color(0xFFFF3B30);
-
-  late final TextEditingController _policeCtrl;
-  late final TextEditingController _ambulanceCtrl;
-  late final TextEditingController _fireCtrl;
-  final _formKey = GlobalKey<FormState>();
-  bool _saving = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _policeCtrl = TextEditingController(text: widget.policeNumber);
-    _ambulanceCtrl = TextEditingController(text: widget.ambulanceNumber);
-    _fireCtrl = TextEditingController(text: widget.fireNumber);
-  }
-
-  @override
-  void dispose() {
-    _policeCtrl.dispose();
-    _ambulanceCtrl.dispose();
-    _fireCtrl.dispose();
-    super.dispose();
-  }
-
-  Future<void> _save() async {
-    if (!_formKey.currentState!.validate()) return;
-    if (widget.email == null) return;
-
-    setState(() => _saving = true);
-    try {
-      await ApiService.instance.updateEmergencyNumbers(widget.email!, {
-        'police_number': _policeCtrl.text.trim(),
-        'ambulance_number': _ambulanceCtrl.text.trim(),
-        'fire_number': _fireCtrl.text.trim(),
-      });
-      if (mounted) Navigator.pop(context, true);
-    } catch (e) {
-      if (!mounted) return;
-      setState(() => _saving = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString().replaceFirst('Exception: ', '')),
-          backgroundColor: _sosRed,
-          behavior: SnackBarBehavior.floating,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-      );
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textColor = isDark ? Colors.white : Colors.black87;
-
-    return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-      ),
-      child: ClipRRect(
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-          child: Container(
-            decoration: BoxDecoration(
-              color: isDark
-                  ? const Color(0xFF16161C).withOpacity(0.90)
-                  : Colors.white.withOpacity(0.92),
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(28)),
-              border: Border.all(
-                color: isDark
-                    ? Colors.white.withOpacity(0.10)
-                    : Colors.white.withOpacity(0.70),
-              ),
-            ),
-            padding: const EdgeInsets.fromLTRB(22, 12, 22, 28),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Center(
-                    child: Container(
-                      width: 40,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: isDark ? Colors.white24 : Colors.black12,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-                  Text(
-                    'Edit Emergency Numbers',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: -0.4,
-                      color: textColor,
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-                  TextFormField(
-                    controller: _policeCtrl,
-                    keyboardType: TextInputType.phone,
-                    decoration: widget.inputDecoration('Police', isDark),
-                    validator: (v) =>
-                        (v == null || v.trim().isEmpty) ? 'Required' : null,
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: _ambulanceCtrl,
-                    keyboardType: TextInputType.phone,
-                    decoration: widget.inputDecoration('Ambulance', isDark),
-                    validator: (v) =>
-                        (v == null || v.trim().isEmpty) ? 'Required' : null,
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: _fireCtrl,
-                    keyboardType: TextInputType.phone,
-                    decoration: widget.inputDecoration('Fire', isDark),
-                    validator: (v) =>
-                        (v == null || v.trim().isEmpty) ? 'Required' : null,
-                  ),
-                  const SizedBox(height: 22),
-                  _MorphButton(
-                    label: 'Save Numbers',
-                    isDark: isDark,
-                    filled: true,
-                    fillColor: _sosRed,
-                    loading: _saving,
-                    onTap: _saving ? null : _save,
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
