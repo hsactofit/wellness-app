@@ -354,27 +354,81 @@ class AuthService {
     }
   }
 
-  // Submit Onboarding API
-  Future<void> submitOnboarding(Map<String, dynamic> payload) async {
-    try {
-      final token = await getAccessToken();
-      final response = await http.post(
-        Uri.parse('$apiBaseUrl/api/onboarding'),
-        headers: {
-          'Content-Type': 'application/json',
-          if (token != null) 'Authorization': 'Bearer $token',
-        },
-        body: jsonEncode(payload),
-      );
+  // ---- Enrolment API (wellness-server /enrolments/*) ----
+  // Replaces the old prototype's single POST /api/onboarding call, which
+  // has no equivalent on wellness-server. The real pipeline is a sequence:
+  // list corporates/facilities -> start -> health-assessment -> consent.
+  // See app/api/v1/enrolment.py and medifit-kb/MEDIFIT_KB.md §5.
 
-      if (response.statusCode != 200 && response.statusCode != 201) {
-        final data = jsonDecode(response.body);
-        throw Exception(_extractErrorMessage(data));
-      }
-    } catch (e) {
-      print("Submit onboarding API error: $e");
-      rethrow;
+  Future<Map<String, dynamic>> _authedGet(String path) async {
+    final token = await getAccessToken();
+    final response = await http.get(
+      Uri.parse('$apiBaseUrl$path'),
+      headers: {if (token != null) 'Authorization': 'Bearer $token'},
+    );
+    if (response.statusCode != 200) {
+      throw Exception(_extractErrorMessage(jsonDecode(response.body)));
     }
+    return {'body': jsonDecode(response.body)};
+  }
+
+  Future<Map<String, dynamic>> _authedPost(String path, Map<String, dynamic> payload) async {
+    final token = await getAccessToken();
+    final response = await http.post(
+      Uri.parse('$apiBaseUrl$path'),
+      headers: {
+        'Content-Type': 'application/json',
+        if (token != null) 'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode(payload),
+    );
+    final data = jsonDecode(response.body);
+    if (response.statusCode != 200 && response.statusCode != 201) {
+      throw Exception(_extractErrorMessage(data));
+    }
+    return data as Map<String, dynamic>;
+  }
+
+  Future<List<dynamic>> listEnrolmentCorporates() async {
+    final result = await _authedGet('/api/enrolments/corporates');
+    return result['body'] as List<dynamic>;
+  }
+
+  Future<List<dynamic>> listEnrolmentFacilities() async {
+    final result = await _authedGet('/api/enrolments/facilities');
+    return result['body'] as List<dynamic>;
+  }
+
+  Future<Map<String, dynamic>> startEnrolment({
+    required String corporateId,
+    required String facilityId,
+    String? goal,
+  }) {
+    return _authedPost('/api/enrolments/me/start', {
+      'corporate_id': corporateId,
+      'facility_id': facilityId,
+      'goal': goal,
+    });
+  }
+
+  Future<Map<String, dynamic>> submitHealthAssessment({
+    required Map<String, String> answers,
+    String? declaredCondition,
+  }) {
+    return _authedPost('/api/enrolments/me/health-assessment', {
+      'answers': answers,
+      'declared_condition': declaredCondition,
+    });
+  }
+
+  Future<Map<String, dynamic>> submitEnrolmentConsent({
+    required Map<String, bool> grants,
+    required String signatureName,
+  }) {
+    return _authedPost('/api/enrolments/me/consent', {
+      'grants': grants.entries.map((e) => {'key': e.key, 'granted': e.value}).toList(),
+      'signature_name': signatureName,
+    });
   }
 
   // Helper to extract error message from API response (specifically FastAPI ValidationError)

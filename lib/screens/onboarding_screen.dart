@@ -5,7 +5,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../services/auth_service.dart';
 import '../widgets/onboarding/profile_step.dart';
 import '../widgets/onboarding/goals_step.dart';
+import '../widgets/onboarding/company_step.dart';
 import '../widgets/onboarding/medical_step.dart';
+import '../widgets/onboarding/consent_step.dart';
 import '../widgets/onboarding/sync_progress_step.dart';
 import 'auth_screen.dart';
 import 'main_shell.dart';
@@ -22,7 +24,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     with SingleTickerProviderStateMixin {
   late final PageController _pageController;
   late int _currentPage;
-  final int _totalPages = 4; // 3 form steps + 1 sync step
+  final int _totalPages = 6; // Profile, Goals, Company, Medical, Consent + 1 sync step
+  static const int _consentPageIndex = 4;
 
   // Form keys for validation
   final _profileFormKey = GlobalKey<FormState>();
@@ -32,6 +35,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   final TextEditingController _dobController = TextEditingController();
   final TextEditingController _heightController = TextEditingController();
   final TextEditingController _weightController = TextEditingController();
+  final TextEditingController _signatureController = TextEditingController();
 
   // State Variables
   String _gender = 'Female';
@@ -41,6 +45,22 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   final List<String> _selectedGoals = [];
   List<String> _selectedConditions = [];
   bool _noConditions = false;
+
+  // Company/facility selection (enrolment)
+  bool _loadingCompanyData = true;
+  String? _companyLoadError;
+  List<CompanyOption> _corporates = [];
+  List<CompanyOption> _facilities = [];
+  String? _selectedCorporateId;
+  String? _selectedFacilityId;
+
+  // Consent grants — keys match wellness-server's ConsentKey values
+  final Map<String, bool> _consentGrants = {
+    'terms': false,
+    'healthData': false,
+    'medicalShare': false,
+    'employerAggregate': false,
+  };
 
   // Sync state
   double _syncProgress = 0.0;
@@ -67,6 +87,47 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     );
 
     _loadExistingUserData();
+    _loadCompanyData();
+    // Rebuild on every keystroke so ConsentStep's continue-button enablement
+    // (which reads signatureController.text at build time) stays live.
+    _signatureController.addListener(() {
+      if (mounted) setState(() {});
+    });
+  }
+
+  Future<void> _loadCompanyData() async {
+    setState(() {
+      _loadingCompanyData = true;
+      _companyLoadError = null;
+    });
+    try {
+      final corpJson = await AuthService.instance.listEnrolmentCorporates();
+      final facJson = await AuthService.instance.listEnrolmentFacilities();
+      if (!mounted) return;
+      setState(() {
+        _corporates = corpJson
+            .map((c) => CompanyOption(
+                  id: c['id'] as String,
+                  name: c['name'] as String,
+                  subtitle: "${c['industry']} · ${c['city']}",
+                ))
+            .toList();
+        _facilities = facJson
+            .map((f) => CompanyOption(
+                  id: f['id'] as String,
+                  name: f['name'] as String,
+                  subtitle: "${f['type']} · ${f['city']}",
+                ))
+            .toList();
+        _loadingCompanyData = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _loadingCompanyData = false;
+        _companyLoadError = "Couldn't load companies/facilities: ${e.toString().replaceAll('Exception: ', '')}";
+      });
+    }
   }
 
   Future<void> _loadExistingUserData() async {
@@ -87,6 +148,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     _dobController.dispose();
     _heightController.dispose();
     _weightController.dispose();
+    _signatureController.dispose();
     super.dispose();
   }
 
@@ -125,15 +187,6 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     });
   }
 
-  String _formatDateForApi(String dateStr) {
-    // Input format: dd-mm-yyyy -> Output format: yyyy-mm-dd
-    final parts = dateStr.split('-');
-    if (parts.length == 3) {
-      return "${parts[2]}-${parts[1]}-${parts[0]}";
-    }
-    return dateStr;
-  }
-
   Future<void> _startSyncAndFinish() async {
     _nextPage(); // Move to SyncProgressStep
     setState(() {
@@ -159,8 +212,6 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     }
 
     final prefs = await SharedPreferences.getInstance();
-    final userEmail = prefs.getString('user_email') ?? '';
-    final userProvider = prefs.getString('user_provider') ?? 'email';
 
     // Save full name to preferences if entered
     final enteredName = _fullNameController.text.trim();
@@ -168,52 +219,59 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       await prefs.setString('user_name', enteredName);
     }
 
-    // Construct the updated API request payload
-    final Map<String, dynamic> onboardingPayload = {
-      'onboarding_completed': true,
-      'completed_at': DateTime.now().toUtc().toIso8601String(),
-      'auth': {
-        'provider': userProvider,
-        'name': enteredName,
-        'email': userEmail,
-      },
-      'profile': {
-        'full_name': enteredName,
-        'dob': _formatDateForApi(_dobController.text.trim()),
-        'gender': _gender,
-        'height': double.tryParse(_heightController.text),
-        'height_unit': _heightUnit,
-        'weight': double.tryParse(_weightController.text),
-        'weight_unit': _weightUnit,
-        'activity_level': _activityLevel,
-        'medical_conditions': _noConditions ? [] : _selectedConditions,
-        'no_conditions': _noConditions,
-      },
-      'goals': _selectedGoals,
-      // Retain mock permission mapping for backend API compatibility
-      'permissions': {
-        'health_connect_connected': false,
-        'notifications': {
-          'daily_reminder': true,
-          'hydration_reminder': true,
-          'activity_reminder': true,
-          'sleep_reminder': true,
-          'challenge_updates': false,
-          'rewards': false,
-          'ai_tips': true,
-        },
-      },
-    };
-
     try {
-      // API call to backend server
-      await AuthService.instance.submitOnboarding(onboardingPayload);
+      // Real wellness-server enrolment pipeline (see app/api/v1/enrolment.py):
+      // start -> health-assessment -> consent. `consent` auto-activates the
+      // Member row (and issues a member code) when no medical clearance is
+      // required; otherwise the enrolment lands in the staff clearance queue
+      // and the member sees "pending review" until a doctor/HR approves it.
+      final started = await AuthService.instance.startEnrolment(
+        corporateId: _selectedCorporateId!,
+        facilityId: _selectedFacilityId!,
+        goal: _selectedGoals.isNotEmpty ? _selectedGoals.first : null,
+      );
 
-      // Save onboarding completion state locally
-      await prefs.setString('onboarding_data', jsonEncode(onboardingPayload));
+      final declaredCondition = _noConditions || _selectedConditions.isEmpty
+          ? null
+          : _selectedConditions.join(', ');
+      await AuthService.instance.submitHealthAssessment(
+        answers: {
+          'conditions': _noConditions ? 'no' : (_selectedConditions.isEmpty ? 'no' : 'yes'),
+        },
+        declaredCondition: declaredCondition,
+      );
+
+      final result = await AuthService.instance.submitEnrolmentConsent(
+        grants: _consentGrants,
+        signatureName: _signatureController.text.trim(),
+      );
+
+      final stage = result['stage'] as String? ?? started['stage'] as String? ?? '';
       await prefs.setBool('onboarding_completed', true);
+      await prefs.setString('enrolment_stage', stage);
 
       if (!mounted) return;
+
+      if (stage != 'activated') {
+        // Needs medical clearance before a Member row/member code exists —
+        // dashboard_screen.dart and other member-only endpoints will 409
+        // until staff approves it. Let the user know instead of silently
+        // dropping them into a broken dashboard.
+        setState(() {
+          _isSyncing = false;
+          _syncStatusText = 'Submitted — awaiting medical clearance review';
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              "Your enrolment needs a quick medical clearance review by our staff before your dashboard unlocks. We'll notify you once it's approved.",
+            ),
+            backgroundColor: Colors.orange,
+            duration: Duration(seconds: 6),
+          ),
+        );
+        return;
+      }
 
       // Navigate to the main dashboard shell
       Navigator.pushReplacement(
@@ -228,15 +286,15 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            "Failed to submit onboarding to server: ${e.toString().replaceAll('Exception: ', '')}",
+            "Failed to submit enrolment to server: ${e.toString().replaceAll('Exception: ', '')}",
           ),
           backgroundColor: Colors.redAccent,
           duration: const Duration(seconds: 5),
         ),
       );
-      // Go back to the medical screen to allow retrying
+      // Go back to the consent screen to allow retrying
       _pageController.animateToPage(
-        2,
+        _consentPageIndex,
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeOut,
       );
@@ -334,10 +392,10 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                         ),
                       ),
                       // Sliding Indicator (only show for the input pages, i.e., page < 3)
-                      if (_currentPage < 3)
+                      if (_currentPage < 5)
                         Row(
                           mainAxisSize: MainAxisSize.min,
-                          children: List.generate(3, (index) {
+                          children: List.generate(5, (index) {
                             final isActive = index == _currentPage;
                             return AnimatedContainer(
                               duration: const Duration(milliseconds: 300),
@@ -365,6 +423,9 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                       setState(() {
                         _currentPage = page;
                       });
+                      if (page == _consentPageIndex && _signatureController.text.trim().isEmpty) {
+                        _signatureController.text = _fullNameController.text.trim();
+                      }
                     },
                     children: [
                       // Step 1: Tell Us About Yourself
@@ -399,7 +460,25 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                         onBack: _prevPage,
                         onNext: _nextPage,
                       ),
-                      // Step 3: Medical Health Profile
+                      // Step 3: Company & Home Facility
+                      CompanyStep(
+                        isLoading: _loadingCompanyData,
+                        loadError: _companyLoadError,
+                        corporates: _corporates,
+                        facilities: _facilities,
+                        selectedCorporateId: _selectedCorporateId,
+                        selectedFacilityId: _selectedFacilityId,
+                        onCorporateSelected: (id) {
+                          setState(() => _selectedCorporateId = id);
+                        },
+                        onFacilitySelected: (id) {
+                          setState(() => _selectedFacilityId = id);
+                        },
+                        onBack: _prevPage,
+                        onNext: _nextPage,
+                        onRetry: _loadCompanyData,
+                      ),
+                      // Step 4: Medical Health Profile
                       MedicalStep(
                         selectedConditions: _selectedConditions,
                         onConditionsChanged: (val) {
@@ -415,9 +494,19 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                           });
                         },
                         onBack: _prevPage,
+                        onNext: _nextPage,
+                      ),
+                      // Step 5: Consent & Signature
+                      ConsentStep(
+                        grants: _consentGrants,
+                        onToggleGrant: (key) {
+                          setState(() => _consentGrants[key] = !(_consentGrants[key] ?? false));
+                        },
+                        signatureController: _signatureController,
+                        onBack: _prevPage,
                         onNext: _startSyncAndFinish,
                       ),
-                      // Step 4: Loading & Syncing Progress
+                      // Step 6: Loading & Syncing Progress
                       SyncProgressStep(
                         progress: _syncProgress,
                         statusText: _syncStatusText,

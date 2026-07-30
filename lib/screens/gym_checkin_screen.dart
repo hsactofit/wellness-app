@@ -29,6 +29,12 @@ class _GymCheckinScreenState extends State<GymCheckinScreen> with TickerProvider
   // Camera permission tracking
   bool _cameraPermissionGranted = false;
 
+  // Manual facility-code entry — fallback when the camera/QR isn't usable
+  // (no camera, damaged/missing QR sticker, or the QR still encodes the old
+  // freeform {name, place} payload instead of a real Facility.code).
+  bool _showManualEntry = false;
+  final TextEditingController _manualCodeController = TextEditingController();
+
   // Real Camera barcode/QR scanner controller
   MobileScannerController? _scannerController;
 
@@ -106,6 +112,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen> with TickerProvider
     _timer?.cancel();
     _scannerAnimController.dispose();
     _scannerController?.dispose();
+    _manualCodeController.dispose();
     super.dispose();
   }
 
@@ -163,6 +170,23 @@ class _GymCheckinScreenState extends State<GymCheckinScreen> with TickerProvider
         _elapsed = DateTime.now().difference(_checkInTime!);
       });
     });
+  }
+
+  void _submitManualCode() {
+    final code = _manualCodeController.text.trim();
+    if (code.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Enter a facility code first"),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+    // A manually-typed code is never JSON, so _handleCheckin's fallback
+    // path treats it as the raw facility code directly (uppercased) — no
+    // separate code path needed.
+    _handleCheckin(code);
   }
 
   Future<void> _handleCheckin(String qrString) async {
@@ -1017,6 +1041,56 @@ class _GymCheckinScreenState extends State<GymCheckinScreen> with TickerProvider
                                 ),
                               ),
                             ],
+                            const SizedBox(height: 16),
+                            Center(
+                              child: TextButton.icon(
+                                onPressed: () {
+                                  setState(() => _showManualEntry = !_showManualEntry);
+                                },
+                                icon: Icon(
+                                  _showManualEntry ? Icons.expand_less_rounded : Icons.keyboard_rounded,
+                                  size: 18,
+                                ),
+                                label: Text(_showManualEntry ? "Hide manual entry" : "Can't scan? Enter code"),
+                              ),
+                            ),
+                            if (_showManualEntry)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 4),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Expanded(
+                                      child: TextField(
+                                        controller: _manualCodeController,
+                                        textCapitalization: TextCapitalization.characters,
+                                        decoration: InputDecoration(
+                                          hintText: "Facility code, e.g. BLR1",
+                                          filled: true,
+                                          fillColor: isDark ? Colors.white10 : Colors.black.withOpacity(0.04),
+                                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                          border: OutlineInputBorder(
+                                            borderRadius: BorderRadius.circular(12),
+                                            borderSide: BorderSide.none,
+                                          ),
+                                        ),
+                                        onSubmitted: (_) => _submitManualCode(),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 10),
+                                    ElevatedButton(
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.blueAccent,
+                                        foregroundColor: Colors.white,
+                                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                      ),
+                                      onPressed: _isLoading ? null : _submitManualCode,
+                                      child: const Text("Check In"),
+                                    ),
+                                  ],
+                                ),
+                              ),
                           ] else ...[
                             // Checked In UI
                             GlassCard(
