@@ -5,6 +5,7 @@ import 'challenges_screen.dart';
 import 'ai_screen.dart';
 import 'progress_screen.dart';
 import 'profile_screen.dart';
+import '../services/push_service.dart';
 
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
@@ -15,6 +16,16 @@ class MainShell extends StatefulWidget {
 
 class MainShellState extends State<MainShell> {
   int _currentIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    // Fire-and-forget: this is the authenticated app shell, reached after
+    // every login and on every relaunch with an existing session, so it's
+    // the one place that reliably runs for every signed-in user without
+    // duplicating the call across every login path (email, code, social).
+    PushService.instance.initialize();
+  }
 
   void setIndex(int index) {
     setState(() {

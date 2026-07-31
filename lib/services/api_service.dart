@@ -92,6 +92,22 @@ class ApiService {
     return response;
   }
 
+  /// Registers (or reassigns) this device's FCM token with the backend so
+  /// staff broadcasts can reach it as a real push notification, not just
+  /// the in-app feed. Safe to call on every app start / after login —
+  /// the backend upserts by token, so re-registering the same token is a
+  /// no-op beyond refreshing `updated_at`.
+  Future<void> registerDeviceToken(String fcmToken, String platform) async {
+    final response = await _post(
+      '/api/notifications/device-token',
+      body: {'fcm_token': fcmToken, 'platform': platform},
+    );
+    if (response.statusCode != 201) {
+      throw Exception(
+          "Failed to register device token: ${response.statusCode} - ${response.body}");
+    }
+  }
+
   /// Fetch the signed-in user's email (onboarding data → prefs → Firebase).
   Future<String> getUserEmail() async {
     final prefs = await SharedPreferences.getInstance();
