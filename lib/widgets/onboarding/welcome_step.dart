@@ -28,7 +28,8 @@ class WelcomeStep extends StatefulWidget {
   State<WelcomeStep> createState() => _WelcomeStepState();
 }
 
-class _WelcomeStepState extends State<WelcomeStep> with SingleTickerProviderStateMixin {
+class _WelcomeStepState extends State<WelcomeStep>
+    with SingleTickerProviderStateMixin {
   late AnimationController _pulseController;
   late Animation<double> _scaleAnimation;
 
@@ -66,7 +67,10 @@ class _WelcomeStepState extends State<WelcomeStep> with SingleTickerProviderStat
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               GlassCard(
-                padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 36.0),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24.0,
+                  vertical: 36.0,
+                ),
                 child: Column(
                   children: [
                     FadeSlideTransition(
@@ -80,16 +84,18 @@ class _WelcomeStepState extends State<WelcomeStep> with SingleTickerProviderStat
                                   color: Colors.white,
                                   borderRadius: BorderRadius.circular(24),
                                   border: Border.all(
-                                    color: isDark 
-                                        ? Colors.white.withOpacity(0.08) 
-                                        : Colors.black.withOpacity(0.04),
+                                    color: isDark
+                                        ? Colors.white.withValues(alpha: 0.08)
+                                        : Colors.black.withValues(alpha: 0.04),
                                     width: 1,
                                   ),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: isDark 
-                                          ? Colors.black.withOpacity(0.4) 
-                                          : Colors.blueAccent.withOpacity(0.08),
+                                      color: isDark
+                                          ? Colors.black.withValues(alpha: 0.4)
+                                          : Colors.blueAccent.withValues(
+                                              alpha: 0.08,
+                                            ),
                                       blurRadius: 20,
                                       offset: const Offset(0, 8),
                                     ),
@@ -144,14 +150,19 @@ class _WelcomeStepState extends State<WelcomeStep> with SingleTickerProviderStat
                     backgroundColor: Colors.blueAccent,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                    shadowColor: Colors.blueAccent.withOpacity(0.3),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    shadowColor: Colors.blueAccent.withValues(alpha: 0.3),
                     elevation: 4,
                   ),
                   onPressed: widget.onAction,
                   child: Text(
                     widget.actionLabel,
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),
@@ -163,7 +174,9 @@ class _WelcomeStepState extends State<WelcomeStep> with SingleTickerProviderStat
                     onPressed: widget.onBack,
                     child: Text(
                       "Back",
-                      style: TextStyle(color: isDark ? Colors.white60 : Colors.black54),
+                      style: TextStyle(
+                        color: isDark ? Colors.white60 : Colors.black54,
+                      ),
                     ),
                   ),
                 ),

@@ -16,7 +16,8 @@ class SyncProgressStep extends StatefulWidget {
   State<SyncProgressStep> createState() => _SyncProgressStepState();
 }
 
-class _SyncProgressStepState extends State<SyncProgressStep> with SingleTickerProviderStateMixin {
+class _SyncProgressStepState extends State<SyncProgressStep>
+    with SingleTickerProviderStateMixin {
   late AnimationController _pulseController;
   late Animation<double> _scaleAnimation;
 
@@ -29,10 +30,7 @@ class _SyncProgressStepState extends State<SyncProgressStep> with SingleTickerPr
     )..repeat(reverse: true);
 
     _scaleAnimation = Tween<double>(begin: 0.96, end: 1.04).animate(
-      CurvedAnimation(
-        parent: _pulseController,
-        curve: Curves.easeInOut,
-      ),
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
   }
 
@@ -74,7 +72,9 @@ class _SyncProgressStepState extends State<SyncProgressStep> with SingleTickerPr
                             shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFF006D5B).withOpacity(isDark ? 0.18 : 0.12),
+                                color: const Color(
+                                  0xFF006D5B,
+                                ).withValues(alpha: isDark ? 0.18 : 0.12),
                                 blurRadius: 24,
                                 spreadRadius: 4,
                               ),
@@ -89,14 +89,18 @@ class _SyncProgressStepState extends State<SyncProgressStep> with SingleTickerPr
                             strokeWidth: 6,
                             strokeCap: StrokeCap.round,
                             color: const Color(0xFF006D5B),
-                            backgroundColor: isDark 
-                                ? Colors.white.withOpacity(0.08) 
-                                : Colors.black.withOpacity(0.05),
+                            backgroundColor: isDark
+                                ? Colors.white.withValues(alpha: 0.08)
+                                : Colors.black.withValues(alpha: 0.05),
                           ),
                         ),
                         Text(
                           "${(widget.progress * 100).round()}%",
-                          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, letterSpacing: -0.5),
+                          style: const TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -0.5,
+                          ),
                         ),
                       ],
                     ),
@@ -109,7 +113,11 @@ class _SyncProgressStepState extends State<SyncProgressStep> with SingleTickerPr
                 child: Text(
                   "Personalizing Experience",
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, letterSpacing: -0.5),
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: -0.5,
+                  ),
                 ),
               ),
               const SizedBox(height: 12),

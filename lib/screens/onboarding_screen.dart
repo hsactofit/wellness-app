@@ -1,5 +1,3 @@
-import 'dart:convert';
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/auth_service.dart';
@@ -24,7 +22,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     with SingleTickerProviderStateMixin {
   late final PageController _pageController;
   late int _currentPage;
-  final int _totalPages = 6; // Profile, Goals, Company, Medical, Consent + 1 sync step
+  final int _totalPages =
+      6; // Profile, Goals, Company, Medical, Consent + 1 sync step
   static const int _consentPageIndex = 4;
 
   // Form keys for validation
@@ -65,6 +64,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   // Sync state
   double _syncProgress = 0.0;
   String _syncStatusText = 'Initializing secure container...';
+  // ignore: unused_field
   bool _isSyncing = false;
 
   // Background Animation Controllers
@@ -106,18 +106,22 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       if (!mounted) return;
       setState(() {
         _corporates = corpJson
-            .map((c) => CompanyOption(
-                  id: c['id'] as String,
-                  name: c['name'] as String,
-                  subtitle: "${c['industry']} · ${c['city']}",
-                ))
+            .map(
+              (c) => CompanyOption(
+                id: c['id'] as String,
+                name: c['name'] as String,
+                subtitle: "${c['industry']} · ${c['city']}",
+              ),
+            )
             .toList();
         _facilities = facJson
-            .map((f) => CompanyOption(
-                  id: f['id'] as String,
-                  name: f['name'] as String,
-                  subtitle: "${f['type']} · ${f['city']}",
-                ))
+            .map(
+              (f) => CompanyOption(
+                id: f['id'] as String,
+                name: f['name'] as String,
+                subtitle: "${f['type']} · ${f['city']}",
+              ),
+            )
             .toList();
         _loadingCompanyData = false;
       });
@@ -125,7 +129,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       if (!mounted) return;
       setState(() {
         _loadingCompanyData = false;
-        _companyLoadError = "Couldn't load companies/facilities: ${e.toString().replaceAll('Exception: ', '')}";
+        _companyLoadError =
+            "Couldn't load companies/facilities: ${e.toString().replaceAll('Exception: ', '')}";
       });
     }
   }
@@ -236,7 +241,9 @@ class _OnboardingScreenState extends State<OnboardingScreen>
           : _selectedConditions.join(', ');
       await AuthService.instance.submitHealthAssessment(
         answers: {
-          'conditions': _noConditions ? 'no' : (_selectedConditions.isEmpty ? 'no' : 'yes'),
+          'conditions': _noConditions
+              ? 'no'
+              : (_selectedConditions.isEmpty ? 'no' : 'yes'),
         },
         declaredCondition: declaredCondition,
       );
@@ -246,7 +253,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
         signatureName: _signatureController.text.trim(),
       );
 
-      final stage = result['stage'] as String? ?? started['stage'] as String? ?? '';
+      final stage =
+          result['stage'] as String? ?? started['stage'] as String? ?? '';
       await prefs.setBool('onboarding_completed', true);
       await prefs.setString('enrolment_stage', stage);
 
@@ -335,9 +343,9 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                           gradient: RadialGradient(
                             colors: [
                               isDark
-                                  ? Colors.blue.withOpacity(0.15)
-                                  : Colors.cyan.withOpacity(0.25),
-                              Colors.blue.withOpacity(0.0),
+                                  ? Colors.blue.withValues(alpha: 0.15)
+                                  : Colors.cyan.withValues(alpha: 0.25),
+                              Colors.blue.withValues(alpha: 0.0),
                             ],
                           ),
                         ),
@@ -355,9 +363,9 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                           gradient: RadialGradient(
                             colors: [
                               isDark
-                                  ? Colors.purple.withOpacity(0.12)
-                                  : Colors.pink.withOpacity(0.20),
-                              Colors.purple.withOpacity(0.0),
+                                  ? Colors.purple.withValues(alpha: 0.12)
+                                  : Colors.pink.withValues(alpha: 0.20),
+                              Colors.purple.withValues(alpha: 0.0),
                             ],
                           ),
                         ),
@@ -405,7 +413,9 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                               decoration: BoxDecoration(
                                 color: isActive
                                     ? const Color(0xFF006D5B)
-                                    : (isDark ? Colors.white24 : const Color(0xFFE2E8F0)),
+                                    : (isDark
+                                          ? Colors.white24
+                                          : const Color(0xFFE2E8F0)),
                                 borderRadius: BorderRadius.circular(2),
                               ),
                             );
@@ -423,8 +433,10 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                       setState(() {
                         _currentPage = page;
                       });
-                      if (page == _consentPageIndex && _signatureController.text.trim().isEmpty) {
-                        _signatureController.text = _fullNameController.text.trim();
+                      if (page == _consentPageIndex &&
+                          _signatureController.text.trim().isEmpty) {
+                        _signatureController.text = _fullNameController.text
+                            .trim();
                       }
                     },
                     children: [
@@ -500,7 +512,10 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                       ConsentStep(
                         grants: _consentGrants,
                         onToggleGrant: (key) {
-                          setState(() => _consentGrants[key] = !(_consentGrants[key] ?? false));
+                          setState(
+                            () => _consentGrants[key] =
+                                !(_consentGrants[key] ?? false),
+                          );
                         },
                         signatureController: _signatureController,
                         onBack: _prevPage,

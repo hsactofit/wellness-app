@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:math';
+import 'package:flutter/foundation.dart';
 import 'package:crypto/crypto.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -24,16 +25,11 @@ class AuthService {
   Future<User?> signInWithGoogle() async {
     try {
       // Trigger the Google Sign-in flow (v7.0.0+ uses authenticate())
-      final GoogleSignInAccount? googleUser = await GoogleSignIn.instance
+      final GoogleSignInAccount googleUser = await GoogleSignIn.instance
           .authenticate();
-      if (googleUser == null) {
-        // User cancelled the sign-in flow
-        return null;
-      }
 
       // Obtain auth details (tokens)
-      final GoogleSignInAuthentication googleAuth =
-          await googleUser.authentication;
+      final GoogleSignInAuthentication googleAuth = googleUser.authentication;
 
       // Create a credential for Firebase (v7.0.0+ only requires idToken)
       final AuthCredential credential = GoogleAuthProvider.credential(
@@ -46,7 +42,7 @@ class AuthService {
       );
       return userCredential.user;
     } catch (e) {
-      print("Google Authentication error: $e");
+      debugPrint("Google Authentication error: $e");
       rethrow;
     }
   }
@@ -104,7 +100,7 @@ class AuthService {
       }
       rethrow;
     } catch (e) {
-      print("Apple Authentication error: $e");
+      debugPrint("Apple Authentication error: $e");
       rethrow;
     }
   }
@@ -173,7 +169,7 @@ class AuthService {
         throw AuthException(errorMsg);
       }
     } catch (e) {
-      print("SignUp API error: $e");
+      debugPrint("SignUp API error: $e");
       rethrow;
     }
   }
@@ -203,7 +199,7 @@ class AuthService {
         throw AuthException(errorMsg);
       }
     } catch (e) {
-      print("Login API error: $e");
+      debugPrint("Login API error: $e");
       rethrow;
     }
   }
@@ -224,7 +220,7 @@ class AuthService {
         throw Exception(_extractErrorMessage(data));
       }
     } catch (e) {
-      print("Request Login Code API error: $e");
+      debugPrint("Request Login Code API error: $e");
       rethrow;
     }
   }
@@ -252,7 +248,7 @@ class AuthService {
         throw AuthException(errorMsg);
       }
     } catch (e) {
-      print("Login With Code API error: $e");
+      debugPrint("Login With Code API error: $e");
       rethrow;
     }
   }
@@ -287,7 +283,7 @@ class AuthService {
     } on AuthException {
       rethrow;
     } catch (e) {
-      print("Token Refresh API connection error: $e");
+      debugPrint("Token Refresh API connection error: $e");
       // Do NOT clear tokens on network/connection errors to preserve persistence
       rethrow;
     }
@@ -310,7 +306,7 @@ class AuthService {
         throw Exception(errorMsg);
       }
     } catch (e) {
-      print("Forgot Password API error: $e");
+      debugPrint("Forgot Password API error: $e");
       rethrow;
     }
   }
@@ -336,7 +332,7 @@ class AuthService {
         throw Exception(errorMsg);
       }
     } catch (e) {
-      print("Verify OTP API error: $e");
+      debugPrint("Verify OTP API error: $e");
       rethrow;
     }
   }
@@ -361,7 +357,7 @@ class AuthService {
         throw Exception(errorMsg);
       }
     } catch (e) {
-      print("Reset Password API error: $e");
+      debugPrint("Reset Password API error: $e");
       rethrow;
     }
   }
@@ -398,7 +394,7 @@ class AuthService {
         throw AuthException(errorMsg);
       }
     } catch (e) {
-      print("Social Login API error: $e");
+      debugPrint("Social Login API error: $e");
       rethrow;
     }
   }
@@ -421,7 +417,10 @@ class AuthService {
     return {'body': jsonDecode(response.body)};
   }
 
-  Future<Map<String, dynamic>> _authedPost(String path, Map<String, dynamic> payload) async {
+  Future<Map<String, dynamic>> _authedPost(
+    String path,
+    Map<String, dynamic> payload,
+  ) async {
     final token = await getAccessToken();
     final response = await http.post(
       Uri.parse('$apiBaseUrl$path'),
@@ -475,7 +474,9 @@ class AuthService {
     required String signatureName,
   }) {
     return _authedPost('/api/enrolments/me/consent', {
-      'grants': grants.entries.map((e) => {'key': e.key, 'granted': e.value}).toList(),
+      'grants': grants.entries
+          .map((e) => {'key': e.key, 'granted': e.value})
+          .toList(),
       'signature_name': signatureName,
     });
   }
@@ -506,7 +507,7 @@ class AuthService {
     try {
       await GoogleSignIn.instance.disconnect();
     } catch (e) {
-      print("Error disconnecting Google Sign-In: $e");
+      debugPrint("Error disconnecting Google Sign-In: $e");
     }
     await _clearTokens();
     final prefs = await SharedPreferences.getInstance();

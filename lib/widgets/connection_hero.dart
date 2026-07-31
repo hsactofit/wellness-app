@@ -45,7 +45,7 @@ class ConnectionHero extends StatelessWidget {
                   width: 50,
                   height: 50,
                   decoration: BoxDecoration(
-                    color: Colors.green.withOpacity(0.15),
+                    color: Colors.green.withValues(alpha: 0.15),
                     shape: BoxShape.circle,
                   ),
                   child: const Center(
@@ -65,15 +65,23 @@ class ConnectionHero extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        isDemoMode ? "Simulated Demo Active" : "Connected to Health Services",
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                        isDemoMode
+                            ? "Simulated Demo Active"
+                            : "Connected to Health Services",
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         isDemoMode
                             ? "Displaying static mockup info."
                             : "Wellness data is synced automatically.",
-                        style: const TextStyle(color: Colors.grey, fontSize: 12),
+                        style: const TextStyle(
+                          color: Colors.grey,
+                          fontSize: 12,
+                        ),
                       ),
                     ],
                   ),
@@ -88,16 +96,27 @@ class ConnectionHero extends StatelessWidget {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blue,
                       padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                     onPressed: isSyncing ? null : onSync,
                     child: isSyncing
                         ? const SizedBox(
                             width: 20,
                             height: 20,
-                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
                           )
-                        : const Text("Sync Now", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                        : const Text(
+                            "Sync Now",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -107,7 +126,10 @@ class ConnectionHero extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
-                        side: BorderSide(color: isDark ? Colors.white24 : Colors.black12, width: 1.2),
+                        side: BorderSide(
+                          color: isDark ? Colors.white24 : Colors.black12,
+                          width: 1.2,
+                        ),
                       ),
                     ),
                     onPressed: onDisconnect,
@@ -126,9 +148,13 @@ class ConnectionHero extends StatelessWidget {
               const SizedBox(height: 10),
               Text(
                 "Last sync: ${lastSynced!.hour.toString().padLeft(2, '0')}:${lastSynced!.minute.toString().padLeft(2, '0')}:${lastSynced!.second.toString().padLeft(2, '0')}",
-                style: const TextStyle(color: Colors.grey, fontSize: 11, fontStyle: FontStyle.italic),
+                style: const TextStyle(
+                  color: Colors.grey,
+                  fontSize: 11,
+                  fontStyle: FontStyle.italic,
+                ),
               ),
-            ]
+            ],
           ],
         ),
       );
@@ -141,27 +167,36 @@ class ConnectionHero extends StatelessWidget {
         children: [
           Text(
             "Sync Your Health Data",
-            style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
           ),
           const SizedBox(height: 10),
           Text(
             "Connect to import steps, heart rate, sleep metrics, active calories, body weight, blood pressure, hydration, and nutrition directly from ${Platform.isIOS ? 'Apple HealthKit' : 'Google Health Connect'}.",
-            style: const TextStyle(color: Colors.grey, fontSize: 13, height: 1.4),
+            style: const TextStyle(
+              color: Colors.grey,
+              fontSize: 13,
+              height: 1.4,
+            ),
           ),
           const SizedBox(height: 24),
-          
+
           if (isSyncing)
             const Center(child: CircularProgressIndicator())
-          else if (Platform.isAndroid && sdkStatus == HealthConnectSdkStatus.sdkUnavailable)
+          else if (Platform.isAndroid &&
+              sdkStatus == HealthConnectSdkStatus.sdkUnavailable)
             Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.red.withOpacity(0.1),
+                    color: Colors.red.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.red.withOpacity(0.3)),
+                    border: Border.all(
+                      color: Colors.red.withValues(alpha: 0.3),
+                    ),
                   ),
                   child: const Row(
                     children: [
@@ -170,9 +205,13 @@ class ConnectionHero extends StatelessWidget {
                       Expanded(
                         child: Text(
                           "Health Connect app is not installed on this device.",
-                          style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 12),
+                          style: TextStyle(
+                            color: Colors.red,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
                         ),
-                      )
+                      ),
                     ],
                   ),
                 ),
@@ -181,10 +220,18 @@ class ConnectionHero extends StatelessWidget {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.red,
                     padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                   onPressed: onShowDownloadRationale,
-                  child: const Text("Download Health Connect", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  child: const Text(
+                    "Download Health Connect",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
               ],
             )
@@ -193,22 +240,38 @@ class ConnectionHero extends StatelessWidget {
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blue,
                 padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
               onPressed: onConnect,
-              child: const Text("Connect Health Services", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              child: const Text(
+                "Connect Health Services",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
             const SizedBox(height: 12),
             OutlinedButton(
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 side: const BorderSide(color: Colors.blue, width: 1.2),
               ),
               onPressed: onDemo,
-              child: const Text("Try Demo Mode", style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold)),
+              child: const Text(
+                "Try Demo Mode",
+                style: TextStyle(
+                  color: Colors.blue,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
-          ]
+          ],
         ],
       ),
     );

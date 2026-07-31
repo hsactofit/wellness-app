@@ -357,8 +357,9 @@ class _SignupStepState extends State<SignupStep> {
                                       : Colors.black38,
                                 ),
                                 onChanged: (val) {
-                                  if (val != null)
+                                  if (val != null) {
                                     setState(() => _agreedToTerms = val);
+                                  }
                                 },
                               ),
                             ),
@@ -413,7 +414,9 @@ class _SignupStepState extends State<SignupStep> {
                             borderRadius: BorderRadius.circular(14),
                           ),
                           elevation: 2,
-                          shadowColor: const Color(0xFF0F52BA).withOpacity(0.3),
+                          shadowColor: const Color(
+                            0xFF0F52BA,
+                          ).withValues(alpha: 0.3),
                         ),
                         onPressed: () {
                           if (!_isLogin && !_agreedToTerms) {
@@ -509,7 +512,7 @@ class _SignupStepState extends State<SignupStep> {
                                 child: OutlinedButton(
                                   style: OutlinedButton.styleFrom(
                                     backgroundColor: isDark
-                                        ? Colors.white.withOpacity(0.03)
+                                        ? Colors.white.withValues(alpha: 0.03)
                                         : Colors.white,
                                     side: BorderSide(
                                       color: isDark
@@ -553,7 +556,7 @@ class _SignupStepState extends State<SignupStep> {
                                 child: OutlinedButton(
                                   style: OutlinedButton.styleFrom(
                                     backgroundColor: isDark
-                                        ? Colors.white.withOpacity(0.03)
+                                        ? Colors.white.withValues(alpha: 0.03)
                                         : Colors.white,
                                     side: BorderSide(
                                       color: isDark
@@ -762,10 +765,10 @@ class _SignupStepState extends State<SignupStep> {
                         Container(
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
-                            color: Colors.redAccent.withOpacity(0.1),
+                            color: Colors.redAccent.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(10),
                             border: Border.all(
-                              color: Colors.redAccent.withOpacity(0.3),
+                              color: Colors.redAccent.withValues(alpha: 0.3),
                             ),
                           ),
                           child: Text(
@@ -1177,10 +1180,10 @@ class _SignupStepState extends State<SignupStep> {
                         Container(
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
-                            color: Colors.redAccent.withOpacity(0.1),
+                            color: Colors.redAccent.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(10),
                             border: Border.all(
-                              color: Colors.redAccent.withOpacity(0.3),
+                              color: Colors.redAccent.withValues(alpha: 0.3),
                             ),
                           ),
                           child: Text(
@@ -1227,8 +1230,7 @@ class _SignupStepState extends State<SignupStep> {
                           onPressed: isDialogLoading
                               ? null
                               : () async {
-                                  final email = codeEmailController.text
-                                      .trim();
+                                  final email = codeEmailController.text.trim();
                                   if (email.isEmpty || !email.contains('@')) {
                                     setDialogState(() {
                                       errorMessage =
@@ -1241,8 +1243,9 @@ class _SignupStepState extends State<SignupStep> {
                                     errorMessage = '';
                                   });
                                   try {
-                                    await AuthService.instance
-                                        .requestLoginCode(email);
+                                    await AuthService.instance.requestLoginCode(
+                                      email,
+                                    );
                                     setDialogState(() {
                                       currentStep = 1;
                                     });
@@ -1361,8 +1364,7 @@ class _SignupStepState extends State<SignupStep> {
                                           errorMessage = '';
                                         });
                                         try {
-                                          final res = await AuthService
-                                              .instance
+                                          final res = await AuthService.instance
                                               .loginWithCode(email, otp);
                                           codeEmailController.dispose();
                                           otpController.dispose();
@@ -1431,8 +1433,8 @@ class _SignupStepState extends State<SignupStep> {
       ),
       filled: true,
       fillColor: isDark
-          ? const Color(0xFF1E1E26).withOpacity(0.5)
-          : Colors.white.withOpacity(0.8),
+          ? const Color(0xFF1E1E26).withValues(alpha: 0.5)
+          : Colors.white.withValues(alpha: 0.8),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       suffixIcon: suffixIcon,
       border: OutlineInputBorder(
@@ -1494,13 +1496,13 @@ class _SignupStepState extends State<SignupStep> {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: isDark
-              ? Colors.white.withOpacity(0.02)
-              : Colors.black.withOpacity(0.015),
+              ? Colors.white.withValues(alpha: 0.02)
+              : Colors.black.withValues(alpha: 0.015),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isDark
-                ? Colors.white.withOpacity(0.08)
-                : Colors.black.withOpacity(0.06),
+                ? Colors.white.withValues(alpha: 0.08)
+                : Colors.black.withValues(alpha: 0.06),
             width: 1.0,
           ),
         ),
@@ -1564,7 +1566,7 @@ class _SignupStepState extends State<SignupStep> {
                       boxShadow: isLit
                           ? [
                               BoxShadow(
-                                color: strengthColor.withOpacity(0.4),
+                                color: strengthColor.withValues(alpha: 0.4),
                                 blurRadius: 6,
                                 spreadRadius: 1,
                               ),
@@ -1668,11 +1670,11 @@ class _SignupStepState extends State<SignupStep> {
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: isMet
-                ? Colors.greenAccent.withOpacity(isDark ? 0.15 : 0.2)
+                ? Colors.greenAccent.withValues(alpha: isDark ? 0.15 : 0.2)
                 : Colors.transparent,
             border: Border.all(
               color: isMet
-                  ? Colors.greenAccent.withOpacity(0.5)
+                  ? Colors.greenAccent.withValues(alpha: 0.5)
                   : (isDark ? Colors.white10 : Colors.black12),
               width: 1.0,
             ),

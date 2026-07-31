@@ -168,10 +168,11 @@ class _MetricDetailScreenState extends State<MetricDetailScreen>
                         shape: BoxShape.circle,
                         gradient: RadialGradient(
                           colors: [
-                            widget.color.withOpacity(
-                              (isDark ? 0.22 : 0.18) * (0.85 + pulse * 0.2),
+                            widget.color.withValues(
+                              alpha:
+                                  (isDark ? 0.22 : 0.18) * (0.85 + pulse * 0.2),
                             ),
-                            widget.color.withOpacity(0.0),
+                            widget.color.withValues(alpha: 0.0),
                           ],
                         ),
                       ),
@@ -188,11 +189,12 @@ class _MetricDetailScreenState extends State<MetricDetailScreen>
                         shape: BoxShape.circle,
                         gradient: RadialGradient(
                           colors: [
-                            Colors.blue.withOpacity(
-                              (isDark ? 0.18 : 0.14) *
+                            Colors.blue.withValues(
+                              alpha:
+                                  (isDark ? 0.18 : 0.14) *
                                   (0.9 + (1.0 - pulse) * 0.15),
                             ),
-                            Colors.blue.withOpacity(0.0),
+                            Colors.blue.withValues(alpha: 0.0),
                           ],
                         ),
                       ),
@@ -209,10 +211,12 @@ class _MetricDetailScreenState extends State<MetricDetailScreen>
                         shape: BoxShape.circle,
                         gradient: RadialGradient(
                           colors: [
-                            Colors.green.withOpacity(
-                              (isDark ? 0.15 : 0.12) * (0.85 + pulse * 0.25),
+                            Colors.green.withValues(
+                              alpha:
+                                  (isDark ? 0.15 : 0.12) *
+                                  (0.85 + pulse * 0.25),
                             ),
-                            Colors.green.withOpacity(0.0),
+                            Colors.green.withValues(alpha: 0.0),
                           ],
                         ),
                       ),
@@ -238,8 +242,8 @@ class _MetricDetailScreenState extends State<MetricDetailScreen>
                         IconButton(
                           style: IconButton.styleFrom(
                             backgroundColor: isDark
-                                ? Colors.white.withOpacity(0.06)
-                                : Colors.black.withOpacity(0.04),
+                                ? Colors.white.withValues(alpha: 0.06)
+                                : Colors.black.withValues(alpha: 0.04),
                           ),
                           icon: const Icon(
                             Icons.arrow_back_ios_new_rounded,
@@ -309,7 +313,9 @@ class _MetricDetailScreenState extends State<MetricDetailScreen>
                             const SizedBox(height: 20),
                             ElevatedButton(
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: widget.color.withOpacity(0.12),
+                                backgroundColor: widget.color.withValues(
+                                  alpha: 0.12,
+                                ),
                                 shadowColor: Colors.transparent,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
@@ -373,8 +379,8 @@ class _MetricDetailScreenState extends State<MetricDetailScreen>
                                 Container(
                                   decoration: BoxDecoration(
                                     color: isDark
-                                        ? Colors.white.withOpacity(0.06)
-                                        : Colors.black.withOpacity(0.04),
+                                        ? Colors.white.withValues(alpha: 0.06)
+                                        : Colors.black.withValues(alpha: 0.04),
                                     borderRadius: BorderRadius.circular(10),
                                   ),
                                   padding: const EdgeInsets.all(2),
@@ -534,7 +540,11 @@ class _MetricDetailScreenState extends State<MetricDetailScreen>
               children: [
                 Row(
                   children: [
-                    Icon(icon, size: 11, color: displayColor.withOpacity(0.8)),
+                    Icon(
+                      icon,
+                      size: 11,
+                      color: displayColor.withValues(alpha: 0.8),
+                    ),
                     const SizedBox(width: 4),
                     Expanded(
                       child: Text(
@@ -653,8 +663,8 @@ class _MetricDetailScreenState extends State<MetricDetailScreen>
         height: 200,
         decoration: BoxDecoration(
           color: isDark
-              ? Colors.white.withOpacity(0.02)
-              : Colors.black.withOpacity(0.01),
+              ? Colors.white.withValues(alpha: 0.02)
+              : Colors.black.withValues(alpha: 0.01),
           borderRadius: BorderRadius.circular(14),
         ),
         child: const Center(
@@ -1023,12 +1033,14 @@ class _MetricDetailScreenState extends State<MetricDetailScreen>
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
                       color: isDark
-                          ? Colors.white.withOpacity(0.06)
-                          : Colors.black.withOpacity(0.04),
+                          ? Colors.white.withValues(alpha: 0.06)
+                          : Colors.black.withValues(alpha: 0.04),
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(isDark ? 0.25 : 0.06),
+                        color: Colors.black.withValues(
+                          alpha: isDark ? 0.25 : 0.06,
+                        ),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),
@@ -1040,7 +1052,7 @@ class _MetricDetailScreenState extends State<MetricDetailScreen>
                         width: 38,
                         height: 38,
                         decoration: BoxDecoration(
-                          color: widget.color.withOpacity(0.08),
+                          color: widget.color.withValues(alpha: 0.08),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Icon(
@@ -1159,21 +1171,23 @@ class _MetricDetailScreenState extends State<MetricDetailScreen>
           margin: const EdgeInsets.symmetric(vertical: 6),
           decoration: BoxDecoration(
             color: isDark
-                ? Colors.white.withOpacity(isExpanded ? 0.06 : 0.03)
-                : Colors.white.withOpacity(isExpanded ? 0.95 : 0.8),
+                ? Colors.white.withValues(alpha: isExpanded ? 0.06 : 0.03)
+                : Colors.white.withValues(alpha: isExpanded ? 0.95 : 0.8),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
               color: isExpanded
-                  ? widget.color.withOpacity(0.3)
+                  ? widget.color.withValues(alpha: 0.3)
                   : (isDark
-                        ? Colors.white.withOpacity(0.04)
-                        : Colors.black.withOpacity(0.02)),
+                        ? Colors.white.withValues(alpha: 0.04)
+                        : Colors.black.withValues(alpha: 0.02)),
               width: isExpanded ? 1.5 : 1.0,
             ),
             boxShadow: isExpanded
                 ? [
                     BoxShadow(
-                      color: widget.color.withOpacity(isDark ? 0.15 : 0.08),
+                      color: widget.color.withValues(
+                        alpha: isDark ? 0.15 : 0.08,
+                      ),
                       blurRadius: 16,
                       offset: const Offset(0, 8),
                     ),
@@ -1205,8 +1219,8 @@ class _MetricDetailScreenState extends State<MetricDetailScreen>
                             height: 42,
                             decoration: BoxDecoration(
                               color: isExpanded
-                                  ? widget.color.withOpacity(0.12)
-                                  : widget.color.withOpacity(0.06),
+                                  ? widget.color.withValues(alpha: 0.12)
+                                  : widget.color.withValues(alpha: 0.06),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Icon(
@@ -1291,8 +1305,8 @@ class _MetricDetailScreenState extends State<MetricDetailScreen>
                             const SizedBox(height: 16),
                             Divider(
                               color: isDark
-                                  ? Colors.white.withOpacity(0.08)
-                                  : Colors.black.withOpacity(0.06),
+                                  ? Colors.white.withValues(alpha: 0.08)
+                                  : Colors.black.withValues(alpha: 0.06),
                               height: 1.0,
                             ),
                             const SizedBox(height: 16),
@@ -1369,12 +1383,12 @@ class _MetricDetailScreenState extends State<MetricDetailScreen>
                                 decoration: BoxDecoration(
                                   color: const Color(
                                     0xFFFF9500,
-                                  ).withOpacity(0.06),
+                                  ).withValues(alpha: 0.06),
                                   borderRadius: BorderRadius.circular(14),
                                   border: Border.all(
                                     color: const Color(
                                       0xFFFF9500,
-                                    ).withOpacity(0.12),
+                                    ).withValues(alpha: 0.12),
                                     width: 1.0,
                                   ),
                                 ),
@@ -1385,7 +1399,7 @@ class _MetricDetailScreenState extends State<MetricDetailScreen>
                                       decoration: BoxDecoration(
                                         color: const Color(
                                           0xFFFF9500,
-                                        ).withOpacity(0.12),
+                                        ).withValues(alpha: 0.12),
                                         shape: BoxShape.circle,
                                       ),
                                       child: const Icon(
@@ -1445,6 +1459,7 @@ class _MetricDetailScreenState extends State<MetricDetailScreen>
     );
   }
 
+  // ignore: unused_element
   void _showLogDetailsBottomSheet(
     BuildContext context,
     Map<String, dynamic> log,
@@ -1492,7 +1507,7 @@ class _MetricDetailScreenState extends State<MetricDetailScreen>
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.15),
+                color: Colors.black.withValues(alpha: 0.15),
                 blurRadius: 20,
                 spreadRadius: 5,
               ),
@@ -1546,8 +1561,8 @@ class _MetricDetailScreenState extends State<MetricDetailScreen>
                     ),
                     decoration: BoxDecoration(
                       color: isGoalHit
-                          ? const Color(0xFF00C781).withOpacity(0.12)
-                          : const Color(0xFFFF3B30).withOpacity(0.12),
+                          ? const Color(0xFF00C781).withValues(alpha: 0.12)
+                          : const Color(0xFFFF3B30).withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Text(
@@ -1569,13 +1584,13 @@ class _MetricDetailScreenState extends State<MetricDetailScreen>
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
                   color: isDark
-                      ? Colors.white.withOpacity(0.02)
-                      : Colors.black.withOpacity(0.01),
+                      ? Colors.white.withValues(alpha: 0.02)
+                      : Colors.black.withValues(alpha: 0.01),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
                     color: isDark
-                        ? Colors.white.withOpacity(0.04)
-                        : Colors.black.withOpacity(0.02),
+                        ? Colors.white.withValues(alpha: 0.04)
+                        : Colors.black.withValues(alpha: 0.02),
                   ),
                 ),
                 child: Row(
@@ -1639,10 +1654,10 @@ class _MetricDetailScreenState extends State<MetricDetailScreen>
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFF9500).withOpacity(0.05),
+                    color: const Color(0xFFFF9500).withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: const Color(0xFFFF9500).withOpacity(0.12),
+                      color: const Color(0xFFFF9500).withValues(alpha: 0.12),
                     ),
                   ),
                   child: Row(
@@ -1650,7 +1665,7 @@ class _MetricDetailScreenState extends State<MetricDetailScreen>
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFFF9500).withOpacity(0.1),
+                          color: const Color(0xFFFF9500).withValues(alpha: 0.1),
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(
@@ -1693,12 +1708,12 @@ class _MetricDetailScreenState extends State<MetricDetailScreen>
               ElevatedButton(
                 onPressed: () => Navigator.pop(context),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: widget.color.withOpacity(0.12),
+                  backgroundColor: widget.color.withValues(alpha: 0.12),
                   shadowColor: Colors.transparent,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
                     side: BorderSide(
-                      color: widget.color.withOpacity(0.3),
+                      color: widget.color.withValues(alpha: 0.3),
                       width: 1,
                     ),
                   ),
@@ -1815,7 +1830,7 @@ class _MetricDetailScreenState extends State<MetricDetailScreen>
           margin: EdgeInsets.zero,
           borderRadius: 20,
           border: Border.all(
-            color: widget.color.withOpacity(0.12 + (pulse * 0.08)),
+            color: widget.color.withValues(alpha: 0.12 + (pulse * 0.08)),
             width: 1.5,
           ),
           child: Column(
@@ -1830,7 +1845,7 @@ class _MetricDetailScreenState extends State<MetricDetailScreen>
                         width: 32,
                         height: 32,
                         decoration: BoxDecoration(
-                          color: widget.color.withOpacity(0.1),
+                          color: widget.color.withValues(alpha: 0.1),
                           shape: BoxShape.circle,
                         ),
                         child: Center(
@@ -1871,10 +1886,10 @@ class _MetricDetailScreenState extends State<MetricDetailScreen>
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: widget.color.withOpacity(0.06),
+                      color: widget.color.withValues(alpha: 0.06),
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(
-                        color: widget.color.withOpacity(0.12),
+                        color: widget.color.withValues(alpha: 0.12),
                         width: 1,
                       ),
                     ),
@@ -1886,12 +1901,14 @@ class _MetricDetailScreenState extends State<MetricDetailScreen>
                           height: 6,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: widget.color.withOpacity(
-                              0.4 + (pulse * 0.6),
+                            color: widget.color.withValues(
+                              alpha: 0.4 + (pulse * 0.6),
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: widget.color.withOpacity(0.5 * pulse),
+                                color: widget.color.withValues(
+                                  alpha: 0.5 * pulse,
+                                ),
                                 blurRadius: 4,
                                 spreadRadius: 1,
                               ),
@@ -1919,8 +1936,8 @@ class _MetricDetailScreenState extends State<MetricDetailScreen>
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
                   color: isDark
-                      ? Colors.white.withOpacity(0.02)
-                      : Colors.black.withOpacity(0.01),
+                      ? Colors.white.withValues(alpha: 0.02)
+                      : Colors.black.withValues(alpha: 0.01),
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(4),
                     topRight: Radius.circular(16),
@@ -1929,8 +1946,8 @@ class _MetricDetailScreenState extends State<MetricDetailScreen>
                   ),
                   border: Border.all(
                     color: isDark
-                        ? Colors.white.withOpacity(0.03)
-                        : Colors.black.withOpacity(0.02),
+                        ? Colors.white.withValues(alpha: 0.03)
+                        : Colors.black.withValues(alpha: 0.02),
                   ),
                 ),
                 child: Text(
@@ -1978,8 +1995,8 @@ class MetricDetailChartPainter extends CustomPainter {
     // Draw horizontal grid lines
     final Paint gridPaint = Paint()
       ..color = isDark
-          ? Colors.white.withOpacity(0.05)
-          : Colors.black.withOpacity(0.03)
+          ? Colors.white.withValues(alpha: 0.05)
+          : Colors.black.withValues(alpha: 0.03)
       ..strokeWidth = 1.0;
 
     for (int i = 1; i <= 3; i++) {
@@ -2032,7 +2049,10 @@ class MetricDetailChartPainter extends CustomPainter {
         ..shader = LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [color.withOpacity(0.22), color.withOpacity(0.00)],
+          colors: [
+            color.withValues(alpha: 0.22),
+            color.withValues(alpha: 0.00),
+          ],
         ).createShader(Rect.fromLTRB(0, 0, width, height));
 
       canvas.drawPath(areaPath, areaPaint);
@@ -2060,7 +2080,7 @@ class MetricDetailChartPainter extends CustomPainter {
 
       // Draw subtle glow shadow under the line path for premium neon glow look
       final Paint glowPaint = Paint()
-        ..color = color.withOpacity(0.25)
+        ..color = color.withValues(alpha: 0.25)
         ..style = PaintingStyle.stroke
         ..strokeWidth = 6.0
         ..strokeCap = StrokeCap.round;
@@ -2097,7 +2117,7 @@ class MetricDetailChartPainter extends CustomPainter {
     if (hoveredIndex != null && hoveredIndex! < points.length) {
       final double x = hoveredIndex! * stepX;
       final Paint guidelinePaint = Paint()
-        ..color = color.withOpacity(0.25)
+        ..color = color.withValues(alpha: 0.25)
         ..strokeWidth = 1.2
         ..style = PaintingStyle.stroke;
 
@@ -2108,7 +2128,7 @@ class MetricDetailChartPainter extends CustomPainter {
 
       final Offset pt = points[hoveredIndex!];
       final Paint outerGlowPaint = Paint()
-        ..color = color.withOpacity(0.25)
+        ..color = color.withValues(alpha: 0.25)
         ..style = PaintingStyle.fill;
       canvas.drawCircle(pt, 11.0, outerGlowPaint);
 
@@ -2144,7 +2164,7 @@ class ActivityRingPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final Paint trackPaint = Paint()
-      ..color = color.withOpacity(0.08)
+      ..color = color.withValues(alpha: 0.08)
       ..strokeWidth = 3.0
       ..style = PaintingStyle.stroke;
 

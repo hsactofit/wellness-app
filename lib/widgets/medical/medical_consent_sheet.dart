@@ -24,14 +24,14 @@ class _MedicalConsentSheetState extends State<MedicalConsentSheet> {
         bottom: MediaQuery.of(context).viewInsets.bottom + 24,
       ),
       decoration: BoxDecoration(
-        color: theme.scaffoldBackgroundColor.withOpacity(0.95),
+        color: theme.scaffoldBackgroundColor.withValues(alpha: 0.95),
         borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.15),
+            color: Colors.black.withValues(alpha: 0.15),
             blurRadius: 15,
             spreadRadius: 1,
-          )
+          ),
         ],
       ),
       child: Column(
@@ -42,7 +42,9 @@ class _MedicalConsentSheetState extends State<MedicalConsentSheet> {
           const SizedBox(height: 16),
           Text(
             "Consent Form: Medical Records Sync",
-            style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 16),
@@ -51,9 +53,15 @@ class _MedicalConsentSheetState extends State<MedicalConsentSheet> {
             style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
           ),
           const SizedBox(height: 12),
-          _consentPoint("1. Retrieve your clinical records, lab test reports, immunizations, and cardiology (ECG) data from your secure on-device health database."),
-          _consentPoint("2. Process and cache this telemetry locally for offline visual dashboards. Your data will never be sent to any cloud backend or shared with third parties without your explicit intent."),
-          _consentPoint("3. Understand that you can withdraw and revoke this consent at any time, which immediately deletes all local cache and locks medical records views."),
+          _consentPoint(
+            "1. Retrieve your clinical records, lab test reports, immunizations, and cardiology (ECG) data from your secure on-device health database.",
+          ),
+          _consentPoint(
+            "2. Process and cache this telemetry locally for offline visual dashboards. Your data will never be sent to any cloud backend or shared with third parties without your explicit intent.",
+          ),
+          _consentPoint(
+            "3. Understand that you can withdraw and revoke this consent at any time, which immediately deletes all local cache and locks medical records views.",
+          ),
           const SizedBox(height: 20),
           CheckboxListTile(
             contentPadding: EdgeInsets.zero,
@@ -84,7 +92,9 @@ class _MedicalConsentSheetState extends State<MedicalConsentSheet> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.blue,
                     padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                   onPressed: !_isChecked
                       ? null
@@ -94,7 +104,10 @@ class _MedicalConsentSheetState extends State<MedicalConsentSheet> {
                         },
                   child: const Text(
                     "Agree & Authorize",
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),
@@ -111,11 +124,18 @@ class _MedicalConsentSheetState extends State<MedicalConsentSheet> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text("• ", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue)),
+          const Text(
+            "• ",
+            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue),
+          ),
           Expanded(
             child: Text(
               text,
-              style: const TextStyle(fontSize: 12, color: Colors.grey, height: 1.3),
+              style: const TextStyle(
+                fontSize: 12,
+                color: Colors.grey,
+                height: 1.3,
+              ),
             ),
           ),
         ],

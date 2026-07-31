@@ -48,22 +48,35 @@ class _ProgressScreenState extends State<ProgressScreen>
     final periodParam = _selectedPeriod == "Daily"
         ? 'days'
         : _selectedPeriod == "Weekly"
-            ? 'weeks'
-            : 'month';
+        ? 'weeks'
+        : 'month';
 
     final results = await Future.wait([
       ApiService.instance.fetchGoals(),
       ApiService.instance.fetchGraphData(
-          email: email, metric: 'steps', period: periodParam, title: 'Steps'),
+        email: email,
+        metric: 'steps',
+        period: periodParam,
+        title: 'Steps',
+      ),
       ApiService.instance.fetchGraphData(
-          email: email,
-          metric: 'calories',
-          period: periodParam,
-          title: 'Calories'),
+        email: email,
+        metric: 'calories',
+        period: periodParam,
+        title: 'Calories',
+      ),
       ApiService.instance.fetchGraphData(
-          email: email, metric: 'sleep', period: periodParam, title: 'Sleep'),
+        email: email,
+        metric: 'sleep',
+        period: periodParam,
+        title: 'Sleep',
+      ),
       ApiService.instance.fetchGraphData(
-          email: email, metric: 'water', period: periodParam, title: 'Water'),
+        email: email,
+        metric: 'water',
+        period: periodParam,
+        title: 'Water',
+      ),
     ]);
 
     final goals = results[0];
@@ -175,8 +188,8 @@ class _ProgressScreenState extends State<ProgressScreen>
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    Colors.blue.withOpacity(isDark ? 0.15 : 0.1),
-                    Colors.blue.withOpacity(0.0),
+                    Colors.blue.withValues(alpha: isDark ? 0.15 : 0.1),
+                    Colors.blue.withValues(alpha: 0.0),
                   ],
                 ),
               ),
@@ -235,8 +248,7 @@ class _ProgressScreenState extends State<ProgressScreen>
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const Text("⚠️",
-                                  style: TextStyle(fontSize: 48)),
+                              const Text("⚠️", style: TextStyle(fontSize: 48)),
                               const SizedBox(height: 16),
                               Text(
                                 "Failed to load trends",
@@ -248,13 +260,16 @@ class _ProgressScreenState extends State<ProgressScreen>
                               ),
                               const SizedBox(height: 8),
                               Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 24),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 24,
+                                ),
                                 child: Text(
                                   "${snapshot.error}",
                                   textAlign: TextAlign.center,
                                   style: const TextStyle(
-                                      fontSize: 12, color: Colors.grey),
+                                    fontSize: 12,
+                                    color: Colors.grey,
+                                  ),
                                 ),
                               ),
                               const SizedBox(height: 20),
@@ -305,29 +320,33 @@ class _ProgressScreenState extends State<ProgressScreen>
 
                       final metricCards = [
                         _MetricInfo(
-                            "🚶 Steps",
-                            "${avgSteps.round()}",
-                            "avg / target ${targetSteps.round()}",
-                            Colors.green,
-                            avgSteps / targetSteps),
+                          "🚶 Steps",
+                          "${avgSteps.round()}",
+                          "avg / target ${targetSteps.round()}",
+                          Colors.green,
+                          avgSteps / targetSteps,
+                        ),
                         _MetricInfo(
-                            "🔥 Calories",
-                            "${avgCalories.round()} kcal",
-                            "avg / target ${targetCalories.round()}",
-                            Colors.orange,
-                            avgCalories / targetCalories),
+                          "🔥 Calories",
+                          "${avgCalories.round()} kcal",
+                          "avg / target ${targetCalories.round()}",
+                          Colors.orange,
+                          avgCalories / targetCalories,
+                        ),
                         _MetricInfo(
-                            "🌙 Sleep",
-                            "${avgSleep.toStringAsFixed(1)} hrs",
-                            "avg / target ${targetSleep.toStringAsFixed(0)}h",
-                            Colors.purple,
-                            avgSleep / targetSleep),
+                          "🌙 Sleep",
+                          "${avgSleep.toStringAsFixed(1)} hrs",
+                          "avg / target ${targetSleep.toStringAsFixed(0)}h",
+                          Colors.purple,
+                          avgSleep / targetSleep,
+                        ),
                         _MetricInfo(
-                            "💧 Hydration",
-                            "${avgWater.round()} ml",
-                            "avg / target ${targetWater.round()}ml",
-                            Colors.blue,
-                            avgWater / targetWater),
+                          "💧 Hydration",
+                          "${avgWater.round()} ml",
+                          "avg / target ${targetWater.round()}ml",
+                          Colors.blue,
+                          avgWater / targetWater,
+                        ),
                       ];
 
                       return RefreshIndicator(
@@ -368,7 +387,11 @@ class _ProgressScreenState extends State<ProgressScreen>
 
                             // ─── History Logs (Collapsible) ───
                             _buildHistorySection(
-                                dailyData, isDark, textColor, secondaryTextColor),
+                              dailyData,
+                              isDark,
+                              textColor,
+                              secondaryTextColor,
+                            ),
 
                             const SizedBox(height: 80),
                           ],
@@ -393,10 +416,10 @@ class _ProgressScreenState extends State<ProgressScreen>
             ? Color.lerp(const Color(0xFF1A1A2E), card.color, 0.12)
             : Color.lerp(Colors.white, card.color, 0.06),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: card.color.withOpacity(0.25), width: 1),
+        border: Border.all(color: card.color.withValues(alpha: 0.25), width: 1),
         boxShadow: [
           BoxShadow(
-            color: card.color.withOpacity(0.08),
+            color: card.color.withValues(alpha: 0.08),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -407,31 +430,39 @@ class _ProgressScreenState extends State<ProgressScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(card.title,
-              style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 11,
-                  color: isDark ? Colors.grey[400] : Colors.grey[600])),
+          Text(
+            card.title,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 11,
+              color: isDark ? Colors.grey[400] : Colors.grey[600],
+            ),
+          ),
           const SizedBox(height: 4),
-          Text(card.value,
-              style: TextStyle(
-                  fontWeight: FontWeight.w900,
-                  fontSize: 20,
-                  color: textColor)),
+          Text(
+            card.value,
+            style: TextStyle(
+              fontWeight: FontWeight.w900,
+              fontSize: 20,
+              color: textColor,
+            ),
+          ),
           const SizedBox(height: 4),
           // Progress bar
           ClipRRect(
             borderRadius: BorderRadius.circular(4),
             child: LinearProgressIndicator(
               value: card.progress.clamp(0.0, 1.0),
-              backgroundColor: card.color.withOpacity(0.15),
+              backgroundColor: card.color.withValues(alpha: 0.15),
               valueColor: AlwaysStoppedAnimation(card.color),
               minHeight: 5,
             ),
           ),
           const SizedBox(height: 4),
-          Text(card.subtitle,
-              style: TextStyle(fontSize: 10, color: card.color)),
+          Text(
+            card.subtitle,
+            style: TextStyle(fontSize: 10, color: card.color),
+          ),
         ],
       ),
     );
@@ -441,7 +472,10 @@ class _ProgressScreenState extends State<ProgressScreen>
   //  Graph Section (from graph_data)
   // ──────────────────────────────────────────────────
   Widget _buildGraphSection(
-      List<dynamic> graphData, bool isDark, Color textColor) {
+    List<dynamic> graphData,
+    bool isDark,
+    Color textColor,
+  ) {
     if (graphData.isEmpty) return const SizedBox.shrink();
 
     final metricOptions = [
@@ -471,9 +505,14 @@ class _ProgressScreenState extends State<ProgressScreen>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text("Trends Graph",
-            style: TextStyle(
-                fontSize: 16, fontWeight: FontWeight.w900, color: textColor)),
+        Text(
+          "Trends Graph",
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w900,
+            color: textColor,
+          ),
+        ),
         const SizedBox(height: 12),
         // Metric selector row
         SingleChildScrollView(
@@ -489,29 +528,32 @@ class _ProgressScreenState extends State<ProgressScreen>
                 child: GestureDetector(
                   onTap: () => setState(() => _selectedGraphMetric = key),
                   child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: isSelected
-                          ? color.withOpacity(0.2)
+                          ? color.withValues(alpha: 0.2)
                           : (isDark
-                              ? Colors.white.withOpacity(0.04)
-                              : Colors.black.withOpacity(0.03)),
+                                ? Colors.white.withValues(alpha: 0.04)
+                                : Colors.black.withValues(alpha: 0.03)),
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
                         color: isSelected ? color : Colors.transparent,
                         width: 1.5,
                       ),
                     ),
-                    child: Text(label,
-                        style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                            color: isSelected
-                                ? color
-                                : (isDark
-                                    ? Colors.white60
-                                    : Colors.black54))),
+                    child: Text(
+                      label,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: isSelected
+                            ? color
+                            : (isDark ? Colors.white60 : Colors.black54),
+                      ),
+                    ),
                   ),
                 ),
               );
@@ -548,27 +590,38 @@ class _ProgressScreenState extends State<ProgressScreen>
   // ──────────────────────────────────────────────────
   //  History Logs — Stacked Cards with Expand/Close
   // ──────────────────────────────────────────────────
-  Widget _buildHistorySection(List<dynamic> dailyData, bool isDark,
-      Color textColor, Color? secondaryTextColor) {
+  Widget _buildHistorySection(
+    List<dynamic> dailyData,
+    bool isDark,
+    Color textColor,
+    Color? secondaryTextColor,
+  ) {
     final headerText = _selectedPeriod == "Daily"
         ? "Day-by-Day Logs (Last 7 Days)"
         : _selectedPeriod == "Weekly"
-            ? "Week-by-Week Logs (Last 4 Weeks)"
-            : "Month-by-Month Logs (Last 3 Months)";
+        ? "Week-by-Week Logs (Last 4 Weeks)"
+        : "Month-by-Month Logs (Last 3 Months)";
 
     if (dailyData.isEmpty) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(headerText,
-              style: TextStyle(
-                  fontSize: 16, fontWeight: FontWeight.w900, color: textColor)),
+          Text(
+            headerText,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w900,
+              color: textColor,
+            ),
+          ),
           const SizedBox(height: 12),
           Padding(
             padding: const EdgeInsets.all(32.0),
             child: Center(
-              child: Text("No sync logs available yet",
-                  style: TextStyle(color: secondaryTextColor)),
+              child: Text(
+                "No sync logs available yet",
+                style: TextStyle(color: secondaryTextColor),
+              ),
             ),
           ),
         ],
@@ -590,19 +643,24 @@ class _ProgressScreenState extends State<ProgressScreen>
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Expanded(
-                child: Text(headerText,
-                    style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w900,
-                        color: textColor)),
+                child: Text(
+                  headerText,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w900,
+                    color: textColor,
+                  ),
+                ),
               ),
               GestureDetector(
                 onTap: () => setState(() => _isLogsExpanded = false),
                 child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
-                    color: Colors.blueAccent.withOpacity(0.15),
+                    color: Colors.blueAccent.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: const Row(
@@ -610,11 +668,14 @@ class _ProgressScreenState extends State<ProgressScreen>
                     children: [
                       Icon(Icons.close, size: 14, color: Colors.blueAccent),
                       SizedBox(width: 4),
-                      Text("Close",
-                          style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.blueAccent,
-                              fontWeight: FontWeight.bold)),
+                      Text(
+                        "Close",
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.blueAccent,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -622,10 +683,12 @@ class _ProgressScreenState extends State<ProgressScreen>
             ],
           ),
           const SizedBox(height: 12),
-          ...logCards.map((card) => Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: card,
-              )),
+          ...logCards.map(
+            (card) => Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: card,
+            ),
+          ),
         ],
       );
     }
@@ -639,9 +702,14 @@ class _ProgressScreenState extends State<ProgressScreen>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(headerText,
-            style: TextStyle(
-                fontSize: 16, fontWeight: FontWeight.w900, color: textColor)),
+        Text(
+          headerText,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w900,
+            color: textColor,
+          ),
+        ),
         const SizedBox(height: 12),
         GestureDetector(
           onTap: () => setState(() => _isLogsExpanded = true),
@@ -652,8 +720,7 @@ class _ProgressScreenState extends State<ProgressScreen>
               children: List.generate(visibleCount, (i) {
                 // Render in reverse so card 0 is on top
                 final reverseIdx = visibleCount - 1 - i;
-                final day =
-                    dailyData[reverseIdx] as Map<String, dynamic>;
+                final day = dailyData[reverseIdx] as Map<String, dynamic>;
                 final anyOk = _hasAnyCompletion(day);
 
                 return Positioned(
@@ -664,25 +731,35 @@ class _ProgressScreenState extends State<ProgressScreen>
                   child: Container(
                     decoration: BoxDecoration(
                       color: isDark
-                          ? Color.lerp(const Color(0xFF1A1A2E),
-                              anyOk ? Colors.green : Colors.blueGrey, 0.08)
-                          : Color.lerp(Colors.white,
-                              anyOk ? Colors.green : Colors.blueGrey, 0.04),
+                          ? Color.lerp(
+                              const Color(0xFF1A1A2E),
+                              anyOk ? Colors.green : Colors.blueGrey,
+                              0.08,
+                            )
+                          : Color.lerp(
+                              Colors.white,
+                              anyOk ? Colors.green : Colors.blueGrey,
+                              0.04,
+                            ),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
                         color: (isDark ? Colors.white : Colors.black)
-                            .withOpacity(0.08),
+                            .withValues(alpha: 0.08),
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(isDark ? 0.3 : 0.07),
+                          color: Colors.black.withValues(
+                            alpha: isDark ? 0.3 : 0.07,
+                          ),
                           blurRadius: 8,
                           offset: const Offset(0, 3),
                         ),
                       ],
                     ),
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 12),
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
                     child: _buildStackedLogContent(day, textColor, isDark),
                   ),
                 );
@@ -697,9 +774,10 @@ class _ProgressScreenState extends State<ProgressScreen>
               child: Text(
                 "Tap to expand ${dailyData.length} entries",
                 style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.blueAccent.withOpacity(0.8),
-                    fontWeight: FontWeight.w600),
+                  fontSize: 12,
+                  color: Colors.blueAccent.withValues(alpha: 0.8),
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ),
@@ -716,7 +794,10 @@ class _ProgressScreenState extends State<ProgressScreen>
   }
 
   Widget _buildStackedLogContent(
-      Map<String, dynamic> day, Color textColor, bool isDark) {
+    Map<String, dynamic> day,
+    Color textColor,
+    bool isDark,
+  ) {
     final dateStr = day['date'] as String? ?? '';
     final steps = (day['steps'] as num?)?.round() ?? 0;
     final calories = (day['calories'] as num?)?.round() ?? 0;
@@ -727,23 +808,34 @@ class _ProgressScreenState extends State<ProgressScreen>
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Text(_formatDate(dateStr),
-            style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 13,
-                color: textColor)),
+        Text(
+          _formatDate(dateStr),
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 13,
+            color: textColor,
+          ),
+        ),
         const SizedBox(height: 6),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text("🚶 $steps",
-                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-            Text("🔥 $calories",
-                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-            Text("🌙 ${sleep.toStringAsFixed(1)}h",
-                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-            Text("💧 ${water}ml",
-                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+            Text(
+              "🚶 $steps",
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+            ),
+            Text(
+              "🔥 $calories",
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+            ),
+            Text(
+              "🌙 ${sleep.toStringAsFixed(1)}h",
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+            ),
+            Text(
+              "💧 ${water}ml",
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+            ),
           ],
         ),
       ],
@@ -751,7 +843,10 @@ class _ProgressScreenState extends State<ProgressScreen>
   }
 
   Widget _buildSingleLogCard(
-      Map<String, dynamic> day, Color textColor, bool isDark) {
+    Map<String, dynamic> day,
+    Color textColor,
+    bool isDark,
+  ) {
     final dateStr = day['date'] as String? ?? '';
     final steps = (day['steps'] as num?)?.round() ?? 0;
     final calories = (day['calories'] as num?)?.round() ?? 0;
@@ -773,13 +868,19 @@ class _ProgressScreenState extends State<ProgressScreen>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(_formatDate(dateStr),
-                  style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                      color: textColor)),
-              Icon(Icons.check_circle_outline,
-                  color: anyOk ? Colors.green : Colors.grey, size: 16),
+              Text(
+                _formatDate(dateStr),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                  color: textColor,
+                ),
+              ),
+              Icon(
+                Icons.check_circle_outline,
+                color: anyOk ? Colors.green : Colors.grey,
+                size: 16,
+              ),
             ],
           ),
           const SizedBox(height: 12),
@@ -788,10 +889,12 @@ class _ProgressScreenState extends State<ProgressScreen>
             children: [
               _buildLogMetric("🚶 $steps", "steps", completed: stepsOk),
               _buildLogMetric("🔥 $calories", "kcal", completed: calOk),
-              _buildLogMetric("🌙 ${sleep.toStringAsFixed(1)}h", "sleep",
-                  completed: sleepOk),
-              _buildLogMetric("💧 ${water}ml", "water",
-                  completed: waterOk),
+              _buildLogMetric(
+                "🌙 ${sleep.toStringAsFixed(1)}h",
+                "sleep",
+                completed: sleepOk,
+              ),
+              _buildLogMetric("💧 ${water}ml", "water", completed: waterOk),
             ],
           ),
         ],
@@ -812,8 +915,8 @@ class _ProgressScreenState extends State<ProgressScreen>
       pressElevation: 0,
       selectedColor: Colors.blueAccent,
       backgroundColor: isDark
-          ? Colors.white.withOpacity(0.04)
-          : Colors.black.withOpacity(0.03),
+          ? Colors.white.withValues(alpha: 0.04)
+          : Colors.black.withValues(alpha: 0.03),
       side: BorderSide(
         color: isSelected
             ? Colors.blueAccent
@@ -848,13 +951,15 @@ class _ProgressScreenState extends State<ProgressScreen>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(value,
-            style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 13,
-                color: completed ? Colors.green : null)),
-        Text(label,
-            style: const TextStyle(color: Colors.grey, fontSize: 10)),
+        Text(
+          value,
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 13,
+            color: completed ? Colors.green : null,
+          ),
+        ),
+        Text(label, style: const TextStyle(color: Colors.grey, fontSize: 10)),
       ],
     );
   }
@@ -884,11 +989,27 @@ class _ProgressScreenState extends State<ProgressScreen>
       }
 
       final List<String> weekdays = [
-        "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri",
+        "Sat",
+        "Sun",
       ];
       final List<String> months = [
-        "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec",
       ];
       return "${weekdays[date.weekday - 1]}, ${months[date.month - 1]} ${date.day}";
     } catch (_) {
@@ -896,7 +1017,6 @@ class _ProgressScreenState extends State<ProgressScreen>
     }
   }
 }
-
 
 // ──────────────────────────────────────────────────────────────
 //  Bar Chart Painter (for Trends Graph)
@@ -932,7 +1052,7 @@ class _TrendsBarChartPainter extends CustomPainter {
 
     // Grid lines
     final gridPaint = Paint()
-      ..color = (isDark ? Colors.white : Colors.black).withOpacity(0.06)
+      ..color = (isDark ? Colors.white : Colors.black).withValues(alpha: 0.06)
       ..strokeWidth = 1;
     for (int i = 0; i <= 4; i++) {
       final y = topPadding + chartHeight * (1 - i / 4);
@@ -946,8 +1066,7 @@ class _TrendsBarChartPainter extends CustomPainter {
       final x = spacing * i + (spacing - barWidth) / 2;
       final y = topPadding + chartHeight - barHeight;
 
-      final barRect =
-          RRect.fromRectAndRadius(
+      final barRect = RRect.fromRectAndRadius(
         Rect.fromLTWH(x, y, barWidth, barHeight),
         const Radius.circular(6),
       );
@@ -957,7 +1076,7 @@ class _TrendsBarChartPainter extends CustomPainter {
         ..shader = LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [color, color.withOpacity(0.5)],
+          colors: [color, color.withValues(alpha: 0.5)],
         ).createShader(Rect.fromLTWH(x, y, barWidth, barHeight));
       canvas.drawRRect(barRect, paint);
 
@@ -967,16 +1086,17 @@ class _TrendsBarChartPainter extends CustomPainter {
           text: TextSpan(
             text: _formatValue(values[i]),
             style: TextStyle(
-                fontSize: 9,
-                color: isDark ? Colors.white70 : Colors.black54,
-                fontWeight: FontWeight.bold),
+              fontSize: 9,
+              color: isDark ? Colors.white70 : Colors.black54,
+              fontWeight: FontWeight.bold,
+            ),
           ),
           textDirection: TextDirection.ltr,
         )..layout();
         tp.paint(
-            canvas,
-            Offset(x + barWidth / 2 - tp.width / 2,
-                y - tp.height - 4));
+          canvas,
+          Offset(x + barWidth / 2 - tp.width / 2, y - tp.height - 4),
+        );
       }
 
       // Label below
@@ -985,15 +1105,19 @@ class _TrendsBarChartPainter extends CustomPainter {
         text: TextSpan(
           text: labelText,
           style: TextStyle(
-              fontSize: 9,
-              color: isDark ? Colors.white54 : Colors.black45),
+            fontSize: 9,
+            color: isDark ? Colors.white54 : Colors.black45,
+          ),
         ),
         textDirection: TextDirection.ltr,
       )..layout();
       labelTp.paint(
-          canvas,
-          Offset(x + barWidth / 2 - labelTp.width / 2,
-              size.height - bottomPadding + 6));
+        canvas,
+        Offset(
+          x + barWidth / 2 - labelTp.width / 2,
+          size.height - bottomPadding + 6,
+        ),
+      );
     }
   }
 
@@ -1011,16 +1135,36 @@ class _TrendsBarChartPainter extends CustomPainter {
     final parts = label.split('-');
     if (parts.length == 3) {
       const months = [
-        'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
       ];
       final m = int.tryParse(parts[1]) ?? 1;
       return "${months[m.clamp(1, 12) - 1]} ${int.tryParse(parts[2]) ?? ''}";
     }
     if (parts.length == 2) {
       const months = [
-        'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
       ];
       final m = int.tryParse(parts[1]) ?? 1;
       return months[m.clamp(1, 12) - 1];

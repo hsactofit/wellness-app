@@ -32,10 +32,14 @@ class MedicalRecordsSection extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: Colors.red.withOpacity(0.12),
+                    color: Colors.red.withValues(alpha: 0.12),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.lock, color: Colors.redAccent, size: 28),
+                  child: const Icon(
+                    Icons.lock,
+                    color: Colors.redAccent,
+                    size: 28,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 const Expanded(
@@ -44,7 +48,10 @@ class MedicalRecordsSection extends StatelessWidget {
                     children: [
                       Text(
                         "Medical & Clinical Records",
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                        ),
                       ),
                       Text(
                         "Explicit consent required to access clinical reports.",
@@ -70,12 +77,17 @@ class MedicalRecordsSection extends StatelessWidget {
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.redAccent,
                 padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15),
+                ),
               ),
               icon: const Icon(Icons.assignment_ind, color: Colors.white),
               label: const Text(
                 "Provide Explicit Consent",
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               onPressed: onProvideConsentPressed,
             ),
@@ -98,10 +110,14 @@ class MedicalRecordsSection extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: Colors.green.withOpacity(0.12),
+                      color: Colors.green.withValues(alpha: 0.12),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.assignment_turned_in, color: Colors.green, size: 28),
+                    child: const Icon(
+                      Icons.assignment_turned_in,
+                      color: Colors.green,
+                      size: 28,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   const Column(
@@ -109,7 +125,10 @@ class MedicalRecordsSection extends StatelessWidget {
                     children: [
                       Text(
                         "Medical Records",
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                        ),
                       ),
                       Text(
                         "Synced securely with explicit consent",
@@ -132,7 +151,10 @@ class MedicalRecordsSection extends StatelessWidget {
               padding: EdgeInsets.symmetric(vertical: 16),
               child: Text(
                 "No medical records found in device database.",
-                style: TextStyle(color: Colors.grey, fontStyle: FontStyle.italic),
+                style: TextStyle(
+                  color: Colors.grey,
+                  fontStyle: FontStyle.italic,
+                ),
                 textAlign: TextAlign.center,
               ),
             )
@@ -154,7 +176,10 @@ class MedicalRecordsSection extends StatelessWidget {
               padding: const EdgeInsets.symmetric(vertical: 12),
             ),
             icon: const Icon(Icons.no_accounts),
-            label: const Text("Revoke Explicit Consent", style: TextStyle(fontWeight: FontWeight.bold)),
+            label: const Text(
+              "Revoke Explicit Consent",
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
             onPressed: onRevokeConsentPressed,
           ),
         ],

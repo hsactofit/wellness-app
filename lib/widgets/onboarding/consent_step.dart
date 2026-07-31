@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'fade_slide_transition.dart';
 
 class ConsentStep extends StatelessWidget {
-  final Map<String, bool> grants; // keys: terms, healthData, medicalShare, employerAggregate
+  final Map<String, bool>
+  grants; // keys: terms, healthData, medicalShare, employerAggregate
   final ValueChanged<String> onToggleGrant;
   final TextEditingController signatureController;
   final VoidCallback onBack;
@@ -21,7 +22,8 @@ class ConsentStep extends StatelessWidget {
     {
       'key': 'terms',
       'title': 'Terms of Service',
-      'body': 'I agree to Medifit\'s terms of service and program participation rules.',
+      'body':
+          'I agree to Medifit\'s terms of service and program participation rules.',
     },
     {
       'key': 'healthData',
@@ -43,13 +45,15 @@ class ConsentStep extends StatelessWidget {
     },
   ];
 
-  bool get _allRequiredGranted => _clauses.every((c) => grants[c['key']] == true);
+  bool get _allRequiredGranted =>
+      _clauses.every((c) => grants[c['key']] == true);
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final canContinue = _allRequiredGranted && signatureController.text.trim().isNotEmpty;
+    final canContinue =
+        _allRequiredGranted && signatureController.text.trim().isNotEmpty;
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -58,7 +62,10 @@ class ConsentStep extends StatelessWidget {
           Expanded(
             child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 20.0,
+                vertical: 10.0,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -103,13 +110,19 @@ class ConsentStep extends StatelessWidget {
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
                             color: granted
-                                ? const Color(0xFF006D5B).withOpacity(0.06)
-                                : (isDark ? Colors.white.withOpacity(0.04) : Colors.white),
+                                ? const Color(
+                                    0xFF006D5B,
+                                  ).withValues(alpha: 0.06)
+                                : (isDark
+                                      ? Colors.white.withValues(alpha: 0.04)
+                                      : Colors.white),
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
                               color: granted
                                   ? const Color(0xFF006D5B)
-                                  : (isDark ? Colors.white.withOpacity(0.12) : Colors.grey.withOpacity(0.18)),
+                                  : (isDark
+                                        ? Colors.white.withValues(alpha: 0.12)
+                                        : Colors.grey.withValues(alpha: 0.18)),
                               width: granted ? 2.0 : 1.2,
                             ),
                           ),
@@ -120,7 +133,9 @@ class ConsentStep extends StatelessWidget {
                                 value: granted,
                                 activeColor: const Color(0xFF006D5B),
                                 onChanged: (_) => onToggleGrant(key),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
                               ),
                               const SizedBox(width: 8),
                               Expanded(
@@ -132,7 +147,9 @@ class ConsentStep extends StatelessWidget {
                                       style: TextStyle(
                                         fontWeight: FontWeight.bold,
                                         fontSize: 14,
-                                        color: isDark ? Colors.white : const Color(0xFF0F172A),
+                                        color: isDark
+                                            ? Colors.white
+                                            : const Color(0xFF0F172A),
                                       ),
                                     ),
                                     const SizedBox(height: 4),
@@ -141,7 +158,9 @@ class ConsentStep extends StatelessWidget {
                                       style: TextStyle(
                                         fontSize: 12,
                                         height: 1.3,
-                                        color: isDark ? Colors.grey[400] : Colors.grey[600],
+                                        color: isDark
+                                            ? Colors.grey[400]
+                                            : Colors.grey[600],
                                       ),
                                     ),
                                   ],
@@ -159,7 +178,9 @@ class ConsentStep extends StatelessWidget {
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 13,
-                      color: isDark ? Colors.grey[300] : const Color(0xFF334155),
+                      color: isDark
+                          ? Colors.grey[300]
+                          : const Color(0xFF334155),
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -169,15 +190,25 @@ class ConsentStep extends StatelessWidget {
                     decoration: InputDecoration(
                       hintText: "Full legal name",
                       filled: true,
-                      fillColor: isDark ? Colors.white.withOpacity(0.04) : Colors.white,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      fillColor: isDark
+                          ? Colors.white.withValues(alpha: 0.04)
+                          : Colors.white,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 14,
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Colors.grey.withOpacity(0.3)),
+                        borderSide: BorderSide(
+                          color: Colors.grey.withValues(alpha: 0.3),
+                        ),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: Color(0xFF006D5B), width: 2),
+                        borderSide: const BorderSide(
+                          color: Color(0xFF006D5B),
+                          width: 2,
+                        ),
                       ),
                     ),
                   ),
@@ -187,7 +218,10 @@ class ConsentStep extends StatelessWidget {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 20.0,
+              vertical: 16.0,
+            ),
             child: Row(
               children: [
                 Expanded(
@@ -196,7 +230,9 @@ class ConsentStep extends StatelessWidget {
                       backgroundColor: const Color(0xFFE3EDF7),
                       elevation: 0,
                       padding: const EdgeInsets.symmetric(vertical: 18),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(24),
+                      ),
                     ),
                     onPressed: onBack,
                     child: const Text(
@@ -216,8 +252,12 @@ class ConsentStep extends StatelessWidget {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF006D5B),
                       padding: const EdgeInsets.symmetric(vertical: 18),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                      shadowColor: const Color(0xFF006D5B).withOpacity(0.3),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                      shadowColor: const Color(
+                        0xFF006D5B,
+                      ).withValues(alpha: 0.3),
                       elevation: 4,
                     ),
                     onPressed: canContinue
@@ -225,7 +265,9 @@ class ConsentStep extends StatelessWidget {
                         : () {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
-                                content: Text("Please agree to all consents and sign your name"),
+                                content: Text(
+                                  "Please agree to all consents and sign your name",
+                                ),
                                 backgroundColor: Colors.orange,
                               ),
                             );
@@ -243,7 +285,11 @@ class ConsentStep extends StatelessWidget {
                           ),
                         ),
                         SizedBox(width: 8),
-                        Icon(Icons.check_circle_outline_rounded, color: Colors.white, size: 16),
+                        Icon(
+                          Icons.check_circle_outline_rounded,
+                          color: Colors.white,
+                          size: 16,
+                        ),
                       ],
                     ),
                   ),

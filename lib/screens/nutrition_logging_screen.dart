@@ -38,7 +38,8 @@ class NutritionLog {
       protein: (macro('protein') ?? json['protein'] as num?)?.toDouble() ?? 0,
       fat: (macro('fats') ?? json['fat'] as num?)?.toDouble() ?? 0,
       carbs: (macro('carbs') ?? json['carbs'] as num?)?.toDouble() ?? 0,
-      timestamp: DateTime.tryParse(
+      timestamp:
+          DateTime.tryParse(
             (json['logged_at'] ?? json['timestamp'])?.toString() ?? '',
           ) ??
           DateTime.now(),
@@ -146,8 +147,10 @@ class _NutritionLoggingScreenState extends State<NutritionLoggingScreen>
     });
     try {
       final email = await ApiService.instance.getUserEmail();
-      final result = await ApiService.instance
-          .fetchNutritionGraph(email, _selectedGraphPeriod);
+      final result = await ApiService.instance.fetchNutritionGraph(
+        email,
+        _selectedGraphPeriod,
+      );
 
       // Support both { data: [...] } and nested / alternate shapes
       dynamic raw = result['data'];
@@ -165,7 +168,9 @@ class _NutritionLoggingScreenState extends State<NutritionLoggingScreen>
             for (final key in ['calories', 'protein', 'fat', 'carbs']) {
               final v = m[key] ?? m['${key}_g'] ?? m[key.toUpperCase()];
               if (v != null) {
-                m[key] = (v is num) ? v.toDouble() : double.tryParse('$v') ?? 0.0;
+                m[key] = (v is num)
+                    ? v.toDouble()
+                    : double.tryParse('$v') ?? 0.0;
               } else {
                 m[key] = 0.0;
               }
@@ -216,9 +221,9 @@ class _NutritionLoggingScreenState extends State<NutritionLoggingScreen>
     } catch (e) {
       debugPrint("Error adding food log: $e");
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Failed to log food: $e")),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Failed to log food: $e")));
       }
     } finally {
       setState(() => _isSyncing = false);
@@ -234,9 +239,9 @@ class _NutritionLoggingScreenState extends State<NutritionLoggingScreen>
     } catch (e) {
       debugPrint("Error deleting nutrition log: $e");
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Failed to delete: $e")),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Failed to delete: $e")));
       }
     }
   }
@@ -249,26 +254,30 @@ class _NutritionLoggingScreenState extends State<NutritionLoggingScreen>
     final subtextColor = isDark ? Colors.grey[400]! : Colors.grey[600]!;
 
     return Scaffold(
-      backgroundColor:
-          isDark ? const Color(0xFF0F0F12) : const Color(0xFFF6F8FC),
+      backgroundColor: isDark
+          ? const Color(0xFF0F0F12)
+          : const Color(0xFFF6F8FC),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new,
-              color: textColor, size: 20),
+          icon: Icon(Icons.arrow_back_ios_new, color: textColor, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text("Nutrition",
-            style: TextStyle(
-                color: textColor,
-                fontWeight: FontWeight.w900,
-                fontSize: 22)),
+        title: Text(
+          "Nutrition",
+          style: TextStyle(
+            color: textColor,
+            fontWeight: FontWeight.w900,
+            fontSize: 22,
+          ),
+        ),
         centerTitle: false,
       ),
       body: _isLoading
           ? const Center(
-              child: CircularProgressIndicator(color: Colors.orangeAccent))
+              child: CircularProgressIndicator(color: Colors.orangeAccent),
+            )
           : RefreshIndicator(
               onRefresh: () async {
                 await _fetchData();
@@ -276,9 +285,12 @@ class _NutritionLoggingScreenState extends State<NutritionLoggingScreen>
               },
               child: ListView(
                 physics: const BouncingScrollPhysics(
-                    parent: AlwaysScrollableScrollPhysics()),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                  parent: AlwaysScrollableScrollPhysics(),
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 8,
+                ),
                 children: [
                   // ─── Calorie Summary Ring ───
                   _buildCalorieSummary(isDark, textColor, subtextColor),
@@ -313,7 +325,10 @@ class _NutritionLoggingScreenState extends State<NutritionLoggingScreen>
   //  Calorie Summary Ring
   // ──────────────────────────────────────────────────
   Widget _buildCalorieSummary(
-      bool isDark, Color textColor, Color subtextColor) {
+    bool isDark,
+    Color textColor,
+    Color subtextColor,
+  ) {
     final progress = (_caloriesToday / _calorieGoal).clamp(0.0, 1.0);
     final remaining = (_calorieGoal - _caloriesToday).clamp(0, double.infinity);
 
@@ -345,9 +360,10 @@ class _NutritionLoggingScreenState extends State<NutritionLoggingScreen>
                             color: textColor,
                           ),
                         ),
-                        Text("kcal",
-                            style:
-                                TextStyle(fontSize: 11, color: subtextColor)),
+                        Text(
+                          "kcal",
+                          style: TextStyle(fontSize: 11, color: subtextColor),
+                        ),
                       ],
                     ),
                   ),
@@ -361,19 +377,28 @@ class _NutritionLoggingScreenState extends State<NutritionLoggingScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text("Today's Intake",
-                    style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w900,
-                        color: textColor)),
+                Text(
+                  "Today's Intake",
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w900,
+                    color: textColor,
+                  ),
+                ),
                 const SizedBox(height: 8),
                 _infoRow("Goal", "${_calorieGoal.round()} kcal", subtextColor),
                 const SizedBox(height: 4),
-                _infoRow("Consumed", "${_caloriesToday.round()} kcal",
-                    Colors.orangeAccent),
+                _infoRow(
+                  "Consumed",
+                  "${_caloriesToday.round()} kcal",
+                  Colors.orangeAccent,
+                ),
                 const SizedBox(height: 4),
-                _infoRow("Remaining", "${remaining.round()} kcal",
-                    remaining > 0 ? Colors.green : Colors.redAccent),
+                _infoRow(
+                  "Remaining",
+                  "${remaining.round()} kcal",
+                  remaining > 0 ? Colors.green : Colors.redAccent,
+                ),
               ],
             ),
           ),
@@ -386,13 +411,15 @@ class _NutritionLoggingScreenState extends State<NutritionLoggingScreen>
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label,
-            style: const TextStyle(fontSize: 12, color: Colors.grey)),
-        Text(value,
-            style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-                color: valueColor)),
+        Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+            color: valueColor,
+          ),
+        ),
       ],
     );
   }
@@ -413,29 +440,40 @@ class _NutritionLoggingScreenState extends State<NutritionLoggingScreen>
   }
 
   Widget _macroCard(
-      String label, double value, String unit, Color color, bool isDark) {
+    String label,
+    double value,
+    String unit,
+    Color color,
+    bool isDark,
+  ) {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
         decoration: BoxDecoration(
           color: isDark
-              ? color.withOpacity(0.12)
-              : color.withOpacity(0.08),
+              ? color.withValues(alpha: 0.12)
+              : color.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.withOpacity(0.25)),
+          border: Border.all(color: color.withValues(alpha: 0.25)),
         ),
         child: Column(
           children: [
-            Text("${value.round()}$unit",
-                style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w900,
-                    color: color)),
+            Text(
+              "${value.round()}$unit",
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w900,
+                color: color,
+              ),
+            ),
             const SizedBox(height: 2),
-            Text(label,
-                style: TextStyle(
-                    fontSize: 11,
-                    color: isDark ? Colors.grey[400] : Colors.grey[600])),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                color: isDark ? Colors.grey[400] : Colors.grey[600],
+              ),
+            ),
           ],
         ),
       ),
@@ -446,27 +484,86 @@ class _NutritionLoggingScreenState extends State<NutritionLoggingScreen>
   //  Quick Add Food Presets
   // ──────────────────────────────────────────────────
   Widget _buildQuickAddSection(
-      bool isDark, Color textColor, Color subtextColor) {
+    bool isDark,
+    Color textColor,
+    Color subtextColor,
+  ) {
     final presets = [
-      {"name": "Apple", "emoji": "🍎", "cal": 95.0, "p": 0.5, "f": 0.3, "c": 25.0},
-      {"name": "Banana", "emoji": "🍌", "cal": 105.0, "p": 1.3, "f": 0.4, "c": 27.0},
-      {"name": "Chicken Breast", "emoji": "🍗", "cal": 165.0, "p": 31.0, "f": 3.6, "c": 0.0},
-      {"name": "Rice (1 cup)", "emoji": "🍚", "cal": 206.0, "p": 4.3, "f": 0.4, "c": 45.0},
+      {
+        "name": "Apple",
+        "emoji": "🍎",
+        "cal": 95.0,
+        "p": 0.5,
+        "f": 0.3,
+        "c": 25.0,
+      },
+      {
+        "name": "Banana",
+        "emoji": "🍌",
+        "cal": 105.0,
+        "p": 1.3,
+        "f": 0.4,
+        "c": 27.0,
+      },
+      {
+        "name": "Chicken Breast",
+        "emoji": "🍗",
+        "cal": 165.0,
+        "p": 31.0,
+        "f": 3.6,
+        "c": 0.0,
+      },
+      {
+        "name": "Rice (1 cup)",
+        "emoji": "🍚",
+        "cal": 206.0,
+        "p": 4.3,
+        "f": 0.4,
+        "c": 45.0,
+      },
       {"name": "Egg", "emoji": "🥚", "cal": 78.0, "p": 6.0, "f": 5.0, "c": 0.6},
-      {"name": "Salad", "emoji": "🥗", "cal": 120.0, "p": 3.0, "f": 7.0, "c": 12.0},
-      {"name": "Bread (1 slice)", "emoji": "🍞", "cal": 79.0, "p": 2.7, "f": 1.0, "c": 15.0},
-      {"name": "Milk (1 glass)", "emoji": "🥛", "cal": 149.0, "p": 8.0, "f": 8.0, "c": 12.0},
+      {
+        "name": "Salad",
+        "emoji": "🥗",
+        "cal": 120.0,
+        "p": 3.0,
+        "f": 7.0,
+        "c": 12.0,
+      },
+      {
+        "name": "Bread (1 slice)",
+        "emoji": "🍞",
+        "cal": 79.0,
+        "p": 2.7,
+        "f": 1.0,
+        "c": 15.0,
+      },
+      {
+        "name": "Milk (1 glass)",
+        "emoji": "🥛",
+        "cal": 149.0,
+        "p": 8.0,
+        "f": 8.0,
+        "c": 12.0,
+      },
     ];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text("Quick Add",
-            style: TextStyle(
-                fontSize: 16, fontWeight: FontWeight.w900, color: textColor)),
+        Text(
+          "Quick Add",
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w900,
+            color: textColor,
+          ),
+        ),
         const SizedBox(height: 4),
-        Text("Tap to log instantly",
-            style: TextStyle(fontSize: 12, color: subtextColor)),
+        Text(
+          "Tap to log instantly",
+          style: TextStyle(fontSize: 12, color: subtextColor),
+        ),
         const SizedBox(height: 12),
         Wrap(
           spacing: 8,
@@ -476,19 +573,21 @@ class _NutritionLoggingScreenState extends State<NutritionLoggingScreen>
               onTap: _isSyncing
                   ? null
                   : () => _addFoodLog(
-                        foodName: p['name'] as String,
-                        calories: p['cal'] as double,
-                        protein: p['p'] as double,
-                        fat: p['f'] as double,
-                        carbs: p['c'] as double,
-                      ),
+                      foodName: p['name'] as String,
+                      calories: p['cal'] as double,
+                      protein: p['p'] as double,
+                      fat: p['f'] as double,
+                      carbs: p['c'] as double,
+                    ),
               child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
                   color: isDark
-                      ? Colors.white.withOpacity(0.06)
-                      : Colors.black.withOpacity(0.04),
+                      ? Colors.white.withValues(alpha: 0.06)
+                      : Colors.black.withValues(alpha: 0.04),
                   borderRadius: BorderRadius.circular(24),
                   border: Border.all(
                     color: isDark ? Colors.white12 : Colors.black12,
@@ -497,24 +596,28 @@ class _NutritionLoggingScreenState extends State<NutritionLoggingScreen>
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(p['emoji'] as String,
-                        style: const TextStyle(fontSize: 16)),
+                    Text(
+                      p['emoji'] as String,
+                      style: const TextStyle(fontSize: 16),
+                    ),
                     const SizedBox(width: 6),
-                    Text(p['name'] as String,
-                        style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: isDark
-                                ? Colors.white70
-                                : Colors.black87)),
+                    Text(
+                      p['name'] as String,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.white70 : Colors.black87,
+                      ),
+                    ),
                     const SizedBox(width: 4),
-                    Text("${(p['cal'] as double).round()}",
-                        style: TextStyle(
-                            fontSize: 10,
-                            color: isDark
-                                ? Colors.orangeAccent
-                                : Colors.deepOrange,
-                            fontWeight: FontWeight.w600)),
+                    Text(
+                      "${(p['cal'] as double).round()}",
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: isDark ? Colors.orangeAccent : Colors.deepOrange,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -528,45 +631,70 @@ class _NutritionLoggingScreenState extends State<NutritionLoggingScreen>
   // ──────────────────────────────────────────────────
   //  Custom Log Form
   // ──────────────────────────────────────────────────
-  Widget _buildCustomLogForm(
-      bool isDark, Color textColor, Color subtextColor) {
+  Widget _buildCustomLogForm(bool isDark, Color textColor, Color subtextColor) {
     return GlassCard(
       padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text("Log Custom Food",
-              style: TextStyle(
-                  fontSize: 16, fontWeight: FontWeight.w900, color: textColor)),
+          Text(
+            "Log Custom Food",
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w900,
+              color: textColor,
+            ),
+          ),
           const SizedBox(height: 16),
-          _buildTextField(_foodNameCtrl, "Food name", isDark,
-              icon: Icons.restaurant),
+          _buildTextField(
+            _foodNameCtrl,
+            "Food name",
+            isDark,
+            icon: Icons.restaurant,
+          ),
           const SizedBox(height: 10),
           Row(
             children: [
               Expanded(
-                  child: _buildTextField(
-                      _caloriesCtrl, "Calories", isDark,
-                      keyboardType: TextInputType.number,
-                      icon: Icons.local_fire_department)),
+                child: _buildTextField(
+                  _caloriesCtrl,
+                  "Calories",
+                  isDark,
+                  keyboardType: TextInputType.number,
+                  icon: Icons.local_fire_department,
+                ),
+              ),
               const SizedBox(width: 10),
               Expanded(
-                  child: _buildTextField(
-                      _proteinCtrl, "Protein (g)", isDark,
-                      keyboardType: TextInputType.number)),
+                child: _buildTextField(
+                  _proteinCtrl,
+                  "Protein (g)",
+                  isDark,
+                  keyboardType: TextInputType.number,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 10),
           Row(
             children: [
               Expanded(
-                  child: _buildTextField(_fatCtrl, "Fat (g)", isDark,
-                      keyboardType: TextInputType.number)),
+                child: _buildTextField(
+                  _fatCtrl,
+                  "Fat (g)",
+                  isDark,
+                  keyboardType: TextInputType.number,
+                ),
+              ),
               const SizedBox(width: 10),
               Expanded(
-                  child: _buildTextField(
-                      _carbsCtrl, "Carbs (g)", isDark,
-                      keyboardType: TextInputType.number)),
+                child: _buildTextField(
+                  _carbsCtrl,
+                  "Carbs (g)",
+                  isDark,
+                  keyboardType: TextInputType.number,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 16),
@@ -579,17 +707,25 @@ class _NutritionLoggingScreenState extends State<NutritionLoggingScreen>
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14)),
+                  borderRadius: BorderRadius.circular(14),
+                ),
               ),
               child: _isSyncing
                   ? const SizedBox(
                       width: 20,
                       height: 20,
                       child: CircularProgressIndicator(
-                          strokeWidth: 2, color: Colors.white))
-                  : const Text("Log Food",
-                      style:
-                          TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Text(
+                      "Log Food",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                      ),
+                    ),
             ),
           ),
         ],
@@ -598,32 +734,44 @@ class _NutritionLoggingScreenState extends State<NutritionLoggingScreen>
   }
 
   Widget _buildTextField(
-      TextEditingController ctrl, String hint, bool isDark,
-      {TextInputType keyboardType = TextInputType.text, IconData? icon}) {
+    TextEditingController ctrl,
+    String hint,
+    bool isDark, {
+    TextInputType keyboardType = TextInputType.text,
+    IconData? icon,
+  }) {
     return TextField(
       controller: ctrl,
       keyboardType: keyboardType,
       style: TextStyle(
-          color: isDark ? Colors.white : Colors.black87, fontSize: 14),
+        color: isDark ? Colors.white : Colors.black87,
+        fontSize: 14,
+      ),
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: TextStyle(
-            color: isDark ? Colors.white38 : Colors.black38, fontSize: 13),
+          color: isDark ? Colors.white38 : Colors.black38,
+          fontSize: 13,
+        ),
         prefixIcon: icon != null
-            ? Icon(icon,
+            ? Icon(
+                icon,
                 size: 18,
-                color: isDark ? Colors.white30 : Colors.black26)
+                color: isDark ? Colors.white30 : Colors.black26,
+              )
             : null,
         filled: true,
         fillColor: isDark
-            ? Colors.white.withOpacity(0.06)
-            : Colors.black.withOpacity(0.04),
+            ? Colors.white.withValues(alpha: 0.06)
+            : Colors.black.withValues(alpha: 0.04),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
         ),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 12,
+        ),
       ),
     );
   }
@@ -660,21 +808,25 @@ class _NutritionLoggingScreenState extends State<NutritionLoggingScreen>
   // ──────────────────────────────────────────────────
   //  Today's Logs
   // ──────────────────────────────────────────────────
-  Widget _buildLogsSection(
-      bool isDark, Color textColor, Color subtextColor) {
+  Widget _buildLogsSection(bool isDark, Color textColor, Color subtextColor) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text("Today's Food Log",
-                style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w900,
-                    color: textColor)),
-            Text("${_logs.length} entries",
-                style: TextStyle(fontSize: 12, color: subtextColor)),
+            Text(
+              "Today's Food Log",
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w900,
+                color: textColor,
+              ),
+            ),
+            Text(
+              "${_logs.length} entries",
+              style: TextStyle(fontSize: 12, color: subtextColor),
+            ),
           ],
         ),
         const SizedBox(height: 12),
@@ -686,94 +838,109 @@ class _NutritionLoggingScreenState extends State<NutritionLoggingScreen>
                 children: [
                   const Text("🍽️", style: TextStyle(fontSize: 36)),
                   const SizedBox(height: 8),
-                  Text("No food logged yet",
-                      style: TextStyle(
-                          fontSize: 14,
-                          color: subtextColor,
-                          fontWeight: FontWeight.w600)),
-                  Text("Use the quick add or form above",
-                      style: TextStyle(fontSize: 12, color: subtextColor)),
+                  Text(
+                    "No food logged yet",
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: subtextColor,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  Text(
+                    "Use the quick add or form above",
+                    style: TextStyle(fontSize: 12, color: subtextColor),
+                  ),
                 ],
               ),
             ),
           )
         else
-          ..._logs.map((log) => Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: Dismissible(
-                  key: Key('nutrition_log_${log.id}'),
-                  direction: DismissDirection.endToStart,
-                  background: Container(
-                    alignment: Alignment.centerRight,
-                    padding: const EdgeInsets.only(right: 20),
-                    decoration: BoxDecoration(
-                      color: Colors.redAccent.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: const Icon(Icons.delete_outline,
-                        color: Colors.redAccent),
+          ..._logs.map(
+            (log) => Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Dismissible(
+                key: Key('nutrition_log_${log.id}'),
+                direction: DismissDirection.endToStart,
+                background: Container(
+                  alignment: Alignment.centerRight,
+                  padding: const EdgeInsets.only(right: 20),
+                  decoration: BoxDecoration(
+                    color: Colors.redAccent.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(16),
                   ),
-                  onDismissed: (_) {
-                    if (log.id != null) _deleteLog(log.id!);
-                  },
-                  child: GlassCard(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 14),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: Colors.orangeAccent.withOpacity(0.15),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Center(
-                            child: Text("🍽️",
-                                style: TextStyle(fontSize: 18)),
-                          ),
+                  child: const Icon(
+                    Icons.delete_outline,
+                    color: Colors.redAccent,
+                  ),
+                ),
+                onDismissed: (_) {
+                  if (log.id != null) _deleteLog(log.id!);
+                },
+                child: GlassCard(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: Colors.orangeAccent.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(log.foodName,
-                                  style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
-                                      color: isDark
-                                          ? Colors.white
-                                          : Colors.black87)),
-                              const SizedBox(height: 2),
-                              Text(
-                                "P: ${log.protein.round()}g · C: ${log.carbs.round()}g · F: ${log.fat.round()}g",
-                                style: TextStyle(
-                                    fontSize: 11, color: subtextColor),
-                              ),
-                            ],
-                          ),
+                        child: const Center(
+                          child: Text("🍽️", style: TextStyle(fontSize: 18)),
                         ),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text("${log.calories.round()} kcal",
-                                style: const TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w900,
-                                    color: Colors.orangeAccent)),
                             Text(
-                              _formatTime(log.timestamp),
+                              log.foodName,
                               style: TextStyle(
-                                  fontSize: 10, color: subtextColor),
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: isDark ? Colors.white : Colors.black87,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              "P: ${log.protein.round()}g · C: ${log.carbs.round()}g · F: ${log.fat.round()}g",
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: subtextColor,
+                              ),
                             ),
                           ],
                         ),
-                      ],
-                    ),
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            "${log.calories.round()} kcal",
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w900,
+                              color: Colors.orangeAccent,
+                            ),
+                          ),
+                          Text(
+                            _formatTime(log.timestamp),
+                            style: TextStyle(fontSize: 10, color: subtextColor),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
-              )),
+              ),
+            ),
+          ),
       ],
     );
   }
@@ -821,16 +988,19 @@ class _NutritionLoggingScreenState extends State<NutritionLoggingScreen>
           child: Row(
             children: ["day", "week", "month"].map((p) {
               final isSelected = _selectedGraphPeriod == p;
-              final label =
-                  p == "day" ? "Day" : p == "week" ? "Week" : "Month";
+              final label = p == "day"
+                  ? "Day"
+                  : p == "week"
+                  ? "Week"
+                  : "Month";
               return Padding(
                 padding: const EdgeInsets.only(right: 8),
                 child: ChoiceChip(
                   selected: isSelected,
                   selectedColor: Colors.orangeAccent,
                   backgroundColor: isDark
-                      ? Colors.white.withOpacity(0.04)
-                      : Colors.black.withOpacity(0.03),
+                      ? Colors.white.withValues(alpha: 0.04)
+                      : Colors.black.withValues(alpha: 0.03),
                   side: BorderSide(
                     color: isSelected
                         ? Colors.orangeAccent
@@ -862,48 +1032,49 @@ class _NutritionLoggingScreenState extends State<NutritionLoggingScreen>
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: Row(
-            children: const [
-              ('calories', 'Calories', Color(0xFFFFA726)),
-              ('protein', 'Protein', Color(0xFF42A5F5)),
-              ('carbs', 'Carbs', Color(0xFF66BB6A)),
-              ('fat', 'Fat', Color(0xFFEF5350)),
-            ].map((m) {
-              final key = m.$1;
-              final label = m.$2;
-              final color = m.$3;
-              final selected = _graphMetric == key;
-              return Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: FilterChip(
-                  selected: selected,
-                  showCheckmark: false,
-                  selectedColor: color.withOpacity(0.22),
-                  backgroundColor: isDark
-                      ? Colors.white.withOpacity(0.04)
-                      : Colors.black.withOpacity(0.03),
-                  side: BorderSide(
-                    color: selected
-                        ? color
-                        : (isDark ? Colors.white10 : Colors.black12),
-                  ),
-                  label: Text(
-                    label,
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w800,
-                      color: selected
-                          ? color
-                          : (isDark ? Colors.white70 : Colors.black87),
+            children:
+                const [
+                  ('calories', 'Calories', Color(0xFFFFA726)),
+                  ('protein', 'Protein', Color(0xFF42A5F5)),
+                  ('carbs', 'Carbs', Color(0xFF66BB6A)),
+                  ('fat', 'Fat', Color(0xFFEF5350)),
+                ].map((m) {
+                  final key = m.$1;
+                  final label = m.$2;
+                  final color = m.$3;
+                  final selected = _graphMetric == key;
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: FilterChip(
+                      selected: selected,
+                      showCheckmark: false,
+                      selectedColor: color.withValues(alpha: 0.22),
+                      backgroundColor: isDark
+                          ? Colors.white.withValues(alpha: 0.04)
+                          : Colors.black.withValues(alpha: 0.03),
+                      side: BorderSide(
+                        color: selected
+                            ? color
+                            : (isDark ? Colors.white10 : Colors.black12),
+                      ),
+                      label: Text(
+                        label,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          color: selected
+                              ? color
+                              : (isDark ? Colors.white70 : Colors.black87),
+                        ),
+                      ),
+                      onSelected: (_) {
+                        if (_graphMetric == key) return;
+                        setState(() => _graphMetric = key);
+                        _graphAnimController.forward(from: 0.0);
+                      },
                     ),
-                  ),
-                  onSelected: (_) {
-                    if (_graphMetric == key) return;
-                    setState(() => _graphMetric = key);
-                    _graphAnimController.forward(from: 0.0);
-                  },
-                ),
-              );
-            }).toList(),
+                  );
+                }).toList(),
           ),
         ),
         const SizedBox(height: 14),
@@ -920,135 +1091,128 @@ class _NutritionLoggingScreenState extends State<NutritionLoggingScreen>
                     ),
                   )
                 : _graphError != null
-                    ? _buildGraphMessage(
-                        isDark: isDark,
-                        icon: Icons.wifi_off_rounded,
-                        title: 'Could not load graph',
-                        message: _graphError!,
-                        actionLabel: 'Retry',
-                        onAction: _fetchGraphData,
-                      )
-                    : _graphData.isEmpty
-                        ? _buildGraphMessage(
-                            isDark: isDark,
-                            icon: Icons.bar_chart_rounded,
-                            title: 'No trend data yet',
-                            message:
-                                'Log some meals and your $_selectedGraphPeriod trend will appear here.',
-                            actionLabel: 'Refresh',
-                            onAction: _fetchGraphData,
-                          )
-                        : Column(
-                            children: [
-                              Expanded(
-                                child: LayoutBuilder(
-                                  builder: (context, constraints) {
-                                    // Give each bar enough room; scroll when dense.
-                                    const minSlot = 36.0;
-                                    final pointCount = _graphData.length;
-                                    final neededWidth =
-                                        pointCount * minSlot + 12;
-                                    final chartWidth = max(
-                                      constraints.maxWidth,
-                                      neededWidth,
-                                    );
-                                    final dense = pointCount > 8;
+                ? _buildGraphMessage(
+                    isDark: isDark,
+                    icon: Icons.wifi_off_rounded,
+                    title: 'Could not load graph',
+                    message: _graphError!,
+                    actionLabel: 'Retry',
+                    onAction: _fetchGraphData,
+                  )
+                : _graphData.isEmpty
+                ? _buildGraphMessage(
+                    isDark: isDark,
+                    icon: Icons.bar_chart_rounded,
+                    title: 'No trend data yet',
+                    message:
+                        'Log some meals and your $_selectedGraphPeriod trend will appear here.',
+                    actionLabel: 'Refresh',
+                    onAction: _fetchGraphData,
+                  )
+                : Column(
+                    children: [
+                      Expanded(
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            // Give each bar enough room; scroll when dense.
+                            const minSlot = 36.0;
+                            final pointCount = _graphData.length;
+                            final neededWidth = pointCount * minSlot + 12;
+                            final chartWidth = max(
+                              constraints.maxWidth,
+                              neededWidth,
+                            );
+                            final dense = pointCount > 8;
 
-                                    return AnimatedBuilder(
-                                      animation: _graphAnimController,
-                                      builder: (context, _) {
-                                        final chart = SizedBox(
-                                          width: chartWidth,
-                                          height: constraints.maxHeight,
-                                          child: CustomPaint(
-                                            painter: _NutritionBarChartPainter(
-                                              data: _graphData,
-                                              metricKey: _graphMetric,
-                                              isDark: isDark,
-                                              animProgress:
-                                                  _graphAnimController.value,
-                                            ),
-                                            child: const SizedBox.expand(),
-                                          ),
-                                        );
-
-                                        if (chartWidth <=
-                                            constraints.maxWidth + 0.5) {
-                                          return chart;
-                                        }
-
-                                        return Stack(
-                                          children: [
-                                            SingleChildScrollView(
-                                              scrollDirection: Axis.horizontal,
-                                              physics:
-                                                  const BouncingScrollPhysics(),
-                                              child: chart,
-                                            ),
-                                            if (dense)
-                                              Positioned(
-                                                right: 0,
-                                                top: 0,
-                                                bottom: 28,
-                                                child: IgnorePointer(
-                                                  child: Container(
-                                                    width: 28,
-                                                    decoration: BoxDecoration(
-                                                      gradient: LinearGradient(
-                                                        begin: Alignment
-                                                            .centerLeft,
-                                                        end: Alignment
-                                                            .centerRight,
-                                                        colors: [
-                                                          (isDark
-                                                                  ? const Color(
-                                                                      0xFF16161C)
-                                                                  : Colors
-                                                                      .white)
-                                                              .withOpacity(0),
-                                                          (isDark
-                                                                  ? const Color(
-                                                                      0xFF16161C)
-                                                                  : Colors
-                                                                      .white)
-                                                              .withOpacity(
-                                                                  0.85),
-                                                        ],
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ),
-                                              ),
-                                          ],
-                                        );
-                                      },
-                                    );
-                                  },
-                                ),
-                              ),
-                              const SizedBox(height: 6),
-                              Text(
-                                _graphSummaryLine(),
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                  color: subtext,
-                                ),
-                              ),
-                              if (_graphData.length > 8)
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 2),
-                                  child: Text(
-                                    'Swipe chart to see all ${_graphData.length} points',
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w600,
-                                      color: subtext,
+                            return AnimatedBuilder(
+                              animation: _graphAnimController,
+                              builder: (context, _) {
+                                final chart = SizedBox(
+                                  width: chartWidth,
+                                  height: constraints.maxHeight,
+                                  child: CustomPaint(
+                                    painter: _NutritionBarChartPainter(
+                                      data: _graphData,
+                                      metricKey: _graphMetric,
+                                      isDark: isDark,
+                                      animProgress: _graphAnimController.value,
                                     ),
+                                    child: const SizedBox.expand(),
                                   ),
-                                ),
-                            ],
+                                );
+
+                                if (chartWidth <= constraints.maxWidth + 0.5) {
+                                  return chart;
+                                }
+
+                                return Stack(
+                                  children: [
+                                    SingleChildScrollView(
+                                      scrollDirection: Axis.horizontal,
+                                      physics: const BouncingScrollPhysics(),
+                                      child: chart,
+                                    ),
+                                    if (dense)
+                                      Positioned(
+                                        right: 0,
+                                        top: 0,
+                                        bottom: 28,
+                                        child: IgnorePointer(
+                                          child: Container(
+                                            width: 28,
+                                            decoration: BoxDecoration(
+                                              gradient: LinearGradient(
+                                                begin: Alignment.centerLeft,
+                                                end: Alignment.centerRight,
+                                                colors: [
+                                                  (isDark
+                                                          ? const Color(
+                                                              0xFF16161C,
+                                                            )
+                                                          : Colors.white)
+                                                      .withValues(alpha: 0),
+                                                  (isDark
+                                                          ? const Color(
+                                                              0xFF16161C,
+                                                            )
+                                                          : Colors.white)
+                                                      .withValues(alpha: 0.85),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                );
+                              },
+                            );
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        _graphSummaryLine(),
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: subtext,
+                        ),
+                      ),
+                      if (_graphData.length > 8)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 2),
+                          child: Text(
+                            'Swipe chart to see all ${_graphData.length} points',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                              color: subtext,
+                            ),
                           ),
+                        ),
+                    ],
+                  ),
           ),
         ),
       ],
@@ -1101,10 +1265,7 @@ class _NutritionLoggingScreenState extends State<NutritionLoggingScreen>
               style: TextStyle(fontSize: 12, height: 1.35, color: muted),
             ),
             const SizedBox(height: 12),
-            TextButton(
-              onPressed: onAction,
-              child: Text(actionLabel),
-            ),
+            TextButton(onPressed: onAction, child: Text(actionLabel)),
           ],
         ),
       ),
@@ -1128,7 +1289,7 @@ class _CalorieRingPainter extends CustomPainter {
 
     // Background ring
     final bgPaint = Paint()
-      ..color = (isDark ? Colors.white : Colors.black).withOpacity(0.08)
+      ..color = (isDark ? Colors.white : Colors.black).withValues(alpha: 0.08)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 10
       ..strokeCap = StrokeCap.round;
@@ -1139,11 +1300,7 @@ class _CalorieRingPainter extends CustomPainter {
       ..shader = SweepGradient(
         startAngle: -pi / 2,
         endAngle: 3 * pi / 2,
-        colors: const [
-          Color(0xFFFFA726),
-          Color(0xFFFF7043),
-          Color(0xFFFFA726),
-        ],
+        colors: const [Color(0xFFFFA726), Color(0xFFFF7043), Color(0xFFFFA726)],
       ).createShader(Rect.fromCircle(center: center, radius: radius))
       ..style = PaintingStyle.stroke
       ..strokeWidth = 10
@@ -1223,22 +1380,32 @@ class _NutritionBarChartPainter extends CustomPainter {
     const double rightPadding = 8;
     const double bottomPadding = 34;
     const double topPadding = 18;
-    final double chartWidth =
-        (size.width - leftPadding - rightPadding).clamp(1.0, size.width);
-    final double chartHeight =
-        (size.height - bottomPadding - topPadding).clamp(1.0, size.height);
+    final double chartWidth = (size.width - leftPadding - rightPadding).clamp(
+      1.0,
+      size.width,
+    );
+    final double chartHeight = (size.height - bottomPadding - topPadding).clamp(
+      1.0,
+      size.height,
+    );
 
     final double spacing = chartWidth / count;
     // Keep bars readable; wider scroll area is preferred over crammed bars
-    final double barWidth = (spacing * (dense ? 0.52 : 0.58))
-        .clamp(veryDense ? 6.0 : 10.0, dense ? 28.0 : 42.0);
+    final double barWidth = (spacing * (dense ? 0.52 : 0.58)).clamp(
+      veryDense ? 6.0 : 10.0,
+      dense ? 28.0 : 42.0,
+    );
 
     // Which X labels to show (avoid overlap)
-    final labelIndexes = _labelIndexes(count, dense: dense, veryDense: veryDense);
+    final labelIndexes = _labelIndexes(
+      count,
+      dense: dense,
+      veryDense: veryDense,
+    );
 
     // Grid lines + Y labels
     final gridPaint = Paint()
-      ..color = (isDark ? Colors.white : Colors.black).withOpacity(0.07)
+      ..color = (isDark ? Colors.white : Colors.black).withValues(alpha: 0.07)
       ..strokeWidth = 1;
 
     for (int i = 0; i <= 4; i++) {
@@ -1276,8 +1443,10 @@ class _NutritionBarChartPainter extends CustomPainter {
     for (int i = 0; i < count; i++) {
       final normalised = (values[i] / maxVal).clamp(0.0, 1.0);
       final barHeight =
-          (chartHeight * normalised * animProgress.clamp(0.0, 1.0))
-              .clamp(0.0, chartHeight);
+          (chartHeight * normalised * animProgress.clamp(0.0, 1.0)).clamp(
+            0.0,
+            chartHeight,
+          );
       final x = leftPadding + spacing * i + (spacing - barWidth) / 2;
       final y = topPadding + chartHeight - barHeight;
 
@@ -1290,7 +1459,9 @@ class _NutritionBarChartPainter extends CustomPainter {
         canvas.drawRRect(
           trackRect,
           Paint()
-            ..color = (isDark ? Colors.white : Colors.black).withOpacity(0.04),
+            ..color = (isDark ? Colors.white : Colors.black).withValues(
+              alpha: 0.04,
+            ),
         );
       }
 
@@ -1303,10 +1474,7 @@ class _NutritionBarChartPainter extends CustomPainter {
           ..shader = LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              baseColor,
-              baseColor.withOpacity(0.55),
-            ],
+            colors: [baseColor, baseColor.withValues(alpha: 0.55)],
           ).createShader(Rect.fromLTWH(x, y, barWidth, barHeight));
         canvas.drawRRect(barRect, paint);
       }
@@ -1324,8 +1492,10 @@ class _NutritionBarChartPainter extends CustomPainter {
           ),
           textDirection: TextDirection.ltr,
         )..layout(maxWidth: spacing);
-        final labelX = (x + barWidth / 2 - tp.width / 2)
-            .clamp(leftPadding, size.width - tp.width);
+        final labelX = (x + barWidth / 2 - tp.width / 2).clamp(
+          leftPadding,
+          size.width - tp.width,
+        );
         tp.paint(canvas, Offset(labelX, y - tp.height - 3));
       }
 
@@ -1352,12 +1522,11 @@ class _NutritionBarChartPainter extends CustomPainter {
         ellipsis: '…',
       )..layout(maxWidth: max(spacing * (dense ? 1.8 : 1.2), 28));
 
-      final lx = (x + barWidth / 2 - labelTp.width / 2)
-          .clamp(0.0, size.width - labelTp.width);
-      labelTp.paint(
-        canvas,
-        Offset(lx, size.height - bottomPadding + 10),
+      final lx = (x + barWidth / 2 - labelTp.width / 2).clamp(
+        0.0,
+        size.width - labelTp.width,
       );
+      labelTp.paint(canvas, Offset(lx, size.height - bottomPadding + 10));
     }
   }
 
@@ -1402,7 +1571,9 @@ class _NutritionBarChartPainter extends CustomPainter {
         final parts = label.split('T');
         if (parts.length > 1 && parts[1].length >= 2) {
           final hour = parts[1].split(':').first;
-          return dense ? '${int.tryParse(hour) ?? hour}h' : '${hour.padLeft(2, '0')}:00';
+          return dense
+              ? '${int.tryParse(hour) ?? hour}h'
+              : '${hour.padLeft(2, '0')}:00';
         }
       }
     }
@@ -1416,8 +1587,18 @@ class _NutritionBarChartPainter extends CustomPainter {
     final dateParts = label.split('-');
     if (dateParts.length >= 3) {
       const months = [
-        'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
       ];
       final m = int.tryParse(dateParts[1]) ?? 1;
       final dayRaw = dateParts[2].split(RegExp(r'[T\s]')).first;
@@ -1429,8 +1610,18 @@ class _NutritionBarChartPainter extends CustomPainter {
     // YYYY-MM
     if (dateParts.length == 2) {
       const months = [
-        'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
       ];
       final m = int.tryParse(dateParts[1]) ?? 1;
       return months[(m.clamp(1, 12)) - 1];

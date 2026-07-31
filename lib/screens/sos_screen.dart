@@ -117,7 +117,10 @@ class _SosScreenState extends State<SosScreen>
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message, style: const TextStyle(fontWeight: FontWeight.w600)),
+        content: Text(
+          message,
+          style: const TextStyle(fontWeight: FontWeight.w600),
+        ),
         backgroundColor: isError ? _sosRed : _mint,
         behavior: SnackBarBehavior.floating,
         margin: const EdgeInsets.fromLTRB(16, 0, 16, 24),
@@ -129,7 +132,7 @@ class _SosScreenState extends State<SosScreen>
   Future<void> _confirmAndTriggerSos() async {
     final confirmed = await showDialog<bool>(
       context: context,
-      barrierColor: Colors.black.withOpacity(0.45),
+      barrierColor: Colors.black.withValues(alpha: 0.45),
       builder: (ctx) {
         final isDark = Theme.of(ctx).brightness == Brightness.dark;
         return Dialog(
@@ -143,18 +146,18 @@ class _SosScreenState extends State<SosScreen>
                 padding: const EdgeInsets.fromLTRB(22, 22, 22, 16),
                 decoration: BoxDecoration(
                   color: isDark
-                      ? const Color(0xFF16161C).withOpacity(0.88)
-                      : Colors.white.withOpacity(0.92),
+                      ? const Color(0xFF16161C).withValues(alpha: 0.88)
+                      : Colors.white.withValues(alpha: 0.92),
                   borderRadius: BorderRadius.circular(28),
                   border: Border.all(
                     color: isDark
-                        ? Colors.white.withOpacity(0.10)
-                        : Colors.white.withOpacity(0.65),
+                        ? Colors.white.withValues(alpha: 0.10)
+                        : Colors.white.withValues(alpha: 0.65),
                     width: 1.4,
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: _sosRed.withOpacity(0.18),
+                      color: _sosRed.withValues(alpha: 0.18),
                       blurRadius: 30,
                       offset: const Offset(0, 12),
                     ),
@@ -168,11 +171,16 @@ class _SosScreenState extends State<SosScreen>
                       height: 56,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: _sosRed.withOpacity(0.12),
-                        border: Border.all(color: _sosRed.withOpacity(0.25)),
+                        color: _sosRed.withValues(alpha: 0.12),
+                        border: Border.all(
+                          color: _sosRed.withValues(alpha: 0.25),
+                        ),
                       ),
-                      child: const Icon(Icons.warning_amber_rounded,
-                          color: _sosRed, size: 28),
+                      child: const Icon(
+                        Icons.warning_amber_rounded,
+                        color: _sosRed,
+                        size: 28,
+                      ),
                     ),
                     const SizedBox(height: 16),
                     Text(
@@ -278,7 +286,7 @@ class _SosScreenState extends State<SosScreen>
       if (!mounted) return;
       await showDialog(
         context: context,
-        barrierColor: Colors.black.withOpacity(0.45),
+        barrierColor: Colors.black.withValues(alpha: 0.45),
         builder: (ctx) {
           final isDark = Theme.of(ctx).brightness == Brightness.dark;
           return Dialog(
@@ -292,13 +300,13 @@ class _SosScreenState extends State<SosScreen>
                   padding: const EdgeInsets.fromLTRB(22, 22, 22, 16),
                   decoration: BoxDecoration(
                     color: isDark
-                        ? const Color(0xFF16161C).withOpacity(0.88)
-                        : Colors.white.withOpacity(0.92),
+                        ? const Color(0xFF16161C).withValues(alpha: 0.88)
+                        : Colors.white.withValues(alpha: 0.92),
                     borderRadius: BorderRadius.circular(28),
                     border: Border.all(
                       color: isDark
-                          ? Colors.white.withOpacity(0.10)
-                          : Colors.white.withOpacity(0.65),
+                          ? Colors.white.withValues(alpha: 0.10)
+                          : Colors.white.withValues(alpha: 0.65),
                     ),
                   ),
                   child: Column(
@@ -311,10 +319,13 @@ class _SosScreenState extends State<SosScreen>
                           height: 56,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: _mint.withOpacity(0.14),
+                            color: _mint.withValues(alpha: 0.14),
                           ),
-                          child: const Icon(Icons.check_circle_rounded,
-                              color: _mint, size: 30),
+                          child: const Icon(
+                            Icons.check_circle_rounded,
+                            color: _mint,
+                            size: 30,
+                          ),
                         ),
                       ),
                       const SizedBox(height: 14),
@@ -355,10 +366,7 @@ class _SosScreenState extends State<SosScreen>
         },
       );
     } catch (e) {
-      _showSnack(
-        e.toString().replaceFirst('Exception: ', ''),
-        isError: true,
-      );
+      _showSnack(e.toString().replaceFirst('Exception: ', ''), isError: true);
     } finally {
       if (mounted) setState(() => _isTriggering = false);
     }
@@ -369,12 +377,9 @@ class _SosScreenState extends State<SosScreen>
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      barrierColor: Colors.black.withOpacity(0.4),
+      barrierColor: Colors.black.withValues(alpha: 0.4),
       builder: (ctx) {
-        return _SosContactSheet(
-          contact: contact,
-          inputDecoration: _morphInput,
-        );
+        return _SosContactSheet(contact: contact, inputDecoration: _morphInput);
       },
     );
 
@@ -387,7 +392,7 @@ class _SosScreenState extends State<SosScreen>
   Future<void> _deleteContact(SosContact contact) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      barrierColor: Colors.black.withOpacity(0.45),
+      barrierColor: Colors.black.withValues(alpha: 0.45),
       builder: (ctx) {
         final isDark = Theme.of(ctx).brightness == Brightness.dark;
         return Dialog(
@@ -400,13 +405,13 @@ class _SosScreenState extends State<SosScreen>
                 padding: const EdgeInsets.all(22),
                 decoration: BoxDecoration(
                   color: isDark
-                      ? const Color(0xFF16161C).withOpacity(0.9)
-                      : Colors.white.withOpacity(0.92),
+                      ? const Color(0xFF16161C).withValues(alpha: 0.9)
+                      : Colors.white.withValues(alpha: 0.92),
                   borderRadius: BorderRadius.circular(24),
                   border: Border.all(
                     color: isDark
-                        ? Colors.white.withOpacity(0.1)
-                        : Colors.black.withOpacity(0.05),
+                        ? Colors.white.withValues(alpha: 0.1)
+                        : Colors.black.withValues(alpha: 0.05),
                   ),
                 ),
                 child: Column(
@@ -466,10 +471,7 @@ class _SosScreenState extends State<SosScreen>
       await _loadSosData();
       _showSnack('Contact deleted');
     } catch (e) {
-      _showSnack(
-        e.toString().replaceFirst('Exception: ', ''),
-        isError: true,
-      );
+      _showSnack(e.toString().replaceFirst('Exception: ', ''), isError: true);
     }
   }
 
@@ -488,25 +490,31 @@ class _SosScreenState extends State<SosScreen>
       ),
       filled: true,
       fillColor: isDark
-          ? Colors.white.withOpacity(0.05)
-          : Colors.black.withOpacity(0.03),
-      contentPadding:
-          const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          ? Colors.white.withValues(alpha: 0.05)
+          : Colors.black.withValues(alpha: 0.03),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
         borderSide: BorderSide(
-          color: isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.05),
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.08)
+              : Colors.black.withValues(alpha: 0.05),
         ),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
         borderSide: BorderSide(
-          color: isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.05),
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.08)
+              : Colors.black.withValues(alpha: 0.05),
         ),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: _sosRed.withOpacity(0.7), width: 1.5),
+        borderSide: BorderSide(
+          color: _sosRed.withValues(alpha: 0.7),
+          width: 1.5,
+        ),
       ),
     );
   }
@@ -537,8 +545,8 @@ class _SosScreenState extends State<SosScreen>
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    _sosRed.withOpacity(isDark ? 0.28 : 0.18),
-                    _sosRed.withOpacity(0.0),
+                    _sosRed.withValues(alpha: isDark ? 0.28 : 0.18),
+                    _sosRed.withValues(alpha: 0.0),
                   ],
                 ),
               ),
@@ -554,8 +562,8 @@ class _SosScreenState extends State<SosScreen>
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    _sosCoral.withOpacity(isDark ? 0.18 : 0.12),
-                    _sosCoral.withOpacity(0.0),
+                    _sosCoral.withValues(alpha: isDark ? 0.18 : 0.12),
+                    _sosCoral.withValues(alpha: 0.0),
                   ],
                 ),
               ),
@@ -571,8 +579,8 @@ class _SosScreenState extends State<SosScreen>
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    Colors.purple.withOpacity(isDark ? 0.16 : 0.10),
-                    Colors.purple.withOpacity(0.0),
+                    Colors.purple.withValues(alpha: isDark ? 0.16 : 0.10),
+                    Colors.purple.withValues(alpha: 0.0),
                   ],
                 ),
               ),
@@ -581,135 +589,136 @@ class _SosScreenState extends State<SosScreen>
 
           SafeArea(
             child: _isLoading
-                ? const Center(
-                    child: CircularProgressIndicator(color: _sosRed),
-                  )
+                ? const Center(child: CircularProgressIndicator(color: _sosRed))
                 : _error != null
-                    ? _buildErrorState(textColor, secondaryText)
-                    : RefreshIndicator(
-                        color: _sosRed,
-                        backgroundColor:
-                            isDark ? const Color(0xFF1E1E24) : Colors.white,
-                        onRefresh: _loadSosData,
-                        child: SingleChildScrollView(
-                          physics: const AlwaysScrollableScrollPhysics(
-                            parent: BouncingScrollPhysics(),
-                          ),
-                          padding: const EdgeInsets.fromLTRB(20, 8, 20, 40),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                ? _buildErrorState(textColor, secondaryText)
+                : RefreshIndicator(
+                    color: _sosRed,
+                    backgroundColor: isDark
+                        ? const Color(0xFF1E1E24)
+                        : Colors.white,
+                    onRefresh: _loadSosData,
+                    child: SingleChildScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(
+                        parent: BouncingScrollPhysics(),
+                      ),
+                      padding: const EdgeInsets.fromLTRB(20, 8, 20, 40),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          _buildHeader(theme, isDark, textColor, secondaryText),
+                          const SizedBox(height: 28),
+                          _buildSosTrigger(isDark, secondaryText),
+                          const SizedBox(height: 32),
+                          _buildSectionLabel('EMERGENCY SERVICES', theme),
+                          const SizedBox(height: 12),
+                          Row(
                             children: [
-                              _buildHeader(theme, isDark, textColor, secondaryText),
-                              const SizedBox(height: 28),
-                              _buildSosTrigger(isDark, secondaryText),
-                              const SizedBox(height: 32),
-                              _buildSectionLabel('EMERGENCY SERVICES', theme),
-                              const SizedBox(height: 12),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: _EmergencyMorphCard(
-                                      icon: Icons.local_police_rounded,
-                                      label: 'Police',
-                                      number: _policeNumber,
-                                      color: _policeBlue,
-                                      isDark: isDark,
-                                      onTap: () => _callNumber(_policeNumber),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: _EmergencyMorphCard(
-                                      icon: Icons.local_hospital_rounded,
-                                      label: 'Ambulance',
-                                      number: _ambulanceNumber,
-                                      color: _mint,
-                                      isDark: isDark,
-                                      onTap: () =>
-                                          _callNumber(_ambulanceNumber),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: _EmergencyMorphCard(
-                                      icon: Icons.local_fire_department_rounded,
-                                      label: 'Fire',
-                                      number: _fireNumber,
-                                      color: _fireAmber,
-                                      isDark: isDark,
-                                      onTap: () => _callNumber(_fireNumber),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 28),
-                              _buildSectionLabel(
-                                'EMERGENCY CONTACTS',
-                                theme,
-                                actions: [
-                                  _MorphIconButton(
-                                    icon: Icons.person_add_alt_1_rounded,
-                                    tooltip: 'Add contact',
-                                    isDark: isDark,
-                                    accent: true,
-                                    onTap: () => _showContactSheet(),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 12),
-                              if (_contacts.isEmpty)
-                                _buildEmptyContacts(isDark, textColor, secondaryText)
-                              else
-                                ..._contacts.map(
-                                  (c) => Padding(
-                                    padding: const EdgeInsets.only(bottom: 10),
-                                    child: _ContactMorphCard(
-                                      contact: c,
-                                      isDark: isDark,
-                                      onCall: () => _callNumber(c.phone),
-                                      onEdit: () =>
-                                          _showContactSheet(contact: c),
-                                      onDelete: () => _deleteContact(c),
-                                    ),
-                                  ),
+                              Expanded(
+                                child: _EmergencyMorphCard(
+                                  icon: Icons.local_police_rounded,
+                                  label: 'Police',
+                                  number: _policeNumber,
+                                  color: _policeBlue,
+                                  isDark: isDark,
+                                  onTap: () => _callNumber(_policeNumber),
                                 ),
-                              const SizedBox(height: 20),
-                              GlassCard(
-                                padding: const EdgeInsets.all(16),
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      width: 40,
-                                      height: 40,
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        color: _sosCoral.withOpacity(0.12),
-                                      ),
-                                      child: const Icon(
-                                        Icons.info_outline_rounded,
-                                        color: _sosCoral,
-                                        size: 20,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Text(
-                                        'In an emergency, tap SOS to notify contacts, or call services directly from the cards above.',
-                                        style: TextStyle(
-                                          fontSize: 12.5,
-                                          height: 1.4,
-                                          fontWeight: FontWeight.w500,
-                                          color: secondaryText,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: _EmergencyMorphCard(
+                                  icon: Icons.local_hospital_rounded,
+                                  label: 'Ambulance',
+                                  number: _ambulanceNumber,
+                                  color: _mint,
+                                  isDark: isDark,
+                                  onTap: () => _callNumber(_ambulanceNumber),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: _EmergencyMorphCard(
+                                  icon: Icons.local_fire_department_rounded,
+                                  label: 'Fire',
+                                  number: _fireNumber,
+                                  color: _fireAmber,
+                                  isDark: isDark,
+                                  onTap: () => _callNumber(_fireNumber),
                                 ),
                               ),
                             ],
                           ),
-                        ),
+                          const SizedBox(height: 28),
+                          _buildSectionLabel(
+                            'EMERGENCY CONTACTS',
+                            theme,
+                            actions: [
+                              _MorphIconButton(
+                                icon: Icons.person_add_alt_1_rounded,
+                                tooltip: 'Add contact',
+                                isDark: isDark,
+                                accent: true,
+                                onTap: () => _showContactSheet(),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          if (_contacts.isEmpty)
+                            _buildEmptyContacts(
+                              isDark,
+                              textColor,
+                              secondaryText,
+                            )
+                          else
+                            ..._contacts.map(
+                              (c) => Padding(
+                                padding: const EdgeInsets.only(bottom: 10),
+                                child: _ContactMorphCard(
+                                  contact: c,
+                                  isDark: isDark,
+                                  onCall: () => _callNumber(c.phone),
+                                  onEdit: () => _showContactSheet(contact: c),
+                                  onDelete: () => _deleteContact(c),
+                                ),
+                              ),
+                            ),
+                          const SizedBox(height: 20),
+                          GlassCard(
+                            padding: const EdgeInsets.all(16),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 40,
+                                  height: 40,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: _sosCoral.withValues(alpha: 0.12),
+                                  ),
+                                  child: const Icon(
+                                    Icons.info_outline_rounded,
+                                    color: _sosCoral,
+                                    size: 20,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    'In an emergency, tap SOS to notify contacts, or call services directly from the cards above.',
+                                    style: TextStyle(
+                                      fontSize: 12.5,
+                                      height: 1.4,
+                                      fontWeight: FontWeight.w500,
+                                      color: secondaryText,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
+                    ),
+                  ),
           ),
         ],
       ),
@@ -739,11 +748,11 @@ class _SosScreenState extends State<SosScreen>
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                _sosRed.withOpacity(0.22),
-                _sosCoral.withOpacity(0.12),
+                _sosRed.withValues(alpha: 0.22),
+                _sosCoral.withValues(alpha: 0.12),
               ],
             ),
-            border: Border.all(color: _sosRed.withOpacity(0.18)),
+            border: Border.all(color: _sosRed.withValues(alpha: 0.18)),
           ),
           child: const Center(
             child: Text('🛡️', style: TextStyle(fontSize: 22)),
@@ -820,8 +829,8 @@ class _SosScreenState extends State<SosScreen>
                   height: 210 + (_pulseController.value * 12),
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: _sosRed.withOpacity(
-                      (isDark ? 0.08 : 0.06) * pulse,
+                    color: _sosRed.withValues(
+                      alpha: (isDark ? 0.08 : 0.06) * pulse,
                     ),
                   ),
                 ),
@@ -830,7 +839,7 @@ class _SosScreenState extends State<SosScreen>
                   height: 180,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: _sosRed.withOpacity(isDark ? 0.10 : 0.07),
+                    color: _sosRed.withValues(alpha: isDark ? 0.10 : 0.07),
                   ),
                 ),
                 // Main morph button
@@ -844,7 +853,7 @@ class _SosScreenState extends State<SosScreen>
                       gradient: RadialGradient(
                         colors: [
                           _isTriggering
-                              ? _sosRed.withOpacity(0.75)
+                              ? _sosRed.withValues(alpha: 0.75)
                               : const Color(0xFFFF6B60),
                           _sosRed,
                           const Color(0xFFC62828),
@@ -853,19 +862,23 @@ class _SosScreenState extends State<SosScreen>
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: _sosRed.withOpacity(isDark ? 0.45 : 0.32),
+                          color: _sosRed.withValues(
+                            alpha: isDark ? 0.45 : 0.32,
+                          ),
                           blurRadius: 28 + (_pulseController.value * 10),
                           spreadRadius: 1,
                           offset: const Offset(0, 12),
                         ),
                         BoxShadow(
-                          color: Colors.white.withOpacity(isDark ? 0.06 : 0.35),
+                          color: Colors.white.withValues(
+                            alpha: isDark ? 0.06 : 0.35,
+                          ),
                           blurRadius: 12,
                           offset: const Offset(-4, -4),
                         ),
                       ],
                       border: Border.all(
-                        color: Colors.white.withOpacity(0.18),
+                        color: Colors.white.withValues(alpha: 0.18),
                         width: 1.5,
                       ),
                     ),
@@ -882,8 +895,11 @@ class _SosScreenState extends State<SosScreen>
                           : const Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(Icons.sos_rounded,
-                                    color: Colors.white, size: 46),
+                                Icon(
+                                  Icons.sos_rounded,
+                                  color: Colors.white,
+                                  size: 46,
+                                ),
                                 SizedBox(height: 2),
                                 Text(
                                   'SOS',
@@ -931,13 +947,13 @@ class _SosScreenState extends State<SosScreen>
             height: 64,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: _sosRed.withOpacity(0.10),
-              border: Border.all(color: _sosRed.withOpacity(0.15)),
+              color: _sosRed.withValues(alpha: 0.10),
+              border: Border.all(color: _sosRed.withValues(alpha: 0.15)),
             ),
             child: Icon(
               Icons.people_outline_rounded,
               size: 30,
-              color: _sosRed.withOpacity(0.85),
+              color: _sosRed.withValues(alpha: 0.85),
             ),
           ),
           const SizedBox(height: 14),
@@ -954,11 +970,7 @@ class _SosScreenState extends State<SosScreen>
           Text(
             'Add people who should be notified when you trigger SOS.',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 13,
-              height: 1.4,
-              color: secondaryText,
-            ),
+            style: TextStyle(fontSize: 13, height: 1.4, color: secondaryText),
           ),
           const SizedBox(height: 18),
           _MorphButton(
@@ -987,10 +999,13 @@ class _SosScreenState extends State<SosScreen>
                 height: 64,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: _sosRed.withOpacity(0.12),
+                  color: _sosRed.withValues(alpha: 0.12),
                 ),
-                child: const Icon(Icons.wifi_off_rounded,
-                    size: 30, color: _sosRed),
+                child: const Icon(
+                  Icons.wifi_off_rounded,
+                  size: 30,
+                  color: _sosRed,
+                ),
               ),
               const SizedBox(height: 14),
               Text(
@@ -1061,28 +1076,25 @@ class _MorphButton extends StatelessWidget {
                 ? LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [
-                      color.withOpacity(0.95),
-                      color,
-                    ],
+                    colors: [color.withValues(alpha: 0.95), color],
                   )
                 : null,
             color: filled
                 ? null
                 : (isDark
-                    ? Colors.white.withOpacity(0.06)
-                    : Colors.black.withOpacity(0.04)),
+                      ? Colors.white.withValues(alpha: 0.06)
+                      : Colors.black.withValues(alpha: 0.04)),
             border: Border.all(
               color: filled
-                  ? color.withOpacity(0.35)
+                  ? color.withValues(alpha: 0.35)
                   : (isDark
-                      ? Colors.white.withOpacity(0.10)
-                      : Colors.black.withOpacity(0.06)),
+                        ? Colors.white.withValues(alpha: 0.10)
+                        : Colors.black.withValues(alpha: 0.06)),
             ),
             boxShadow: filled
                 ? [
                     BoxShadow(
-                      color: color.withOpacity(0.28),
+                      color: color.withValues(alpha: 0.28),
                       blurRadius: 14,
                       offset: const Offset(0, 6),
                     ),
@@ -1145,16 +1157,16 @@ class _MorphIconButton extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(14),
             color: accent
-                ? const Color(0xFFFF3B30).withOpacity(0.12)
+                ? const Color(0xFFFF3B30).withValues(alpha: 0.12)
                 : (isDark
-                    ? Colors.white.withOpacity(0.06)
-                    : Colors.black.withOpacity(0.04)),
+                      ? Colors.white.withValues(alpha: 0.06)
+                      : Colors.black.withValues(alpha: 0.04)),
             border: Border.all(
               color: accent
-                  ? const Color(0xFFFF3B30).withOpacity(0.2)
+                  ? const Color(0xFFFF3B30).withValues(alpha: 0.2)
                   : (isDark
-                      ? Colors.white.withOpacity(0.08)
-                      : Colors.black.withOpacity(0.05)),
+                        ? Colors.white.withValues(alpha: 0.08)
+                        : Colors.black.withValues(alpha: 0.05)),
             ),
           ),
           child: Icon(
@@ -1210,14 +1222,14 @@ class _EmergencyMorphCard extends StatelessWidget {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    color.withOpacity(0.22),
-                    color.withOpacity(0.08),
+                    color.withValues(alpha: 0.22),
+                    color.withValues(alpha: 0.08),
                   ],
                 ),
-                border: Border.all(color: color.withOpacity(0.22)),
+                border: Border.all(color: color.withValues(alpha: 0.22)),
                 boxShadow: [
                   BoxShadow(
-                    color: color.withOpacity(isDark ? 0.18 : 0.12),
+                    color: color.withValues(alpha: isDark ? 0.18 : 0.12),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
@@ -1249,7 +1261,7 @@ class _EmergencyMorphCard extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(20),
-                color: color.withOpacity(0.12),
+                color: color.withValues(alpha: 0.12),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -1306,19 +1318,17 @@ class _ContactMorphCard extends StatelessWidget {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  const Color(0xFFFF3B30).withOpacity(0.22),
-                  const Color(0xFFFF6D55).withOpacity(0.10),
+                  const Color(0xFFFF3B30).withValues(alpha: 0.22),
+                  const Color(0xFFFF6D55).withValues(alpha: 0.10),
                 ],
               ),
               border: Border.all(
-                color: const Color(0xFFFF3B30).withOpacity(0.18),
+                color: const Color(0xFFFF3B30).withValues(alpha: 0.18),
               ),
             ),
             child: Center(
               child: Text(
-                contact.name.isNotEmpty
-                    ? contact.name[0].toUpperCase()
-                    : '?',
+                contact.name.isNotEmpty ? contact.name[0].toUpperCase() : '?',
                 style: const TextStyle(
                   color: Color(0xFFFF3B30),
                   fontWeight: FontWeight.w900,
@@ -1382,12 +1392,12 @@ class _ContactMorphCard extends StatelessWidget {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(14),
                 color: isDark
-                    ? Colors.white.withOpacity(0.06)
-                    : Colors.black.withOpacity(0.04),
+                    ? Colors.white.withValues(alpha: 0.06)
+                    : Colors.black.withValues(alpha: 0.04),
                 border: Border.all(
                   color: isDark
-                      ? Colors.white.withOpacity(0.08)
-                      : Colors.black.withOpacity(0.05),
+                      ? Colors.white.withValues(alpha: 0.08)
+                      : Colors.black.withValues(alpha: 0.05),
                 ),
               ),
               child: Icon(
@@ -1464,8 +1474,9 @@ class _SosContactSheetState extends State<_SosContactSheet> {
           content: Text(e.toString().replaceFirst('Exception: ', '')),
           backgroundColor: _sosRed,
           behavior: SnackBarBehavior.floating,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
       );
     }
@@ -1487,14 +1498,15 @@ class _SosContactSheetState extends State<_SosContactSheet> {
           child: Container(
             decoration: BoxDecoration(
               color: isDark
-                  ? const Color(0xFF16161C).withOpacity(0.90)
-                  : Colors.white.withOpacity(0.92),
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(28)),
+                  ? const Color(0xFF16161C).withValues(alpha: 0.90)
+                  : Colors.white.withValues(alpha: 0.92),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(28),
+              ),
               border: Border.all(
                 color: isDark
-                    ? Colors.white.withOpacity(0.10)
-                    : Colors.white.withOpacity(0.70),
+                    ? Colors.white.withValues(alpha: 0.10)
+                    : Colors.white.withValues(alpha: 0.70),
               ),
             ),
             padding: const EdgeInsets.fromLTRB(22, 12, 22, 28),
@@ -1546,8 +1558,7 @@ class _SosContactSheetState extends State<_SosContactSheet> {
                   TextFormField(
                     controller: _phoneCtrl,
                     keyboardType: TextInputType.phone,
-                    decoration:
-                        widget.inputDecoration('Phone number', isDark),
+                    decoration: widget.inputDecoration('Phone number', isDark),
                     validator: (v) =>
                         (v == null || v.trim().isEmpty) ? 'Required' : null,
                   ),
@@ -1571,4 +1582,3 @@ class _SosContactSheetState extends State<_SosContactSheet> {
     );
   }
 }
-

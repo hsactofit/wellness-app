@@ -24,16 +24,16 @@ class GlassCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     // Sleek and harmonized frosted glass colors
-    final defaultBgColor = isDark 
-        ? Colors.black.withOpacity(0.35) 
-        : Colors.white.withOpacity(0.65);
-        
+    final defaultBgColor = isDark
+        ? Colors.black.withValues(alpha: 0.35)
+        : Colors.white.withValues(alpha: 0.65);
+
     final defaultBorder = Border.all(
-      color: isDark 
-          ? Colors.white.withOpacity(0.12) 
-          : Colors.white.withOpacity(0.55),
+      color: isDark
+          ? Colors.white.withValues(alpha: 0.12)
+          : Colors.white.withValues(alpha: 0.55),
       width: 1.3,
     );
 
@@ -43,9 +43,9 @@ class GlassCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(borderRadius),
         boxShadow: [
           BoxShadow(
-            color: isDark 
-                ? Colors.black.withOpacity(0.25) 
-                : Colors.blueAccent.withOpacity(0.07),
+            color: isDark
+                ? Colors.black.withValues(alpha: 0.25)
+                : Colors.blueAccent.withValues(alpha: 0.07),
             blurRadius: 24,
             spreadRadius: -3,
             offset: const Offset(0, 12),
