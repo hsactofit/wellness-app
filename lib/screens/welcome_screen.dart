@@ -10,7 +10,8 @@ class WelcomeScreen extends StatefulWidget {
   State<WelcomeScreen> createState() => _WelcomeScreenState();
 }
 
-class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProviderStateMixin {
+class _WelcomeScreenState extends State<WelcomeScreen>
+    with SingleTickerProviderStateMixin {
   final PageController _pageController = PageController();
   int _currentPage = 0;
   final int _totalPages = 3;
@@ -103,8 +104,10 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
                           shape: BoxShape.circle,
                           gradient: RadialGradient(
                             colors: [
-                              isDark ? Colors.blue.withOpacity(0.22) : Colors.cyan.withOpacity(0.35),
-                              Colors.blue.withOpacity(0.0),
+                              isDark
+                                  ? Colors.blue.withValues(alpha: 0.22)
+                                  : Colors.cyan.withValues(alpha: 0.35),
+                              Colors.blue.withValues(alpha: 0.0),
                             ],
                           ),
                         ),
@@ -120,8 +123,10 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
                           shape: BoxShape.circle,
                           gradient: RadialGradient(
                             colors: [
-                              isDark ? Colors.purple.withOpacity(0.18) : Colors.pink.withOpacity(0.24),
-                              Colors.purple.withOpacity(0.0),
+                              isDark
+                                  ? Colors.purple.withValues(alpha: 0.18)
+                                  : Colors.pink.withValues(alpha: 0.24),
+                              Colors.purple.withValues(alpha: 0.0),
                             ],
                           ),
                         ),
@@ -139,7 +144,10 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
               children: [
                 // Top Segment Indicator dots
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 16,
+                  ),
                   child: Row(
                     children: List.generate(_totalPages, (index) {
                       final isActive = index == _currentPage;
@@ -175,7 +183,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
                       WelcomeStep(
                         imagePath: "assets/slide_1_onbording.png",
                         title: "Welcome to Your Wellness Journey",
-                        description: "Track your daily health, activity, nutrition, and wellness records all in one place.",
+                        description:
+                            "Track your daily health, activity, nutrition, and wellness records all in one place.",
                         actionLabel: "Next",
                         onAction: _nextPage,
                         isFirst: true,
@@ -183,7 +192,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
                       WelcomeStep(
                         imagePath: "assets/slide_2_onbording.png",
                         title: "Build Healthy Habits",
-                        description: "Set personalized goals, monitor progress daily, and stay inspired to live a healthier life.",
+                        description:
+                            "Set personalized goals, monitor progress daily, and stay inspired to live a healthier life.",
                         actionLabel: "Next",
                         onAction: _nextPage,
                         onBack: _prevPage,
@@ -191,7 +201,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
                       WelcomeStep(
                         imagePath: "assets/slide_3_onbording.png",
                         title: "Your AI Wellness Companion",
-                        description: "Receive personalized tips, metrics summary, and recommendations designed exactly for you.",
+                        description:
+                            "Receive personalized tips, metrics summary, and recommendations designed exactly for you.",
                         actionLabel: "Get Started",
                         onAction: _nextPage,
                         onBack: _prevPage,

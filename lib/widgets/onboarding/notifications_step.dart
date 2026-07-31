@@ -44,7 +44,8 @@ class NotificationsStep extends StatefulWidget {
   State<NotificationsStep> createState() => _NotificationsStepState();
 }
 
-class _NotificationsStepState extends State<NotificationsStep> with SingleTickerProviderStateMixin {
+class _NotificationsStepState extends State<NotificationsStep>
+    with SingleTickerProviderStateMixin {
   late AnimationController _bellController;
   late Animation<double> _rotationAnimation;
   late Animation<double> _scaleAnimation;
@@ -58,17 +59,11 @@ class _NotificationsStepState extends State<NotificationsStep> with SingleTicker
     )..repeat(reverse: true);
 
     _rotationAnimation = Tween<double>(begin: -0.10, end: 0.10).animate(
-      CurvedAnimation(
-        parent: _bellController,
-        curve: Curves.easeInOut,
-      ),
+      CurvedAnimation(parent: _bellController, curve: Curves.easeInOut),
     );
 
     _scaleAnimation = Tween<double>(begin: 0.94, end: 1.06).animate(
-      CurvedAnimation(
-        parent: _bellController,
-        curve: Curves.easeInOut,
-      ),
+      CurvedAnimation(parent: _bellController, curve: Curves.easeInOut),
     );
   }
 
@@ -90,7 +85,10 @@ class _NotificationsStepState extends State<NotificationsStep> with SingleTicker
         children: [
           Expanded(
             child: GlassCard(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 24.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 20.0,
+                vertical: 24.0,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -120,7 +118,11 @@ class _NotificationsStepState extends State<NotificationsStep> with SingleTicker
                     child: Text(
                       "Notifications",
                       textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, letterSpacing: -0.5),
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: -0.5,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 6),
@@ -130,7 +132,7 @@ class _NotificationsStepState extends State<NotificationsStep> with SingleTicker
                       "Stay motivated with smart wellness alerts",
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: isDark ? Colors.grey[400] : Colors.grey[600], 
+                        color: isDark ? Colors.grey[400] : Colors.grey[600],
                         fontSize: 13,
                       ),
                     ),
@@ -140,13 +142,62 @@ class _NotificationsStepState extends State<NotificationsStep> with SingleTicker
                     child: ListView(
                       physics: const BouncingScrollPhysics(),
                       children: [
-                        _buildNotifToggle("Daily Wellness Reminder", "Receive a summary of today's health metrics.", widget.notifDaily, widget.onDailyChanged, isDark, 350),
-                        _buildNotifToggle("Hydration Alert", "Remind you to log water and reach your goals.", widget.notifHydration, widget.onHydrationChanged, isDark, 450),
-                        _buildNotifToggle("Activity Summary", "Weekly logs of total distance and calories.", widget.notifActivity, widget.onActivityChanged, isDark, 550),
-                        _buildNotifToggle("Sleep Schedule", "Gentle alerts when it's time to rest.", widget.notifSleep, widget.onSleepChanged, isDark, 650),
-                        _buildNotifToggle("Challenge & Updates", "Compete with users in fun activities.", widget.notifChallenges, widget.onChallengesChanged, isDark, 750),
-                        _buildNotifToggle("Rewards & Offers", "Earn achievements and premium badges.", widget.notifRewards, widget.onRewardsChanged, isDark, 850),
-                        _buildNotifToggle("AI Wellness Tips", "Tailored feedback on health improvements.", widget.notifAiTips, widget.onAiTipsChanged, isDark, 950),
+                        _buildNotifToggle(
+                          "Daily Wellness Reminder",
+                          "Receive a summary of today's health metrics.",
+                          widget.notifDaily,
+                          widget.onDailyChanged,
+                          isDark,
+                          350,
+                        ),
+                        _buildNotifToggle(
+                          "Hydration Alert",
+                          "Remind you to log water and reach your goals.",
+                          widget.notifHydration,
+                          widget.onHydrationChanged,
+                          isDark,
+                          450,
+                        ),
+                        _buildNotifToggle(
+                          "Activity Summary",
+                          "Weekly logs of total distance and calories.",
+                          widget.notifActivity,
+                          widget.onActivityChanged,
+                          isDark,
+                          550,
+                        ),
+                        _buildNotifToggle(
+                          "Sleep Schedule",
+                          "Gentle alerts when it's time to rest.",
+                          widget.notifSleep,
+                          widget.onSleepChanged,
+                          isDark,
+                          650,
+                        ),
+                        _buildNotifToggle(
+                          "Challenge & Updates",
+                          "Compete with users in fun activities.",
+                          widget.notifChallenges,
+                          widget.onChallengesChanged,
+                          isDark,
+                          750,
+                        ),
+                        _buildNotifToggle(
+                          "Rewards & Offers",
+                          "Earn achievements and premium badges.",
+                          widget.notifRewards,
+                          widget.onRewardsChanged,
+                          isDark,
+                          850,
+                        ),
+                        _buildNotifToggle(
+                          "AI Wellness Tips",
+                          "Tailored feedback on health improvements.",
+                          widget.notifAiTips,
+                          widget.onAiTipsChanged,
+                          isDark,
+                          950,
+                        ),
                       ],
                     ),
                   ),
@@ -163,11 +214,20 @@ class _NotificationsStepState extends State<NotificationsStep> with SingleTicker
                   child: OutlinedButton(
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      side: BorderSide(color: isDark ? Colors.white24 : Colors.black12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      side: BorderSide(
+                        color: isDark ? Colors.white24 : Colors.black12,
+                      ),
                     ),
                     onPressed: widget.onBack,
-                    child: Text("Back", style: TextStyle(color: isDark ? Colors.white70 : Colors.black87)),
+                    child: Text(
+                      "Back",
+                      style: TextStyle(
+                        color: isDark ? Colors.white70 : Colors.black87,
+                      ),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -177,12 +237,17 @@ class _NotificationsStepState extends State<NotificationsStep> with SingleTicker
                       backgroundColor: Colors.blueAccent,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      shadowColor: Colors.blueAccent.withOpacity(0.3),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      shadowColor: Colors.blueAccent.withValues(alpha: 0.3),
                       elevation: 4,
                     ),
                     onPressed: widget.onNext,
-                    child: const Text("Allow & Finish", style: TextStyle(fontWeight: FontWeight.bold)),
+                    child: const Text(
+                      "Allow & Finish",
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
                   ),
                 ),
               ],
@@ -207,28 +272,32 @@ class _NotificationsStepState extends State<NotificationsStep> with SingleTicker
         margin: const EdgeInsets.symmetric(vertical: 6),
         padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
         decoration: BoxDecoration(
-          color: isDark ? Colors.white.withOpacity(0.03) : Colors.black.withOpacity(0.015),
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.03)
+              : Colors.black.withValues(alpha: 0.015),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isDark ? Colors.white.withOpacity(0.06) : Colors.black.withOpacity(0.04),
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.06)
+                : Colors.black.withValues(alpha: 0.04),
           ),
         ),
         child: SwitchListTile(
           title: Text(
-            title, 
+            title,
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
           ),
           subtitle: Text(
-            subtitle, 
+            subtitle,
             style: TextStyle(
-              fontSize: 11, 
+              fontSize: 11,
               color: isDark ? Colors.grey[400] : Colors.grey[600],
             ),
           ),
           value: value,
           onChanged: onChanged,
           activeThumbColor: Colors.blueAccent,
-          activeTrackColor: Colors.blueAccent.withOpacity(0.3),
+          activeTrackColor: Colors.blueAccent.withValues(alpha: 0.3),
           contentPadding: const EdgeInsets.symmetric(horizontal: 8),
         ),
       ),

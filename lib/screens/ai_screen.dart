@@ -44,21 +44,25 @@ class _AIScreenState extends State<AIScreen> {
         final latest = Map<String, dynamic>.from(conversations.first as Map);
         final id = latest['id']?.toString();
         if (id != null) {
-          final items = await ApiService.instance.getAiChatConversationMessages(id);
+          final items = await ApiService.instance.getAiChatConversationMessages(
+            id,
+          );
           if (items.isNotEmpty && mounted) {
             setState(() {
               _conversationId = id;
               _messages
                 ..clear()
-                ..addAll(items.map((raw) {
-                  final m = Map<String, dynamic>.from(raw as Map);
-                  final role = (m['role'] as String? ?? '').toLowerCase();
-                  return {
-                    'isUser': role == 'user',
-                    'text': m['content'] as String? ?? '',
-                    'time': _formatTime(m['created_at'] as String?),
-                  };
-                }));
+                ..addAll(
+                  items.map((raw) {
+                    final m = Map<String, dynamic>.from(raw as Map);
+                    final role = (m['role'] as String? ?? '').toLowerCase();
+                    return {
+                      'isUser': role == 'user',
+                      'text': m['content'] as String? ?? '',
+                      'time': _formatTime(m['created_at'] as String?),
+                    };
+                  }),
+                );
             });
             _scrollToBottom();
             return;
@@ -106,11 +110,7 @@ class _AIScreenState extends State<AIScreen> {
 
     setState(() {
       _isSending = true;
-      _messages.add({
-        'isUser': true,
-        'text': trimmed,
-        'time': "Just now",
-      });
+      _messages.add({'isUser': true, 'text': trimmed, 'time': "Just now"});
       _messageController.clear();
     });
     _scrollToBottom();
@@ -134,7 +134,8 @@ class _AIScreenState extends State<AIScreen> {
 
       if (!mounted) return;
 
-      final String reply = resData['reply'] as String? ?? "I couldn't process that.";
+      final String reply =
+          resData['reply'] as String? ?? "I couldn't process that.";
       final String? convId = resData['conversation_id'] as String?;
 
       setState(() {
@@ -216,8 +217,8 @@ class _AIScreenState extends State<AIScreen> {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    Colors.teal.withOpacity(isDark ? 0.12 : 0.08),
-                    Colors.teal.withOpacity(0.0),
+                    Colors.teal.withValues(alpha: isDark ? 0.12 : 0.08),
+                    Colors.teal.withValues(alpha: 0.0),
                   ],
                 ),
               ),
@@ -228,7 +229,10 @@ class _AIScreenState extends State<AIScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 12,
+                  ),
                   child: Row(
                     children: [
                       Container(
@@ -237,7 +241,7 @@ class _AIScreenState extends State<AIScreen> {
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: Colors.tealAccent.withOpacity(0.3),
+                            color: Colors.tealAccent.withValues(alpha: 0.3),
                             width: 1.5,
                           ),
                         ),
@@ -278,7 +282,10 @@ class _AIScreenState extends State<AIScreen> {
                                 SizedBox(width: 6),
                                 Text(
                                   "Online & Ready",
-                                  style: TextStyle(fontSize: 11, color: Colors.grey),
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: Colors.grey,
+                                  ),
                                 ),
                               ],
                             ),
@@ -300,10 +307,15 @@ class _AIScreenState extends State<AIScreen> {
                 const Divider(height: 1, color: Colors.white10),
                 Expanded(
                   child: _isLoadingHistory
-                      ? const Center(child: CircularProgressIndicator(strokeWidth: 2))
+                      ? const Center(
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
                       : ListView.builder(
                           controller: _scrollController,
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 16,
+                          ),
                           physics: const BouncingScrollPhysics(),
                           itemCount: _messages.length,
                           itemBuilder: (context, index) {
@@ -318,7 +330,8 @@ class _AIScreenState extends State<AIScreen> {
                           },
                         ),
                 ),
-                if (!_isLoadingHistory && _messages.where((m) => m['isUser'] == true).isEmpty)
+                if (!_isLoadingHistory &&
+                    _messages.where((m) => m['isUser'] == true).isEmpty)
                   SizedBox(
                     height: 40,
                     child: ListView.builder(
@@ -334,18 +347,24 @@ class _AIScreenState extends State<AIScreen> {
                             elevation: 0,
                             pressElevation: 0,
                             backgroundColor: isDark
-                                ? Colors.white.withOpacity(0.04)
-                                : Colors.black.withOpacity(0.03),
-                            side: BorderSide(color: isDark ? Colors.white10 : Colors.black12),
+                                ? Colors.white.withValues(alpha: 0.04)
+                                : Colors.black.withValues(alpha: 0.03),
+                            side: BorderSide(
+                              color: isDark ? Colors.white10 : Colors.black12,
+                            ),
                             label: Text(
                               text,
                               style: TextStyle(
-                                color: isDark ? Colors.tealAccent : Colors.teal[800],
+                                color: isDark
+                                    ? Colors.tealAccent
+                                    : Colors.teal[800],
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
-                            onPressed: _isSending ? null : () => _sendMessage(text),
+                            onPressed: _isSending
+                                ? null
+                                : () => _sendMessage(text),
                           ),
                         );
                       },
@@ -353,12 +372,19 @@ class _AIScreenState extends State<AIScreen> {
                   ),
                 const SizedBox(height: 8),
                 Padding(
-                  padding: const EdgeInsets.only(left: 16, right: 16, bottom: 96),
+                  padding: const EdgeInsets.only(
+                    left: 16,
+                    right: 16,
+                    bottom: 96,
+                  ),
                   child: Row(
                     children: [
                       Expanded(
                         child: GlassCard(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 4,
+                          ),
                           child: TextField(
                             controller: _messageController,
                             enabled: !_isSending,
@@ -379,17 +405,28 @@ class _AIScreenState extends State<AIScreen> {
                       Container(
                         decoration: const BoxDecoration(
                           shape: BoxShape.circle,
-                          gradient: LinearGradient(colors: [Colors.tealAccent, Colors.blueAccent]),
+                          gradient: LinearGradient(
+                            colors: [Colors.tealAccent, Colors.blueAccent],
+                          ),
                         ),
                         child: IconButton(
                           icon: _isSending
                               ? const SizedBox(
                                   width: 18,
                                   height: 18,
-                                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
                                 )
-                              : const Icon(Icons.send_rounded, color: Colors.white, size: 20),
-                          onPressed: _isSending ? null : () => _sendMessage(_messageController.text),
+                              : const Icon(
+                                  Icons.send_rounded,
+                                  color: Colors.white,
+                                  size: 20,
+                                ),
+                          onPressed: _isSending
+                              ? null
+                              : () => _sendMessage(_messageController.text),
                         ),
                       ),
                     ],
@@ -403,17 +440,26 @@ class _AIScreenState extends State<AIScreen> {
     );
   }
 
-  Widget _buildChatBubble(String text, bool isUser, bool isDark, {bool isTyping = false}) {
+  Widget _buildChatBubble(
+    String text,
+    bool isUser,
+    bool isDark, {
+    bool isTyping = false,
+  }) {
     return Align(
       alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
+        constraints: BoxConstraints(
+          maxWidth: MediaQuery.of(context).size.width * 0.75,
+        ),
         decoration: BoxDecoration(
           color: isUser
-              ? Colors.teal.withOpacity(0.2)
-              : (isDark ? Colors.white.withOpacity(0.04) : Colors.black.withOpacity(0.03)),
+              ? Colors.teal.withValues(alpha: 0.2)
+              : (isDark
+                    ? Colors.white.withValues(alpha: 0.04)
+                    : Colors.black.withValues(alpha: 0.03)),
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(16),
             topRight: const Radius.circular(16),
@@ -421,7 +467,9 @@ class _AIScreenState extends State<AIScreen> {
             bottomRight: Radius.circular(isUser ? 4 : 16),
           ),
           border: Border.all(
-            color: isUser ? Colors.teal.withOpacity(0.4) : (isDark ? Colors.white10 : Colors.black12),
+            color: isUser
+                ? Colors.teal.withValues(alpha: 0.4)
+                : (isDark ? Colors.white10 : Colors.black12),
           ),
         ),
         child: isTyping

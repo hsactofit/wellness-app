@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'api_service.dart';
 
@@ -51,7 +52,7 @@ class PushService {
       // Push is an enhancement, not a hard dependency — a misconfigured
       // Firebase project (e.g. no APNs key set up in Apple Developer
       // Console yet) shouldn't block app startup.
-      print("PushService init error: $e");
+      debugPrint("PushService init error: $e");
     }
   }
 
@@ -62,7 +63,7 @@ class PushService {
         Platform.isIOS ? 'ios' : 'android',
       );
     } catch (e) {
-      print("Device token registration error: $e");
+      debugPrint("Device token registration error: $e");
     }
   }
 }

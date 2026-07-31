@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -10,7 +9,8 @@ class GoalsConfigurationScreen extends StatefulWidget {
   const GoalsConfigurationScreen({super.key});
 
   @override
-  State<GoalsConfigurationScreen> createState() => _GoalsConfigurationScreenState();
+  State<GoalsConfigurationScreen> createState() =>
+      _GoalsConfigurationScreenState();
 }
 
 class _GoalsConfigurationScreenState extends State<GoalsConfigurationScreen>
@@ -84,8 +84,10 @@ class _GoalsConfigurationScreenState extends State<GoalsConfigurationScreen>
         setState(() {
           _stepGoal = (data['step_goal'] as num?)?.toDouble() ?? _stepGoal;
           _waterGoal = (data['water_goal'] as num?)?.toDouble() ?? _waterGoal;
-          _calorieGoal = (data['calorie_goal'] as num?)?.toDouble() ?? _calorieGoal;
-          _exerciseGoal = (data['exercise_goal'] as num?)?.toDouble() ?? _exerciseGoal;
+          _calorieGoal =
+              (data['calorie_goal'] as num?)?.toDouble() ?? _calorieGoal;
+          _exerciseGoal =
+              (data['exercise_goal'] as num?)?.toDouble() ?? _exerciseGoal;
           _sleepGoal = (data['sleep_goal'] as num?)?.toDouble() ?? _sleepGoal;
         });
 
@@ -209,8 +211,10 @@ class _GoalsConfigurationScreenState extends State<GoalsConfigurationScreen>
                           shape: BoxShape.circle,
                           gradient: RadialGradient(
                             colors: [
-                              Colors.blue.withOpacity(isDark ? 0.12 : 0.08),
-                              Colors.blue.withOpacity(0.0),
+                              Colors.blue.withValues(
+                                alpha: isDark ? 0.12 : 0.08,
+                              ),
+                              Colors.blue.withValues(alpha: 0.0),
                             ],
                           ),
                         ),
@@ -226,8 +230,10 @@ class _GoalsConfigurationScreenState extends State<GoalsConfigurationScreen>
                           shape: BoxShape.circle,
                           gradient: RadialGradient(
                             colors: [
-                              Colors.teal.withOpacity(isDark ? 0.10 : 0.06),
-                              Colors.teal.withOpacity(0.0),
+                              Colors.teal.withValues(
+                                alpha: isDark ? 0.10 : 0.06,
+                              ),
+                              Colors.teal.withValues(alpha: 0.0),
                             ],
                           ),
                         ),
@@ -245,11 +251,18 @@ class _GoalsConfigurationScreenState extends State<GoalsConfigurationScreen>
               children: [
                 // Premium custom app bar
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                   child: Row(
                     children: [
                       IconButton(
-                        icon: Icon(Icons.arrow_back_ios_new_rounded, color: textColor, size: 20),
+                        icon: Icon(
+                          Icons.arrow_back_ios_new_rounded,
+                          color: textColor,
+                          size: 20,
+                        ),
                         onPressed: () => Navigator.pop(context),
                       ),
                       const SizedBox(width: 8),
@@ -267,7 +280,10 @@ class _GoalsConfigurationScreenState extends State<GoalsConfigurationScreen>
                 Expanded(
                   child: SingleChildScrollView(
                     physics: const BouncingScrollPhysics(),
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 8,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
@@ -446,9 +462,9 @@ class _GoalsConfigurationScreenState extends State<GoalsConfigurationScreen>
           SliderTheme(
             data: SliderThemeData(
               activeTrackColor: color,
-              inactiveTrackColor: color.withOpacity(0.12),
+              inactiveTrackColor: color.withValues(alpha: 0.12),
               thumbColor: color,
-              overlayColor: color.withOpacity(0.15),
+              overlayColor: color.withValues(alpha: 0.15),
               trackHeight: 4,
               valueIndicatorColor: color,
             ),

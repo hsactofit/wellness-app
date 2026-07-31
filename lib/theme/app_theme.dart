@@ -75,7 +75,7 @@ class AppTheme {
         secondaryLabelStyle: textTheme.labelMedium,
       ),
       dividerTheme: DividerThemeData(
-        color: Colors.black.withOpacity(0.06),
+        color: Colors.black.withValues(alpha: 0.06),
         thickness: 1,
       ),
     );
@@ -131,7 +131,7 @@ class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         labelStyle: textTheme.bodyMedium,
         hintStyle: textTheme.bodyMedium?.copyWith(
-          color: Colors.white.withOpacity(0.4),
+          color: Colors.white.withValues(alpha: 0.4),
         ),
         floatingLabelStyle: textTheme.labelMedium?.copyWith(
           color: brandPrimary,
@@ -142,7 +142,7 @@ class AppTheme {
         secondaryLabelStyle: textTheme.labelMedium,
       ),
       dividerTheme: DividerThemeData(
-        color: Colors.white.withOpacity(0.08),
+        color: Colors.white.withValues(alpha: 0.08),
         thickness: 1,
       ),
     );

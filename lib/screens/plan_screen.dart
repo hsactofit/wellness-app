@@ -11,11 +11,7 @@ class PlanScreen extends StatefulWidget {
   final PlanKind kind;
   final VoidCallback? onPlanChanged;
 
-  const PlanScreen({
-    super.key,
-    required this.kind,
-    this.onPlanChanged,
-  });
+  const PlanScreen({super.key, required this.kind, this.onPlanChanged});
 
   @override
   State<PlanScreen> createState() => _PlanScreenState();
@@ -24,7 +20,8 @@ class PlanScreen extends StatefulWidget {
 class _PlanScreenState extends State<PlanScreen> {
   bool _isWorkout(PlanKind k) => k == PlanKind.workout;
   bool get _isWorkoutKind => _isWorkout(widget.kind);
-  Color get _accent => _isWorkoutKind ? const Color(0xFF5B8CFF) : const Color(0xFFFF9F43);
+  Color get _accent =>
+      _isWorkoutKind ? const Color(0xFF5B8CFF) : const Color(0xFFFF9F43);
   String get _title => _isWorkoutKind ? 'Workout Plan' : 'Nutrition Plan';
   String get _emoji => _isWorkoutKind ? '💪' : '🥗';
 
@@ -93,7 +90,9 @@ class _PlanScreenState extends State<PlanScreen> {
   }
 
   Duration? get _cooldownRemaining {
-    final createdAt = _isWorkoutKind ? _workoutPlan?.createdAt : _nutritionPlan?.createdAt;
+    final createdAt = _isWorkoutKind
+        ? _workoutPlan?.createdAt
+        : _nutritionPlan?.createdAt;
     if (createdAt == null) return null;
     final elapsed = DateTime.now().difference(createdAt);
     final remaining = const Duration(hours: 24) - elapsed;
@@ -130,7 +129,8 @@ class _PlanScreenState extends State<PlanScreen> {
           'allergies': _allergies,
           'meals_per_day': _mealsPerDay.round(),
           if (_setCalorieTarget) 'calorie_target': _calorieTarget.round(),
-          if (_cuisineCtrl.text.trim().isNotEmpty) 'cuisine': _cuisineCtrl.text.trim(),
+          if (_cuisineCtrl.text.trim().isNotEmpty)
+            'cuisine': _cuisineCtrl.text.trim(),
         };
         final result = await ApiService.instance.generateNutritionPlan(body);
         _nutritionPlan = NutritionPlan.fromJson(result);
@@ -153,7 +153,9 @@ class _PlanScreenState extends State<PlanScreen> {
     final isDark = theme.brightness == Brightness.dark;
     final textColor = isDark ? Colors.white : Colors.black87;
 
-    final hasPlan = _isWorkoutKind ? _workoutPlan != null : _nutritionPlan != null;
+    final hasPlan = _isWorkoutKind
+        ? _workoutPlan != null
+        : _nutritionPlan != null;
 
     return Scaffold(
       body: Stack(
@@ -173,8 +175,8 @@ class _PlanScreenState extends State<PlanScreen> {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    _accent.withOpacity(isDark ? 0.14 : 0.08),
-                    _accent.withOpacity(0.0),
+                    _accent.withValues(alpha: isDark ? 0.14 : 0.08),
+                    _accent.withValues(alpha: 0.0),
                   ],
                 ),
               ),
@@ -184,16 +186,22 @@ class _PlanScreenState extends State<PlanScreen> {
             child: Column(
               children: [
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 16,
+                  ),
                   child: Row(
                     children: [
                       IconButton(
                         style: IconButton.styleFrom(
                           backgroundColor: isDark
-                              ? Colors.white.withOpacity(0.06)
-                              : Colors.black.withOpacity(0.04),
+                              ? Colors.white.withValues(alpha: 0.06)
+                              : Colors.black.withValues(alpha: 0.04),
                         ),
-                        icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 16),
+                        icon: const Icon(
+                          Icons.arrow_back_ios_new_rounded,
+                          size: 16,
+                        ),
                         color: isDark ? Colors.white70 : Colors.black87,
                         onPressed: () => Navigator.pop(context),
                       ),
@@ -211,7 +219,10 @@ class _PlanScreenState extends State<PlanScreen> {
                         IconButton(
                           tooltip: "Refresh",
                           onPressed: _load,
-                          icon: Icon(Icons.refresh_rounded, color: isDark ? Colors.white70 : Colors.black54),
+                          icon: Icon(
+                            Icons.refresh_rounded,
+                            color: isDark ? Colors.white70 : Colors.black54,
+                          ),
                         ),
                     ],
                   ),
@@ -220,10 +231,10 @@ class _PlanScreenState extends State<PlanScreen> {
                   child: _isLoading
                       ? Center(child: CircularProgressIndicator(color: _accent))
                       : _loadError != null
-                          ? _buildErrorState(isDark, textColor)
-                          : hasPlan
-                              ? _buildPlanView(isDark, textColor)
-                              : _buildGenerateForm(isDark, textColor),
+                      ? _buildErrorState(isDark, textColor)
+                      : hasPlan
+                      ? _buildPlanView(isDark, textColor)
+                      : _buildGenerateForm(isDark, textColor),
                 ),
               ],
             ),
@@ -249,7 +260,10 @@ class _PlanScreenState extends State<PlanScreen> {
             ),
             const SizedBox(height: 16),
             ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: _accent, foregroundColor: Colors.white),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _accent,
+                foregroundColor: Colors.white,
+              ),
               onPressed: _load,
               child: const Text("Retry"),
             ),
@@ -264,7 +278,9 @@ class _PlanScreenState extends State<PlanScreen> {
     final cooldown = _cooldownRemaining;
 
     final title = _isWorkoutKind ? _workoutPlan!.title : _nutritionPlan!.title;
-    final summary = _isWorkoutKind ? _workoutPlan!.summary : _nutritionPlan!.summary;
+    final summary = _isWorkoutKind
+        ? _workoutPlan!.summary
+        : _nutritionPlan!.summary;
     final days = _isWorkoutKind
         ? _workoutPlan!.days.length
         : _nutritionPlan!.days.length;
@@ -287,47 +303,79 @@ class _PlanScreenState extends State<PlanScreen> {
                     Expanded(
                       child: Text(
                         title,
-                        style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: textColor),
+                        style: TextStyle(
+                          fontWeight: FontWeight.w900,
+                          fontSize: 16,
+                          color: textColor,
+                        ),
                       ),
                     ),
                   ],
                 ),
                 if (summary != null && summary.isNotEmpty) ...[
                   const SizedBox(height: 8),
-                  Text(summary, style: TextStyle(color: secondaryTextColor, fontSize: 12.5, height: 1.4)),
+                  Text(
+                    summary,
+                    style: TextStyle(
+                      color: secondaryTextColor,
+                      fontSize: 12.5,
+                      height: 1.4,
+                    ),
+                  ),
                 ],
                 const SizedBox(height: 12),
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
-                  children: _isWorkoutKind ? _workoutBadges() : _nutritionBadges(),
+                  children: _isWorkoutKind
+                      ? _workoutBadges()
+                      : _nutritionBadges(),
                 ),
                 const SizedBox(height: 16),
                 if (_generateError != null) ...[
-                  Text(_generateError!, style: const TextStyle(color: Colors.redAccent, fontSize: 11.5)),
+                  Text(
+                    _generateError!,
+                    style: const TextStyle(
+                      color: Colors.redAccent,
+                      fontSize: 11.5,
+                    ),
+                  ),
                   const SizedBox(height: 8),
                 ],
                 ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: cooldown != null ? Colors.grey.withOpacity(0.25) : _accent,
+                    backgroundColor: cooldown != null
+                        ? Colors.grey.withValues(alpha: 0.25)
+                        : _accent,
                     foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                     padding: const EdgeInsets.symmetric(vertical: 12),
                   ),
-                  onPressed: (_isGenerating || cooldown != null) ? null : _generate,
+                  onPressed: (_isGenerating || cooldown != null)
+                      ? null
+                      : _generate,
                   icon: _isGenerating
                       ? const SizedBox(
-                          width: 16, height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
                         )
                       : const Icon(Icons.refresh_rounded, size: 18),
                   label: Text(
                     _isGenerating
                         ? "Generating…"
                         : cooldown != null
-                            ? "Regenerate in ${_formatDuration(cooldown)}"
-                            : "Regenerate plan",
-                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5),
+                        ? "Regenerate in ${_formatDuration(cooldown)}"
+                        : "Regenerate plan",
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 12.5,
+                    ),
                   ),
                 ),
               ],
@@ -345,9 +393,13 @@ class _PlanScreenState extends State<PlanScreen> {
           ),
           const SizedBox(height: 10),
           if (_isWorkoutKind)
-            ..._workoutPlan!.days.asMap().entries.map((e) => _buildWorkoutDayCard(e.key, e.value, isDark, textColor))
+            ..._workoutPlan!.days.asMap().entries.map(
+              (e) => _buildWorkoutDayCard(e.key, e.value, isDark, textColor),
+            )
           else
-            ..._nutritionPlan!.days.asMap().entries.map((e) => _buildNutritionDayCard(e.key, e.value, isDark, textColor)),
+            ..._nutritionPlan!.days.asMap().entries.map(
+              (e) => _buildNutritionDayCard(e.key, e.value, isDark, textColor),
+            ),
         ],
       ),
     );
@@ -377,15 +429,27 @@ class _PlanScreenState extends State<PlanScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: _accent.withOpacity(0.12),
+        color: _accent.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: _accent.withOpacity(0.3)),
+        border: Border.all(color: _accent.withValues(alpha: 0.3)),
       ),
-      child: Text(label, style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: _accent)),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 10.5,
+          fontWeight: FontWeight.w700,
+          color: _accent,
+        ),
+      ),
     );
   }
 
-  Widget _buildWorkoutDayCard(int index, WorkoutPlanDay day, bool isDark, Color textColor) {
+  Widget _buildWorkoutDayCard(
+    int index,
+    WorkoutPlanDay day,
+    bool isDark,
+    Color textColor,
+  ) {
     final secondaryTextColor = isDark ? Colors.grey[400] : Colors.grey[600];
     final isExpanded = _expandedDays.contains(index);
     final isToday = day.day.toLowerCase() == currentWeekdayName().toLowerCase();
@@ -402,7 +466,9 @@ class _PlanScreenState extends State<PlanScreen> {
         }),
         child: GlassCard(
           padding: const EdgeInsets.all(16),
-          border: isToday ? Border.all(color: _accent.withOpacity(0.5), width: 1.5) : null,
+          border: isToday
+              ? Border.all(color: _accent.withValues(alpha: 0.5), width: 1.5)
+              : null,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -411,7 +477,14 @@ class _PlanScreenState extends State<PlanScreen> {
                   Expanded(
                     child: Row(
                       children: [
-                        Text(day.day, style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5, color: textColor)),
+                        Text(
+                          day.day,
+                          style: TextStyle(
+                            fontWeight: FontWeight.w800,
+                            fontSize: 13.5,
+                            color: textColor,
+                          ),
+                        ),
                         if (isToday) ...[
                           const SizedBox(width: 6),
                           _badge('TODAY'),
@@ -420,15 +493,24 @@ class _PlanScreenState extends State<PlanScreen> {
                     ),
                   ),
                   if (day.isRestDay)
-                    Text("Rest day", style: TextStyle(color: secondaryTextColor, fontSize: 12))
+                    Text(
+                      "Rest day",
+                      style: TextStyle(color: secondaryTextColor, fontSize: 12),
+                    )
                   else
                     Text(
                       day.focus ?? '${day.exercises.length} exercises',
-                      style: TextStyle(color: _accent, fontWeight: FontWeight.w700, fontSize: 12),
+                      style: TextStyle(
+                        color: _accent,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 12,
+                      ),
                     ),
                   const SizedBox(width: 6),
                   Icon(
-                    isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                    isExpanded
+                        ? Icons.keyboard_arrow_up
+                        : Icons.keyboard_arrow_down,
                     color: secondaryTextColor,
                     size: 18,
                   ),
@@ -438,19 +520,41 @@ class _PlanScreenState extends State<PlanScreen> {
                 const SizedBox(height: 12),
                 const Divider(height: 1),
                 const SizedBox(height: 10),
-                ...day.exercises.map((ex) => Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 6),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(ex.name, style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5, color: textColor)),
-                          if (ex.dosageLabel.isNotEmpty)
-                            Text(ex.dosageLabel, style: TextStyle(color: secondaryTextColor, fontSize: 11)),
-                          if (ex.notes != null && ex.notes!.isNotEmpty)
-                            Text(ex.notes!, style: TextStyle(color: secondaryTextColor, fontSize: 11, fontStyle: FontStyle.italic)),
-                        ],
-                      ),
-                    )),
+                ...day.exercises.map(
+                  (ex) => Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          ex.name,
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 12.5,
+                            color: textColor,
+                          ),
+                        ),
+                        if (ex.dosageLabel.isNotEmpty)
+                          Text(
+                            ex.dosageLabel,
+                            style: TextStyle(
+                              color: secondaryTextColor,
+                              fontSize: 11,
+                            ),
+                          ),
+                        if (ex.notes != null && ex.notes!.isNotEmpty)
+                          Text(
+                            ex.notes!,
+                            style: TextStyle(
+                              color: secondaryTextColor,
+                              fontSize: 11,
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
               ],
             ],
           ),
@@ -459,7 +563,12 @@ class _PlanScreenState extends State<PlanScreen> {
     );
   }
 
-  Widget _buildNutritionDayCard(int index, NutritionPlanDay day, bool isDark, Color textColor) {
+  Widget _buildNutritionDayCard(
+    int index,
+    NutritionPlanDay day,
+    bool isDark,
+    Color textColor,
+  ) {
     final secondaryTextColor = isDark ? Colors.grey[400] : Colors.grey[600];
     final isExpanded = _expandedDays.contains(index);
     final isToday = day.day.toLowerCase() == currentWeekdayName().toLowerCase();
@@ -476,7 +585,9 @@ class _PlanScreenState extends State<PlanScreen> {
         }),
         child: GlassCard(
           padding: const EdgeInsets.all(16),
-          border: isToday ? Border.all(color: _accent.withOpacity(0.5), width: 1.5) : null,
+          border: isToday
+              ? Border.all(color: _accent.withValues(alpha: 0.5), width: 1.5)
+              : null,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -485,7 +596,14 @@ class _PlanScreenState extends State<PlanScreen> {
                   Expanded(
                     child: Row(
                       children: [
-                        Text(day.day, style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5, color: textColor)),
+                        Text(
+                          day.day,
+                          style: TextStyle(
+                            fontWeight: FontWeight.w800,
+                            fontSize: 13.5,
+                            color: textColor,
+                          ),
+                        ),
                         if (isToday) ...[
                           const SizedBox(width: 6),
                           _badge('TODAY'),
@@ -494,12 +612,20 @@ class _PlanScreenState extends State<PlanScreen> {
                     ),
                   ),
                   Text(
-                    day.totalCalories != null ? '${day.totalCalories} kcal' : '${day.meals.length} meals',
-                    style: TextStyle(color: _accent, fontWeight: FontWeight.w700, fontSize: 12),
+                    day.totalCalories != null
+                        ? '${day.totalCalories} kcal'
+                        : '${day.meals.length} meals',
+                    style: TextStyle(
+                      color: _accent,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 12,
+                    ),
                   ),
                   const SizedBox(width: 6),
                   Icon(
-                    isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                    isExpanded
+                        ? Icons.keyboard_arrow_up
+                        : Icons.keyboard_arrow_down,
                     color: secondaryTextColor,
                     size: 18,
                   ),
@@ -509,21 +635,44 @@ class _PlanScreenState extends State<PlanScreen> {
                 const SizedBox(height: 12),
                 const Divider(height: 1),
                 const SizedBox(height: 10),
-                ...day.meals.map((meal) => Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 6),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(meal.name, style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5, color: textColor)),
-                          Text(meal.items, style: TextStyle(color: secondaryTextColor, fontSize: 11.5, height: 1.3)),
-                          if (meal.macrosLabel.isNotEmpty)
-                            Padding(
-                              padding: const EdgeInsets.only(top: 2),
-                              child: Text(meal.macrosLabel, style: TextStyle(color: _accent, fontSize: 10.5, fontWeight: FontWeight.w700)),
+                ...day.meals.map(
+                  (meal) => Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          meal.name,
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 12.5,
+                            color: textColor,
+                          ),
+                        ),
+                        Text(
+                          meal.items,
+                          style: TextStyle(
+                            color: secondaryTextColor,
+                            fontSize: 11.5,
+                            height: 1.3,
+                          ),
+                        ),
+                        if (meal.macrosLabel.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 2),
+                            child: Text(
+                              meal.macrosLabel,
+                              style: TextStyle(
+                                color: _accent,
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.w700,
+                              ),
                             ),
-                        ],
-                      ),
-                    )),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
               ],
             ],
           ),
@@ -550,36 +699,57 @@ class _PlanScreenState extends State<PlanScreen> {
                 const SizedBox(height: 12),
                 Text(
                   "No $_title yet",
-                  style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: textColor),
+                  style: TextStyle(
+                    fontWeight: FontWeight.w900,
+                    fontSize: 16,
+                    color: textColor,
+                  ),
                 ),
                 const SizedBox(height: 6),
                 Text(
                   "Tell us a bit about your goals and we'll generate one for you.",
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: secondaryTextColor, fontSize: 12.5, height: 1.4),
+                  style: TextStyle(
+                    color: secondaryTextColor,
+                    fontSize: 12.5,
+                    height: 1.4,
+                  ),
                 ),
               ],
             ),
           ),
           const SizedBox(height: 16),
-          if (_isWorkoutKind) _buildWorkoutForm(isDark, textColor) else _buildNutritionForm(isDark, textColor),
+          if (_isWorkoutKind)
+            _buildWorkoutForm(isDark, textColor)
+          else
+            _buildNutritionForm(isDark, textColor),
           const SizedBox(height: 20),
           if (_generateError != null) ...[
-            Text(_generateError!, style: const TextStyle(color: Colors.redAccent, fontSize: 12), textAlign: TextAlign.center),
+            Text(
+              _generateError!,
+              style: const TextStyle(color: Colors.redAccent, fontSize: 12),
+              textAlign: TextAlign.center,
+            ),
             const SizedBox(height: 10),
           ],
           ElevatedButton.icon(
             style: ElevatedButton.styleFrom(
               backgroundColor: _accent,
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
               padding: const EdgeInsets.symmetric(vertical: 14),
             ),
             onPressed: _isGenerating ? null : _generate,
             icon: _isGenerating
                 ? const SizedBox(
-                    width: 18, height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
                   )
                 : const Text("✨", style: TextStyle(fontSize: 16)),
             label: Text(
@@ -593,19 +763,35 @@ class _PlanScreenState extends State<PlanScreen> {
   }
 
   Widget _sectionLabel(String label, Color? color) => Padding(
-        padding: const EdgeInsets.only(bottom: 8, top: 4),
-        child: Text(
-          label.toUpperCase(),
-          style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w900, letterSpacing: 0.6, color: color),
-        ),
-      );
+    padding: const EdgeInsets.only(bottom: 8, top: 4),
+    child: Text(
+      label.toUpperCase(),
+      style: TextStyle(
+        fontSize: 10.5,
+        fontWeight: FontWeight.w900,
+        letterSpacing: 0.6,
+        color: color,
+      ),
+    ),
+  );
 
   Widget _buildWorkoutForm(bool isDark, Color textColor) {
     final secondaryTextColor = isDark ? Colors.grey[400] : Colors.grey[600];
-    const goals = ['General fitness', 'Lose weight', 'Build muscle', 'Endurance'];
+    const goals = [
+      'General fitness',
+      'Lose weight',
+      'Build muscle',
+      'Endurance',
+    ];
     const experiences = ['Beginner', 'Intermediate', 'Advanced'];
     const locations = ['Home', 'Gym', 'Outdoor'];
-    const equipmentOptions = ['Bodyweight only', 'Dumbbells', 'Barbell', 'Resistance bands', 'Full gym'];
+    const equipmentOptions = [
+      'Bodyweight only',
+      'Dumbbells',
+      'Barbell',
+      'Resistance bands',
+      'Full gym',
+    ];
 
     return GlassCard(
       padding: const EdgeInsets.all(18),
@@ -616,53 +802,72 @@ class _PlanScreenState extends State<PlanScreen> {
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: goals.map((g) => ChoiceChip(
-                  label: Text(g, style: const TextStyle(fontSize: 11.5)),
-                  selected: _goal == g,
-                  selectedColor: _accent.withOpacity(0.25),
-                  onSelected: (_) => setState(() => _goal = g),
-                )).toList(),
+            children: goals
+                .map(
+                  (g) => ChoiceChip(
+                    label: Text(g, style: const TextStyle(fontSize: 11.5)),
+                    selected: _goal == g,
+                    selectedColor: _accent.withValues(alpha: 0.25),
+                    onSelected: (_) => setState(() => _goal = g),
+                  ),
+                )
+                .toList(),
           ),
           _sectionLabel('Experience', secondaryTextColor),
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: experiences.map((e) => ChoiceChip(
-                  label: Text(e, style: const TextStyle(fontSize: 11.5)),
-                  selected: _experience == e,
-                  selectedColor: _accent.withOpacity(0.25),
-                  onSelected: (_) => setState(() => _experience = e),
-                )).toList(),
+            children: experiences
+                .map(
+                  (e) => ChoiceChip(
+                    label: Text(e, style: const TextStyle(fontSize: 11.5)),
+                    selected: _experience == e,
+                    selectedColor: _accent.withValues(alpha: 0.25),
+                    onSelected: (_) => setState(() => _experience = e),
+                  ),
+                )
+                .toList(),
           ),
           _sectionLabel('Trains at', secondaryTextColor),
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: locations.map((l) => ChoiceChip(
-                  label: Text(l, style: const TextStyle(fontSize: 11.5)),
-                  selected: _location == l,
-                  selectedColor: _accent.withOpacity(0.25),
-                  onSelected: (_) => setState(() => _location = l),
-                )).toList(),
+            children: locations
+                .map(
+                  (l) => ChoiceChip(
+                    label: Text(l, style: const TextStyle(fontSize: 11.5)),
+                    selected: _location == l,
+                    selectedColor: _accent.withValues(alpha: 0.25),
+                    onSelected: (_) => setState(() => _location = l),
+                  ),
+                )
+                .toList(),
           ),
           _sectionLabel('Equipment (pick any)', secondaryTextColor),
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: equipmentOptions.map((eq) => FilterChip(
-                  label: Text(eq, style: const TextStyle(fontSize: 11.5)),
-                  selected: _equipment.contains(eq),
-                  selectedColor: _accent.withOpacity(0.25),
-                  onSelected: (sel) => setState(() {
-                    if (sel) {
-                      _equipment.add(eq);
-                    } else {
-                      _equipment.remove(eq);
-                    }
-                  }),
-                )).toList(),
+            children: equipmentOptions
+                .map(
+                  (eq) => FilterChip(
+                    label: Text(eq, style: const TextStyle(fontSize: 11.5)),
+                    selected: _equipment.contains(eq),
+                    selectedColor: _accent.withValues(alpha: 0.25),
+                    onSelected: (sel) => setState(() {
+                      if (sel) {
+                        _equipment.add(eq);
+                      } else {
+                        _equipment.remove(eq);
+                      }
+                    }),
+                  ),
+                )
+                .toList(),
           ),
-          _sectionLabel('Session length: ${_sessionMinutes.round()} min', secondaryTextColor),
+          _sectionLabel(
+            'Session length: ${_sessionMinutes.round()} min',
+            secondaryTextColor,
+          ),
           Slider(
             value: _sessionMinutes,
             min: 15,
@@ -671,7 +876,10 @@ class _PlanScreenState extends State<PlanScreen> {
             activeColor: _accent,
             onChanged: (v) => setState(() => _sessionMinutes = v),
           ),
-          _sectionLabel('Days per week: ${_daysPerWeek.round()}', secondaryTextColor),
+          _sectionLabel(
+            'Days per week: ${_daysPerWeek.round()}',
+            secondaryTextColor,
+          ),
           Slider(
             value: _daysPerWeek,
             min: 1,
@@ -687,7 +895,14 @@ class _PlanScreenState extends State<PlanScreen> {
 
   Widget _buildNutritionForm(bool isDark, Color textColor) {
     final secondaryTextColor = isDark ? Colors.grey[400] : Colors.grey[600];
-    const dietaryOptions = ['No preference', 'Vegetarian', 'Vegan', 'Keto', 'Low-carb', 'High-protein'];
+    const dietaryOptions = [
+      'No preference',
+      'Vegetarian',
+      'Vegan',
+      'Keto',
+      'Low-carb',
+      'High-protein',
+    ];
 
     return GlassCard(
       padding: const EdgeInsets.all(18),
@@ -698,12 +913,16 @@ class _PlanScreenState extends State<PlanScreen> {
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: dietaryOptions.map((d) => ChoiceChip(
-                  label: Text(d, style: const TextStyle(fontSize: 11.5)),
-                  selected: _dietary == d,
-                  selectedColor: _accent.withOpacity(0.25),
-                  onSelected: (_) => setState(() => _dietary = d),
-                )).toList(),
+            children: dietaryOptions
+                .map(
+                  (d) => ChoiceChip(
+                    label: Text(d, style: const TextStyle(fontSize: 11.5)),
+                    selected: _dietary == d,
+                    selectedColor: _accent.withValues(alpha: 0.25),
+                    onSelected: (_) => setState(() => _dietary = d),
+                  ),
+                )
+                .toList(),
           ),
           _sectionLabel('Allergies / avoid', secondaryTextColor),
           Row(
@@ -731,13 +950,18 @@ class _PlanScreenState extends State<PlanScreen> {
               spacing: 6,
               runSpacing: 6,
               children: _allergies
-                  .map((a) => Chip(
-                        label: Text(a, style: const TextStyle(fontSize: 11)),
-                        onDeleted: () => setState(() => _allergies.remove(a)),
-                      ))
+                  .map(
+                    (a) => Chip(
+                      label: Text(a, style: const TextStyle(fontSize: 11)),
+                      onDeleted: () => setState(() => _allergies.remove(a)),
+                    ),
+                  )
                   .toList(),
             ),
-          _sectionLabel('Meals per day: ${_mealsPerDay.round()}', secondaryTextColor),
+          _sectionLabel(
+            'Meals per day: ${_mealsPerDay.round()}',
+            secondaryTextColor,
+          ),
           Slider(
             value: _mealsPerDay,
             min: 2,
@@ -750,11 +974,13 @@ class _PlanScreenState extends State<PlanScreen> {
             children: [
               Switch(
                 value: _setCalorieTarget,
-                activeColor: _accent,
+                activeThumbColor: _accent,
                 onChanged: (v) => setState(() => _setCalorieTarget = v),
               ),
               Text(
-                _setCalorieTarget ? 'Daily calorie target: ${_calorieTarget.round()} kcal' : 'Set a calorie target',
+                _setCalorieTarget
+                    ? 'Daily calorie target: ${_calorieTarget.round()} kcal'
+                    : 'Set a calorie target',
                 style: TextStyle(color: textColor, fontSize: 12),
               ),
             ],
@@ -772,7 +998,11 @@ class _PlanScreenState extends State<PlanScreen> {
           TextField(
             controller: _cuisineCtrl,
             style: TextStyle(color: textColor, fontSize: 12.5),
-            decoration: const InputDecoration(hintText: "e.g. Indian, Mediterranean", hintStyle: TextStyle(fontSize: 12), isDense: true),
+            decoration: const InputDecoration(
+              hintText: "e.g. Indian, Mediterranean",
+              hintStyle: TextStyle(fontSize: 12),
+              isDense: true,
+            ),
           ),
         ],
       ),

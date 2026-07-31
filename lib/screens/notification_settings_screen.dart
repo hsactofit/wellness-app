@@ -8,10 +8,12 @@ class NotificationSettingsScreen extends StatefulWidget {
   const NotificationSettingsScreen({super.key});
 
   @override
-  State<NotificationSettingsScreen> createState() => _NotificationSettingsScreenState();
+  State<NotificationSettingsScreen> createState() =>
+      _NotificationSettingsScreenState();
 }
 
-class _NotificationSettingsScreenState extends State<NotificationSettingsScreen> {
+class _NotificationSettingsScreenState
+    extends State<NotificationSettingsScreen> {
   bool _isLoading = true;
 
   // Preferences mapping
@@ -44,9 +46,12 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
           _rewards = notifications['rewards'] as bool? ?? false;
           _dailyReminder = notifications['daily_reminder'] as bool? ?? true;
           _sleepReminder = notifications['sleep_reminder'] as bool? ?? true;
-          _activityReminder = notifications['activity_reminder'] as bool? ?? true;
-          _challengeUpdates = notifications['challenge_updates'] as bool? ?? false;
-          _hydrationReminder = notifications['hydration_reminder'] as bool? ?? true;
+          _activityReminder =
+              notifications['activity_reminder'] as bool? ?? true;
+          _challengeUpdates =
+              notifications['challenge_updates'] as bool? ?? false;
+          _hydrationReminder =
+              notifications['hydration_reminder'] as bool? ?? true;
           _isLoading = false;
         });
 
@@ -54,7 +59,9 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
         await prefs.setString('onboarding_data', jsonEncode(profileData));
         return;
       } catch (e) {
-        debugPrint("Failed to fetch notification settings from API, loading fallback cache: $e");
+        debugPrint(
+          "Failed to fetch notification settings from API, loading fallback cache: $e",
+        );
       }
 
       // Local storage fallback
@@ -69,9 +76,12 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
           _rewards = notifications['rewards'] as bool? ?? false;
           _dailyReminder = notifications['daily_reminder'] as bool? ?? true;
           _sleepReminder = notifications['sleep_reminder'] as bool? ?? true;
-          _activityReminder = notifications['activity_reminder'] as bool? ?? true;
-          _challengeUpdates = notifications['challenge_updates'] as bool? ?? false;
-          _hydrationReminder = notifications['hydration_reminder'] as bool? ?? true;
+          _activityReminder =
+              notifications['activity_reminder'] as bool? ?? true;
+          _challengeUpdates =
+              notifications['challenge_updates'] as bool? ?? false;
+          _hydrationReminder =
+              notifications['hydration_reminder'] as bool? ?? true;
           _isLoading = false;
         });
       } else {
@@ -110,14 +120,14 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
     try {
       final payload = {
         "permissions": {
-          "notifications": {
-            key: val
-          }
-        }
+          "notifications": {key: val},
+        },
       };
 
-      final updatedProfile = await ApiService.instance.updateUserProfile(payload);
-      
+      final updatedProfile = await ApiService.instance.updateUserProfile(
+        payload,
+      );
+
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('onboarding_data', jsonEncode(updatedProfile));
     } catch (e) {
@@ -149,6 +159,7 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final textColor = isDark ? Colors.white : Colors.black87;
+    // ignore: unused_local_variable
     final secondaryTextColor = isDark ? Colors.grey[400] : Colors.grey[600];
 
     return Scaffold(
@@ -183,8 +194,10 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    theme.colorScheme.primary.withOpacity(isDark ? 0.15 : 0.08),
-                    theme.colorScheme.primary.withOpacity(0.0),
+                    theme.colorScheme.primary.withValues(
+                      alpha: isDark ? 0.15 : 0.08,
+                    ),
+                    theme.colorScheme.primary.withValues(alpha: 0.0),
                   ],
                 ),
               ),
@@ -193,16 +206,25 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
 
           SafeArea(
             child: _isLoading
-                ? const Center(child: CircularProgressIndicator(color: Colors.blueAccent))
+                ? const Center(
+                    child: CircularProgressIndicator(color: Colors.blueAccent),
+                  )
                 : SingleChildScrollView(
                     physics: const BouncingScrollPhysics(),
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 12,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         const Text(
                           "Configure which alerts you would like to receive. These settings are synchronized across your devices.",
-                          style: TextStyle(fontSize: 13, color: Colors.grey, height: 1.4),
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey,
+                            height: 1.4,
+                          ),
                         ),
                         const SizedBox(height: 20),
 
@@ -223,30 +245,38 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                             children: [
                               _buildSwitchRow(
                                 title: "AI Wellness Tips",
-                                subtitle: "Personalized advice from your AI Wellness Buddy",
+                                subtitle:
+                                    "Personalized advice from your AI Wellness Buddy",
                                 value: _aiTips,
-                                onChanged: (val) => _updateSetting('ai_tips', val),
+                                onChanged: (val) =>
+                                    _updateSetting('ai_tips', val),
                               ),
                               const Divider(height: 1, color: Colors.white10),
                               _buildSwitchRow(
                                 title: "Hydration Reminders",
-                                subtitle: "Reminders to log and meet your daily water goal",
+                                subtitle:
+                                    "Reminders to log and meet your daily water goal",
                                 value: _hydrationReminder,
-                                onChanged: (val) => _updateSetting('hydration_reminder', val),
+                                onChanged: (val) =>
+                                    _updateSetting('hydration_reminder', val),
                               ),
                               const Divider(height: 1, color: Colors.white10),
                               _buildSwitchRow(
                                 title: "Sleep Schedule Alerts",
-                                subtitle: "Helpful reminders to support consistent sleep",
+                                subtitle:
+                                    "Helpful reminders to support consistent sleep",
                                 value: _sleepReminder,
-                                onChanged: (val) => _updateSetting('sleep_reminder', val),
+                                onChanged: (val) =>
+                                    _updateSetting('sleep_reminder', val),
                               ),
                               const Divider(height: 1, color: Colors.white10),
                               _buildSwitchRow(
                                 title: "Activity Prompts",
-                                subtitle: "Movement nudges if you remain inactive",
+                                subtitle:
+                                    "Movement nudges if you remain inactive",
                                 value: _activityReminder,
-                                onChanged: (val) => _updateSetting('activity_reminder', val),
+                                onChanged: (val) =>
+                                    _updateSetting('activity_reminder', val),
                               ),
                             ],
                           ),
@@ -271,16 +301,20 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                             children: [
                               _buildSwitchRow(
                                 title: "Challenge Updates",
-                                subtitle: "Leaderboard changes and completion status",
+                                subtitle:
+                                    "Leaderboard changes and completion status",
                                 value: _challengeUpdates,
-                                onChanged: (val) => _updateSetting('challenge_updates', val),
+                                onChanged: (val) =>
+                                    _updateSetting('challenge_updates', val),
                               ),
                               const Divider(height: 1, color: Colors.white10),
                               _buildSwitchRow(
                                 title: "Rewards & Milestone Announcements",
-                                subtitle: "Unlock points, tiers, and exclusive badges",
+                                subtitle:
+                                    "Unlock points, tiers, and exclusive badges",
                                 value: _rewards,
-                                onChanged: (val) => _updateSetting('rewards', val),
+                                onChanged: (val) =>
+                                    _updateSetting('rewards', val),
                               ),
                             ],
                           ),
@@ -303,9 +337,11 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                           padding: EdgeInsets.zero,
                           child: _buildSwitchRow(
                             title: "Daily Wellness Summary",
-                            subtitle: "Morning briefing summarizing stats and goals",
+                            subtitle:
+                                "Morning briefing summarizing stats and goals",
                             value: _dailyReminder,
-                            onChanged: (val) => _updateSetting('daily_reminder', val),
+                            onChanged: (val) =>
+                                _updateSetting('daily_reminder', val),
                           ),
                         ),
                         const SizedBox(height: 60),
@@ -347,10 +383,7 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                 const SizedBox(height: 2),
                 Text(
                   subtitle,
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: secondaryTextColor,
-                  ),
+                  style: TextStyle(fontSize: 11, color: secondaryTextColor),
                 ),
               ],
             ),
@@ -358,7 +391,7 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
           Switch(
             value: value,
             onChanged: onChanged,
-            activeColor: Colors.tealAccent,
+            activeThumbColor: Colors.tealAccent,
           ),
         ],
       ),

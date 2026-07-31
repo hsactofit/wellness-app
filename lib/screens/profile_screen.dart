@@ -242,7 +242,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      barrierColor: Colors.black.withOpacity(0.45),
+      barrierColor: Colors.black.withValues(alpha: 0.45),
       builder: (ctx) {
         return _EditProfileSheet(
           initialName: _name,
@@ -268,8 +268,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
         },
       };
 
-      final updatedProfile =
-          await ApiService.instance.updateUserProfile(payload);
+      final updatedProfile = await ApiService.instance.updateUserProfile(
+        payload,
+      );
 
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('user_name', result['name'] as String);
@@ -306,6 +307,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _showThemeSelectionDialog() async {
     final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
     final currentTheme = prefs.getString('theme_mode') ?? 'system';
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? Colors.white : Colors.black87;
@@ -313,7 +315,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final selected = await showModalBottomSheet<String>(
       context: context,
       backgroundColor: Colors.transparent,
-      barrierColor: Colors.black.withOpacity(0.45),
+      barrierColor: Colors.black.withValues(alpha: 0.45),
       builder: (ctx) {
         return ClipRRect(
           borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
@@ -322,15 +324,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: Container(
               decoration: BoxDecoration(
                 color: isDark
-                    ? const Color(0xFF16161C).withOpacity(0.94)
-                    : Colors.white.withOpacity(0.96),
+                    ? const Color(0xFF16161C).withValues(alpha: 0.94)
+                    : Colors.white.withValues(alpha: 0.96),
                 borderRadius: const BorderRadius.vertical(
                   top: Radius.circular(28),
                 ),
                 border: Border.all(
                   color: isDark
-                      ? Colors.white.withOpacity(0.10)
-                      : Colors.white.withOpacity(0.7),
+                      ? Colors.white.withValues(alpha: 0.10)
+                      : Colors.white.withValues(alpha: 0.7),
                 ),
               ),
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
@@ -539,7 +541,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     final confirm = await showDialog<bool>(
       context: context,
-      barrierColor: Colors.black.withOpacity(0.45),
+      barrierColor: Colors.black.withValues(alpha: 0.45),
       builder: (context) => Dialog(
         backgroundColor: Colors.transparent,
         child: ClipRRect(
@@ -550,13 +552,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
               padding: const EdgeInsets.all(22),
               decoration: BoxDecoration(
                 color: isDark
-                    ? const Color(0xFF16161C).withOpacity(0.92)
-                    : Colors.white.withOpacity(0.96),
+                    ? const Color(0xFF16161C).withValues(alpha: 0.92)
+                    : Colors.white.withValues(alpha: 0.96),
                 borderRadius: BorderRadius.circular(24),
                 border: Border.all(
                   color: isDark
-                      ? Colors.white.withOpacity(0.1)
-                      : Colors.black.withOpacity(0.05),
+                      ? Colors.white.withValues(alpha: 0.1)
+                      : Colors.black.withValues(alpha: 0.05),
                 ),
               ),
               child: Column(
@@ -567,7 +569,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     height: 52,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: Colors.redAccent.withOpacity(0.12),
+                      color: Colors.redAccent.withValues(alpha: 0.12),
                     ),
                     child: const Icon(
                       Icons.logout_rounded,
@@ -681,8 +683,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    _accent.withOpacity(isDark ? 0.22 : 0.14),
-                    _accent.withOpacity(0),
+                    _accent.withValues(alpha: isDark ? 0.22 : 0.14),
+                    _accent.withValues(alpha: 0),
                   ],
                 ),
               ),
@@ -698,8 +700,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    _violet.withOpacity(isDark ? 0.18 : 0.10),
-                    _violet.withOpacity(0),
+                    _violet.withValues(alpha: isDark ? 0.18 : 0.10),
+                    _violet.withValues(alpha: 0),
                   ],
                 ),
               ),
@@ -715,8 +717,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    _sky.withOpacity(isDark ? 0.14 : 0.08),
-                    _sky.withOpacity(0),
+                    _sky.withValues(alpha: isDark ? 0.14 : 0.08),
+                    _sky.withValues(alpha: 0),
                   ],
                 ),
               ),
@@ -911,7 +913,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             trailing: Switch.adaptive(
                               value: _hcConnected,
                               onChanged: _toggleHealthConnect,
-                              activeColor: _mint,
+                              activeThumbColor: _mint,
                             ),
                           ),
                         ],
@@ -989,7 +991,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
-                          color: secondary.withOpacity(0.7),
+                          color: secondary.withValues(alpha: 0.7),
                         ),
                       ),
                     ),
@@ -1038,8 +1040,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              _accent.withOpacity(isDark ? 0.18 : 0.12),
-              _violet.withOpacity(isDark ? 0.10 : 0.06),
+              _accent.withValues(alpha: isDark ? 0.18 : 0.12),
+              _violet.withValues(alpha: isDark ? 0.10 : 0.06),
               Colors.transparent,
             ],
           ),
@@ -1062,7 +1064,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: _accent.withOpacity(0.35),
+                        color: _accent.withValues(alpha: 0.35),
                         blurRadius: 16,
                         offset: const Offset(0, 6),
                       ),
@@ -1121,7 +1123,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(20),
-                            color: _mint.withOpacity(0.14),
+                            color: _mint.withValues(alpha: 0.14),
                           ),
                           child: Text(
                             '$age yrs · $_gender',
@@ -1153,7 +1155,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: _accent.withOpacity(0.3),
+                        color: _accent.withValues(alpha: 0.3),
                         blurRadius: 12,
                         offset: const Offset(0, 5),
                       ),
@@ -1205,7 +1207,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             height: 34,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
-              color: color.withOpacity(0.14),
+              color: color.withValues(alpha: 0.14),
             ),
             child: Icon(icon, size: 18, color: color),
           ),
@@ -1264,8 +1266,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       height: 1,
       thickness: 1,
       color: isDark
-          ? Colors.white.withOpacity(0.06)
-          : Colors.black.withOpacity(0.05),
+          ? Colors.white.withValues(alpha: 0.06)
+          : Colors.black.withValues(alpha: 0.05),
     );
   }
 
@@ -1287,7 +1289,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             height: 40,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(13),
-              color: color.withOpacity(0.12),
+              color: color.withValues(alpha: 0.12),
             ),
             child: Icon(icon, size: 20, color: color),
           ),
@@ -1346,8 +1348,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 height: 42,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(14),
-                  color: color.withOpacity(0.12),
-                  border: Border.all(color: color.withOpacity(0.18)),
+                  color: color.withValues(alpha: 0.12),
+                  border: Border.all(color: color.withValues(alpha: 0.18)),
                 ),
                 child: Icon(icon, size: 20, color: color),
               ),
@@ -1402,12 +1404,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(14),
             color: isDark
-                ? Colors.white.withOpacity(0.06)
-                : Colors.black.withOpacity(0.04),
+                ? Colors.white.withValues(alpha: 0.06)
+                : Colors.black.withValues(alpha: 0.04),
             border: Border.all(
               color: isDark
-                  ? Colors.white.withOpacity(0.08)
-                  : Colors.black.withOpacity(0.05),
+                  ? Colors.white.withValues(alpha: 0.08)
+                  : Colors.black.withValues(alpha: 0.05),
             ),
           ),
           child: Icon(
@@ -1434,8 +1436,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final borderColor =
         outlineColor ??
         (isDark
-            ? Colors.white.withOpacity(0.10)
-            : Colors.black.withOpacity(0.06));
+            ? Colors.white.withValues(alpha: 0.10)
+            : Colors.black.withValues(alpha: 0.06));
 
     return Material(
       color: Colors.transparent,
@@ -1450,21 +1452,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ? LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [color.withOpacity(0.95), color],
+                    colors: [color.withValues(alpha: 0.95), color],
                   )
                 : null,
             color: filled
                 ? null
                 : (isDark
-                      ? Colors.white.withOpacity(0.05)
-                      : Colors.black.withOpacity(0.03)),
+                      ? Colors.white.withValues(alpha: 0.05)
+                      : Colors.black.withValues(alpha: 0.03)),
             border: Border.all(
-              color: filled ? color.withOpacity(0.3) : borderColor,
+              color: filled ? color.withValues(alpha: 0.3) : borderColor,
             ),
             boxShadow: filled
                 ? [
                     BoxShadow(
-                      color: color.withOpacity(0.28),
+                      color: color.withValues(alpha: 0.28),
                       blurRadius: 14,
                       offset: const Offset(0, 6),
                     ),
@@ -1525,16 +1527,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
             color: selected
-                ? _accent.withOpacity(isDark ? 0.16 : 0.10)
+                ? _accent.withValues(alpha: isDark ? 0.16 : 0.10)
                 : (isDark
-                      ? Colors.white.withOpacity(0.04)
-                      : Colors.black.withOpacity(0.03)),
+                      ? Colors.white.withValues(alpha: 0.04)
+                      : Colors.black.withValues(alpha: 0.03)),
             border: Border.all(
               color: selected
-                  ? _accent.withOpacity(0.5)
+                  ? _accent.withValues(alpha: 0.5)
                   : (isDark
-                        ? Colors.white.withOpacity(0.08)
-                        : Colors.black.withOpacity(0.05)),
+                        ? Colors.white.withValues(alpha: 0.08)
+                        : Colors.black.withValues(alpha: 0.05)),
               width: selected ? 1.5 : 1,
             ),
           ),
@@ -1546,10 +1548,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
                   color: selected
-                      ? _accent.withOpacity(0.18)
+                      ? _accent.withValues(alpha: 0.18)
                       : (isDark
-                            ? Colors.white.withOpacity(0.06)
-                            : Colors.black.withOpacity(0.04)),
+                            ? Colors.white.withValues(alpha: 0.06)
+                            : Colors.black.withValues(alpha: 0.04)),
                 ),
                 child: Icon(
                   icon,
@@ -1593,6 +1595,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  // ignore: unused_element
   Widget _morphField({
     required TextEditingController controller,
     required String label,
@@ -1612,8 +1615,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         prefixIcon: Icon(icon, size: 20),
         filled: true,
         fillColor: isDark
-            ? Colors.white.withOpacity(0.05)
-            : Colors.black.withOpacity(0.03),
+            ? Colors.white.withValues(alpha: 0.05)
+            : Colors.black.withValues(alpha: 0.03),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
           borderSide: BorderSide.none,
@@ -1626,6 +1629,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  // ignore: unused_element
   Widget _morphTapField({
     required bool isDark,
     required String label,
@@ -1642,8 +1646,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           prefixIcon: Icon(icon, size: 20),
           filled: true,
           fillColor: isDark
-              ? Colors.white.withOpacity(0.05)
-              : Colors.black.withOpacity(0.03),
+              ? Colors.white.withValues(alpha: 0.05)
+              : Colors.black.withValues(alpha: 0.03),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(14),
             borderSide: BorderSide.none,
@@ -1660,6 +1664,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  // ignore: unused_element
   Widget _morphDropdown({
     required bool isDark,
     required String label,
@@ -1668,14 +1673,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
     required ValueChanged<String?> onChanged,
   }) {
     return DropdownButtonFormField<String>(
-      value: value,
+      initialValue: value,
       decoration: InputDecoration(
         labelText: label,
         prefixIcon: const Icon(Icons.wc_rounded, size: 20),
         filled: true,
         fillColor: isDark
-            ? Colors.white.withOpacity(0.05)
-            : Colors.black.withOpacity(0.03),
+            ? Colors.white.withValues(alpha: 0.05)
+            : Colors.black.withValues(alpha: 0.03),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
           borderSide: BorderSide.none,
@@ -1784,14 +1789,15 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
           child: Container(
             decoration: BoxDecoration(
               color: isDark
-                  ? const Color(0xFF16161C).withOpacity(0.94)
-                  : Colors.white.withOpacity(0.96),
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(28)),
+                  ? const Color(0xFF16161C).withValues(alpha: 0.94)
+                  : Colors.white.withValues(alpha: 0.96),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(28),
+              ),
               border: Border.all(
                 color: isDark
-                    ? Colors.white.withOpacity(0.10)
-                    : Colors.white.withOpacity(0.7),
+                    ? Colors.white.withValues(alpha: 0.10)
+                    : Colors.white.withValues(alpha: 0.7),
               ),
             ),
             padding: const EdgeInsets.fromLTRB(22, 12, 22, 28),
@@ -1866,20 +1872,14 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
                   ),
                   const SizedBox(height: 12),
                   DropdownButtonFormField<String>(
-                    value: _selectedGender,
+                    initialValue: _selectedGender,
                     decoration: _deco(
                       isDark: isDark,
                       label: 'Gender',
                       icon: Icons.wc_rounded,
                     ),
-                    items: const [
-                      'Male',
-                      'Female',
-                      'Non-binary',
-                      'Other',
-                    ]
-                        .map((g) =>
-                            DropdownMenuItem(value: g, child: Text(g)))
+                    items: const ['Male', 'Female', 'Non-binary', 'Other']
+                        .map((g) => DropdownMenuItem(value: g, child: Text(g)))
                         .toList(),
                     onChanged: (val) {
                       if (val != null) setState(() => _selectedGender = val);
@@ -1894,9 +1894,9 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
                           label: 'Height (cm)',
                           icon: Icons.height_rounded,
                           isDark: isDark,
-                          keyboardType:
-                              const TextInputType.numberWithOptions(
-                                  decimal: true),
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -1906,9 +1906,9 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
                           label: 'Weight (kg)',
                           icon: Icons.monitor_weight_outlined,
                           isDark: isDark,
-                          keyboardType:
-                              const TextInputType.numberWithOptions(
-                                  decimal: true),
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
                         ),
                       ),
                     ],
@@ -1953,8 +1953,8 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
       prefixIcon: Icon(icon, size: 20),
       filled: true,
       fillColor: isDark
-          ? Colors.white.withOpacity(0.05)
-          : Colors.black.withOpacity(0.03),
+          ? Colors.white.withValues(alpha: 0.05)
+          : Colors.black.withValues(alpha: 0.03),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
         borderSide: BorderSide.none,
@@ -2009,14 +2009,14 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
             color: filled
                 ? null
                 : (isDark
-                    ? Colors.white.withOpacity(0.05)
-                    : Colors.black.withOpacity(0.03)),
+                      ? Colors.white.withValues(alpha: 0.05)
+                      : Colors.black.withValues(alpha: 0.03)),
             border: Border.all(
               color: filled
-                  ? _accent.withOpacity(0.3)
+                  ? _accent.withValues(alpha: 0.3)
                   : (isDark
-                      ? Colors.white.withOpacity(0.10)
-                      : Colors.black.withOpacity(0.06)),
+                        ? Colors.white.withValues(alpha: 0.10)
+                        : Colors.black.withValues(alpha: 0.06)),
             ),
           ),
           child: Center(

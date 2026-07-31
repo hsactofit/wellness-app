@@ -79,19 +79,19 @@ class _SplashScreenState extends State<SplashScreen>
             }
           }
         } on AuthException catch (authError) {
-          print("Splash token verification failed: $authError");
+          debugPrint("Splash token verification failed: $authError");
           // If the token is explicitly invalid, clear credentials and force login
           isLoggedIn = false;
           await AuthService.instance.signOut();
         } catch (networkError) {
-          print(
+          debugPrint(
             "Splash token refresh network error (offline mode): $networkError",
           );
           // Retain isLoggedIn = true and use local onboardingCompleted state since it's just a network/server failure
         }
       }
     } catch (e) {
-      print("Splash initialization error: $e");
+      debugPrint("Splash initialization error: $e");
     }
 
     final elapsed = DateTime.now().difference(startTime);
@@ -103,11 +103,13 @@ class _SplashScreenState extends State<SplashScreen>
     if (!mounted) return;
 
     final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
 
     if (isLoggedIn) {
       if (onboardingCompleted) {
         // Logged in & completed onboarding -> Dashboard
         await prefs.setBool('onboarding_completed', true);
+        if (!mounted) return;
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const MainShell()),
@@ -181,8 +183,8 @@ class _SplashScreenState extends State<SplashScreen>
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    Colors.blueAccent.withOpacity(isDark ? 0.15 : 0.25),
-                    Colors.blueAccent.withOpacity(0.0),
+                    Colors.blueAccent.withValues(alpha: isDark ? 0.15 : 0.25),
+                    Colors.blueAccent.withValues(alpha: 0.0),
                   ],
                 ),
               ),
@@ -200,8 +202,8 @@ class _SplashScreenState extends State<SplashScreen>
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    Colors.tealAccent.withOpacity(isDark ? 0.12 : 0.22),
-                    Colors.tealAccent.withOpacity(0.0),
+                    Colors.tealAccent.withValues(alpha: isDark ? 0.12 : 0.22),
+                    Colors.tealAccent.withValues(alpha: 0.0),
                   ],
                 ),
               ),
@@ -232,12 +234,12 @@ class _SplashScreenState extends State<SplashScreen>
                   Text(
                     "Optimize. Sync. Thrive.",
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          color: isDark
-                              ? Colors.grey[400]
-                              : const Color(0xFF556677),
-                          letterSpacing: 0.6,
-                          fontWeight: FontWeight.w600,
-                        ),
+                      color: isDark
+                          ? Colors.grey[400]
+                          : const Color(0xFF556677),
+                      letterSpacing: 0.6,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   const SizedBox(height: 48),
 

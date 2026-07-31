@@ -16,12 +16,13 @@ class GymCheckinScreen extends StatefulWidget {
   State<GymCheckinScreen> createState() => _GymCheckinScreenState();
 }
 
-class _GymCheckinScreenState extends State<GymCheckinScreen> with TickerProviderStateMixin {
+class _GymCheckinScreenState extends State<GymCheckinScreen>
+    with TickerProviderStateMixin {
   bool _isCheckedIn = false;
   String? _gymName;
   String? _gymPlace;
   DateTime? _checkInTime;
-  
+
   bool _isLoading = false;
   Timer? _timer;
   Duration _elapsed = Duration.zero;
@@ -63,20 +64,22 @@ class _GymCheckinScreenState extends State<GymCheckinScreen> with TickerProvider
     super.initState();
     _loadCheckinState();
     _checkCameraPermission();
-    
+
     // Setup pulse scan line animation
     _scannerAnimController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 2),
     )..repeat(reverse: true);
-    
+
     _scannerLinePosition = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _scannerAnimController, curve: Curves.easeInOut),
     );
   }
 
   void _initScanner() {
-    if (_scannerController == null && _cameraPermissionGranted && !_isCheckedIn) {
+    if (_scannerController == null &&
+        _cameraPermissionGranted &&
+        !_isCheckedIn) {
       setState(() {
         _scannerController = MobileScannerController();
       });
@@ -139,7 +142,10 @@ class _GymCheckinScreenState extends State<GymCheckinScreen> with TickerProvider
   Future<void> _saveLoggedExercises() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('gym_logged_exercises', jsonEncode(_loggedExercises));
+      await prefs.setString(
+        'gym_logged_exercises',
+        jsonEncode(_loggedExercises),
+      );
     } catch (e) {
       debugPrint("Error saving logged exercises: $e");
     }
@@ -153,7 +159,9 @@ class _GymCheckinScreenState extends State<GymCheckinScreen> with TickerProvider
         final List<dynamic> decoded = jsonDecode(jsonStr);
         setState(() {
           _loggedExercises.clear();
-          _loggedExercises.addAll(decoded.map((e) => Map<String, dynamic>.from(e as Map)));
+          _loggedExercises.addAll(
+            decoded.map((e) => Map<String, dynamic>.from(e as Map)),
+          );
         });
       }
     } catch (e) {
@@ -228,8 +236,12 @@ class _GymCheckinScreenState extends State<GymCheckinScreen> with TickerProvider
       debugPrint("================ GYM CHECKIN API REQUEST ================");
       debugPrint("URL: $url");
       debugPrint("Method: POST");
-      debugPrint("Headers: ${token != null ? 'Authorization: Bearer [token]' : 'None'}");
-      debugPrint("Body: {'facility_code': '$facilityCode', 'method': 'QR scan'}");
+      debugPrint(
+        "Headers: ${token != null ? 'Authorization: Bearer [token]' : 'None'}",
+      );
+      debugPrint(
+        "Body: {'facility_code': '$facilityCode', 'method': 'QR scan'}",
+      );
       debugPrint("=========================================================");
 
       final response = await http.post(
@@ -238,10 +250,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen> with TickerProvider
           'Content-Type': 'application/json',
           if (token != null) 'Authorization': 'Bearer $token',
         },
-        body: jsonEncode({
-          'facility_code': facilityCode,
-          'method': 'QR scan',
-        }),
+        body: jsonEncode({'facility_code': facilityCode, 'method': 'QR scan'}),
       );
 
       debugPrint("================ GYM CHECKIN API RESPONSE ================");
@@ -254,7 +263,8 @@ class _GymCheckinScreenState extends State<GymCheckinScreen> with TickerProvider
         _scannerController = null;
         final data = jsonDecode(response.body);
         final sessId = data['id'] as String? ?? '';
-        final checkinTimeStr = data['check_in_at'] as String? ?? DateTime.now().toIso8601String();
+        final checkinTimeStr =
+            data['check_in_at'] as String? ?? DateTime.now().toIso8601String();
         final checkInTime = DateTime.tryParse(checkinTimeStr) ?? DateTime.now();
 
         final prefs = await SharedPreferences.getInstance();
@@ -339,7 +349,9 @@ class _GymCheckinScreenState extends State<GymCheckinScreen> with TickerProvider
       debugPrint("================ GYM CHECKOUT API REQUEST ================");
       debugPrint("URL: $url");
       debugPrint("Method: POST");
-      debugPrint("Headers: ${token != null ? 'Authorization: Bearer [token]' : 'None'}");
+      debugPrint(
+        "Headers: ${token != null ? 'Authorization: Bearer [token]' : 'None'}",
+      );
       debugPrint("Body: ${jsonEncode(checkoutPayload)}");
       debugPrint("==========================================================");
 
@@ -359,7 +371,8 @@ class _GymCheckinScreenState extends State<GymCheckinScreen> with TickerProvider
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = jsonDecode(response.body);
-        final checkoutTimeStr = data['check_out_at'] as String? ?? DateTime.now().toIso8601String();
+        final checkoutTimeStr =
+            data['check_out_at'] as String? ?? DateTime.now().toIso8601String();
 
         final prefs = await SharedPreferences.getInstance();
         await prefs.remove('gym_checked_in');
@@ -457,7 +470,9 @@ class _GymCheckinScreenState extends State<GymCheckinScreen> with TickerProvider
               ),
               decoration: BoxDecoration(
                 color: isDark ? const Color(0xFF1E1E24) : Colors.white,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(24),
+                ),
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -474,7 +489,10 @@ class _GymCheckinScreenState extends State<GymCheckinScreen> with TickerProvider
                   const SizedBox(height: 16),
                   Text(
                     "Choose from popular exercises:",
-                    style: TextStyle(fontSize: 12, color: isDark ? Colors.grey[400] : Colors.grey[600]),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isDark ? Colors.grey[400] : Colors.grey[600],
+                    ),
                   ),
                   const SizedBox(height: 8),
                   SizedBox(
@@ -494,14 +512,21 @@ class _GymCheckinScreenState extends State<GymCheckinScreen> with TickerProvider
                           },
                           child: Container(
                             margin: const EdgeInsets.only(right: 8),
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 8,
+                            ),
                             decoration: BoxDecoration(
                               color: isSelected
                                   ? Colors.blueAccent.withValues(alpha: 0.15)
-                                  : (isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05)),
+                                  : (isDark
+                                        ? Colors.white10
+                                        : Colors.black.withValues(alpha: 0.05)),
                               borderRadius: BorderRadius.circular(20),
                               border: Border.all(
-                                color: isSelected ? Colors.blueAccent : Colors.transparent,
+                                color: isSelected
+                                    ? Colors.blueAccent
+                                    : Colors.transparent,
                               ),
                             ),
                             child: Center(
@@ -509,8 +534,14 @@ class _GymCheckinScreenState extends State<GymCheckinScreen> with TickerProvider
                                 name,
                                 style: TextStyle(
                                   fontSize: 12,
-                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                  color: isSelected ? Colors.blueAccent : (isDark ? Colors.white70 : Colors.black87),
+                                  fontWeight: isSelected
+                                      ? FontWeight.bold
+                                      : FontWeight.normal,
+                                  color: isSelected
+                                      ? Colors.blueAccent
+                                      : (isDark
+                                            ? Colors.white70
+                                            : Colors.black87),
                                 ),
                               ),
                             ),
@@ -522,7 +553,10 @@ class _GymCheckinScreenState extends State<GymCheckinScreen> with TickerProvider
                   const SizedBox(height: 16),
                   Text(
                     "Or type custom exercise name:",
-                    style: TextStyle(fontSize: 12, color: isDark ? Colors.grey[400] : Colors.grey[600]),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isDark ? Colors.grey[400] : Colors.grey[600],
+                    ),
                   ),
                   const SizedBox(height: 8),
                   TextField(
@@ -536,10 +570,18 @@ class _GymCheckinScreenState extends State<GymCheckinScreen> with TickerProvider
                     },
                     decoration: InputDecoration(
                       hintText: "E.g., Pull-ups, Calf Raises",
-                      hintStyle: const TextStyle(fontSize: 13, color: Colors.grey),
+                      hintStyle: const TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey,
+                      ),
                       filled: true,
-                      fillColor: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.04),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      fillColor: isDark
+                          ? Colors.white10
+                          : Colors.black.withValues(alpha: 0.04),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide.none,
@@ -580,7 +622,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen> with TickerProvider
                             color: Colors.blueAccent,
                           ),
                         ],
-                      )
+                      ),
                     ],
                   ),
                   const SizedBox(height: 24),
@@ -589,7 +631,9 @@ class _GymCheckinScreenState extends State<GymCheckinScreen> with TickerProvider
                       backgroundColor: Colors.blueAccent,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                     onPressed: () {
                       final name = customNameController.text.trim().isNotEmpty
@@ -607,13 +651,18 @@ class _GymCheckinScreenState extends State<GymCheckinScreen> with TickerProvider
                       } else {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
-                            content: Text("Please specify or choose an exercise name!"),
+                            content: Text(
+                              "Please specify or choose an exercise name!",
+                            ),
                             backgroundColor: Colors.orange,
                           ),
                         );
                       }
                     },
-                    child: const Text("Add to Workout", style: TextStyle(fontWeight: FontWeight.bold)),
+                    child: const Text(
+                      "Add to Workout",
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
                   ),
                 ],
               ),
@@ -643,10 +692,15 @@ class _GymCheckinScreenState extends State<GymCheckinScreen> with TickerProvider
             return PopScope(
               canPop: !isCheckingOut,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 24,
+                ),
                 decoration: BoxDecoration(
                   color: isDark ? const Color(0xFF1E1E24) : Colors.white,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(24),
+                  ),
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -677,7 +731,10 @@ class _GymCheckinScreenState extends State<GymCheckinScreen> with TickerProvider
                                   );
                                 },
                           icon: const Icon(Icons.add, size: 16),
-                          label: const Text("Add", style: TextStyle(fontSize: 12)),
+                          label: const Text(
+                            "Add",
+                            style: TextStyle(fontSize: 12),
+                          ),
                         ),
                       ],
                     ),
@@ -688,7 +745,10 @@ class _GymCheckinScreenState extends State<GymCheckinScreen> with TickerProvider
                         child: Center(
                           child: Text(
                             "No exercises added. Tap 'Add' to log a workout!",
-                            style: TextStyle(color: Colors.grey[500], fontSize: 13),
+                            style: TextStyle(
+                              color: Colors.grey[500],
+                              fontSize: 13,
+                            ),
                           ),
                         ),
                       )
@@ -702,29 +762,37 @@ class _GymCheckinScreenState extends State<GymCheckinScreen> with TickerProvider
                             final item = _loggedExercises[index];
                             return Card(
                               color: isDark
-                                  ? Colors.white.withOpacity(0.04)
-                                  : Colors.black.withOpacity(0.02),
+                                  ? Colors.white.withValues(alpha: 0.04)
+                                  : Colors.black.withValues(alpha: 0.02),
                               elevation: 0,
                               margin: const EdgeInsets.symmetric(vertical: 4),
                               shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10)),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
                               child: ListTile(
                                 title: Text(
                                   item['name'],
                                   style: TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 13,
-                                    color: isDark ? Colors.white : Colors.black87,
+                                    color: isDark
+                                        ? Colors.white
+                                        : Colors.black87,
                                   ),
                                 ),
                                 subtitle: Text(
                                   "${item['sets']} sets",
                                   style: const TextStyle(
-                                      fontSize: 12, color: Colors.grey),
+                                    fontSize: 12,
+                                    color: Colors.grey,
+                                  ),
                                 ),
                                 trailing: IconButton(
-                                  icon: const Icon(Icons.delete_outline,
-                                      color: Colors.redAccent, size: 18),
+                                  icon: const Icon(
+                                    Icons.delete_outline,
+                                    color: Colors.redAccent,
+                                    size: 18,
+                                  ),
                                   onPressed: isCheckingOut
                                       ? null
                                       : () {
@@ -758,7 +826,10 @@ class _GymCheckinScreenState extends State<GymCheckinScreen> with TickerProvider
                               SizedBox(height: 10),
                               Text(
                                 "Checking out… please wait",
-                                style: TextStyle(fontSize: 13, color: Colors.grey),
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Colors.grey,
+                                ),
                               ),
                             ],
                           ),
@@ -772,7 +843,8 @@ class _GymCheckinScreenState extends State<GymCheckinScreen> with TickerProvider
                             style: OutlinedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(vertical: 14),
                               shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12)),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
                             ),
                             onPressed: isCheckingOut
                                 ? null
@@ -788,7 +860,8 @@ class _GymCheckinScreenState extends State<GymCheckinScreen> with TickerProvider
                               foregroundColor: Colors.white,
                               padding: const EdgeInsets.symmetric(vertical: 14),
                               shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12)),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
                             ),
                             // Keep sheet open until checkout API finishes.
                             onPressed: isCheckingOut
@@ -824,8 +897,12 @@ class _GymCheckinScreenState extends State<GymCheckinScreen> with TickerProvider
                                     }
                                   },
                             child: Text(
-                              isCheckingOut ? "Checking out…" : "Checkout & Log",
-                              style: const TextStyle(fontWeight: FontWeight.bold),
+                              isCheckingOut
+                                  ? "Checking out…"
+                                  : "Checkout & Log",
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                         ),
@@ -853,7 +930,9 @@ class _GymCheckinScreenState extends State<GymCheckinScreen> with TickerProvider
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final backgroundColor = isDark ? const Color(0xFF0F0F12) : const Color(0xFFF6F8FC);
+    final backgroundColor = isDark
+        ? const Color(0xFF0F0F12)
+        : const Color(0xFFF6F8FC);
     final textColor = isDark ? Colors.white : Colors.black87;
 
     return Scaffold(
@@ -862,12 +941,20 @@ class _GymCheckinScreenState extends State<GymCheckinScreen> with TickerProvider
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new_rounded, color: textColor, size: 20),
+          icon: Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: textColor,
+            size: 20,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           "Gym Check-In 🏋️‍♂️",
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: textColor),
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+            color: textColor,
+          ),
         ),
       ),
       body: Stack(
@@ -890,7 +977,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen> with TickerProvider
               ),
             ),
           ),
-          
+
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
@@ -899,287 +986,380 @@ class _GymCheckinScreenState extends State<GymCheckinScreen> with TickerProvider
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     if (!_isCheckedIn) ...[
-                            // Header Instruction
-                            Text(
-                              "Find QR code in your partner gym to check in & start tracking workout duration.",
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                color: isDark ? Colors.grey[400] : Colors.grey[600],
-                                fontSize: 13,
-                                height: 1.4,
-                              ),
+                      // Header Instruction
+                      Text(
+                        "Find QR code in your partner gym to check in & start tracking workout duration.",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: isDark ? Colors.grey[400] : Colors.grey[600],
+                          fontSize: 13,
+                          height: 1.4,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      if (!_cameraPermissionGranted) ...[
+                        // Camera permission request state
+                        Container(
+                          height: 280,
+                          decoration: BoxDecoration(
+                            color: isDark
+                                ? Colors.white10
+                                : Colors.black.withValues(alpha: 0.04),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: isDark ? Colors.white24 : Colors.black12,
                             ),
-                            const SizedBox(height: 16),
-                             if (!_cameraPermissionGranted) ...[
-                              // Camera permission request state
-                              Container(
-                                height: 280,
-                                decoration: BoxDecoration(
-                                  color: isDark ? Colors.white10 : Colors.black.withOpacity(0.04),
-                                  borderRadius: BorderRadius.circular(20),
-                                  border: Border.all(color: isDark ? Colors.white24 : Colors.black12),
-                                ),
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    const Icon(Icons.camera_alt_rounded, size: 60, color: Colors.blueAccent),
-                                    const SizedBox(height: 16),
-                                    const Padding(
-                                      padding: EdgeInsets.symmetric(horizontal: 24),
-                                      child: Text(
-                                        "Camera Access Required",
-                                        textAlign: TextAlign.center,
-                                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Padding(
-                                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                                      child: Text(
-                                        "Arcare needs camera permission to scan QR code at the gym.",
-                                        textAlign: TextAlign.center,
-                                        style: TextStyle(fontSize: 12, color: isDark ? Colors.white54 : Colors.black54),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 20),
-                                    ElevatedButton(
-                                      onPressed: _requestCameraPermission,
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.blueAccent,
-                                        foregroundColor: Colors.white,
-                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                                      ),
-                                      child: const Text("Grant Permission", style: TextStyle(fontWeight: FontWeight.bold)),
-                                    ),
-                                  ],
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(
+                                Icons.camera_alt_rounded,
+                                size: 60,
+                                color: Colors.blueAccent,
+                              ),
+                              const SizedBox(height: 16),
+                              const Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 24),
+                                child: Text(
+                                  "Camera Access Required",
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ),
-                              const SizedBox(height: 24),
-                            ] else ...[
-                              // Real Camera Barcode/QR Scanner Feed
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(20),
-                                child: Container(
-                                  height: 280,
-                                  color: Colors.black,
-                                  child: Stack(
-                                    children: [
-                                      if (_cameraPermissionGranted && _scannerController != null)
-                                        MobileScanner(
-                                          controller: _scannerController!,
-                                          onDetect: (barcodeCapture) {
-                                            if (_isLoading) return; // Prevent double scanning while loading
-                                            final List<Barcode> barcodes = barcodeCapture.barcodes;
-                                            debugPrint("Scanned QR Code barcodes found: ${barcodes.length}");
-                                            for (final barcode in barcodes) {
-                                              final rawValue = barcode.rawValue;
-                                              debugPrint("Scanned QR Code raw value: $rawValue");
-                                              if (rawValue != null) {
-                                                _handleCheckin(rawValue);
-                                                break;
-                                              }
-                                            }
-                                          },
-                                        ),
-                                      // Real QR focus overlay visual
-                                      Center(
-                                        child: Container(
-                                          width: 180,
-                                          height: 180,
-                                          decoration: BoxDecoration(
-                                            borderRadius: BorderRadius.circular(16),
-                                            border: Border.all(color: Colors.blueAccent, width: 2.5),
-                                          ),
-                                        ),
-                                      ),
-                                      // Pulsing scan animation line overlay
-                                      AnimatedBuilder(
-                                        animation: _scannerLinePosition,
-                                        builder: (context, child) {
-                                          final topPos = 50.0 + _scannerLinePosition.value * 180.0;
-                                          return Positioned(
-                                            top: topPos,
-                                            left: (MediaQuery.of(context).size.width - 240) / 2,
-                                            width: 180,
-                                            child: Container(
-                                              height: 3,
-                                              decoration: BoxDecoration(
-                                                color: Colors.redAccent,
-                                                boxShadow: [
-                                                  BoxShadow(
-                                                    color: Colors.redAccent.withOpacity(0.8),
-                                                    blurRadius: 8,
-                                                    spreadRadius: 2,
-                                                  )
-                                                ],
-                                              ),
-                                            ),
-                                          );
-                                        },
-                                      ),
-                                      const Positioned(
-                                        bottom: 16,
-                                        left: 0,
-                                        right: 0,
-                                        child: Center(
-                                          child: Text(
-                                            "Point camera at the Gym QR Code",
-                                            style: TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.bold,
-                                              shadows: [
-                                                Shadow(color: Colors.black, blurRadius: 4),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
+                              const SizedBox(height: 8),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 24,
+                                ),
+                                child: Text(
+                                  "Arcare needs camera permission to scan QR code at the gym.",
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: isDark
+                                        ? Colors.white54
+                                        : Colors.black54,
                                   ),
+                                ),
+                              ),
+                              const SizedBox(height: 20),
+                              ElevatedButton(
+                                onPressed: _requestCameraPermission,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.blueAccent,
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 20,
+                                    vertical: 12,
+                                  ),
+                                ),
+                                child: const Text(
+                                  "Grant Permission",
+                                  style: TextStyle(fontWeight: FontWeight.bold),
                                 ),
                               ),
                             ],
-                            const SizedBox(height: 16),
-                            Center(
-                              child: TextButton.icon(
-                                onPressed: () {
-                                  setState(() => _showManualEntry = !_showManualEntry);
-                                },
-                                icon: Icon(
-                                  _showManualEntry ? Icons.expand_less_rounded : Icons.keyboard_rounded,
-                                  size: 18,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                      ] else ...[
+                        // Real Camera Barcode/QR Scanner Feed
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(20),
+                          child: Container(
+                            height: 280,
+                            color: Colors.black,
+                            child: Stack(
+                              children: [
+                                if (_cameraPermissionGranted &&
+                                    _scannerController != null)
+                                  MobileScanner(
+                                    controller: _scannerController!,
+                                    onDetect: (barcodeCapture) {
+                                      if (_isLoading) {
+                                        return; // Prevent double scanning while loading
+                                      }
+                                      final List<Barcode> barcodes =
+                                          barcodeCapture.barcodes;
+                                      debugPrint(
+                                        "Scanned QR Code barcodes found: ${barcodes.length}",
+                                      );
+                                      for (final barcode in barcodes) {
+                                        final rawValue = barcode.rawValue;
+                                        debugPrint(
+                                          "Scanned QR Code raw value: $rawValue",
+                                        );
+                                        if (rawValue != null) {
+                                          _handleCheckin(rawValue);
+                                          break;
+                                        }
+                                      }
+                                    },
+                                  ),
+                                // Real QR focus overlay visual
+                                Center(
+                                  child: Container(
+                                    width: 180,
+                                    height: 180,
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(16),
+                                      border: Border.all(
+                                        color: Colors.blueAccent,
+                                        width: 2.5,
+                                      ),
+                                    ),
+                                  ),
                                 ),
-                                label: Text(_showManualEntry ? "Hide manual entry" : "Can't scan? Enter code"),
+                                // Pulsing scan animation line overlay
+                                AnimatedBuilder(
+                                  animation: _scannerLinePosition,
+                                  builder: (context, child) {
+                                    final topPos =
+                                        50.0 +
+                                        _scannerLinePosition.value * 180.0;
+                                    return Positioned(
+                                      top: topPos,
+                                      left:
+                                          (MediaQuery.of(context).size.width -
+                                              240) /
+                                          2,
+                                      width: 180,
+                                      child: Container(
+                                        height: 3,
+                                        decoration: BoxDecoration(
+                                          color: Colors.redAccent,
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.redAccent
+                                                  .withValues(alpha: 0.8),
+                                              blurRadius: 8,
+                                              spreadRadius: 2,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                                const Positioned(
+                                  bottom: 16,
+                                  left: 0,
+                                  right: 0,
+                                  child: Center(
+                                    child: Text(
+                                      "Point camera at the Gym QR Code",
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                        shadows: [
+                                          Shadow(
+                                            color: Colors.black,
+                                            blurRadius: 4,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 16),
+                      Center(
+                        child: TextButton.icon(
+                          onPressed: () {
+                            setState(
+                              () => _showManualEntry = !_showManualEntry,
+                            );
+                          },
+                          icon: Icon(
+                            _showManualEntry
+                                ? Icons.expand_less_rounded
+                                : Icons.keyboard_rounded,
+                            size: 18,
+                          ),
+                          label: Text(
+                            _showManualEntry
+                                ? "Hide manual entry"
+                                : "Can't scan? Enter code",
+                          ),
+                        ),
+                      ),
+                      if (_showManualEntry)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 4),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: TextField(
+                                  controller: _manualCodeController,
+                                  textCapitalization:
+                                      TextCapitalization.characters,
+                                  decoration: InputDecoration(
+                                    hintText: "Facility code, e.g. BLR1",
+                                    filled: true,
+                                    fillColor: isDark
+                                        ? Colors.white10
+                                        : Colors.black.withValues(alpha: 0.04),
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 14,
+                                    ),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide: BorderSide.none,
+                                    ),
+                                  ),
+                                  onSubmitted: (_) => _submitManualCode(),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.blueAccent,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 18,
+                                    vertical: 16,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                onPressed: _isLoading
+                                    ? null
+                                    : _submitManualCode,
+                                child: const Text("Check In"),
+                              ),
+                            ],
+                          ),
+                        ),
+                    ] else ...[
+                      // Checked In UI
+                      GlassCard(
+                        padding: const EdgeInsets.all(24),
+                        child: Column(
+                          children: [
+                            const CircleAvatar(
+                              radius: 36,
+                              backgroundColor: Colors.greenAccent,
+                              child: Icon(
+                                Icons.check_circle_rounded,
+                                size: 48,
+                                color: Colors.green,
                               ),
                             ),
-                            if (_showManualEntry)
-                              Padding(
-                                padding: const EdgeInsets.only(top: 4),
-                                child: Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Expanded(
-                                      child: TextField(
-                                        controller: _manualCodeController,
-                                        textCapitalization: TextCapitalization.characters,
-                                        decoration: InputDecoration(
-                                          hintText: "Facility code, e.g. BLR1",
-                                          filled: true,
-                                          fillColor: isDark ? Colors.white10 : Colors.black.withOpacity(0.04),
-                                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                                          border: OutlineInputBorder(
-                                            borderRadius: BorderRadius.circular(12),
-                                            borderSide: BorderSide.none,
-                                          ),
-                                        ),
-                                        onSubmitted: (_) => _submitManualCode(),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 10),
-                                    ElevatedButton(
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.blueAccent,
-                                        foregroundColor: Colors.white,
-                                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                      ),
-                                      onPressed: _isLoading ? null : _submitManualCode,
-                                      child: const Text("Check In"),
-                                    ),
-                                  ],
+                            const SizedBox(height: 16),
+                            Text(
+                              "ACTIVE GYM WORKOUT SESSION",
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 1.0,
+                                fontSize: 11,
+                                color: isDark
+                                    ? Colors.grey[400]
+                                    : Colors.grey[600],
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              _gymName ?? "Gym",
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.w900,
+                                color: textColor,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(
+                                  Icons.location_on_outlined,
+                                  size: 14,
+                                  color: Colors.grey,
                                 ),
-                              ),
-                          ] else ...[
-                            // Checked In UI
-                            GlassCard(
-                              padding: const EdgeInsets.all(24),
-                              child: Column(
-                                children: [
-                                  const CircleAvatar(
-                                    radius: 36,
-                                    backgroundColor: Colors.greenAccent,
-                                    child: Icon(Icons.check_circle_rounded, size: 48, color: Colors.green),
+                                const SizedBox(width: 4),
+                                Text(
+                                  _gymPlace ?? "",
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey,
                                   ),
-                                  const SizedBox(height: 16),
-                                  Text(
-                                    "ACTIVE GYM WORKOUT SESSION",
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      letterSpacing: 1.0,
-                                      fontSize: 11,
-                                      color: isDark ? Colors.grey[400] : Colors.grey[600],
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    _gymName ?? "Gym",
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      fontSize: 22,
-                                      fontWeight: FontWeight.w900,
-                                      color: textColor,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      const Icon(Icons.location_on_outlined, size: 14, color: Colors.grey),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        _gymPlace ?? "",
-                                        style: const TextStyle(fontSize: 12, color: Colors.grey),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 24),
-                                  const Divider(color: Colors.white10),
-                                  const SizedBox(height: 16),
-                                  Text(
-                                    "Workout Duration",
-                                    style: TextStyle(fontSize: 12, color: isDark ? Colors.grey[400] : Colors.grey[600]),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    _formatDuration(_elapsed),
-                                    style: TextStyle(
-                                      fontSize: 36,
-                                      fontWeight: FontWeight.w900,
-                                      fontFamily: 'monospace',
-                                      color: Colors.blueAccent,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    "Started at ${_checkInTime?.toLocal().toString().substring(11, 16) ?? ''}",
-                                    style: const TextStyle(fontSize: 11, color: Colors.grey),
-                                  ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
                             const SizedBox(height: 24),
-                            
-                            // Checkout Action
-                            ElevatedButton.icon(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.redAccent,
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(vertical: 16),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            const Divider(color: Colors.white10),
+                            const SizedBox(height: 16),
+                            Text(
+                              "Workout Duration",
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: isDark
+                                    ? Colors.grey[400]
+                                    : Colors.grey[600],
                               ),
-                              onPressed: _showCheckoutConfirmationSheet,
-                              icon: const Icon(Icons.exit_to_app_rounded),
-                              label: const Text(
-                                "Checkout & Log Workout",
-                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              _formatDuration(_elapsed),
+                              style: TextStyle(
+                                fontSize: 36,
+                                fontWeight: FontWeight.w900,
+                                fontFamily: 'monospace',
+                                color: Colors.blueAccent,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              "Started at ${_checkInTime?.toLocal().toString().substring(11, 16) ?? ''}",
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: Colors.grey,
                               ),
                             ),
                           ],
-                        ],
+                        ),
                       ),
-                    ),
+                      const SizedBox(height: 24),
+
+                      // Checkout Action
+                      ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.redAccent,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        onPressed: _showCheckoutConfirmationSheet,
+                        icon: const Icon(Icons.exit_to_app_rounded),
+                        label: const Text(
+                          "Checkout & Log Workout",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
             ),
           ),
           if (_isLoading)

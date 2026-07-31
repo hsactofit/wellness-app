@@ -48,18 +48,9 @@ class GoalsStep extends StatelessWidget {
         'title': 'Weight Loss',
         'icon': Icons.shopping_bag_outlined, // kettlebell/shopping bag shape
       },
-      {
-        'title': 'Muscle Gain',
-        'icon': Icons.fitness_center_rounded,
-      },
-      {
-        'title': 'Better Sleep',
-        'icon': Icons.nightlight_round_outlined,
-      },
-      {
-        'title': 'Stress Reduction',
-        'icon': Icons.self_improvement_rounded,
-      },
+      {'title': 'Muscle Gain', 'icon': Icons.fitness_center_rounded},
+      {'title': 'Better Sleep', 'icon': Icons.nightlight_round_outlined},
+      {'title': 'Stress Reduction', 'icon': Icons.self_improvement_rounded},
     ];
 
     return Scaffold(
@@ -69,7 +60,10 @@ class GoalsStep extends StatelessWidget {
           Expanded(
             child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 20.0,
+                vertical: 10.0,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -108,7 +102,11 @@ class GoalsStep extends StatelessWidget {
                     delay: const Duration(milliseconds: 100),
                     child: Row(
                       children: const [
-                        Icon(Icons.directions_run_rounded, color: Color(0xFF006D5B), size: 20),
+                        Icon(
+                          Icons.directions_run_rounded,
+                          color: Color(0xFF006D5B),
+                          size: 20,
+                        ),
                         SizedBox(width: 8),
                         Text(
                           "Your Activity Level",
@@ -141,13 +139,21 @@ class GoalsStep extends StatelessWidget {
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
                               color: isSelected
-                                  ? const Color(0xFF006D5B).withOpacity(0.06)
-                                  : (isDark ? Colors.white.withOpacity(0.04) : Colors.white),
+                                  ? const Color(
+                                      0xFF006D5B,
+                                    ).withValues(alpha: 0.06)
+                                  : (isDark
+                                        ? Colors.white.withValues(alpha: 0.04)
+                                        : Colors.white),
                               borderRadius: BorderRadius.circular(16),
                               border: Border.all(
                                 color: isSelected
                                     ? const Color(0xFF006D5B)
-                                    : (isDark ? Colors.white.withOpacity(0.12) : Colors.grey.withOpacity(0.18)),
+                                    : (isDark
+                                          ? Colors.white.withValues(alpha: 0.12)
+                                          : Colors.grey.withValues(
+                                              alpha: 0.18,
+                                            )),
                                 width: isSelected ? 2.0 : 1.2,
                               ),
                             ),
@@ -159,7 +165,9 @@ class GoalsStep extends StatelessWidget {
                                   style: TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 16,
-                                    color: isDark ? Colors.white : const Color(0xFF0F172A),
+                                    color: isDark
+                                        ? Colors.white
+                                        : const Color(0xFF0F172A),
                                   ),
                                 ),
                                 const SizedBox(height: 4),
@@ -167,7 +175,9 @@ class GoalsStep extends StatelessWidget {
                                   desc,
                                   style: TextStyle(
                                     fontSize: 13,
-                                    color: isDark ? Colors.grey[400] : Colors.grey[500],
+                                    color: isDark
+                                        ? Colors.grey[400]
+                                        : Colors.grey[500],
                                     height: 1.3,
                                   ),
                                 ),
@@ -186,7 +196,11 @@ class GoalsStep extends StatelessWidget {
                     delay: const Duration(milliseconds: 300),
                     child: Row(
                       children: const [
-                        Icon(Icons.flag_outlined, color: Color(0xFF006D5B), size: 20),
+                        Icon(
+                          Icons.flag_outlined,
+                          color: Color(0xFF006D5B),
+                          size: 20,
+                        ),
                         SizedBox(width: 8),
                         Text(
                           "Primary Health Goals",
@@ -205,19 +219,22 @@ class GoalsStep extends StatelessWidget {
                   GridView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 12,
-                      childAspectRatio: 1.35,
-                    ),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          crossAxisSpacing: 12,
+                          mainAxisSpacing: 12,
+                          childAspectRatio: 1.35,
+                        ),
                     itemCount: healthGoals.length,
                     itemBuilder: (context, idx) {
                       final goal = healthGoals[idx];
                       final title = goal['title']!;
                       final icon = goal['icon'] as IconData;
                       final isSelected = selectedGoals.contains(title);
-                      final itemDelay = Duration(milliseconds: 320 + (idx * 40));
+                      final itemDelay = Duration(
+                        milliseconds: 320 + (idx * 40),
+                      );
 
                       return FadeSlideTransition(
                         delay: itemDelay,
@@ -231,17 +248,32 @@ class GoalsStep extends StatelessWidget {
                                 height: double.infinity,
                                 decoration: BoxDecoration(
                                   color: isSelected
-                                      ? const Color(0xFF006D5B).withOpacity(0.06)
-                                      : (isDark ? Colors.white.withOpacity(0.04) : Colors.white),
+                                      ? const Color(
+                                          0xFF006D5B,
+                                        ).withValues(alpha: 0.06)
+                                      : (isDark
+                                            ? Colors.white.withValues(
+                                                alpha: 0.04,
+                                              )
+                                            : Colors.white),
                                   borderRadius: BorderRadius.circular(16),
                                   border: Border.all(
                                     color: isSelected
                                         ? const Color(0xFF006D5B)
-                                        : (isDark ? Colors.white.withOpacity(0.12) : Colors.grey.withOpacity(0.18)),
+                                        : (isDark
+                                              ? Colors.white.withValues(
+                                                  alpha: 0.12,
+                                                )
+                                              : Colors.grey.withValues(
+                                                  alpha: 0.18,
+                                                )),
                                     width: isSelected ? 2.0 : 1.2,
                                   ),
                                 ),
-                                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 12,
+                                  horizontal: 8,
+                                ),
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
@@ -257,7 +289,9 @@ class GoalsStep extends StatelessWidget {
                                       style: TextStyle(
                                         fontSize: 13,
                                         fontWeight: FontWeight.bold,
-                                        color: isDark ? Colors.white70 : const Color(0xFF0F172A),
+                                        color: isDark
+                                            ? Colors.white70
+                                            : const Color(0xFF0F172A),
                                       ),
                                     ),
                                   ],
@@ -294,7 +328,10 @@ class GoalsStep extends StatelessWidget {
 
           // Bottom Button Section
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 20.0,
+              vertical: 12.0,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -302,8 +339,10 @@ class GoalsStep extends StatelessWidget {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF006D5B),
                     padding: const EdgeInsets.symmetric(vertical: 18),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-                    shadowColor: const Color(0xFF006D5B).withOpacity(0.3),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(28),
+                    ),
+                    shadowColor: const Color(0xFF006D5B).withValues(alpha: 0.3),
                     elevation: 3,
                   ),
                   onPressed: selectedGoals.isEmpty ? null : onNext,

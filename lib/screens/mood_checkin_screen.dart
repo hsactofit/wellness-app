@@ -25,8 +25,16 @@ class _MoodCheckinScreenState extends State<MoodCheckinScreen> {
   bool _submitted = false;
 
   final List<String> _moodLabels = const [
-    'Very low', 'Low', 'Low', 'Down', 'Neutral',
-    'Okay', 'Good', 'Good', 'Great', 'Excellent',
+    'Very low',
+    'Low',
+    'Low',
+    'Down',
+    'Neutral',
+    'Okay',
+    'Good',
+    'Good',
+    'Great',
+    'Excellent',
   ];
 
   String _labelFor(double value) => _moodLabels[value.round() - 1];
@@ -65,21 +73,33 @@ class _MoodCheckinScreenState extends State<MoodCheckinScreen> {
     final secondaryText = isDark ? Colors.white60 : Colors.black54;
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0F0F12) : const Color(0xFFF6F8FC),
+      backgroundColor: isDark
+          ? const Color(0xFF0F0F12)
+          : const Color(0xFFF6F8FC),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new_rounded, color: textColor, size: 20),
+          icon: Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: textColor,
+            size: 20,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'Mood Check-in',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: textColor),
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+            color: textColor,
+          ),
         ),
       ),
       body: SafeArea(
-        child: _submitted ? _buildSuccess(textColor, secondaryText) : _buildForm(isDark, textColor, secondaryText),
+        child: _submitted
+            ? _buildSuccess(textColor, secondaryText)
+            : _buildForm(isDark, textColor, secondaryText),
       ),
     );
   }
@@ -96,13 +116,24 @@ class _MoodCheckinScreenState extends State<MoodCheckinScreen> {
               Container(
                 width: 64,
                 height: 64,
-                decoration: BoxDecoration(shape: BoxShape.circle, color: _mint.withOpacity(0.14)),
-                child: const Icon(Icons.check_circle_rounded, color: _mint, size: 34),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: _mint.withValues(alpha: 0.14),
+                ),
+                child: const Icon(
+                  Icons.check_circle_rounded,
+                  color: _mint,
+                  size: 34,
+                ),
               ),
               const SizedBox(height: 16),
               Text(
                 'Check-in logged',
-                style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: textColor),
+                style: TextStyle(
+                  fontWeight: FontWeight.w900,
+                  fontSize: 18,
+                  color: textColor,
+                ),
               ),
               const SizedBox(height: 8),
               Text(
@@ -116,10 +147,18 @@ class _MoodCheckinScreenState extends State<MoodCheckinScreen> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: _accent,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                 ),
-                child: const Text('Done', style: TextStyle(fontWeight: FontWeight.bold)),
+                child: const Text(
+                  'Done',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
               ),
             ],
           ),
@@ -136,7 +175,11 @@ class _MoodCheckinScreenState extends State<MoodCheckinScreen> {
         children: [
           Text(
             'How are you feeling today?',
-            style: TextStyle(fontWeight: FontWeight.w900, fontSize: 22, color: textColor),
+            style: TextStyle(
+              fontWeight: FontWeight.w900,
+              fontSize: 22,
+              color: textColor,
+            ),
           ),
           const SizedBox(height: 6),
           Text(
@@ -152,10 +195,19 @@ class _MoodCheckinScreenState extends State<MoodCheckinScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Mood', style: TextStyle(fontWeight: FontWeight.bold, color: textColor)),
+                    Text(
+                      'Mood',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: textColor,
+                      ),
+                    ),
                     Text(
                       _labelFor(_mood),
-                      style: const TextStyle(fontWeight: FontWeight.bold, color: _accent),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: _accent,
+                      ),
                     ),
                   ],
                 ),
@@ -171,10 +223,19 @@ class _MoodCheckinScreenState extends State<MoodCheckinScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Stress level', style: TextStyle(fontWeight: FontWeight.bold, color: textColor)),
+                    Text(
+                      'Stress level',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: textColor,
+                      ),
+                    ),
                     Text(
                       '${_stress.round()}/10',
-                      style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.redAccent),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.redAccent,
+                      ),
                     ),
                   ],
                 ),
@@ -195,8 +256,11 @@ class _MoodCheckinScreenState extends State<MoodCheckinScreen> {
             child: SwitchListTile(
               contentPadding: EdgeInsets.zero,
               value: _anonymous,
-              activeColor: _accent,
-              title: Text('Submit anonymously', style: TextStyle(fontWeight: FontWeight.w600, color: textColor)),
+              activeThumbColor: _accent,
+              title: Text(
+                'Submit anonymously',
+                style: TextStyle(fontWeight: FontWeight.w600, color: textColor),
+              ),
               subtitle: Text(
                 'Your name is hidden from the wellness team; only trends are shared.',
                 style: TextStyle(fontSize: 12, color: secondaryText),
@@ -211,15 +275,23 @@ class _MoodCheckinScreenState extends State<MoodCheckinScreen> {
               backgroundColor: _accent,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
             ),
             child: _isSubmitting
                 ? const SizedBox(
                     width: 22,
                     height: 22,
-                    child: CircularProgressIndicator(strokeWidth: 2.4, color: Colors.white),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.4,
+                      color: Colors.white,
+                    ),
                   )
-                : const Text('Submit Check-in', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                : const Text(
+                    'Submit Check-in',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                  ),
           ),
         ],
       ),

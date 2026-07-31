@@ -20,7 +20,8 @@ class HealthSyncStep extends StatefulWidget {
   State<HealthSyncStep> createState() => _HealthSyncStepState();
 }
 
-class _HealthSyncStepState extends State<HealthSyncStep> with SingleTickerProviderStateMixin {
+class _HealthSyncStepState extends State<HealthSyncStep>
+    with SingleTickerProviderStateMixin {
   late AnimationController _pulseController;
   late Animation<double> _scaleAnimation;
 
@@ -58,7 +59,10 @@ class _HealthSyncStepState extends State<HealthSyncStep> with SingleTickerProvid
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               GlassCard(
-                padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 36.0),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24.0,
+                  vertical: 36.0,
+                ),
                 child: Column(
                   children: [
                     FadeSlideTransition(
@@ -78,7 +82,11 @@ class _HealthSyncStepState extends State<HealthSyncStep> with SingleTickerProvid
                       child: Text(
                         "Sync Health Records",
                         textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, letterSpacing: -0.5),
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: -0.5,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -102,19 +110,39 @@ class _HealthSyncStepState extends State<HealthSyncStep> with SingleTickerProvid
                       child: Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: isDark ? Colors.white.withOpacity(0.02) : Colors.black.withOpacity(0.02),
+                          color: isDark
+                              ? Colors.white.withValues(alpha: 0.02)
+                              : Colors.black.withValues(alpha: 0.02),
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: isDark ? Colors.white10 : Colors.black12),
+                          border: Border.all(
+                            color: isDark ? Colors.white10 : Colors.black12,
+                          ),
                         ),
                         child: const Column(
                           children: [
-                            _PermissionItem(icon: "🚶", label: "Daily Steps & Distance", delayMs: 550),
+                            _PermissionItem(
+                              icon: "🚶",
+                              label: "Daily Steps & Distance",
+                              delayMs: 550,
+                            ),
                             SizedBox(height: 10),
-                            _PermissionItem(icon: "🔥", label: "Calories & Exercise time", delayMs: 650),
+                            _PermissionItem(
+                              icon: "🔥",
+                              label: "Calories & Exercise time",
+                              delayMs: 650,
+                            ),
                             SizedBox(height: 10),
-                            _PermissionItem(icon: "🌙", label: "Sleep Duration", delayMs: 750),
+                            _PermissionItem(
+                              icon: "🌙",
+                              label: "Sleep Duration",
+                              delayMs: 750,
+                            ),
                             SizedBox(height: 10),
-                            _PermissionItem(icon: "💓", label: "Heart Rate Pulse", delayMs: 850),
+                            _PermissionItem(
+                              icon: "💓",
+                              label: "Heart Rate Pulse",
+                              delayMs: 850,
+                            ),
                           ],
                         ),
                       ),
@@ -131,14 +159,29 @@ class _HealthSyncStepState extends State<HealthSyncStep> with SingleTickerProvid
                     backgroundColor: Colors.blueAccent,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                    shadowColor: Colors.blueAccent.withOpacity(0.3),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    shadowColor: Colors.blueAccent.withValues(alpha: 0.3),
                     elevation: 4,
                   ),
                   onPressed: widget.isSyncing ? null : widget.onConnect,
                   child: widget.isSyncing
-                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                      : const Text("Connect Health Services", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Text(
+                          "Connect Health Services",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
                 ),
               ),
               const SizedBox(height: 12),
@@ -152,7 +195,12 @@ class _HealthSyncStepState extends State<HealthSyncStep> with SingleTickerProvid
                           padding: const EdgeInsets.symmetric(vertical: 16),
                         ),
                         onPressed: widget.onBack,
-                        child: Text("Back", style: TextStyle(color: isDark ? Colors.white60 : Colors.black54)),
+                        child: Text(
+                          "Back",
+                          style: TextStyle(
+                            color: isDark ? Colors.white60 : Colors.black54,
+                          ),
+                        ),
                       ),
                     ),
                     Expanded(
@@ -161,7 +209,13 @@ class _HealthSyncStepState extends State<HealthSyncStep> with SingleTickerProvid
                           padding: const EdgeInsets.symmetric(vertical: 16),
                         ),
                         onPressed: widget.onSkip,
-                        child: const Text("Skip for now", style: TextStyle(color: Colors.blueAccent, fontWeight: FontWeight.bold)),
+                        child: const Text(
+                          "Skip for now",
+                          style: TextStyle(
+                            color: Colors.blueAccent,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                     ),
                   ],

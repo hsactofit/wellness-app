@@ -54,7 +54,7 @@ class SparklinePainter extends CustomPainter {
 
     final fillPaint = Paint()
       ..shader = LinearGradient(
-        colors: [color.withOpacity(0.18), color.withOpacity(0.0)],
+        colors: [color.withValues(alpha: 0.18), color.withValues(alpha: 0.0)],
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
       ).createShader(Rect.fromLTWH(0, 0, size.width, size.height))
@@ -140,7 +140,7 @@ class MetricCard extends StatelessWidget {
                 width: 32,
                 height: 32,
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.12),
+                  color: color.withValues(alpha: 0.12),
                   shape: BoxShape.circle,
                 ),
                 child: Center(
@@ -153,10 +153,7 @@ class MetricCard extends StatelessWidget {
                           errorBuilder: (_, __, ___) =>
                               const Text('•', style: TextStyle(fontSize: 16)),
                         )
-                      : Text(
-                          icon,
-                          style: const TextStyle(fontSize: 16),
-                        ),
+                      : Text(icon, style: const TextStyle(fontSize: 16)),
                 ),
               ),
               Expanded(
@@ -207,9 +204,7 @@ class MetricCard extends StatelessWidget {
           SizedBox(
             height: 28,
             width: double.infinity,
-            child: CustomPaint(
-              painter: SparklinePainter(mockDataset, color),
-            ),
+            child: CustomPaint(painter: SparklinePainter(mockDataset, color)),
           ),
         ],
       ),
@@ -218,10 +213,7 @@ class MetricCard extends StatelessWidget {
     if (onTap != null) {
       return GestureDetector(
         onTap: onTap,
-        child: MouseRegion(
-          cursor: SystemMouseCursors.click,
-          child: card,
-        ),
+        child: MouseRegion(cursor: SystemMouseCursors.click, child: card),
       );
     }
     return card;

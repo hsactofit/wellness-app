@@ -42,8 +42,8 @@ class WavePainter extends CustomPainter {
       begin: Alignment.topCenter,
       end: Alignment.bottomCenter,
       colors: [
-        const Color(0xFF42A5F5).withOpacity(0.55),
-        const Color(0xFF1E88E5).withOpacity(0.85),
+        const Color(0xFF42A5F5).withValues(alpha: 0.55),
+        const Color(0xFF1E88E5).withValues(alpha: 0.85),
       ],
     );
 
@@ -51,17 +51,21 @@ class WavePainter extends CustomPainter {
       begin: Alignment.topCenter,
       end: Alignment.bottomCenter,
       colors: [
-        const Color(0xFF64B5F6).withOpacity(0.7),
-        const Color(0xFF1565C0).withOpacity(0.95),
+        const Color(0xFF64B5F6).withValues(alpha: 0.7),
+        const Color(0xFF1565C0).withValues(alpha: 0.95),
       ],
     );
 
     final paint1 = Paint()
-      ..shader = waveGrad1.createShader(Rect.fromLTWH(0, yBase - 15, size.width, waterHeight + 15))
+      ..shader = waveGrad1.createShader(
+        Rect.fromLTWH(0, yBase - 15, size.width, waterHeight + 15),
+      )
       ..style = PaintingStyle.fill;
 
     final paint2 = Paint()
-      ..shader = waveGrad2.createShader(Rect.fromLTWH(0, yBase - 15, size.width, waterHeight + 15))
+      ..shader = waveGrad2.createShader(
+        Rect.fromLTWH(0, yBase - 15, size.width, waterHeight + 15),
+      )
       ..style = PaintingStyle.fill;
 
     // Draw first wave (Back wave)
@@ -79,23 +83,34 @@ class WavePainter extends CustomPainter {
 
     // Draw rising bubbles (Under the back wave and above the front wave for layered depth)
     final bubblePaint = Paint()
-      ..color = Colors.white.withOpacity(isDark ? 0.35 : 0.45)
+      ..color = Colors.white.withValues(alpha: isDark ? 0.35 : 0.45)
       ..style = PaintingStyle.fill;
 
     final bubbleGlowPaint = Paint()
-      ..color = Colors.white.withOpacity(0.12)
+      ..color = Colors.white.withValues(alpha: 0.12)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.0;
 
     for (var bubble in bubbles) {
       // Check if bubble is below the actual water level
       final double bubblePixelY = bubble.y * size.height;
-      final double waveYAtBubbleX = 8.0 * sin((2 * pi / size.width) * (bubble.x * size.width) + wavePhase) + yBase;
+      final double waveYAtBubbleX =
+          8.0 *
+              sin((2 * pi / size.width) * (bubble.x * size.width) + wavePhase) +
+          yBase;
 
       if (bubblePixelY > waveYAtBubbleX) {
         final double bubblePixelX = bubble.x * size.width;
-        canvas.drawCircle(Offset(bubblePixelX, bubblePixelY), bubble.radius, bubblePaint);
-        canvas.drawCircle(Offset(bubblePixelX, bubblePixelY), bubble.radius + 1.5, bubbleGlowPaint);
+        canvas.drawCircle(
+          Offset(bubblePixelX, bubblePixelY),
+          bubble.radius,
+          bubblePaint,
+        );
+        canvas.drawCircle(
+          Offset(bubblePixelX, bubblePixelY),
+          bubble.radius + 1.5,
+          bubbleGlowPaint,
+        );
       }
     }
 
@@ -103,7 +118,8 @@ class WavePainter extends CustomPainter {
     final path2 = Path();
     path2.moveTo(0, yBase);
     for (double x = 0; x <= size.width; x++) {
-      final double y = 6.0 * sin((3.5 * pi / size.width) * x - wavePhase + pi / 3.0) + yBase;
+      final double y =
+          6.0 * sin((3.5 * pi / size.width) * x - wavePhase + pi / 3.0) + yBase;
       path2.lineTo(x, y.clamp(0.0, size.height));
     }
     path2.lineTo(size.width, size.height);

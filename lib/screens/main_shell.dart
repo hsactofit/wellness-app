@@ -37,7 +37,8 @@ class MainShellState extends State<MainShell> {
   }
 
   // Key to refresh dashboard when switching back to it
-  final GlobalKey<DashboardScreenState> _dashboardKey = GlobalKey<DashboardScreenState>();
+  final GlobalKey<DashboardScreenState> _dashboardKey =
+      GlobalKey<DashboardScreenState>();
 
   @override
   Widget build(BuildContext context) {
@@ -58,7 +59,7 @@ class MainShellState extends State<MainShell> {
               const ProfileScreen(),
             ],
           ),
-          
+
           // Floating Glassmorphic Bottom Navigation Bar
           Positioned(
             bottom: 24,
@@ -69,34 +70,54 @@ class MainShellState extends State<MainShell> {
               child: BackdropFilter(
                 filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 8,
+                    horizontal: 8,
+                  ),
                   decoration: BoxDecoration(
-                    color: isDark 
-                        ? const Color(0xFF16161C).withOpacity(0.75) 
-                        : const Color(0xFFFFFFFF).withOpacity(0.75),
+                    color: isDark
+                        ? const Color(0xFF16161C).withValues(alpha: 0.75)
+                        : const Color(0xFFFFFFFF).withValues(alpha: 0.75),
                     borderRadius: BorderRadius.circular(24),
                     border: Border.all(
-                      color: isDark 
-                          ? Colors.white.withOpacity(0.08) 
-                          : Colors.black.withOpacity(0.05),
+                      color: isDark
+                          ? Colors.white.withValues(alpha: 0.08)
+                          : Colors.black.withValues(alpha: 0.05),
                       width: 1.5,
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(isDark ? 0.25 : 0.08),
+                        color: Colors.black.withValues(
+                          alpha: isDark ? 0.25 : 0.08,
+                        ),
                         blurRadius: 20,
                         offset: const Offset(0, 8),
-                      )
+                      ),
                     ],
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
                       _buildNavItem(0, Icons.home_outlined, Icons.home, "Home"),
-                      _buildNavItem(1, Icons.emoji_events_outlined, Icons.emoji_events, "Challenges"),
+                      _buildNavItem(
+                        1,
+                        Icons.emoji_events_outlined,
+                        Icons.emoji_events,
+                        "Challenges",
+                      ),
                       _buildCenterAINavItem(2),
-                      _buildNavItem(3, Icons.bar_chart_outlined, Icons.bar_chart, "Progress"),
-                      _buildNavItem(4, Icons.person_outline, Icons.person, "Profile"),
+                      _buildNavItem(
+                        3,
+                        Icons.bar_chart_outlined,
+                        Icons.bar_chart,
+                        "Progress",
+                      ),
+                      _buildNavItem(
+                        4,
+                        Icons.person_outline,
+                        Icons.person,
+                        "Profile",
+                      ),
                     ],
                   ),
                 ),
@@ -108,7 +129,12 @@ class MainShellState extends State<MainShell> {
     );
   }
 
-  Widget _buildNavItem(int index, IconData unselectedIcon, IconData selectedIcon, String label) {
+  Widget _buildNavItem(
+    int index,
+    IconData unselectedIcon,
+    IconData selectedIcon,
+    String label,
+  ) {
     final isSelected = _currentIndex == index;
     final theme = Theme.of(context);
     final activeColor = theme.colorScheme.primary;
@@ -132,8 +158,8 @@ class MainShellState extends State<MainShell> {
           padding: const EdgeInsets.symmetric(vertical: 6),
           margin: const EdgeInsets.symmetric(horizontal: 2),
           decoration: BoxDecoration(
-            color: isSelected 
-                ? activeColor.withOpacity(0.08) 
+            color: isSelected
+                ? activeColor.withValues(alpha: 0.08)
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(16),
           ),
@@ -142,8 +168,8 @@ class MainShellState extends State<MainShell> {
             children: [
               Icon(
                 isSelected ? selectedIcon : unselectedIcon,
-                color: isSelected 
-                    ? activeColor 
+                color: isSelected
+                    ? activeColor
                     : (isDark ? Colors.white54 : Colors.black54),
                 size: 22,
               ),
@@ -153,8 +179,8 @@ class MainShellState extends State<MainShell> {
                 style: TextStyle(
                   fontSize: 10,
                   fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                  color: isSelected 
-                      ? activeColor 
+                  color: isSelected
+                      ? activeColor
                       : (isDark ? Colors.white54 : Colors.black54),
                 ),
               ),
@@ -167,6 +193,7 @@ class MainShellState extends State<MainShell> {
 
   Widget _buildCenterAINavItem(int index) {
     final isSelected = _currentIndex == index;
+    // ignore: unused_local_variable
     final theme = Theme.of(context);
 
     return GestureDetector(
@@ -192,20 +219,19 @@ class MainShellState extends State<MainShell> {
           ),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFFFF6D55).withOpacity(isSelected ? 0.4 : 0.15),
+              color: const Color(
+                0xFFFF6D55,
+              ).withValues(alpha: isSelected ? 0.4 : 0.15),
               blurRadius: 8,
               spreadRadius: 1,
               offset: const Offset(0, 3),
-            )
+            ),
           ],
         ),
         child: ClipOval(
           child: Padding(
             padding: const EdgeInsets.all(2.0),
-            child: Image.asset(
-              'assets/ai_buddy.png',
-              fit: BoxFit.cover,
-            ),
+            child: Image.asset('assets/ai_buddy.png', fit: BoxFit.cover),
           ),
         ),
       ),

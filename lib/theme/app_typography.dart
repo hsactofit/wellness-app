@@ -14,10 +14,12 @@ class AppTypography {
   static TextTheme textTheme(Brightness brightness) {
     final isDark = brightness == Brightness.dark;
     final primary = isDark ? Colors.white : const Color(0xFF0F1419);
-    final secondary =
-        isDark ? Colors.white.withOpacity(0.72) : const Color(0xFF4A5568);
-    final muted =
-        isDark ? Colors.white.withOpacity(0.52) : const Color(0xFF718096);
+    final secondary = isDark
+        ? Colors.white.withValues(alpha: 0.72)
+        : const Color(0xFF4A5568);
+    final muted = isDark
+        ? Colors.white.withValues(alpha: 0.52)
+        : const Color(0xFF718096);
 
     TextStyle base({
       double size = 14,
@@ -151,10 +153,7 @@ class AppTypography {
   }
 
   /// Large metric numbers on dashboard cards.
-  static TextStyle metricValue({
-    required Color color,
-    double size = 28,
-  }) {
+  static TextStyle metricValue({required Color color, double size = 28}) {
     return GoogleFonts.plusJakartaSans(
       fontSize: size,
       fontWeight: FontWeight.w800,

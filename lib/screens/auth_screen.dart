@@ -14,7 +14,8 @@ class AuthScreen extends StatefulWidget {
   State<AuthScreen> createState() => _AuthScreenState();
 }
 
-class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateMixin {
+class _AuthScreenState extends State<AuthScreen>
+    with SingleTickerProviderStateMixin {
   final _signupFormKey = GlobalKey<FormState>();
 
   // Text Controllers
@@ -23,7 +24,8 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
   final TextEditingController _passwordController = TextEditingController();
 
   bool _isSigningIn = false;
-  String _authProvider = '';
+  // ignore: unused_field
+  final String _authProvider = '';
 
   // Background Animation Controllers
   late AnimationController _bgAnimationController;
@@ -64,7 +66,12 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
         final res = await AuthService.instance.loginWithEmail(email, password);
         await _completeLogin(res, email, provider: 'email');
       } else {
-        final res = await AuthService.instance.signUpWithEmail(name, email, password);
+        final res = await AuthService.instance.signUpWithEmail(
+          name,
+          email,
+          password,
+        );
+        // ignore: unused_local_variable
         final backendUser = res['user'];
 
         final prefs = await SharedPreferences.getInstance();
@@ -75,14 +82,18 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
         if (!mounted) return;
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const OnboardingScreen(initialPage: 0)),
+          MaterialPageRoute(
+            builder: (context) => const OnboardingScreen(initialPage: 0),
+          ),
         );
       }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("Authentication failed: ${e.toString().replaceAll('Exception: ', '')}"),
+          content: Text(
+            "Authentication failed: ${e.toString().replaceAll('Exception: ', '')}",
+          ),
           backgroundColor: Colors.redAccent,
         ),
       );
@@ -113,25 +124,34 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
 
     if (isCompleted) {
       final permissions = backendUser['permissions'] ?? {};
-      final bool healthSyncEnabled = permissions['health_connect_connected'] ?? false;
+      final bool healthSyncEnabled =
+          permissions['health_connect_connected'] ?? false;
       await prefs.setBool('health_sync_enabled', healthSyncEnabled);
 
       if (backendUser['last_sync_date'] != null) {
-        await prefs.setString('last_sync_timestamp', backendUser['last_sync_date']);
+        await prefs.setString(
+          'last_sync_timestamp',
+          backendUser['last_sync_date'],
+        );
       }
 
-      await prefs.setString('onboarding_data', jsonEncode({
-        'onboarding_completed': true,
-        'completed_at': backendUser['completed_at'] ?? DateTime.now().toUtc().toIso8601String(),
-        'auth': {
-          'provider': provider,
-          'name': backendUser['name'] ?? '',
-          'email': backendUser['email'] ?? emailFallback,
-        },
-        'profile': backendUser['profile'] ?? {},
-        'goals': backendUser['goals'] ?? [],
-        'permissions': backendUser['permissions'] ?? {},
-      }));
+      await prefs.setString(
+        'onboarding_data',
+        jsonEncode({
+          'onboarding_completed': true,
+          'completed_at':
+              backendUser['completed_at'] ??
+              DateTime.now().toUtc().toIso8601String(),
+          'auth': {
+            'provider': provider,
+            'name': backendUser['name'] ?? '',
+            'email': backendUser['email'] ?? emailFallback,
+          },
+          'profile': backendUser['profile'] ?? {},
+          'goals': backendUser['goals'] ?? [],
+          'permissions': backendUser['permissions'] ?? {},
+        }),
+      );
       await prefs.setBool('onboarding_completed', true);
 
       if (!mounted) return;
@@ -143,7 +163,9 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
       if (!mounted) return;
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const OnboardingScreen(initialPage: 0)),
+        MaterialPageRoute(
+          builder: (context) => const OnboardingScreen(initialPage: 0),
+        ),
       );
     }
   }
@@ -181,32 +203,47 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
         final bool isCompleted = backendUser['onboarding_completed'] ?? false;
 
         final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('user_email', backendUser['email'] ?? user.email ?? '');
-        await prefs.setString('user_name', backendUser['name'] ?? user.displayName ?? '');
+        await prefs.setString(
+          'user_email',
+          backendUser['email'] ?? user.email ?? '',
+        );
+        await prefs.setString(
+          'user_name',
+          backendUser['name'] ?? user.displayName ?? '',
+        );
         await prefs.setString('user_provider', provider.toLowerCase());
 
         if (isCompleted) {
           final permissions = backendUser['permissions'] ?? {};
-          final bool healthSyncEnabled = permissions['health_connect_connected'] ?? false;
+          final bool healthSyncEnabled =
+              permissions['health_connect_connected'] ?? false;
           await prefs.setBool('health_sync_enabled', healthSyncEnabled);
 
           if (backendUser['last_sync_date'] != null) {
-            await prefs.setString('last_sync_timestamp', backendUser['last_sync_date']);
+            await prefs.setString(
+              'last_sync_timestamp',
+              backendUser['last_sync_date'],
+            );
           }
 
           // Save onboarding completed in SharedPreferences
-          await prefs.setString('onboarding_data', jsonEncode({
-            'onboarding_completed': true,
-            'completed_at': backendUser['completed_at'] ?? DateTime.now().toUtc().toIso8601String(),
-            'auth': {
-              'provider': provider.toLowerCase(),
-              'name': backendUser['name'] ?? user.displayName ?? '',
-              'email': backendUser['email'] ?? user.email ?? '',
-            },
-            'profile': backendUser['profile'] ?? {},
-            'goals': backendUser['goals'] ?? [],
-            'permissions': backendUser['permissions'] ?? {},
-          }));
+          await prefs.setString(
+            'onboarding_data',
+            jsonEncode({
+              'onboarding_completed': true,
+              'completed_at':
+                  backendUser['completed_at'] ??
+                  DateTime.now().toUtc().toIso8601String(),
+              'auth': {
+                'provider': provider.toLowerCase(),
+                'name': backendUser['name'] ?? user.displayName ?? '',
+                'email': backendUser['email'] ?? user.email ?? '',
+              },
+              'profile': backendUser['profile'] ?? {},
+              'goals': backendUser['goals'] ?? [],
+              'permissions': backendUser['permissions'] ?? {},
+            }),
+          );
           await prefs.setBool('onboarding_completed', true);
 
           if (!mounted) return;
@@ -218,10 +255,13 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
           if (!mounted) return;
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => const OnboardingScreen(initialPage: 0)),
+            MaterialPageRoute(
+              builder: (context) => const OnboardingScreen(initialPage: 0),
+            ),
           );
         }
       } else {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text("$provider authentication was cancelled."),
@@ -233,7 +273,9 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("Failed to authenticate with $provider: ${e.toString().replaceAll('Exception: ', '')}"),
+          content: Text(
+            "Failed to authenticate with $provider: ${e.toString().replaceAll('Exception: ', '')}",
+          ),
           backgroundColor: Colors.redAccent,
         ),
       );
@@ -277,8 +319,10 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
                           shape: BoxShape.circle,
                           gradient: RadialGradient(
                             colors: [
-                              isDark ? Colors.blue.withOpacity(0.22) : Colors.cyan.withOpacity(0.35),
-                              Colors.blue.withOpacity(0.0),
+                              isDark
+                                  ? Colors.blue.withValues(alpha: 0.22)
+                                  : Colors.cyan.withValues(alpha: 0.35),
+                              Colors.blue.withValues(alpha: 0.0),
                             ],
                           ),
                         ),
@@ -295,8 +339,10 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
                           shape: BoxShape.circle,
                           gradient: RadialGradient(
                             colors: [
-                              isDark ? Colors.purple.withOpacity(0.18) : Colors.pink.withOpacity(0.24),
-                              Colors.purple.withOpacity(0.0),
+                              isDark
+                                  ? Colors.purple.withValues(alpha: 0.18)
+                                  : Colors.pink.withValues(alpha: 0.24),
+                              Colors.purple.withValues(alpha: 0.0),
                             ],
                           ),
                         ),
@@ -325,19 +371,21 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
           if (_isSigningIn)
             Positioned.fill(
               child: Container(
-                color: Colors.black.withOpacity(0.35),
+                color: Colors.black.withValues(alpha: 0.35),
                 child: ClipRect(
                   child: BackdropFilter(
                     filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
                     child: Container(
                       alignment: Alignment.center,
-                      color: Colors.black.withOpacity(0.15),
+                      color: Colors.black.withValues(alpha: 0.15),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           CircularProgressIndicator(
                             valueColor: AlwaysStoppedAnimation<Color>(
-                              isDark ? Colors.blueAccent : const Color(0xFF0F52BA),
+                              isDark
+                                  ? Colors.blueAccent
+                                  : const Color(0xFF0F52BA),
                             ),
                           ),
                           const SizedBox(height: 24),

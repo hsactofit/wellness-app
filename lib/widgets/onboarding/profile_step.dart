@@ -63,21 +63,26 @@ class ProfileStep extends StatelessWidget {
                     g == "Female"
                         ? Icons.female_rounded
                         : g == "Male"
-                            ? Icons.male_rounded
-                            : Icons.transgender_rounded,
+                        ? Icons.male_rounded
+                        : Icons.transgender_rounded,
                     color: isSelected ? const Color(0xFF006D5B) : Colors.grey,
                   ),
                   title: Text(
                     g,
                     style: TextStyle(
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                      fontWeight: isSelected
+                          ? FontWeight.bold
+                          : FontWeight.normal,
                       color: isSelected
                           ? const Color(0xFF006D5B)
                           : (isDark ? Colors.white70 : Colors.black87),
                     ),
                   ),
                   trailing: isSelected
-                      ? const Icon(Icons.check_circle_rounded, color: Color(0xFF006D5B))
+                      ? const Icon(
+                          Icons.check_circle_rounded,
+                          color: Color(0xFF006D5B),
+                        )
                       : null,
                   onTap: () {
                     onGenderChanged(g);
@@ -93,7 +98,10 @@ class ProfileStep extends StatelessWidget {
   }
 
   Widget _buildUnitToggle(
-      String currentUnit, List<String> options, ValueChanged<String> onChanged) {
+    String currentUnit,
+    List<String> options,
+    ValueChanged<String> onChanged,
+  ) {
     return Container(
       padding: const EdgeInsets.all(2),
       decoration: BoxDecoration(
@@ -110,7 +118,9 @@ class ProfileStep extends StatelessWidget {
               duration: const Duration(milliseconds: 150),
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
-                color: isSelected ? const Color(0xFF006D5B) : Colors.transparent,
+                color: isSelected
+                    ? const Color(0xFF006D5B)
+                    : Colors.transparent,
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Text(
@@ -137,26 +147,30 @@ class ProfileStep extends StatelessWidget {
     return InputDecoration(
       hintText: hintText,
       hintStyle: TextStyle(
-        color: isDark ? Colors.white38 : Colors.grey.withOpacity(0.6),
+        color: isDark ? Colors.white38 : Colors.grey.withValues(alpha: 0.6),
         fontWeight: FontWeight.w400,
         fontSize: 15,
       ),
       prefixIcon: Icon(prefixIcon, color: const Color(0xFF64748B), size: 22),
       suffixIcon: suffixIcon,
       filled: true,
-      fillColor: isDark ? Colors.white.withOpacity(0.04) : Colors.white,
+      fillColor: isDark ? Colors.white.withValues(alpha: 0.04) : Colors.white,
       contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
         borderSide: BorderSide(
-          color: isDark ? Colors.white.withOpacity(0.12) : Colors.grey.withOpacity(0.22),
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.12)
+              : Colors.grey.withValues(alpha: 0.22),
           width: 1.2,
         ),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
         borderSide: BorderSide(
-          color: isDark ? Colors.white.withOpacity(0.12) : Colors.grey.withOpacity(0.22),
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.12)
+              : Colors.grey.withValues(alpha: 0.22),
           width: 1.2,
         ),
       ),
@@ -175,7 +189,11 @@ class ProfileStep extends StatelessWidget {
     );
   }
 
-  Widget _buildFieldLabel(String labelText, {Widget? trailing, required bool isDark}) {
+  Widget _buildFieldLabel(
+    String labelText, {
+    Widget? trailing,
+    required bool isDark,
+  }) {
     return Padding(
       padding: const EdgeInsets.only(left: 4.0, bottom: 8.0, top: 16.0),
       child: Row(
@@ -284,8 +302,11 @@ class ProfileStep extends StatelessWidget {
                       decoration: _inputDecoration(
                         hintText: "dd-mm-yyyy",
                         prefixIcon: Icons.calendar_today_outlined,
-                        suffixIcon: const Icon(Icons.calendar_month_outlined,
-                            color: Color(0xFF64748B), size: 20),
+                        suffixIcon: const Icon(
+                          Icons.calendar_month_outlined,
+                          color: Color(0xFF64748B),
+                          size: 20,
+                        ),
                         isDark: isDark,
                       ),
                       validator: (v) => (v == null || v.isEmpty)
@@ -311,8 +332,14 @@ class ProfileStep extends StatelessWidget {
                           },
                         );
                         if (selectedDate != null) {
-                          final day = selectedDate.day.toString().padLeft(2, '0');
-                          final month = selectedDate.month.toString().padLeft(2, '0');
+                          final day = selectedDate.day.toString().padLeft(
+                            2,
+                            '0',
+                          );
+                          final month = selectedDate.month.toString().padLeft(
+                            2,
+                            '0',
+                          );
                           final year = selectedDate.year.toString();
                           dobController.text = "$day-$month-$year";
                         }
@@ -336,18 +363,24 @@ class ProfileStep extends StatelessWidget {
                           style: TextStyle(
                             color: gender.isEmpty || gender == "Select Gender"
                                 ? (isDark ? Colors.white38 : Colors.grey)
-                                : (isDark ? Colors.white : const Color(0xFF0F172A)),
+                                : (isDark
+                                      ? Colors.white
+                                      : const Color(0xFF0F172A)),
                             fontWeight: FontWeight.w500,
                             fontSize: 15,
                           ),
                           decoration: _inputDecoration(
                             hintText: gender.isEmpty ? "Select Gender" : gender,
                             prefixIcon: Icons.people_outline_rounded,
-                            suffixIcon: const Icon(Icons.keyboard_arrow_down_rounded,
-                                color: Color(0xFF64748B), size: 22),
+                            suffixIcon: const Icon(
+                              Icons.keyboard_arrow_down_rounded,
+                              color: Color(0xFF64748B),
+                              size: 22,
+                            ),
                             isDark: isDark,
                           ),
-                          validator: (v) => (gender.isEmpty || gender == "Select Gender")
+                          validator: (v) =>
+                              (gender.isEmpty || gender == "Select Gender")
                               ? "Please select your gender"
                               : null,
                         ),
@@ -365,7 +398,10 @@ class ProfileStep extends StatelessWidget {
                   children: [
                     _buildFieldLabel(
                       "Height",
-                      trailing: _buildUnitToggle(heightUnit, ["CM", "IN"], onHeightUnitChanged),
+                      trailing: _buildUnitToggle(heightUnit, [
+                        "CM",
+                        "IN",
+                      ], onHeightUnitChanged),
                       isDark: isDark,
                     ),
                     TextFormField(
@@ -377,13 +413,19 @@ class ProfileStep extends StatelessWidget {
                         fontSize: 15,
                       ),
                       decoration: _inputDecoration(
-                        hintText: heightUnit.toLowerCase() == "cm" ? "180" : "71",
+                        hintText: heightUnit.toLowerCase() == "cm"
+                            ? "180"
+                            : "71",
                         prefixIcon: Icons.straighten_rounded,
                         isDark: isDark,
                       ),
                       validator: (v) {
-                        if (v == null || v.trim().isEmpty) return "Please enter your height";
-                        if (double.tryParse(v) == null) return "Please enter a valid number";
+                        if (v == null || v.trim().isEmpty) {
+                          return "Please enter your height";
+                        }
+                        if (double.tryParse(v) == null) {
+                          return "Please enter a valid number";
+                        }
                         return null;
                       },
                     ),
@@ -399,7 +441,10 @@ class ProfileStep extends StatelessWidget {
                   children: [
                     _buildFieldLabel(
                       "Weight",
-                      trailing: _buildUnitToggle(weightUnit, ["KG", "LBS"], onWeightUnitChanged),
+                      trailing: _buildUnitToggle(weightUnit, [
+                        "KG",
+                        "LBS",
+                      ], onWeightUnitChanged),
                       isDark: isDark,
                     ),
                     TextFormField(
@@ -411,13 +456,19 @@ class ProfileStep extends StatelessWidget {
                         fontSize: 15,
                       ),
                       decoration: _inputDecoration(
-                        hintText: weightUnit.toLowerCase() == "kg" ? "75" : "165",
+                        hintText: weightUnit.toLowerCase() == "kg"
+                            ? "75"
+                            : "165",
                         prefixIcon: Icons.scale_outlined,
                         isDark: isDark,
                       ),
                       validator: (v) {
-                        if (v == null || v.trim().isEmpty) return "Please enter your weight";
-                        if (double.tryParse(v) == null) return "Please enter a valid number";
+                        if (v == null || v.trim().isEmpty) {
+                          return "Please enter your weight";
+                        }
+                        if (double.tryParse(v) == null) {
+                          return "Please enter a valid number";
+                        }
                         return null;
                       },
                     ),
@@ -435,9 +486,11 @@ class ProfileStep extends StatelessWidget {
                     backgroundColor: const Color(0xFF006D5B),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 18),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(28),
+                    ),
                     elevation: 3,
-                    shadowColor: const Color(0xFF006D5B).withOpacity(0.3),
+                    shadowColor: const Color(0xFF006D5B).withValues(alpha: 0.3),
                   ),
                   onPressed: () {
                     if (formKey.currentState!.validate()) {
@@ -449,10 +502,18 @@ class ProfileStep extends StatelessWidget {
                     children: [
                       const Text(
                         "Next",
-                        style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, letterSpacing: 0.5),
+                        style: TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 16,
+                          letterSpacing: 0.5,
+                        ),
                       ),
                       const SizedBox(width: 8),
-                      const Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 18),
+                      const Icon(
+                        Icons.arrow_forward_rounded,
+                        color: Colors.white,
+                        size: 18,
+                      ),
                     ],
                   ),
                 ),
@@ -471,7 +532,9 @@ class ProfileStep extends StatelessWidget {
                         text: "By continuing, you agree to our ",
                         style: TextStyle(
                           fontSize: 12,
-                          color: isDark ? Colors.grey[400] : const Color(0xFF64748B),
+                          color: isDark
+                              ? Colors.grey[400]
+                              : const Color(0xFF64748B),
                         ),
                         children: [
                           TextSpan(

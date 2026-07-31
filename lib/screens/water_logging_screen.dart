@@ -212,7 +212,9 @@ class _WaterLoggingScreenState extends State<WaterLoggingScreen>
       _logApiResponse(name: 'WATER LOGS', data: resData);
 
       final totalRaw =
-          resData['water_intake_today_ml'] ?? resData['water_intake_today'] ?? 0;
+          resData['water_intake_today_ml'] ??
+          resData['water_intake_today'] ??
+          0;
       final totalToday = totalRaw is num
           ? totalRaw.round()
           : int.tryParse('$totalRaw') ?? 0;
@@ -444,8 +446,8 @@ class _WaterLoggingScreenState extends State<WaterLoggingScreen>
               ),
               filled: true,
               fillColor: isDark
-                  ? Colors.white.withOpacity(0.06)
-                  : Colors.black.withOpacity(0.04),
+                  ? Colors.white.withValues(alpha: 0.06)
+                  : Colors.black.withValues(alpha: 0.04),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
                 borderSide: BorderSide.none,
@@ -591,8 +593,8 @@ class _WaterLoggingScreenState extends State<WaterLoggingScreen>
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    Colors.blue.withOpacity(isDark ? 0.25 : 0.20),
-                    Colors.blue.withOpacity(0.0),
+                    Colors.blue.withValues(alpha: isDark ? 0.25 : 0.20),
+                    Colors.blue.withValues(alpha: 0.0),
                   ],
                 ),
               ),
@@ -608,8 +610,8 @@ class _WaterLoggingScreenState extends State<WaterLoggingScreen>
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    Colors.cyan.withOpacity(isDark ? 0.20 : 0.15),
-                    Colors.cyan.withOpacity(0.0),
+                    Colors.cyan.withValues(alpha: isDark ? 0.20 : 0.15),
+                    Colors.cyan.withValues(alpha: 0.0),
                   ],
                 ),
               ),
@@ -673,8 +675,8 @@ class _WaterLoggingScreenState extends State<WaterLoggingScreen>
                               borderRadius: BorderRadius.circular(36),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.blue.withOpacity(
-                                    isDark ? 0.15 : 0.05,
+                                  color: Colors.blue.withValues(
+                                    alpha: isDark ? 0.15 : 0.05,
                                   ),
                                   blurRadius: 30,
                                   spreadRadius: 2,
@@ -691,13 +693,13 @@ class _WaterLoggingScreenState extends State<WaterLoggingScreen>
                                 height: 300,
                                 decoration: BoxDecoration(
                                   color: isDark
-                                      ? Colors.white.withOpacity(0.03)
-                                      : Colors.black.withOpacity(0.02),
+                                      ? Colors.white.withValues(alpha: 0.03)
+                                      : Colors.black.withValues(alpha: 0.02),
                                   borderRadius: BorderRadius.circular(36),
                                   border: Border.all(
                                     color: isDark
-                                        ? Colors.white.withOpacity(0.12)
-                                        : Colors.black.withOpacity(0.08),
+                                        ? Colors.white.withValues(alpha: 0.12)
+                                        : Colors.black.withValues(alpha: 0.08),
                                     width: 2.0,
                                   ),
                                 ),
@@ -827,8 +829,8 @@ class _WaterLoggingScreenState extends State<WaterLoggingScreen>
                               borderRadius: BorderRadius.circular(16),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(
-                                    isDark ? 0.15 : 0.03,
+                                  color: Colors.black.withValues(
+                                    alpha: isDark ? 0.15 : 0.03,
                                   ),
                                   blurRadius: 10,
                                   offset: const Offset(0, 4),
@@ -894,7 +896,9 @@ class _WaterLoggingScreenState extends State<WaterLoggingScreen>
                               borderRadius: BorderRadius.circular(16),
                             ),
                             elevation: 2,
-                            shadowColor: Colors.blueAccent.withOpacity(0.3),
+                            shadowColor: Colors.blueAccent.withValues(
+                              alpha: 0.3,
+                            ),
                           ),
                           onPressed: _isSyncing
                               ? null
@@ -1267,11 +1271,11 @@ class _WaterLoggingScreenState extends State<WaterLoggingScreen>
                                 (isDark
                                         ? const Color(0xFF16161C)
                                         : Colors.white)
-                                    .withOpacity(0),
+                                    .withValues(alpha: 0),
                                 (isDark
                                         ? const Color(0xFF16161C)
                                         : Colors.white)
-                                    .withOpacity(0.9),
+                                    .withValues(alpha: 0.9),
                               ],
                             ),
                           ),
@@ -1500,7 +1504,7 @@ class _WaterLoggingScreenState extends State<WaterLoggingScreen>
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Colors.blue.withOpacity(0.12),
+              color: Colors.blue.withValues(alpha: 0.12),
               shape: BoxShape.circle,
             ),
             child: const Icon(Icons.water_drop, color: Colors.blue, size: 20),
@@ -1555,7 +1559,7 @@ class _WaterLoggingScreenState extends State<WaterLoggingScreen>
           _logsExpanded = true;
         });
       },
-      child: Container(
+      child: SizedBox(
         height: 80.0 + (displayLogs.length - 1) * 16.0,
         child: Stack(
           children: List.generate(displayLogs.length, (index) {
@@ -1583,7 +1587,7 @@ class _WaterLoggingScreenState extends State<WaterLoggingScreen>
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: Colors.blue.withOpacity(0.12),
+                          color: Colors.blue.withValues(alpha: 0.12),
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(
@@ -1652,7 +1656,7 @@ class _WaterLoggingScreenState extends State<WaterLoggingScreen>
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: Colors.blue.withOpacity(0.12),
+                        color: Colors.blue.withValues(alpha: 0.12),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(
@@ -1744,8 +1748,8 @@ class LineChartPainter extends CustomPainter {
     // Draw horizontal grid lines
     final Paint gridPaint = Paint()
       ..color = isDark
-          ? Colors.white.withOpacity(0.06)
-          : Colors.black.withOpacity(0.04)
+          ? Colors.white.withValues(alpha: 0.06)
+          : Colors.black.withValues(alpha: 0.04)
       ..strokeWidth = 1.0;
 
     for (int i = 1; i <= 3; i++) {
@@ -1795,8 +1799,8 @@ class LineChartPainter extends CustomPainter {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            Colors.blueAccent.withOpacity(0.25),
-            Colors.blueAccent.withOpacity(0.00),
+            Colors.blueAccent.withValues(alpha: 0.25),
+            Colors.blueAccent.withValues(alpha: 0.00),
           ],
         ).createShader(Rect.fromLTRB(0, 0, width, height));
 

@@ -1,1 +1,12 @@
-void main() { List<dynamic> w = [{'title': 'A'}]; var r = w.firstWhere((x) => x['title'] == 'B', orElse: () => null); print(r); }
+import 'package:flutter/foundation.dart';
+
+void main() {
+  final List<dynamic> values = [
+    {'title': 'A'},
+  ];
+  final result = values.firstWhere(
+    (value) => value['title'] == 'B',
+    orElse: () => null,
+  );
+  debugPrint('$result');
+}

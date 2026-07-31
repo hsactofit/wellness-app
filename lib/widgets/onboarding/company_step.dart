@@ -6,7 +6,11 @@ class CompanyOption {
   final String name;
   final String subtitle;
 
-  const CompanyOption({required this.id, required this.name, required this.subtitle});
+  const CompanyOption({
+    required this.id,
+    required this.name,
+    required this.subtitle,
+  });
 }
 
 class CompanyStep extends StatelessWidget {
@@ -41,7 +45,8 @@ class CompanyStep extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final canContinue = selectedCorporateId != null && selectedFacilityId != null;
+    final canContinue =
+        selectedCorporateId != null && selectedFacilityId != null;
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -50,7 +55,10 @@ class CompanyStep extends StatelessWidget {
           Expanded(
             child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 20.0,
+                vertical: 10.0,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -86,22 +94,36 @@ class CompanyStep extends StatelessWidget {
                   if (isLoading)
                     const Padding(
                       padding: EdgeInsets.symmetric(vertical: 60),
-                      child: Center(child: CircularProgressIndicator(color: Color(0xFF006D5B))),
+                      child: Center(
+                        child: CircularProgressIndicator(
+                          color: Color(0xFF006D5B),
+                        ),
+                      ),
                     )
                   else if (loadError != null)
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 40),
                       child: Column(
                         children: [
-                          Icon(Icons.wifi_off_rounded, size: 40, color: Colors.grey[400]),
+                          Icon(
+                            Icons.wifi_off_rounded,
+                            size: 40,
+                            color: Colors.grey[400],
+                          ),
                           const SizedBox(height: 12),
                           Text(
                             loadError!,
                             textAlign: TextAlign.center,
-                            style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 13,
+                            ),
                           ),
                           const SizedBox(height: 16),
-                          OutlinedButton(onPressed: onRetry, child: const Text("Retry")),
+                          OutlinedButton(
+                            onPressed: onRetry,
+                            child: const Text("Retry"),
+                          ),
                         ],
                       ),
                     )
@@ -118,7 +140,10 @@ class CompanyStep extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 24),
-                    _sectionLabel("Home Facility", Icons.fitness_center_rounded),
+                    _sectionLabel(
+                      "Home Facility",
+                      Icons.fitness_center_rounded,
+                    ),
                     const SizedBox(height: 10),
                     ...facilities.map(
                       (f) => _optionTile(
@@ -136,7 +161,10 @@ class CompanyStep extends StatelessWidget {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 20.0,
+              vertical: 16.0,
+            ),
             child: Row(
               children: [
                 Expanded(
@@ -145,7 +173,9 @@ class CompanyStep extends StatelessWidget {
                       backgroundColor: const Color(0xFFE3EDF7),
                       elevation: 0,
                       padding: const EdgeInsets.symmetric(vertical: 18),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(24),
+                      ),
                     ),
                     onPressed: onBack,
                     child: const Text(
@@ -165,8 +195,12 @@ class CompanyStep extends StatelessWidget {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF006D5B),
                       padding: const EdgeInsets.symmetric(vertical: 18),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                      shadowColor: const Color(0xFF006D5B).withOpacity(0.3),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                      shadowColor: const Color(
+                        0xFF006D5B,
+                      ).withValues(alpha: 0.3),
                       elevation: 4,
                     ),
                     onPressed: canContinue
@@ -174,7 +208,9 @@ class CompanyStep extends StatelessWidget {
                         : () {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
-                                content: Text("Please select your company and home facility"),
+                                content: Text(
+                                  "Please select your company and home facility",
+                                ),
                                 backgroundColor: Colors.orange,
                               ),
                             );
@@ -192,7 +228,11 @@ class CompanyStep extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 8),
-                        const Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 16),
+                        const Icon(
+                          Icons.arrow_forward_rounded,
+                          color: Colors.white,
+                          size: 16,
+                        ),
                       ],
                     ),
                   ),
@@ -212,7 +252,11 @@ class CompanyStep extends StatelessWidget {
         const SizedBox(width: 8),
         Text(
           text,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF475569)),
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 15,
+            color: Color(0xFF475569),
+          ),
         ),
       ],
     );
@@ -237,13 +281,17 @@ class CompanyStep extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: isSelected
-                ? const Color(0xFF006D5B).withOpacity(0.06)
-                : (isDark ? Colors.white.withOpacity(0.04) : Colors.white),
+                ? const Color(0xFF006D5B).withValues(alpha: 0.06)
+                : (isDark
+                      ? Colors.white.withValues(alpha: 0.04)
+                      : Colors.white),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: isSelected
                   ? const Color(0xFF006D5B)
-                  : (isDark ? Colors.white.withOpacity(0.12) : Colors.grey.withOpacity(0.18)),
+                  : (isDark
+                        ? Colors.white.withValues(alpha: 0.12)
+                        : Colors.grey.withValues(alpha: 0.18)),
               width: isSelected ? 2.0 : 1.2,
             ),
           ),
@@ -264,13 +312,20 @@ class CompanyStep extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       subtitle,
-                      style: TextStyle(fontSize: 12, color: isDark ? Colors.grey[400] : Colors.grey[500]),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: isDark ? Colors.grey[400] : Colors.grey[500],
+                      ),
                     ),
                   ],
                 ),
               ),
               if (isSelected)
-                const Icon(Icons.check_circle_rounded, color: Color(0xFF006D5B), size: 22),
+                const Icon(
+                  Icons.check_circle_rounded,
+                  color: Color(0xFF006D5B),
+                  size: 22,
+                ),
             ],
           ),
         ),

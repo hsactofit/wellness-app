@@ -28,7 +28,9 @@ class MedicalRecordTile extends StatelessWidget {
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: (isAlert ? Colors.red : Colors.blue).withOpacity(0.1),
+                color: (isAlert ? Colors.red : Colors.blue).withValues(
+                  alpha: 0.1,
+                ),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Center(
@@ -36,8 +38,8 @@ class MedicalRecordTile extends StatelessWidget {
                   record.category == "Immunization"
                       ? "💉"
                       : record.category == "Cardiology"
-                          ? "❤️"
-                          : "📄",
+                      ? "❤️"
+                      : "📄",
                   style: const TextStyle(fontSize: 20),
                 ),
               ),
@@ -49,7 +51,10 @@ class MedicalRecordTile extends StatelessWidget {
                 children: [
                   Text(
                     record.title,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -66,9 +71,14 @@ class MedicalRecordTile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 6),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 2,
+                    horizontal: 6,
+                  ),
                   decoration: BoxDecoration(
-                    color: (isAlert ? Colors.red : Colors.green).withOpacity(0.12),
+                    color: (isAlert ? Colors.red : Colors.green).withValues(
+                      alpha: 0.12,
+                    ),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(

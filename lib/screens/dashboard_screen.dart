@@ -44,20 +44,24 @@ class DashboardScreenState extends State<DashboardScreen>
   bool _isConnected = false;
   bool _isSyncing = false;
   HealthData _healthData = HealthData();
+  // ignore: unused_field
   DateTime? _lastSynced;
+  // ignore: unused_field
   String _userName = "User";
 
   // Custom goals
   double _stepGoal = 10000.0;
   double _waterGoal = 2500.0;
   double _calorieGoal = 600.0;
+  // ignore: unused_field
   double _exerciseGoal = 60.0;
   double _sleepGoal = 8.0;
 
   // Onboarding & Setup States
   bool _healthSetupCompleted = false;
   bool _healthConnectRequested = false;
-  bool _showGuide = false;
+  // ignore: unused_field
+  final bool _showGuide = false;
   bool _dismissedSetupCard = false;
 
   // Server-synced states
@@ -73,10 +77,12 @@ class DashboardScreenState extends State<DashboardScreen>
   // Gym Check-in tracking fields
   bool _gymCheckedIn = false;
   String? _gymName;
+  // ignore: unused_field
   String? _gymPlace;
   DateTime? _gymCheckInTime;
   Timer? _gymTimer;
   Duration _gymElapsed = Duration.zero;
+  // ignore: unused_field
   bool _gymDoneToday = false;
 
   // User email & active challenges
@@ -86,6 +92,7 @@ class DashboardScreenState extends State<DashboardScreen>
   // Custom API metrics
   double? _apiStepsValue;
   double? _apiStepsTarget;
+  // ignore: unused_field
   String? _apiStepsStatus;
 
   double? _apiCaloriesValue;
@@ -102,6 +109,7 @@ class DashboardScreenState extends State<DashboardScreen>
 
   double? _apiWaterValue;
   double? _apiWaterTarget;
+  // ignore: unused_field
   String? _apiWaterStatus;
 
   double? _apiNutritionCalories;
@@ -110,11 +118,14 @@ class DashboardScreenState extends State<DashboardScreen>
   double? _apiFat;
 
   // Rewards & Challenges from API
+  // ignore: unused_field
   String? _apiActiveChallengesValue;
+  // ignore: unused_field
   String? _apiActiveChallengesStatus;
   double? _apiRewardPoints;
   double? _apiRewardTarget;
   String? _apiRewardStatus;
+  // ignore: unused_field
   String? _aiBuddyStatus;
 
   ScrollController? _activeGoalsScrollController;
@@ -930,6 +941,7 @@ class DashboardScreenState extends State<DashboardScreen>
     }
   }
 
+  // ignore: unused_element
   Future<void> _showHealthSyncDataDialog() async {
     showDialog(
       context: context,
@@ -977,7 +989,7 @@ class DashboardScreenState extends State<DashboardScreen>
                     decoration: BoxDecoration(
                       color: isDark
                           ? Colors.black26
-                          : Colors.black.withOpacity(0.03),
+                          : Colors.black.withValues(alpha: 0.03),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
                         color: isDark ? Colors.white10 : Colors.black12,
@@ -1088,6 +1100,7 @@ class DashboardScreenState extends State<DashboardScreen>
     );
   }
 
+  // ignore: unused_element
   Future<void> _showOnboardingDataDialog() async {
     final prefs = await SharedPreferences.getInstance();
     final jsonStr = prefs.getString('onboarding_data');
@@ -1262,7 +1275,7 @@ class DashboardScreenState extends State<DashboardScreen>
                           decoration: BoxDecoration(
                             color: isDark
                                 ? Colors.black26
-                                : Colors.black.withOpacity(0.03),
+                                : Colors.black.withValues(alpha: 0.03),
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
                               color: isDark ? Colors.white10 : Colors.black12,
@@ -1318,7 +1331,7 @@ class DashboardScreenState extends State<DashboardScreen>
 
                   if (confirm == true) {
                     await AuthService.instance.signOut();
-                    if (!mounted) return;
+                    if (!context.mounted) return;
                     Navigator.pushAndRemoveUntil(
                       context,
                       MaterialPageRoute(
@@ -1355,8 +1368,8 @@ class DashboardScreenState extends State<DashboardScreen>
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: isDark
-            ? Colors.white.withOpacity(0.03)
-            : Colors.black.withOpacity(0.02),
+            ? Colors.white.withValues(alpha: 0.03)
+            : Colors.black.withValues(alpha: 0.02),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: isDark ? Colors.white10 : Colors.black12),
       ),
@@ -1486,7 +1499,7 @@ class DashboardScreenState extends State<DashboardScreen>
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  "${_getTimeBasedGreeting()}",
+                  _getTimeBasedGreeting(),
                   style: theme.textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.w900,
                     letterSpacing: -0.6,
@@ -1509,13 +1522,13 @@ class DashboardScreenState extends State<DashboardScreen>
                     height: 38,
                     decoration: BoxDecoration(
                       color: isDark
-                          ? Colors.white.withOpacity(0.06)
+                          ? Colors.white.withValues(alpha: 0.06)
                           : Colors.white,
                       shape: BoxShape.circle,
                       border: Border.all(
                         color: isDark
                             ? Colors.white10
-                            : Colors.black.withOpacity(0.08),
+                            : Colors.black.withValues(alpha: 0.08),
                         width: 1.2,
                       ),
                     ),
@@ -1550,13 +1563,13 @@ class DashboardScreenState extends State<DashboardScreen>
                   height: 38,
                   decoration: BoxDecoration(
                     color: isDark
-                        ? Colors.white.withOpacity(0.06)
+                        ? Colors.white.withValues(alpha: 0.06)
                         : Colors.white,
                     shape: BoxShape.circle,
                     border: Border.all(
                       color: isDark
                           ? Colors.white10
-                          : Colors.black.withOpacity(0.08),
+                          : Colors.black.withValues(alpha: 0.08),
                       width: 1.2,
                     ),
                   ),
@@ -1579,6 +1592,7 @@ class DashboardScreenState extends State<DashboardScreen>
     );
   }
 
+  // ignore: unused_element
   String _formatLastSynced(DateTime dt) {
     final hour = dt.hour.toString().padLeft(2, '0');
     final minute = dt.minute.toString().padLeft(2, '0');
@@ -1748,7 +1762,7 @@ class DashboardScreenState extends State<DashboardScreen>
                         width: 38,
                         height: 38,
                         decoration: BoxDecoration(
-                          color: Colors.blueAccent.withOpacity(0.1),
+                          color: Colors.blueAccent.withValues(alpha: 0.1),
                           shape: BoxShape.circle,
                         ),
                         child: const Center(
@@ -1801,18 +1815,20 @@ class DashboardScreenState extends State<DashboardScreen>
                     height: 28,
                     decoration: BoxDecoration(
                       color: isDark
-                          ? Colors.white.withOpacity(0.04)
-                          : Colors.black.withOpacity(0.03),
+                          ? Colors.white.withValues(alpha: 0.04)
+                          : Colors.black.withValues(alpha: 0.03),
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(
                         color: isDark
-                            ? Colors.white.withOpacity(0.08)
-                            : Colors.black.withOpacity(0.05),
+                            ? Colors.white.withValues(alpha: 0.08)
+                            : Colors.black.withValues(alpha: 0.05),
                         width: 1.0,
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(isDark ? 0.15 : 0.02),
+                          color: Colors.black.withValues(
+                            alpha: isDark ? 0.15 : 0.02,
+                          ),
                           blurRadius: 4,
                           spreadRadius: 1,
                         ),
@@ -1835,6 +1851,7 @@ class DashboardScreenState extends State<DashboardScreen>
     );
   }
 
+  // ignore: unused_element
   Widget _buildProgressItem(bool checked, String text, bool isDark) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 3.0),
@@ -1861,6 +1878,7 @@ class DashboardScreenState extends State<DashboardScreen>
     );
   }
 
+  // ignore: unused_element
   Widget _buildGuideStep(String step, String text) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0),
@@ -1894,6 +1912,7 @@ class DashboardScreenState extends State<DashboardScreen>
     );
   }
 
+  // ignore: unused_element
   Widget _buildPlaceholderCard(
     String title,
     String placeholder,
@@ -2216,22 +2235,22 @@ class DashboardScreenState extends State<DashboardScreen>
               alignment: WrapAlignment.center,
               children: [
                 _buildLegendItem(
-                  "Active: ${_activeSubscoreValue}%",
+                  "Active: $_activeSubscoreValue%",
                   const Color(0xFF2EE5A3),
                   isDark,
                 ),
                 _buildLegendItem(
-                  "Sleep: ${_sleepSubscoreValue}%",
+                  "Sleep: $_sleepSubscoreValue%",
                   const Color(0xFF8F6BFF),
                   isDark,
                 ),
                 _buildLegendItem(
-                  "Nutrition: ${_nutritionSubscoreValue}%",
+                  "Nutrition: $_nutritionSubscoreValue%",
                   const Color(0xFFFFB03A),
                   isDark,
                 ),
                 _buildLegendItem(
-                  "Mind: ${_mindfulnessSubscoreValue}%",
+                  "Mind: $_mindfulnessSubscoreValue%",
                   const Color(0xFF2ECAE5),
                   isDark,
                 ),
@@ -2251,8 +2270,7 @@ class DashboardScreenState extends State<DashboardScreen>
       recommendationText = _serverDailySummary!;
       if (_serverRecommendations.isNotEmpty) {
         recommendationText +=
-            "\n\n💡 Recommendations:\n" +
-            _serverRecommendations.map((r) => "• $r").join("\n");
+            "\n\n💡 Recommendations:\n${_serverRecommendations.map((r) => "• $r").join("\n")}";
       }
     }
 
@@ -2291,6 +2309,7 @@ class DashboardScreenState extends State<DashboardScreen>
     );
   }
 
+  // ignore: unused_element
   Widget _buildActiveChallengeCard(ThemeData theme, bool isDark) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -2321,7 +2340,7 @@ class DashboardScreenState extends State<DashboardScreen>
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.blueAccent.withOpacity(0.12),
+                    color: Colors.blueAccent.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Text(
@@ -2386,6 +2405,7 @@ class DashboardScreenState extends State<DashboardScreen>
     );
   }
 
+  // ignore: unused_element
   Widget _buildRewardsCard(ThemeData theme, bool isDark) {
     final int points = _apiRewardPoints?.round() ?? 0;
     final int target = _apiRewardTarget?.round() ?? 500;
@@ -2460,7 +2480,7 @@ class DashboardScreenState extends State<DashboardScreen>
                 minHeight: 6,
                 backgroundColor: isDark
                     ? Colors.white10
-                    : Colors.black.withOpacity(0.06),
+                    : Colors.black.withValues(alpha: 0.06),
                 valueColor: const AlwaysStoppedAnimation<Color>(Colors.amber),
               ),
             ),
@@ -2470,6 +2490,7 @@ class DashboardScreenState extends State<DashboardScreen>
     );
   }
 
+  // ignore: unused_element
   Widget _buildManualLoggingWidget(ThemeData theme, bool isDark) {
     final textColor = isDark ? Colors.white : Colors.black87;
     return Padding(
@@ -2538,12 +2559,12 @@ class DashboardScreenState extends State<DashboardScreen>
   ) {
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
-        backgroundColor: color.withOpacity(0.08),
+        backgroundColor: color.withValues(alpha: 0.08),
         foregroundColor: color,
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(14),
-          side: BorderSide(color: color.withOpacity(0.2), width: 1.2),
+          side: BorderSide(color: color.withValues(alpha: 0.2), width: 1.2),
         ),
       ),
       onPressed: onPressed,
@@ -2632,13 +2653,13 @@ class DashboardScreenState extends State<DashboardScreen>
                     height: 100,
                     decoration: BoxDecoration(
                       color: isDark
-                          ? Colors.white.withOpacity(0.02)
-                          : Colors.black.withOpacity(0.02),
+                          ? Colors.white.withValues(alpha: 0.02)
+                          : Colors.black.withValues(alpha: 0.02),
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
                         color: isDark
-                            ? Colors.white.withOpacity(0.08)
-                            : Colors.black.withOpacity(0.06),
+                            ? Colors.white.withValues(alpha: 0.08)
+                            : Colors.black.withValues(alpha: 0.06),
                         width: 1.5,
                       ),
                     ),
@@ -2665,10 +2686,12 @@ class DashboardScreenState extends State<DashboardScreen>
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
                                 colors: [
-                                  Colors.black.withOpacity(
-                                    isDark ? 0.35 : 0.05,
+                                  Colors.black.withValues(
+                                    alpha: isDark ? 0.35 : 0.05,
                                   ),
-                                  Colors.black.withOpacity(isDark ? 0.1 : 0.0),
+                                  Colors.black.withValues(
+                                    alpha: isDark ? 0.1 : 0.0,
+                                  ),
                                 ],
                                 begin: Alignment.bottomCenter,
                                 end: Alignment.topCenter,
@@ -2837,7 +2860,7 @@ class DashboardScreenState extends State<DashboardScreen>
                     "Tap to log food ›",
                     style: TextStyle(
                       fontSize: 12,
-                      color: Colors.orangeAccent.withOpacity(0.8),
+                      color: Colors.orangeAccent.withValues(alpha: 0.8),
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -2850,6 +2873,7 @@ class DashboardScreenState extends State<DashboardScreen>
     );
   }
 
+  // ignore: unused_element
   Widget _buildVitalsHeader(ThemeData theme) {
     return SliverToBoxAdapter(
       child: Padding(
@@ -2864,6 +2888,7 @@ class DashboardScreenState extends State<DashboardScreen>
     );
   }
 
+  // ignore: unused_element
   Widget _buildVitalsGrid() {
     return SliverPadding(
       padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -2944,6 +2969,7 @@ class DashboardScreenState extends State<DashboardScreen>
     );
   }
 
+  // ignore: unused_element
   Widget _buildSleepWeightHeader(ThemeData theme) {
     return SliverToBoxAdapter(
       child: Padding(
@@ -2958,6 +2984,7 @@ class DashboardScreenState extends State<DashboardScreen>
     );
   }
 
+  // ignore: unused_element
   Widget _buildSleepWeightGrid() {
     return SliverPadding(
       padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -3022,6 +3049,7 @@ class DashboardScreenState extends State<DashboardScreen>
     );
   }
 
+  // ignore: unused_element
   Widget _buildMedicalSection() {
     return SliverToBoxAdapter(
       child: Padding(
@@ -3057,9 +3085,7 @@ class DashboardScreenState extends State<DashboardScreen>
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            e.toString().replaceFirst('Exception: ', ''),
-          ),
+          content: Text(e.toString().replaceFirst('Exception: ', '')),
           backgroundColor: Colors.redAccent,
         ),
       );
@@ -3121,7 +3147,7 @@ class DashboardScreenState extends State<DashboardScreen>
             end: Alignment.bottomRight,
           );
     final borderColor = isDark
-        ? const Color(0xFF1F3530).withOpacity(0.8)
+        ? const Color(0xFF1F3530).withValues(alpha: 0.8)
         : const Color(0xFFB9DDD3);
     final textColor = isDark ? Colors.white : const Color(0xFF1E2843);
     final progress = (steps / goal).clamp(0.0, 1.0);
@@ -3134,7 +3160,7 @@ class DashboardScreenState extends State<DashboardScreen>
         border: Border.all(color: borderColor, width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.2 : 0.02),
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.02),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -3187,7 +3213,7 @@ class DashboardScreenState extends State<DashboardScreen>
                           minHeight: 7,
                           backgroundColor: isDark
                               ? Colors.white10
-                              : Colors.black.withOpacity(0.04),
+                              : Colors.black.withValues(alpha: 0.04),
                           valueColor: const AlwaysStoppedAnimation<Color>(
                             Color(0xFF006D56),
                           ),
@@ -3239,7 +3265,7 @@ class DashboardScreenState extends State<DashboardScreen>
             end: Alignment.bottomRight,
           );
     final borderColor = isDark
-        ? const Color(0xFF3F1F24).withOpacity(0.8)
+        ? const Color(0xFF3F1F24).withValues(alpha: 0.8)
         : const Color(0xFFF5CCD2);
     final textColor = isDark ? Colors.white : const Color(0xFF1E2843);
 
@@ -3262,7 +3288,9 @@ class DashboardScreenState extends State<DashboardScreen>
                       border: Border.all(color: borderColor, width: 1.5),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(isDark ? 0.25 : 0.02),
+                          color: Colors.black.withValues(
+                            alpha: isDark ? 0.25 : 0.02,
+                          ),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),
@@ -3325,7 +3353,7 @@ class DashboardScreenState extends State<DashboardScreen>
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.04),
+                              color: Colors.black.withValues(alpha: 0.04),
                               blurRadius: 4,
                               offset: const Offset(0, 2),
                             ),
@@ -3371,7 +3399,7 @@ class DashboardScreenState extends State<DashboardScreen>
             end: Alignment.bottomRight,
           );
     final borderColor = isDark
-        ? const Color(0xFF392719).withOpacity(0.8)
+        ? const Color(0xFF392719).withValues(alpha: 0.8)
         : const Color(0xFFEFD5B5);
     final textColor = isDark ? Colors.white : const Color(0xFF1E2843);
 
@@ -3383,7 +3411,7 @@ class DashboardScreenState extends State<DashboardScreen>
         border: Border.all(color: borderColor, width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.2 : 0.02),
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.02),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -3495,7 +3523,7 @@ class DashboardScreenState extends State<DashboardScreen>
             end: Alignment.bottomRight,
           );
     final borderColor = isDark
-        ? const Color(0xFF25233E).withOpacity(0.8)
+        ? const Color(0xFF25233E).withValues(alpha: 0.8)
         : const Color(0xFFCDCDFA);
     final textColor = isDark ? Colors.white : const Color(0xFF1E2843);
     final progress = (sleepHours / goal).clamp(0.0, 1.0);
@@ -3508,7 +3536,7 @@ class DashboardScreenState extends State<DashboardScreen>
         border: Border.all(color: borderColor, width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.2 : 0.02),
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.02),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -3647,8 +3675,8 @@ class DashboardScreenState extends State<DashboardScreen>
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    Colors.purple.withOpacity(isDark ? 0.22 : 0.18),
-                    Colors.purple.withOpacity(0.0),
+                    Colors.purple.withValues(alpha: isDark ? 0.22 : 0.18),
+                    Colors.purple.withValues(alpha: 0.0),
                   ],
                 ),
               ),
@@ -3665,8 +3693,8 @@ class DashboardScreenState extends State<DashboardScreen>
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    Colors.blue.withOpacity(isDark ? 0.22 : 0.18),
-                    Colors.blue.withOpacity(0.0),
+                    Colors.blue.withValues(alpha: isDark ? 0.22 : 0.18),
+                    Colors.blue.withValues(alpha: 0.0),
                   ],
                 ),
               ),
@@ -3683,8 +3711,8 @@ class DashboardScreenState extends State<DashboardScreen>
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    Colors.green.withOpacity(isDark ? 0.18 : 0.15),
-                    Colors.green.withOpacity(0.0),
+                    Colors.green.withValues(alpha: isDark ? 0.18 : 0.15),
+                    Colors.green.withValues(alpha: 0.0),
                   ],
                 ),
               ),
@@ -3898,8 +3926,8 @@ class DashboardScreenState extends State<DashboardScreen>
                   filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
                   child: Container(
                     color: isDark
-                        ? Colors.black.withOpacity(0.65)
-                        : Colors.white.withOpacity(0.55),
+                        ? Colors.black.withValues(alpha: 0.65)
+                        : Colors.white.withValues(alpha: 0.55),
                     child: Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -3910,13 +3938,13 @@ class DashboardScreenState extends State<DashboardScreen>
                             padding: const EdgeInsets.all(18),
                             decoration: BoxDecoration(
                               color: isDark
-                                  ? Colors.white.withOpacity(0.04)
+                                  ? Colors.white.withValues(alpha: 0.04)
                                   : Colors.white,
                               shape: BoxShape.circle,
                               border: Border.all(
                                 color: isDark
                                     ? Colors.white10
-                                    : Colors.black.withOpacity(0.06),
+                                    : Colors.black.withValues(alpha: 0.06),
                                 width: 1.2,
                               ),
                             ),
@@ -3962,9 +3990,9 @@ class DashboardScreenState extends State<DashboardScreen>
         margin: const EdgeInsets.symmetric(horizontal: 4),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.08),
+          color: color.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: color.withOpacity(0.2), width: 1),
+          border: Border.all(color: color.withValues(alpha: 0.2), width: 1),
         ),
         child: Column(
           children: [
@@ -4151,8 +4179,8 @@ class DashboardScreenState extends State<DashboardScreen>
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  accent.withOpacity(isDark ? 0.16 : 0.12),
-                  accent.withOpacity(0.0),
+                  accent.withValues(alpha: isDark ? 0.16 : 0.12),
+                  accent.withValues(alpha: 0.0),
                 ],
               ),
             ),
@@ -4166,11 +4194,13 @@ class DashboardScreenState extends State<DashboardScreen>
                       height: 40,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: accent.withOpacity(isDark ? 0.18 : 0.14),
-                        border: Border.all(color: accent.withOpacity(0.28)),
+                        color: accent.withValues(alpha: isDark ? 0.18 : 0.14),
+                        border: Border.all(
+                          color: accent.withValues(alpha: 0.28),
+                        ),
                         boxShadow: [
                           BoxShadow(
-                            color: accent.withOpacity(0.2),
+                            color: accent.withValues(alpha: 0.2),
                             blurRadius: 12,
                             offset: const Offset(0, 4),
                           ),
@@ -4191,7 +4221,7 @@ class DashboardScreenState extends State<DashboardScreen>
                       ),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(20),
-                        color: statusColor.withOpacity(0.14),
+                        color: statusColor.withValues(alpha: 0.14),
                       ),
                       child: Text(
                         statusLabel,
@@ -4281,7 +4311,9 @@ class DashboardScreenState extends State<DashboardScreen>
             end: Alignment.bottomRight,
           ),
           border: Border.all(
-            color: isDark ? Colors.white10 : Colors.black.withOpacity(0.05),
+            color: isDark
+                ? Colors.white10
+                : Colors.black.withValues(alpha: 0.05),
             width: 1.3,
           ),
         ),
@@ -4336,10 +4368,10 @@ class DashboardScreenState extends State<DashboardScreen>
                     width: 44,
                     height: 44,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFF6D55).withOpacity(0.12),
+                      color: const Color(0xFFFF6D55).withValues(alpha: 0.12),
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: const Color(0xFFFF6D55).withOpacity(0.3),
+                        color: const Color(0xFFFF6D55).withValues(alpha: 0.3),
                         width: 1.5,
                       ),
                     ),
@@ -4360,6 +4392,7 @@ class DashboardScreenState extends State<DashboardScreen>
     );
   }
 
+  // ignore: unused_element
   Widget _buildTodaysPlanSection(ThemeData theme, bool isDark) {
     final labelColor = isDark ? Colors.white60 : Colors.black54;
 
@@ -4463,7 +4496,7 @@ class DashboardScreenState extends State<DashboardScreen>
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
-            color: badgeColor.withOpacity(0.12),
+            color: badgeColor.withValues(alpha: 0.12),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Text(
@@ -4644,9 +4677,12 @@ class DashboardScreenState extends State<DashboardScreen>
               width: 46,
               height: 46,
               decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
+                color: color.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
-                border: Border.all(color: color.withOpacity(0.2), width: 1.2),
+                border: Border.all(
+                  color: color.withValues(alpha: 0.2),
+                  width: 1.2,
+                ),
               ),
               child: Center(
                 child: Text(emoji, style: const TextStyle(fontSize: 18)),
@@ -4965,11 +5001,11 @@ class DashboardScreenState extends State<DashboardScreen>
                   height: 42,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: accent.withOpacity(isDark ? 0.16 : 0.12),
-                    border: Border.all(color: accent.withOpacity(0.28)),
+                    color: accent.withValues(alpha: isDark ? 0.16 : 0.12),
+                    border: Border.all(color: accent.withValues(alpha: 0.28)),
                     boxShadow: [
                       BoxShadow(
-                        color: accent.withOpacity(isDark ? 0.22 : 0.14),
+                        color: accent.withValues(alpha: isDark ? 0.22 : 0.14),
                         blurRadius: 12,
                         offset: const Offset(0, 4),
                       ),
@@ -5041,7 +5077,7 @@ class DashboardScreenState extends State<DashboardScreen>
                 Icon(
                   Icons.chevron_right_rounded,
                   size: 18,
-                  color: secondary.withOpacity(0.7),
+                  color: secondary.withValues(alpha: 0.7),
                 ),
               ],
             ),
@@ -5139,7 +5175,7 @@ class DashboardScreenState extends State<DashboardScreen>
             style: TextStyle(
               fontSize: 10.5,
               fontWeight: FontWeight.w900,
-              color: textColor.withOpacity(0.6),
+              color: textColor.withValues(alpha: 0.6),
               letterSpacing: 1.2,
             ),
           ),
@@ -5156,6 +5192,7 @@ class DashboardScreenState extends State<DashboardScreen>
     );
   }
 
+  // ignore: unused_element
   Widget _buildGymCheckinDashboardCard(
     bool isDark, {
     bool isSingleItem = false,
@@ -5164,9 +5201,9 @@ class DashboardScreenState extends State<DashboardScreen>
 
     // Indigo-to-blue glassmorphic capsule design
     final cardBg = isDark
-        ? Colors.indigoAccent.withOpacity(0.12)
-        : Colors.indigoAccent.withOpacity(0.06);
-    final borderColor = Colors.indigoAccent.withOpacity(0.35);
+        ? Colors.indigoAccent.withValues(alpha: 0.12)
+        : Colors.indigoAccent.withValues(alpha: 0.06);
+    final borderColor = Colors.indigoAccent.withValues(alpha: 0.35);
 
     return Container(
       width: isSingleItem ? double.infinity : 250,
@@ -5204,10 +5241,10 @@ class DashboardScreenState extends State<DashboardScreen>
                   width: 38,
                   height: 38,
                   decoration: BoxDecoration(
-                    color: Colors.indigoAccent.withOpacity(0.15),
+                    color: Colors.indigoAccent.withValues(alpha: 0.15),
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: Colors.indigoAccent.withOpacity(0.3),
+                      color: Colors.indigoAccent.withValues(alpha: 0.3),
                       width: 1.0,
                     ),
                   ),
@@ -5294,25 +5331,28 @@ class DashboardScreenState extends State<DashboardScreen>
   }) {
     final textColor = isDark ? Colors.white : Colors.black87;
     final color = challenge.color;
-    final cardBg = isDark ? color.withOpacity(0.08) : color.withOpacity(0.04);
-    final borderColor = color.withOpacity(0.25);
+    final cardBg = isDark
+        ? color.withValues(alpha: 0.08)
+        : color.withValues(alpha: 0.04);
+    final borderColor = color.withValues(alpha: 0.25);
 
     // Determine category icon
     String emoji = "🏆";
-    if (challenge.metricType == 'steps')
+    if (challenge.metricType == 'steps') {
       emoji = "👣";
-    else if (challenge.metricType == 'water')
+    } else if (challenge.metricType == 'water') {
       emoji = "🥤";
-    else if (challenge.metricType == 'sleep')
+    } else if (challenge.metricType == 'sleep') {
       emoji = "🌙";
-    else if (challenge.metricType == 'calories')
+    } else if (challenge.metricType == 'calories') {
       emoji = "🔥";
-    else if (challenge.metricType == 'heart_rate')
+    } else if (challenge.metricType == 'heart_rate') {
       emoji = "❤️";
-    else if (challenge.metricType == 'workouts' ||
+    } else if (challenge.metricType == 'workouts' ||
         challenge.name.toLowerCase().contains('gym') ||
-        challenge.name.toLowerCase().contains('workout'))
+        challenge.name.toLowerCase().contains('workout')) {
       emoji = "🏋️‍♂️";
+    }
 
     final progressVal = ((challenge.progressPct ?? 0.0) / 100).clamp(0.0, 1.0);
     final pct = (progressVal * 100).round();
@@ -5388,7 +5428,7 @@ class DashboardScreenState extends State<DashboardScreen>
                         strokeWidth: 2.8,
                         backgroundColor: isDark
                             ? Colors.white10
-                            : Colors.black.withOpacity(0.04),
+                            : Colors.black.withValues(alpha: 0.04),
                         valueColor: AlwaysStoppedAnimation<Color>(color),
                       ),
                       Text(emoji, style: const TextStyle(fontSize: 14)),
@@ -5468,8 +5508,8 @@ class GoogleFitSetupGuideScreen extends StatelessWidget {
                       IconButton(
                         style: IconButton.styleFrom(
                           backgroundColor: isDark
-                              ? Colors.white.withOpacity(0.06)
-                              : Colors.black.withOpacity(0.04),
+                              ? Colors.white.withValues(alpha: 0.06)
+                              : Colors.black.withValues(alpha: 0.04),
                         ),
                         icon: const Icon(
                           Icons.arrow_back_ios_new_rounded,
@@ -5679,8 +5719,12 @@ class GoogleFitSetupGuideScreen extends StatelessWidget {
             style: TextStyle(
               fontSize: 12.5,
               color: completed
-                  ? (isDark ? Colors.white.withOpacity(0.87) : Colors.black87)
-                  : (isDark ? Colors.white.withOpacity(0.3) : Colors.black38),
+                  ? (isDark
+                        ? Colors.white.withValues(alpha: 0.87)
+                        : Colors.black87)
+                  : (isDark
+                        ? Colors.white.withValues(alpha: 0.3)
+                        : Colors.black38),
               fontWeight: completed ? FontWeight.w600 : FontWeight.w500,
             ),
           ),
@@ -5699,7 +5743,7 @@ class GoogleFitSetupGuideScreen extends StatelessWidget {
             width: 20,
             height: 20,
             decoration: BoxDecoration(
-              color: Colors.blueAccent.withOpacity(0.12),
+              color: Colors.blueAccent.withValues(alpha: 0.12),
               shape: BoxShape.circle,
             ),
             child: Center(
@@ -5749,7 +5793,7 @@ class SleepRingPainter extends CustomPainter {
     final Offset center = Offset(size.width / 2, size.height / 2);
 
     final Paint bgPaint = Paint()
-      ..color = color.withOpacity(0.12)
+      ..color = color.withValues(alpha: 0.12)
       ..style = PaintingStyle.stroke
       ..strokeWidth = strokeWidth;
 

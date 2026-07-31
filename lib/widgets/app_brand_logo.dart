@@ -29,19 +29,19 @@ class AppBrandLogo extends StatelessWidget {
 
   /// Compact mark for app bars / signup headers.
   const AppBrandLogo.compact({super.key})
-      : height = 52,
-        maxWidth = 200,
-        borderRadius = 14,
-        padding = const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-        elevated = false;
+    : height = 52,
+      maxWidth = 200,
+      borderRadius = 14,
+      padding = const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      elevated = false;
 
   /// Large hero mark for splash.
   const AppBrandLogo.hero({super.key})
-      : height = 108,
-        maxWidth = 360,
-        borderRadius = 24,
-        padding = const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-        elevated = true;
+    : height = 108,
+      maxWidth = 360,
+      borderRadius = 24,
+      padding = const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+      elevated = true;
 
   static const String assetPath = 'assets/logo_2.png';
 
@@ -66,27 +66,27 @@ class AppBrandLogo extends StatelessWidget {
         borderRadius: BorderRadius.circular(borderRadius),
         border: Border.all(
           color: elevated
-              ? Colors.white.withOpacity(0.10)
-              : Colors.white.withOpacity(0.06),
+              ? Colors.white.withValues(alpha: 0.10)
+              : Colors.white.withValues(alpha: 0.06),
           width: 1,
         ),
         boxShadow: elevated
             ? [
                 BoxShadow(
-                  color: const Color(0xFFE53935).withOpacity(0.18),
+                  color: const Color(0xFFE53935).withValues(alpha: 0.18),
                   blurRadius: 22,
                   spreadRadius: 0,
                   offset: const Offset(0, 8),
                 ),
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.25),
+                  color: Colors.black.withValues(alpha: 0.25),
                   blurRadius: 16,
                   offset: const Offset(0, 6),
                 ),
               ]
             : [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.12),
+                  color: Colors.black.withValues(alpha: 0.12),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
