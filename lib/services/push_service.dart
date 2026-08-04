@@ -26,6 +26,7 @@ class PushService {
   static final PushService instance = PushService._privateConstructor();
 
   bool _initialized = false;
+  final ValueNotifier<int> notificationRefreshSignal = ValueNotifier<int>(0);
 
   Future<void> initialize() async {
     if (_initialized) return;
@@ -41,6 +42,13 @@ class PushService {
       if (settings.authorizationStatus == AuthorizationStatus.denied) {
         return;
       }
+
+      FirebaseMessaging.onMessage.listen((_) {
+        notificationRefreshSignal.value++;
+      });
+      FirebaseMessaging.onMessageOpenedApp.listen((_) {
+        notificationRefreshSignal.value++;
+      });
 
       final token = await messaging.getToken();
       if (token != null) {

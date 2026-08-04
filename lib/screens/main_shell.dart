@@ -6,6 +6,7 @@ import 'ai_screen.dart';
 import 'progress_screen.dart';
 import 'profile_screen.dart';
 import '../services/push_service.dart';
+import '../services/workout_session_service.dart';
 
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
@@ -14,17 +15,105 @@ class MainShell extends StatefulWidget {
   State<MainShell> createState() => MainShellState();
 }
 
-class MainShellState extends State<MainShell> {
+class MainShellState extends State<MainShell> with WidgetsBindingObserver {
   int _currentIndex = 0;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     // Fire-and-forget: this is the authenticated app shell, reached after
     // every login and on every relaunch with an existing session, so it's
     // the one place that reliably runs for every signed-in user without
     // duplicating the call across every login path (email, code, social).
     PushService.instance.initialize();
+    WorkoutSessionService.instance.configurePromptHandler(
+      _showWorkoutCompletionPrompt,
+    );
+    WorkoutSessionService.instance.startMonitoring();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    WorkoutSessionService.instance.configurePromptHandler(null);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // Timers can be paused by iOS/Android. Re-evaluating on return makes
+      // the next overdue hourly question appear instead of silently keeping
+      // an abandoned workout active.
+      WorkoutSessionService.instance.startMonitoring();
+    }
+  }
+
+  Future<void> _showWorkoutCompletionPrompt(
+    ActiveWorkoutSession session,
+    WorkoutSessionPromptReason reason,
+  ) async {
+    if (!mounted) return;
+    final leftFacility = reason == WorkoutSessionPromptReason.leftFacility;
+    final complete = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        icon: Icon(
+          leftFacility ? Icons.location_off_outlined : Icons.timer_outlined,
+          color: Theme.of(dialogContext).colorScheme.primary,
+        ),
+        title: Text(
+          leftFacility
+              ? 'Have you left ${session.facilityName}?'
+              : 'Is your workout complete?',
+        ),
+        content: Text(
+          leftFacility
+              ? 'Your phone appears to be outside the facility range. End the workout session if you have finished.'
+              : 'You started at ${session.facilityName} over an hour ago. End the workout session when you are done.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Still working out'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Complete session'),
+          ),
+        ],
+      ),
+    );
+    if (complete != true || !mounted) return;
+
+    try {
+      await WorkoutSessionService.instance.checkout();
+      if (!mounted) return;
+      _dashboardKey.currentState?.refreshData();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Workout session completed.'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } on WorkoutSessionException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.message), backgroundColor: Colors.redAccent),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Could not complete the workout session. Please try again.',
+          ),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+    }
   }
 
   void setIndex(int index) {

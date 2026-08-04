@@ -44,7 +44,7 @@
 	<key>NSHealthUpdateUsageDescription</key>
 	<string>Allow access to write health data to log hydration intake details directly.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Allow location access so your exact location can be sent to the Medifit emergency response team when you trigger SOS.</string>
+	<string>Allow location access to help confirm when you have left a Medifit facility and remind you to complete your workout session. Location is also used if you trigger SOS.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

@@ -32,6 +32,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String _gender = "Not set";
   double _height = 0.0;
   double _weight = 0.0;
+  String? _checkinCode;
   bool _hcConnected = false;
   bool _isLoading = true;
 
@@ -52,6 +53,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _loadProfileData() async {
     try {
       final prefs = await SharedPreferences.getInstance();
+      final localCheckinCode = prefs.getString('member_checkin_code');
 
       _hcConnected = prefs.getBool('healthSetupCompleted') ?? false;
 
@@ -65,6 +67,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         final gender = profile['gender'] ?? "Not set";
         final height = (profile['height'] ?? 0.0).toDouble();
         final weight = (profile['weight'] ?? 0.0).toDouble();
+        final checkinCode = profileData['checkin_code'] as String?;
 
         final permissions = profileData['permissions'] ?? {};
         final hcConnectedApi =
@@ -95,6 +98,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _gender = gender;
           _height = height;
           _weight = weight;
+          _checkinCode = checkinCode ?? localCheckinCode;
 
           _notifAiTips = aiTips;
           _notifRewards = rewards;
@@ -109,6 +113,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
         await prefs.setString('user_name', name);
         await prefs.setString('onboarding_data', jsonEncode(profileData));
+        if (checkinCode != null && RegExp(r'^\d{4}$').hasMatch(checkinCode)) {
+          await prefs.setString('member_checkin_code', checkinCode);
+        }
         return;
       } catch (apiError) {
         debugPrint("API Profile load failed, falling back to local: $apiError");
@@ -130,6 +137,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _gender = profile['gender'] ?? "Not set";
           _height = (profile['height'] ?? 0.0).toDouble();
           _weight = (profile['weight'] ?? 0.0).toDouble();
+          _checkinCode = localCheckinCode;
           _notifAiTips = notifications['ai_tips'] as bool? ?? true;
           _notifRewards = notifications['rewards'] as bool? ?? false;
           _notifDailyReminder =
@@ -151,6 +159,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           setState(() {
             _name = currentUser.displayName ?? "User";
             _email = currentUser.email ?? "";
+            _checkinCode = localCheckinCode;
             _isLoading = false;
           });
         } else {
@@ -478,6 +487,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           .requestPermissions();
       if (permissionGranted) {
         await prefs.setBool('healthSetupCompleted', true);
+        await prefs.setBool('health_sync_enabled', true);
         setState(() => _hcConnected = true);
 
         try {
@@ -515,6 +525,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       }
     } else {
       await prefs.setBool('healthSetupCompleted', false);
+      await prefs.setBool('health_sync_enabled', false);
       setState(() => _hcConnected = false);
 
       try {
@@ -740,6 +751,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     // Header
                     Row(
                       children: [
+                        if (Navigator.canPop(context)) ...[
+                          _morphIconButton(
+                            icon: Icons.arrow_back_rounded,
+                            isDark: isDark,
+                            onTap: () => Navigator.pop(context),
+                          ),
+                          const SizedBox(width: 10),
+                        ],
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -862,6 +881,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             title: 'Email',
                             value: _email.isEmpty ? 'Not set' : _email,
                           ),
+                          if (_checkinCode != null) ...[
+                            _divider(isDark),
+                            _infoRow(
+                              isDark: isDark,
+                              textColor: textColor,
+                              secondary: secondary,
+                              icon: Icons.pin_outlined,
+                              color: _mint,
+                              title: 'Workout check-in code',
+                              value: _checkinCode!,
+                            ),
+                          ],
                         ],
                       ),
                     ),
