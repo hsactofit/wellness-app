@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:ui';
 import 'dart:math';
 import 'dart:async';
 import 'package:flutter/material.dart';
@@ -9,6 +8,7 @@ import 'package:health/health.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/health_service.dart';
 import '../services/api_service.dart';
+import '../services/push_service.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/metric_card.dart';
 import '../widgets/concentric_rings_chart.dart';
@@ -24,6 +24,8 @@ import 'nutrition_logging_screen.dart';
 import 'sos_screen.dart';
 import 'mood_checkin_screen.dart';
 import 'plan_screen.dart';
+import 'profile_screen.dart';
+import 'notifications_screen.dart';
 import '../models/plan_models.dart';
 import '../widgets/water/wave_painter.dart';
 
@@ -43,6 +45,8 @@ class DashboardScreenState extends State<DashboardScreen>
   HealthConnectSdkStatus? _sdkStatus;
   bool _isConnected = false;
   bool _isSyncing = false;
+  bool _isRequestingHealthPermissions = false;
+  bool _hasUnreadNotifications = false;
   HealthData _healthData = HealthData();
   // ignore: unused_field
   DateTime? _lastSynced;
@@ -146,6 +150,10 @@ class DashboardScreenState extends State<DashboardScreen>
     WidgetsBinding.instance.addObserver(this);
     _loadSetupState();
     _loadGymState();
+    _loadUnreadNotifications();
+    PushService.instance.notificationRefreshSignal.addListener(
+      _handleNotificationRefresh,
+    );
     _dailyRecordsFuture = HealthService.instance.fetchDailyHealthDataForPeriod(
       days: 7,
     );
@@ -172,6 +180,9 @@ class DashboardScreenState extends State<DashboardScreen>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    PushService.instance.notificationRefreshSignal.removeListener(
+      _handleNotificationRefresh,
+    );
     _gymTimer?.cancel();
     _activeGoalsScrollTimer?.cancel();
     _activeGoalsScrollController?.dispose();
@@ -184,8 +195,33 @@ class DashboardScreenState extends State<DashboardScreen>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       debugPrint("App resumed: fetching fresh dashboard metrics");
-      _fetchRealData(forceSync: true);
+      _loadUnreadNotifications();
+      unawaited(_fetchRealData(forceSync: true, showSyncIndicator: false));
     }
+  }
+
+  void _handleNotificationRefresh() {
+    _loadUnreadNotifications();
+  }
+
+  Future<void> _loadUnreadNotifications() async {
+    try {
+      final notifications = await ApiService.instance.fetchNotifications();
+      final hasUnread = notifications.any((item) => item['read_at'] == null);
+      if (mounted && hasUnread != _hasUnreadNotifications) {
+        setState(() => _hasUnreadNotifications = hasUnread);
+      }
+    } catch (error) {
+      debugPrint('Unable to refresh unread notifications: $error');
+    }
+  }
+
+  Future<void> _openNotifications() async {
+    await Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const NotificationsScreen()));
+    if (!mounted) return;
+    await _loadUnreadNotifications();
   }
 
   void _updateWaterBubbles() {
@@ -533,62 +569,115 @@ class DashboardScreenState extends State<DashboardScreen>
   }
 
   Future<void> _checkStatusAndSync() async {
-    setState(() => _isSyncing = true);
-
-    if (Platform.isAndroid) {
-      final status = await HealthService.instance.getAndroidSdkStatus();
-      setState(() => _sdkStatus = status);
-    }
-
-    await _loadSetupState();
-
-    final prefs = await SharedPreferences.getInstance();
-    final bool healthSyncEnabled =
-        prefs.getBool('health_sync_enabled') ?? false;
-
-    if (healthSyncEnabled) {
-      final hasPerms = await HealthService.instance.checkPermissions();
-      setState(() => _isConnected = hasPerms);
-      if (hasPerms) {
-        await _fetchRealData(forceSync: false);
-      } else {
-        // Automatically request permissions if enabled but missing
-        await _connectHealthServices(showSnackbarOnFailure: false);
+    try {
+      if (Platform.isAndroid) {
+        final status = await HealthService.instance.getAndroidSdkStatus();
+        if (mounted) setState(() => _sdkStatus = status);
       }
-    } else {
-      setState(() => _isConnected = false);
-    }
 
-    setState(() => _isSyncing = false);
+      await _loadSetupState();
+
+      final prefs = await SharedPreferences.getInstance();
+      final bool healthSyncEnabled =
+          prefs.getBool('health_sync_enabled') ?? false;
+
+      if (healthSyncEnabled) {
+        // HealthKit intentionally does not reveal read authorization status
+        // after the user has answered the sheet. On iOS, the successful
+        // authorization result saved below is therefore the durable source
+        // of truth; actual reads still determine which data is available.
+        final hasPerms = Platform.isIOS
+            ? true
+            : await HealthService.instance.checkPermissions().timeout(
+                const Duration(seconds: 10),
+                onTimeout: () => false,
+              );
+
+        if (Platform.isIOS &&
+            !(prefs.getBool('healthSetupCompleted') ?? false)) {
+          await prefs.setBool('healthSetupCompleted', true);
+          try {
+            await ApiService.instance.updateUserProfile({
+              "permissions": {"health_connect_connected": true},
+            });
+          } catch (error) {
+            debugPrint('Failed to migrate health connection status: $error');
+          }
+        }
+        if (!mounted) return;
+        setState(() {
+          _isConnected = hasPerms;
+          if (Platform.isIOS && hasPerms) {
+            _healthSetupCompleted = true;
+          }
+        });
+        if (hasPerms) {
+          unawaited(_fetchRealData(forceSync: true, showSyncIndicator: false));
+        }
+      } else {
+        if (mounted) setState(() => _isConnected = false);
+      }
+    } catch (error) {
+      debugPrint('Unable to check health service status: $error');
+    } finally {
+      if (mounted) setState(() => _isSyncing = false);
+    }
   }
 
   Future<void> _connectHealthServices({
     bool showSnackbarOnFailure = true,
   }) async {
+    if (_isRequestingHealthPermissions) return;
+
     if (Platform.isAndroid &&
         _sdkStatus != HealthConnectSdkStatus.sdkAvailable) {
       _showDownloadRationaleDialog();
       return;
     }
 
-    setState(() => _isSyncing = true);
-    final success = await HealthService.instance.requestPermissions();
-    if (!mounted) return;
-    setState(() => _isConnected = success);
-
-    if (success) {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('health_sync_enabled', true);
-      await _fetchRealData(forceSync: true);
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Successfully connected to health services!"),
-          backgroundColor: Colors.green,
-        ),
+    setState(() {
+      _isSyncing = true;
+      _isRequestingHealthPermissions = true;
+    });
+    try {
+      final success = await HealthService.instance.requestPermissions().timeout(
+        const Duration(seconds: 30),
       );
-    } else {
-      if (showSnackbarOnFailure) {
+      if (!mounted) return;
+      setState(() => _isConnected = success);
+
+      if (success) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('health_sync_enabled', true);
+        await prefs.setBool('healthSetupCompleted', true);
+        if (mounted) {
+          setState(() => _healthSetupCompleted = true);
+        }
+
+        try {
+          await ApiService.instance.updateUserProfile({
+            "permissions": {"health_connect_connected": true},
+          });
+        } catch (error) {
+          debugPrint('Failed to persist health connection status: $error');
+        }
+
+        // HealthKit can take a long time to return several data types on a
+        // simulator (or when it has no sample data).  The permission was
+        // already granted, so let the member continue using the app while
+        // that initial sync completes in the background.
+        unawaited(_syncHealthDataInBackground());
+
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              "Health services connected. Your data will appear shortly.",
+            ),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else if (showSnackbarOnFailure) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text(
@@ -598,13 +687,61 @@ class DashboardScreenState extends State<DashboardScreen>
           ),
         );
       }
+    } on TimeoutException {
+      debugPrint('HealthKit authorization did not return within 30 seconds.');
+      if (mounted && showSnackbarOnFailure) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("HealthKit did not respond. Please try Grant again."),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+    } catch (error) {
+      debugPrint('Unable to connect health services: $error');
+      if (mounted && showSnackbarOnFailure) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              "We could not connect to HealthKit. Please try again.",
+            ),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSyncing = false;
+          _isRequestingHealthPermissions = false;
+        });
+      }
     }
-    setState(() => _isSyncing = false);
   }
 
-  Future<void> _fetchRealData({bool forceSync = false}) async {
+  Future<void> _syncHealthDataInBackground() async {
+    try {
+      await _fetchRealData(
+        forceSync: true,
+        showSyncIndicator: false,
+      ).timeout(const Duration(seconds: 20));
+    } on TimeoutException {
+      // The underlying data reads may still finish later.  Do not block the
+      // dashboard while waiting for HealthKit to provide them.
+      debugPrint('HealthKit initial sync is taking longer than 20 seconds.');
+    } catch (error) {
+      debugPrint('Background HealthKit sync failed: $error');
+    }
+  }
+
+  Future<void> _fetchRealData({
+    bool forceSync = false,
+    bool showSyncIndicator = true,
+  }) async {
     setState(() {
-      _isSyncing = true;
+      if (showSyncIndicator) {
+        _isSyncing = true;
+      }
       _dailyRecordsFuture = HealthService.instance
           .fetchDailyHealthDataForPeriod(days: 7, forceRefresh: forceSync);
     });
@@ -651,7 +788,9 @@ class DashboardScreenState extends State<DashboardScreen>
     } catch (e) {
       debugPrint("Error in _fetchRealData combined flow: $e");
     } finally {
-      setState(() => _isSyncing = false);
+      if (mounted && showSyncIndicator) {
+        setState(() => _isSyncing = false);
+      }
     }
   }
 
@@ -1512,11 +1651,7 @@ class DashboardScreenState extends State<DashboardScreen>
               children: [
                 // Notification Bell (Circular)
                 GestureDetector(
-                  onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text("No new notifications")),
-                    );
-                  },
+                  onTap: _openNotifications,
                   child: Container(
                     width: 38,
                     height: 38,
@@ -1540,46 +1675,61 @@ class DashboardScreenState extends State<DashboardScreen>
                           color: isDark ? Colors.white70 : Colors.black87,
                           size: 20,
                         ),
-                        Positioned(
-                          right: 10,
-                          top: 10,
-                          child: Container(
-                            width: 6,
-                            height: 6,
-                            decoration: const BoxDecoration(
-                              color: Colors.redAccent,
-                              shape: BoxShape.circle,
+                        if (_hasUnreadNotifications)
+                          Positioned(
+                            right: 10,
+                            top: 10,
+                            child: Container(
+                              width: 6,
+                              height: 6,
+                              decoration: const BoxDecoration(
+                                color: Colors.redAccent,
+                                shape: BoxShape.circle,
+                              ),
                             ),
                           ),
-                        ),
                       ],
                     ),
                   ),
                 ),
                 const SizedBox(width: 8),
                 // Profile Avatar Initial Button (Circular)
-                Container(
-                  width: 38,
-                  height: 38,
-                  decoration: BoxDecoration(
-                    color: isDark
-                        ? Colors.white.withValues(alpha: 0.06)
-                        : Colors.white,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: isDark
-                          ? Colors.white10
-                          : Colors.black.withValues(alpha: 0.08),
-                      width: 1.2,
-                    ),
-                  ),
-                  child: Center(
-                    child: Text(
-                      "P",
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w800,
-                        color: isDark ? Colors.white : Colors.black87,
+                Semantics(
+                  button: true,
+                  label: 'Open profile',
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const ProfileScreen(),
+                        ),
+                      );
+                    },
+                    child: Container(
+                      width: 38,
+                      height: 38,
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? Colors.white.withValues(alpha: 0.06)
+                            : Colors.white,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: isDark
+                              ? Colors.white10
+                              : Colors.black.withValues(alpha: 0.08),
+                          width: 1.2,
+                        ),
+                      ),
+                      child: Center(
+                        child: Text(
+                          "P",
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w800,
+                            color: isDark ? Colors.white : Colors.black87,
+                          ),
+                        ),
                       ),
                     ),
                   ),
@@ -3916,66 +4066,6 @@ class DashboardScreenState extends State<DashboardScreen>
                 backgroundColor: Colors.transparent,
                 valueColor: const AlwaysStoppedAnimation<Color>(
                   Colors.blueAccent,
-                ),
-              ),
-            ),
-          if (_isSyncing && _serverWellnessScore == null)
-            Positioned.fill(
-              child: ClipRRect(
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-                  child: Container(
-                    color: isDark
-                        ? Colors.black.withValues(alpha: 0.65)
-                        : Colors.white.withValues(alpha: 0.55),
-                    child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Container(
-                            width: 70,
-                            height: 70,
-                            padding: const EdgeInsets.all(18),
-                            decoration: BoxDecoration(
-                              color: isDark
-                                  ? Colors.white.withValues(alpha: 0.04)
-                                  : Colors.white,
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: isDark
-                                    ? Colors.white10
-                                    : Colors.black.withValues(alpha: 0.06),
-                                width: 1.2,
-                              ),
-                            ),
-                            child: const CircularProgressIndicator(
-                              color: Color(0xFFFF6D55),
-                              strokeWidth: 3,
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-                          Text(
-                            "Analyzing your health telemetry...",
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w900,
-                              color: isDark ? Colors.white : Colors.black87,
-                              letterSpacing: -0.5,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            "Creating your personalized dashboard",
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: isDark ? Colors.white54 : Colors.black54,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
                 ),
               ),
             ),

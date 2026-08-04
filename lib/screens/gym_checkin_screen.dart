@@ -2,10 +2,9 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:http/http.dart' as http;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
-import '../services/auth_service.dart';
+import '../services/workout_session_service.dart';
 import '../widgets/glass_card.dart';
 
 class GymCheckinScreen extends StatefulWidget {
@@ -62,6 +61,9 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
   @override
   void initState() {
     super.initState();
+    WorkoutSessionService.instance.sessionRefreshSignal.addListener(
+      _handleExternalSessionChange,
+    );
     _loadCheckinState();
     _checkCameraPermission();
 
@@ -112,6 +114,9 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
 
   @override
   void dispose() {
+    WorkoutSessionService.instance.sessionRefreshSignal.removeListener(
+      _handleExternalSessionChange,
+    );
     _timer?.cancel();
     _scannerAnimController.dispose();
     _scannerController?.dispose();
@@ -119,9 +124,14 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
     super.dispose();
   }
 
+  void _handleExternalSessionChange() {
+    _loadCheckinState();
+  }
+
   Future<void> _loadCheckinState() async {
     final prefs = await SharedPreferences.getInstance();
     final isCheckedIn = prefs.getBool('gym_checked_in') ?? false;
+    if (!mounted) return;
     if (isCheckedIn) {
       final name = prefs.getString('gym_name');
       final place = prefs.getString('gym_place');
@@ -136,6 +146,16 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
       });
       _startTimer();
       await _loadLoggedExercises();
+    } else {
+      _timer?.cancel();
+      setState(() {
+        _isCheckedIn = false;
+        _gymName = null;
+        _gymPlace = null;
+        _checkInTime = null;
+        _elapsed = Duration.zero;
+        _loggedExercises.clear();
+      });
     }
   }
 
@@ -198,9 +218,9 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
   }
 
   Future<void> _handleCheckin(String qrString) async {
-    setState(() {
-      _isLoading = true;
-    });
+    // Stop the scanner from delivering duplicate frames while the member is
+    // completing the required second factor for this facility session.
+    setState(() => _isLoading = true);
 
     try {
       // wellness-server identifies the facility by its short code (e.g.
@@ -230,93 +250,77 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
       }
       facilityCode = facilityCode.trim().toUpperCase();
 
-      final token = await AuthService.instance.getAccessToken();
-      final url = '${AuthService.apiBaseUrl}/api/attendance/checkin';
+      final memberPin = await _promptForMemberPin(gymName);
+      if (memberPin == null) return;
 
-      debugPrint("================ GYM CHECKIN API REQUEST ================");
-      debugPrint("URL: $url");
-      debugPrint("Method: POST");
-      debugPrint(
-        "Headers: ${token != null ? 'Authorization: Bearer [token]' : 'None'}",
-      );
-      debugPrint(
-        "Body: {'facility_code': '$facilityCode', 'method': 'QR scan'}",
-      );
-      debugPrint("=========================================================");
-
-      final response = await http.post(
-        Uri.parse(url),
-        headers: {
-          'Content-Type': 'application/json',
-          if (token != null) 'Authorization': 'Bearer $token',
-        },
-        body: jsonEncode({'facility_code': facilityCode, 'method': 'QR scan'}),
+      final data = await WorkoutSessionService.instance.checkIn(
+        facilityCode: facilityCode,
+        memberPin: memberPin,
       );
 
-      debugPrint("================ GYM CHECKIN API RESPONSE ================");
-      debugPrint("Status Code: ${response.statusCode}");
-      debugPrint("Response Body: ${response.body}");
-      debugPrint("==========================================================");
+      await WorkoutSessionService.instance.saveCheckIn(
+        session: data,
+        fallbackFacilityName: gymName,
+        fallbackFacilityPlace: gymPlace,
+      );
+      // This asks for location only after an actual workout starts. A denied
+      // request is optional and simply leaves the hourly confirmation active.
+      await WorkoutSessionService.instance.startMonitoring(
+        requestLocationPermission: true,
+      );
 
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        _scannerController?.dispose();
-        _scannerController = null;
-        final data = jsonDecode(response.body);
-        final sessId = data['id'] as String? ?? '';
-        final checkinTimeStr =
-            data['check_in_at'] as String? ?? DateTime.now().toIso8601String();
-        final checkInTime = DateTime.tryParse(checkinTimeStr) ?? DateTime.now();
+      _scannerController?.dispose();
+      _scannerController = null;
+      final checkinTimeStr =
+          data['check_in_at'] as String? ?? DateTime.now().toIso8601String();
+      final checkInTime = DateTime.tryParse(checkinTimeStr) ?? DateTime.now();
+      final confirmedGymName = data['facility_name'] as String? ?? gymName;
 
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setBool('gym_checked_in', true);
-        await prefs.setString('gym_name', gymName);
-        await prefs.setString('gym_place', gymPlace);
-        await prefs.setString('gym_check_in_time', checkinTimeStr);
-        await prefs.setString('gym_session_id', sessId);
+      setState(() {
+        _isCheckedIn = true;
+        _gymName = confirmedGymName;
+        _gymPlace = gymPlace;
+        _checkInTime = checkInTime;
+      });
 
-        setState(() {
-          _isCheckedIn = true;
-          _gymName = gymName;
-          _gymPlace = gymPlace;
-          _checkInTime = checkInTime;
-        });
+      _startTimer();
+      widget.onStatusChanged?.call();
 
-        _startTimer();
-        widget.onStatusChanged?.call();
-
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text("🎉 Checked in successfully to $gymName!"),
-              backgroundColor: Colors.green,
-            ),
-          );
-        }
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text("Failed to check-in: ${response.statusCode}"),
-              backgroundColor: Colors.redAccent,
-            ),
-          );
-        }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("🎉 Workout session started at $confirmedGymName!"),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } on WorkoutSessionException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.message), backgroundColor: Colors.redAccent),
+        );
       }
     } catch (e) {
       debugPrint("Error in gym check-in: $e");
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text("Invalid QR Code payload or network error: $e"),
+            content: Text("Unable to start workout session: $e"),
             backgroundColor: Colors.redAccent,
           ),
         );
       }
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  Future<String?> _promptForMemberPin(String facilityName) async {
+    return showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => _MemberPinDialog(facilityName: facilityName),
+    );
   }
 
   /// Returns `true` when checkout succeeded.
@@ -334,96 +338,37 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
     }
 
     try {
-      final token = await AuthService.instance.getAccessToken();
-      final url = '${AuthService.apiBaseUrl}/api/attendance/checkout';
+      await WorkoutSessionService.instance.checkout();
 
-      // NOTE: wellness-server's /attendance/checkout doesn't accept a
-      // workout/exercise breakdown yet — WorkoutSession is modeled
-      // server-side but not wired to any endpoint (see
-      // medifit-kb/MEDIFIT_KB.md §3 "modeled but not yet wired"). The
-      // locally-logged exercises below are kept in SharedPreferences for
-      // the in-session UI but aren't persisted server-side until that
-      // endpoint exists.
-      final checkoutPayload = <String, dynamic>{};
+      _timer?.cancel();
+      setState(() {
+        _isCheckedIn = false;
+        _gymName = null;
+        _gymPlace = null;
+        _checkInTime = null;
+        _elapsed = Duration.zero;
+        _loggedExercises.clear();
+      });
 
-      debugPrint("================ GYM CHECKOUT API REQUEST ================");
-      debugPrint("URL: $url");
-      debugPrint("Method: POST");
-      debugPrint(
-        "Headers: ${token != null ? 'Authorization: Bearer [token]' : 'None'}",
-      );
-      debugPrint("Body: ${jsonEncode(checkoutPayload)}");
-      debugPrint("==========================================================");
+      widget.onStatusChanged?.call();
 
-      final response = await http.post(
-        Uri.parse(url),
-        headers: {
-          'Content-Type': 'application/json',
-          if (token != null) 'Authorization': 'Bearer $token',
-        },
-        body: jsonEncode(checkoutPayload),
-      );
-
-      debugPrint("================ GYM CHECKOUT API RESPONSE ================");
-      debugPrint("Status Code: ${response.statusCode}");
-      debugPrint("Response Body: ${response.body}");
-      debugPrint("===========================================================");
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        final data = jsonDecode(response.body);
-        final checkoutTimeStr =
-            data['check_out_at'] as String? ?? DateTime.now().toIso8601String();
-
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.remove('gym_checked_in');
-        await prefs.remove('gym_name');
-        await prefs.remove('gym_place');
-        await prefs.remove('gym_check_in_time');
-        await prefs.remove('gym_session_id');
-        await prefs.remove('gym_logged_exercises');
-
-        await prefs.setString('gym_check_out_time', checkoutTimeStr);
-
-        // Mark that gym is done today to prevent showing the dashboard widget again today
-        final todayStr = DateTime.now().toIso8601String().substring(0, 10);
-        await prefs.setString('gym_done_today_date', todayStr);
-
-        _timer?.cancel();
-
-        setState(() {
-          _isCheckedIn = false;
-          _gymName = null;
-          _gymPlace = null;
-          _checkInTime = null;
-          _elapsed = Duration.zero;
-          _loggedExercises.clear();
-        });
-
-        widget.onStatusChanged?.call();
-
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text("💪 Checked out successfully! Workout logged!"),
-              backgroundColor: Colors.green,
-            ),
-          );
-          if (popScreenOnSuccess) {
-            Navigator.pop(context);
-          }
-        }
-        return true;
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text("Failed to checkout: ${response.statusCode}"),
-              backgroundColor: Colors.redAccent,
-            ),
-          );
-        }
-        return false;
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("💪 Workout session completed!"),
+            backgroundColor: Colors.green,
+          ),
+        );
+        if (popScreenOnSuccess) Navigator.pop(context);
       }
+      return true;
+    } on WorkoutSessionException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.message), backgroundColor: Colors.redAccent),
+        );
+      }
+      return false;
     } catch (e) {
       debugPrint("Error in gym checkout: $e");
       if (mounted) {
@@ -769,39 +714,42 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(10),
                               ),
-                              child: ListTile(
-                                title: Text(
-                                  item['name'],
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 13,
-                                    color: isDark
-                                        ? Colors.white
-                                        : Colors.black87,
+                              child: Material(
+                                color: Colors.transparent,
+                                child: ListTile(
+                                  title: Text(
+                                    item['name'],
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 13,
+                                      color: isDark
+                                          ? Colors.white
+                                          : Colors.black87,
+                                    ),
                                   ),
-                                ),
-                                subtitle: Text(
-                                  "${item['sets']} sets",
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey,
+                                  subtitle: Text(
+                                    "${item['sets']} sets",
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey,
+                                    ),
                                   ),
-                                ),
-                                trailing: IconButton(
-                                  icon: const Icon(
-                                    Icons.delete_outline,
-                                    color: Colors.redAccent,
-                                    size: 18,
+                                  trailing: IconButton(
+                                    icon: const Icon(
+                                      Icons.delete_outline,
+                                      color: Colors.redAccent,
+                                      size: 18,
+                                    ),
+                                    onPressed: isCheckingOut
+                                        ? null
+                                        : () {
+                                            setCheckoutState(() {
+                                              _loggedExercises.removeAt(index);
+                                            });
+                                            setState(() {});
+                                            _saveLoggedExercises();
+                                          },
                                   ),
-                                  onPressed: isCheckingOut
-                                      ? null
-                                      : () {
-                                          setCheckoutState(() {
-                                            _loggedExercises.removeAt(index);
-                                          });
-                                          setState(() {});
-                                          _saveLoggedExercises();
-                                        },
                                 ),
                               ),
                             );
@@ -1373,6 +1321,77 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
             ),
         ],
       ),
+    );
+  }
+}
+
+class _MemberPinDialog extends StatefulWidget {
+  const _MemberPinDialog({required this.facilityName});
+
+  final String facilityName;
+
+  @override
+  State<_MemberPinDialog> createState() => _MemberPinDialogState();
+}
+
+class _MemberPinDialogState extends State<_MemberPinDialog> {
+  final _controller = TextEditingController();
+  String? _validationError;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    final value = _controller.text.trim();
+    if (RegExp(r'^\d{4}$').hasMatch(value)) {
+      Navigator.pop(context, value);
+      return;
+    }
+    setState(() => _validationError = 'Enter all 4 digits');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Enter your 4-digit check-in code'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Enter the code issued when you became a Medifit member to start your workout at ${widget.facilityName}.',
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _controller,
+            autofocus: true,
+            maxLength: 4,
+            keyboardType: TextInputType.number,
+            obscureText: true,
+            decoration: InputDecoration(
+              labelText: '4-digit code',
+              errorText: _validationError,
+              border: const OutlineInputBorder(),
+            ),
+            onChanged: (_) {
+              if (_validationError != null) {
+                setState(() => _validationError = null);
+              }
+            },
+            onSubmitted: (_) => _submit(),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(onPressed: _submit, child: const Text('Start workout')),
+      ],
     );
   }
 }

@@ -58,36 +58,39 @@ class ProfileStep extends StatelessWidget {
               const SizedBox(height: 20),
               ...["Female", "Male", "Other"].map((g) {
                 final isSelected = gender == g;
-                return ListTile(
-                  leading: Icon(
-                    g == "Female"
-                        ? Icons.female_rounded
-                        : g == "Male"
-                        ? Icons.male_rounded
-                        : Icons.transgender_rounded,
-                    color: isSelected ? const Color(0xFF006D5B) : Colors.grey,
-                  ),
-                  title: Text(
-                    g,
-                    style: TextStyle(
-                      fontWeight: isSelected
-                          ? FontWeight.bold
-                          : FontWeight.normal,
-                      color: isSelected
-                          ? const Color(0xFF006D5B)
-                          : (isDark ? Colors.white70 : Colors.black87),
+                return Material(
+                  color: Colors.transparent,
+                  child: ListTile(
+                    leading: Icon(
+                      g == "Female"
+                          ? Icons.female_rounded
+                          : g == "Male"
+                          ? Icons.male_rounded
+                          : Icons.transgender_rounded,
+                      color: isSelected ? const Color(0xFF006D5B) : Colors.grey,
                     ),
+                    title: Text(
+                      g,
+                      style: TextStyle(
+                        fontWeight: isSelected
+                            ? FontWeight.bold
+                            : FontWeight.normal,
+                        color: isSelected
+                            ? const Color(0xFF006D5B)
+                            : (isDark ? Colors.white70 : Colors.black87),
+                      ),
+                    ),
+                    trailing: isSelected
+                        ? const Icon(
+                            Icons.check_circle_rounded,
+                            color: Color(0xFF006D5B),
+                          )
+                        : null,
+                    onTap: () {
+                      onGenderChanged(g);
+                      Navigator.pop(context);
+                    },
                   ),
-                  trailing: isSelected
-                      ? const Icon(
-                          Icons.check_circle_rounded,
-                          color: Color(0xFF006D5B),
-                        )
-                      : null,
-                  onTap: () {
-                    onGenderChanged(g);
-                    Navigator.pop(context);
-                  },
                 );
               }),
             ],
