@@ -553,6 +553,7 @@ class HealthService {
     await prefs.remove('gym_facility_latitude');
     await prefs.remove('gym_facility_longitude');
     await prefs.remove('gym_geofence_radius_m');
+    await prefs.remove('gym_hourly_prompt_anchor_at');
     await prefs.remove('gym_last_hourly_prompt_at');
     await prefs.remove('gym_logged_exercises');
     await prefs.remove('gym_done_today_date');

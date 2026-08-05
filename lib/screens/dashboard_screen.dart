@@ -30,7 +30,11 @@ import '../models/plan_models.dart';
 import '../widgets/water/wave_painter.dart';
 
 class DashboardScreen extends StatefulWidget {
-  const DashboardScreen({super.key});
+  const DashboardScreen({super.key, this.onOpenChallenges});
+
+  /// Lets the enclosing app shell select its persistent Challenges tab rather
+  /// than pushing a second page that would hide the shared bottom navigation.
+  final VoidCallback? onOpenChallenges;
 
   @override
   State<DashboardScreen> createState() => DashboardScreenState();
@@ -89,9 +93,20 @@ class DashboardScreenState extends State<DashboardScreen>
   // ignore: unused_field
   bool _gymDoneToday = false;
 
-  // User email & active challenges
-  String _userEmail = "";
+  // Active challenges
   List<Challenge> _activeChallenges = [];
+
+  void _openChallenges() {
+    final openInShell = widget.onOpenChallenges;
+    if (openInShell != null) {
+      openInShell();
+      return;
+    }
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const ChallengesScreen()),
+    );
+  }
 
   // Custom API metrics
   double? _apiStepsValue;
@@ -762,12 +777,6 @@ class DashboardScreenState extends State<DashboardScreen>
               _userName = name;
             }
           }
-        }
-
-        final jsonStr = prefs.getString('onboarding_data');
-        if (jsonStr != null) {
-          final Map<String, dynamic> onboarding = jsonDecode(jsonStr);
-          _userEmail = onboarding['auth']?['email'] ?? "";
         }
       });
 
@@ -4718,14 +4727,7 @@ class DashboardScreenState extends State<DashboardScreen>
                       "🏆",
                       "Compete",
                       const Color(0xFFFFD60A),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const ChallengesScreen(),
-                          ),
-                        );
-                      },
+                      onTap: _openChallenges,
                     ),
                     _buildQuickAccessItem(
                       "🧠",
@@ -5461,47 +5463,7 @@ class DashboardScreenState extends State<DashboardScreen>
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
-          onTap: () {
-            if (challenge.metricType == 'water') {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => WaterLoggingScreen(
-                    onWaterLogged: () {
-                      _fetchRealData(forceSync: true);
-                    },
-                  ),
-                ),
-              );
-            } else if (challenge.metricType == 'workouts' ||
-                challenge.name.toLowerCase().contains('gym') ||
-                challenge.name.toLowerCase().contains('workout')) {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => GymCheckinScreen(
-                    onStatusChanged: () {
-                      _loadGymState();
-                      _fetchActiveChallenges();
-                    },
-                  ),
-                ),
-              );
-            } else if (challenge.metricType != null) {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => MetricDetailScreen(
-                    metric: challenge.metricType!,
-                    title: challenge.name,
-                    icon: emoji,
-                    color: color,
-                    email: _userEmail,
-                  ),
-                ),
-              );
-            }
-          },
+          onTap: _openChallenges,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             child: Row(
@@ -5552,6 +5514,11 @@ class DashboardScreenState extends State<DashboardScreen>
                       ),
                     ],
                   ),
+                ),
+                Icon(
+                  Icons.arrow_forward_rounded,
+                  size: 17,
+                  color: color.withValues(alpha: 0.85),
                 ),
               ],
             ),
