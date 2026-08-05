@@ -6,6 +6,19 @@ plugins {
     id("com.google.gms.google-services")
 }
 
+val selectedBrand = providers.gradleProperty("appBrand").orElse("medifit").get()
+val isMednovationsBrand = selectedBrand.equals("mednovations", ignoreCase = true)
+val releaseStoreFilePath = providers.environmentVariable("WELLNESS_ANDROID_KEYSTORE_FILE").orNull
+val releaseStorePassword = providers.environmentVariable("WELLNESS_ANDROID_KEYSTORE_PASSWORD").orNull
+val releaseKeyAlias = providers.environmentVariable("WELLNESS_ANDROID_KEY_ALIAS").orNull
+val releaseKeyPassword = providers.environmentVariable("WELLNESS_ANDROID_KEY_PASSWORD").orNull
+val hasReleaseSigning = listOf(
+    releaseStoreFilePath,
+    releaseStorePassword,
+    releaseKeyAlias,
+    releaseKeyPassword,
+).all { !it.isNullOrBlank() }
+
 android {
     namespace = "com.actofit.arhamsecure"
     compileSdk = flutter.compileSdkVersion
@@ -29,13 +42,38 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        manifestPlaceholders["appLabel"] = if (isMednovationsBrand) {
+            "Mednovations Wellness"
+        } else {
+            "Medifit Wellness"
+        }
+        manifestPlaceholders["appIcon"] = if (isMednovationsBrand) {
+            "@mipmap/ic_launcher_mednovations"
+        } else {
+            "@mipmap/ic_launcher"
+        }
+    }
+
+    signingConfigs {
+        if (hasReleaseSigning) {
+            create("release") {
+                storeFile = file(releaseStoreFilePath!!)
+                storePassword = releaseStorePassword
+                keyAlias = releaseKeyAlias
+                keyPassword = releaseKeyPassword
+            }
+        }
     }
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            // The local build helper supplies these values from macOS Keychain.
+            // Retain debug signing only for a developer's local release test.
+            signingConfig = if (hasReleaseSigning) {
+                signingConfigs.getByName("release")
+            } else {
+                signingConfigs.getByName("debug")
+            }
         }
     }
 }

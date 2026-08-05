@@ -4,6 +4,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:health/health.dart';
+import '../app_brand.dart';
 import '../services/auth_service.dart';
 import '../services/health_service.dart';
 import '../services/api_service.dart';
@@ -371,7 +372,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    'Choose how Medifit looks on this device',
+                    'Choose how ${AppBrand.name} looks on this device',
                     style: TextStyle(
                       fontSize: 13,
                       color: isDark ? Colors.white54 : Colors.black45,
@@ -1018,7 +1019,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     const SizedBox(height: 12),
                     Center(
                       child: Text(
-                        'Medifit Wellness · #Wellness360',
+                        '${AppBrand.wellnessName} · #Wellness360',
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
@@ -1859,7 +1860,7 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    'Update how you show up in Medifit',
+                    'Update how you show up in ${AppBrand.name}',
                     style: TextStyle(
                       fontSize: 13,
                       color: isDark ? Colors.white54 : Colors.black45,

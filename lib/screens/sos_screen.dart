@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../app_brand.dart';
 import '../services/api_service.dart';
 import '../widgets/glass_card.dart';
 
@@ -194,7 +195,7 @@ class _SosScreenState extends State<SosScreen>
                     ),
                     const SizedBox(height: 10),
                     Text(
-                      "This notifies Medifit's emergency response team with your live location and current vitals. Only use in a real emergency.",
+                      "This notifies ${AppBrand.name}'s emergency response team with your live location and current vitals. Only use in a real emergency.",
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 13.5,

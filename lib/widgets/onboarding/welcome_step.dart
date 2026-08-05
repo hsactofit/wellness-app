@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../app_brand.dart';
 import '../glass_card.dart';
 import 'fade_slide_transition.dart';
 
@@ -102,9 +103,45 @@ class _WelcomeStepState extends State<WelcomeStep>
                                   ],
                                 ),
                                 padding: const EdgeInsets.all(16),
-                                child: Image.asset(
-                                  widget.imagePath!,
-                                  fit: BoxFit.contain,
+                                child: Stack(
+                                  fit: StackFit.expand,
+                                  children: [
+                                    Image.asset(
+                                      widget.imagePath!,
+                                      fit: BoxFit.contain,
+                                    ),
+                                    if (AppBrand.isMednovations &&
+                                        widget.isFirst)
+                                      Center(
+                                        child: Container(
+                                          width: 78,
+                                          height: 78,
+                                          padding: const EdgeInsets.all(6),
+                                          decoration: BoxDecoration(
+                                            color: Colors.white,
+                                            shape: BoxShape.circle,
+                                            border: Border.all(
+                                              color: const Color(
+                                                0xFF167FB7,
+                                              ).withValues(alpha: 0.16),
+                                            ),
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: const Color(
+                                                  0xFF167FB7,
+                                                ).withValues(alpha: 0.14),
+                                                blurRadius: 12,
+                                                offset: const Offset(0, 4),
+                                              ),
+                                            ],
+                                          ),
+                                          child: Image.asset(
+                                            'assets/branding/mednovations_launcher.png',
+                                            fit: BoxFit.contain,
+                                          ),
+                                        ),
+                                      ),
+                                  ],
                                 ),
                               )
                             : Text(

@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import '../services/auth_service.dart';
 import '../services/health_service.dart';
 import '../services/api_service.dart';
 import '../widgets/glass_card.dart';
@@ -140,7 +141,7 @@ class _WaterLoggingScreenState extends State<WaterLoggingScreen>
     try {
       final email = await ApiService.instance.getUserEmail();
       final period = _selectedGraphPeriod;
-      final url = '${ApiService.baseUrl}/api/water/graph?period=$period';
+      final url = '${AuthService.apiUrl('/api/water/graph')}?period=$period';
 
       _logApiRequest(name: 'WATER GRAPH', method: 'GET', url: url);
 
@@ -202,7 +203,7 @@ class _WaterLoggingScreenState extends State<WaterLoggingScreen>
 
     try {
       final email = await ApiService.instance.getUserEmail();
-      final url = '${ApiService.baseUrl}/api/water/logs';
+      final url = AuthService.apiUrl('/api/water/logs');
 
       _logApiRequest(name: 'WATER LOGS', method: 'GET', url: url);
 
@@ -320,7 +321,7 @@ class _WaterLoggingScreenState extends State<WaterLoggingScreen>
         'amount_ml': amount,
         'timestamp': DateTime.now().toUtc().toIso8601String(),
       };
-      final url = '${ApiService.baseUrl}/api/water/log';
+      final url = AuthService.apiUrl('/api/water/log');
 
       _logApiRequest(
         name: 'WATER ADD LOG',
@@ -374,7 +375,7 @@ class _WaterLoggingScreenState extends State<WaterLoggingScreen>
 
     try {
       // DELETE /api/water/log/{log_id}
-      final url = '${ApiService.baseUrl}/api/water/log/${log.id}';
+      final url = AuthService.apiUrl('/api/water/log/${log.id}');
 
       _logApiRequest(name: 'WATER DELETE LOG', method: 'DELETE', url: url);
 
@@ -493,7 +494,7 @@ class _WaterLoggingScreenState extends State<WaterLoggingScreen>
         'amount_ml': newAmount,
         'timestamp': log.timestamp.toUtc().toIso8601String(),
       };
-      final url = '${ApiService.baseUrl}/api/water/log/${log.id}';
+      final url = AuthService.apiUrl('/api/water/log/${log.id}');
 
       _logApiRequest(
         name: 'WATER UPDATE LOG',

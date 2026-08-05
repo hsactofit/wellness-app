@@ -8,8 +8,6 @@ class ApiService {
   ApiService._privateConstructor();
   static final ApiService instance = ApiService._privateConstructor();
 
-  static const String baseUrl = AuthService.apiBaseUrl;
-
   /// Helper to get authorization headers.
   Future<Map<String, String>> _getHeaders({String? token}) async {
     final t = token ?? await AuthService.instance.getAccessToken();
@@ -25,7 +23,7 @@ class ApiService {
     Map<String, String>? queryParams,
   }) async {
     final token = await AuthService.instance.getAccessToken();
-    Uri uri = Uri.parse('$baseUrl$path');
+    Uri uri = Uri.parse(AuthService.apiUrl(path));
     if (queryParams != null) {
       uri = uri.replace(queryParameters: queryParams);
     }
@@ -49,7 +47,7 @@ class ApiService {
   /// Helper to make authenticated POST requests with automatic token refresh.
   Future<http.Response> _post(String path, {Object? body}) async {
     final token = await AuthService.instance.getAccessToken();
-    final uri = Uri.parse('$baseUrl$path');
+    final uri = Uri.parse(AuthService.apiUrl(path));
 
     var response = await http.post(
       uri,
@@ -72,7 +70,7 @@ class ApiService {
   /// Helper to make authenticated PUT requests with automatic token refresh.
   Future<http.Response> _put(String path, {Object? body}) async {
     final token = await AuthService.instance.getAccessToken();
-    final uri = Uri.parse('$baseUrl$path');
+    final uri = Uri.parse(AuthService.apiUrl(path));
 
     var response = await http.put(
       uri,
@@ -95,7 +93,7 @@ class ApiService {
   /// Helper to make authenticated DELETE requests with automatic token refresh.
   Future<http.Response> _delete(String path) async {
     final token = await AuthService.instance.getAccessToken();
-    final uri = Uri.parse('$baseUrl$path');
+    final uri = Uri.parse(AuthService.apiUrl(path));
 
     var response = await http.delete(
       uri,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../app_brand.dart';
 import '../services/auth_service.dart';
 import '../widgets/onboarding/profile_step.dart';
 import '../widgets/onboarding/goals_step.dart';
@@ -203,7 +204,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       'Establishing secure local environment...',
       'Encrypting medical health profile...',
       'Analyzing lifestyle metrics and wellness goals...',
-      'Submitting profile to Medifit server...',
+      'Submitting profile to ${AppBrand.name} server...',
       'Preparing your personalized dashboard...',
     ];
 
@@ -335,8 +336,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
-              'After scanning a Medifit facility QR code, enter this code to start a workout session. Keep it private.',
+            Text(
+              'After scanning a ${AppBrand.name} facility QR code, enter this code to start a workout session. Keep it private.',
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 20),

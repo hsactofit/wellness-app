@@ -111,7 +111,7 @@ class WorkoutSessionService {
   }) async {
     final token = await AuthService.instance.getAccessToken();
     final response = await http.post(
-      Uri.parse('${AuthService.apiBaseUrl}/api/attendance/checkin'),
+      Uri.parse(AuthService.apiUrl('/api/attendance/checkin')),
       headers: {
         'Content-Type': 'application/json',
         if (token != null) 'Authorization': 'Bearer $token',
@@ -165,7 +165,7 @@ class WorkoutSessionService {
   Future<WorkoutCheckoutResult> checkout() async {
     final token = await AuthService.instance.getAccessToken();
     final response = await http.post(
-      Uri.parse('${AuthService.apiBaseUrl}/api/attendance/checkout'),
+      Uri.parse(AuthService.apiUrl('/api/attendance/checkout')),
       headers: {
         'Content-Type': 'application/json',
         if (token != null) 'Authorization': 'Bearer $token',

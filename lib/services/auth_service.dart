@@ -140,6 +140,33 @@ class AuthService {
     defaultValue: 'http://localhost:8000',
   );
 
+  /// API route namespace. The development server uses `/api`; the deployed
+  /// Wellness360 API is versioned under `/api/v1`.
+  static const String apiPathPrefix = String.fromEnvironment(
+    'API_PATH_PREFIX',
+    defaultValue: '/api',
+  );
+
+  /// Builds an API URL while allowing the server route namespace to vary by
+  /// build. Existing callers may continue to pass their legacy `/api/...`
+  /// paths, so the default Medifit behavior stays unchanged.
+  static String apiUrl(String path) {
+    final base = apiBaseUrl.endsWith('/')
+        ? apiBaseUrl.substring(0, apiBaseUrl.length - 1)
+        : apiBaseUrl;
+    final prefix = apiPathPrefix.startsWith('/')
+        ? apiPathPrefix
+        : '/$apiPathPrefix';
+    final normalizedPath = path.startsWith('/') ? path : '/$path';
+    const legacyPrefix = '/api';
+
+    if (normalizedPath == legacyPrefix ||
+        normalizedPath.startsWith('$legacyPrefix/')) {
+      return '$base$prefix${normalizedPath.substring(legacyPrefix.length)}';
+    }
+    return '$base$normalizedPath';
+  }
+
   // Signup API
   Future<Map<String, dynamic>> signUpWithEmail(
     String name,
@@ -148,7 +175,7 @@ class AuthService {
   ) async {
     try {
       final response = await http.post(
-        Uri.parse('$apiBaseUrl/api/auth/signup'),
+        Uri.parse(apiUrl('/api/auth/signup')),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'email': email,
@@ -183,7 +210,7 @@ class AuthService {
   ) async {
     try {
       final response = await http.post(
-        Uri.parse('$apiBaseUrl/api/auth/login'),
+        Uri.parse(apiUrl('/api/auth/login')),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'email': email, 'password': password}),
       );
@@ -210,7 +237,7 @@ class AuthService {
   Future<String> requestLoginCode(String email) async {
     try {
       final response = await http.post(
-        Uri.parse('$apiBaseUrl/api/auth/login-code/request'),
+        Uri.parse(apiUrl('/api/auth/login-code/request')),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'email': email}),
       );
@@ -232,7 +259,7 @@ class AuthService {
   Future<Map<String, dynamic>> loginWithCode(String email, String otp) async {
     try {
       final response = await http.post(
-        Uri.parse('$apiBaseUrl/api/auth/login-code/verify'),
+        Uri.parse(apiUrl('/api/auth/login-code/verify')),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'email': email, 'otp': otp}),
       );
@@ -264,7 +291,7 @@ class AuthService {
       }
 
       final response = await http.post(
-        Uri.parse('$apiBaseUrl/api/auth/refresh'),
+        Uri.parse(apiUrl('/api/auth/refresh')),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'refresh_token': refreshToken}),
       );
@@ -295,7 +322,7 @@ class AuthService {
   Future<String> forgotPassword(String email) async {
     try {
       final response = await http.post(
-        Uri.parse('$apiBaseUrl/api/auth/forgot-password'),
+        Uri.parse(apiUrl('/api/auth/forgot-password')),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'email': email}),
       );
@@ -317,7 +344,7 @@ class AuthService {
   Future<String> verifyOtp(String email, String otp) async {
     try {
       final response = await http.post(
-        Uri.parse('$apiBaseUrl/api/auth/verify-otp'),
+        Uri.parse(apiUrl('/api/auth/verify-otp')),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'email': email, 'otp': otp}),
       );
@@ -343,7 +370,7 @@ class AuthService {
   Future<String> resetPassword(String resetToken, String newPassword) async {
     try {
       final response = await http.post(
-        Uri.parse('$apiBaseUrl/api/auth/reset-password'),
+        Uri.parse(apiUrl('/api/auth/reset-password')),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'reset_token': resetToken,
@@ -372,7 +399,7 @@ class AuthService {
   }) async {
     try {
       final response = await http.post(
-        Uri.parse('$apiBaseUrl/api/auth/social-login'),
+        Uri.parse(apiUrl('/api/auth/social-login')),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'provider': provider.toLowerCase(),
@@ -410,7 +437,7 @@ class AuthService {
   Future<Map<String, dynamic>> _authedGet(String path) async {
     final token = await getAccessToken();
     final response = await http.get(
-      Uri.parse('$apiBaseUrl$path'),
+      Uri.parse(apiUrl(path)),
       headers: {if (token != null) 'Authorization': 'Bearer $token'},
     );
     if (response.statusCode != 200) {
@@ -425,7 +452,7 @@ class AuthService {
   ) async {
     final token = await getAccessToken();
     final response = await http.post(
-      Uri.parse('$apiBaseUrl$path'),
+      Uri.parse(apiUrl(path)),
       headers: {
         'Content-Type': 'application/json',
         if (token != null) 'Authorization': 'Bearer $token',

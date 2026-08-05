@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../app_brand.dart';
 import 'fade_slide_transition.dart';
 
 class ConsentStep extends StatelessWidget {
@@ -18,24 +19,24 @@ class ConsentStep extends StatelessWidget {
     required this.onNext,
   });
 
-  static const List<Map<String, String>> _clauses = [
+  List<Map<String, String>> get _clauses => [
     {
       'key': 'terms',
       'title': 'Terms of Service',
       'body':
-          'I agree to Medifit\'s terms of service and program participation rules.',
+          'I agree to ${AppBrand.name}\'s terms of service and program participation rules.',
     },
     {
       'key': 'healthData',
       'title': 'Health Data Collection',
       'body':
-          'I consent to Medifit collecting my wearable/health metrics (steps, sleep, heart rate) to power my wellness dashboard.',
+          'I consent to ${AppBrand.name} collecting my wearable/health metrics (steps, sleep, heart rate) to power my wellness dashboard.',
     },
     {
       'key': 'medicalShare',
       'title': 'Medical Data Sharing',
       'body':
-          'I consent to sharing relevant medical assessment answers with Medifit\'s clinical staff for clearance review, where applicable.',
+          'I consent to sharing relevant medical assessment answers with ${AppBrand.name}\'s clinical staff for clearance review, where applicable.',
     },
     {
       'key': 'employerAggregate',
@@ -86,7 +87,7 @@ class ConsentStep extends StatelessWidget {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          "All four consents below are required to activate your Medifit membership.",
+                          'All four consents below are required to activate your ${AppBrand.name} membership.',
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             color: isDark ? Colors.grey[400] : Colors.grey[600],
