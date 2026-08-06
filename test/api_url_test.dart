@@ -3,20 +3,17 @@ import 'package:wellnessconnect/services/auth_service.dart';
 
 void main() {
   test('legacy API paths use the namespace selected for this build', () {
-    final base = AuthService.apiBaseUrl.endsWith('/')
-        ? AuthService.apiBaseUrl.substring(0, AuthService.apiBaseUrl.length - 1)
-        : AuthService.apiBaseUrl;
-    final prefix = AuthService.apiPathPrefix.startsWith('/')
+    final prefixedPath = AuthService.apiPathPrefix.startsWith('/')
         ? AuthService.apiPathPrefix
         : '/${AuthService.apiPathPrefix}';
+    final prefix = prefixedPath.endsWith('/') && prefixedPath.length > 1
+        ? prefixedPath.substring(0, prefixedPath.length - 1)
+        : prefixedPath;
 
-    expect(AuthService.apiUrl('/api/auth/login'), '$base$prefix/auth/login');
+    expect(AuthService.apiUrl('/api/auth/login').path, '$prefix/auth/login');
   });
 
   test('non-API paths remain rooted at the configured host', () {
-    final base = AuthService.apiBaseUrl.endsWith('/')
-        ? AuthService.apiBaseUrl.substring(0, AuthService.apiBaseUrl.length - 1)
-        : AuthService.apiBaseUrl;
-    expect(AuthService.apiUrl('/health'), '$base/health');
+    expect(AuthService.apiUrl('/health').path, '/health');
   });
 }

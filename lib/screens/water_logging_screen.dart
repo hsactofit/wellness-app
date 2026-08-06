@@ -141,7 +141,9 @@ class _WaterLoggingScreenState extends State<WaterLoggingScreen>
     try {
       final email = await ApiService.instance.getUserEmail();
       final period = _selectedGraphPeriod;
-      final url = '${AuthService.apiUrl('/api/water/graph')}?period=$period';
+      final url = AuthService.apiUrl(
+        '/api/water/graph',
+      ).replace(queryParameters: {'period': period}).toString();
 
       _logApiRequest(name: 'WATER GRAPH', method: 'GET', url: url);
 
@@ -203,7 +205,7 @@ class _WaterLoggingScreenState extends State<WaterLoggingScreen>
 
     try {
       final email = await ApiService.instance.getUserEmail();
-      final url = AuthService.apiUrl('/api/water/logs');
+      final url = AuthService.apiUrl('/api/water/logs').toString();
 
       _logApiRequest(name: 'WATER LOGS', method: 'GET', url: url);
 
@@ -321,7 +323,7 @@ class _WaterLoggingScreenState extends State<WaterLoggingScreen>
         'amount_ml': amount,
         'timestamp': DateTime.now().toUtc().toIso8601String(),
       };
-      final url = AuthService.apiUrl('/api/water/log');
+      final url = AuthService.apiUrl('/api/water/log').toString();
 
       _logApiRequest(
         name: 'WATER ADD LOG',
@@ -375,7 +377,7 @@ class _WaterLoggingScreenState extends State<WaterLoggingScreen>
 
     try {
       // DELETE /api/water/log/{log_id}
-      final url = AuthService.apiUrl('/api/water/log/${log.id}');
+      final url = AuthService.apiUrl('/api/water/log/${log.id}').toString();
 
       _logApiRequest(name: 'WATER DELETE LOG', method: 'DELETE', url: url);
 
@@ -494,7 +496,7 @@ class _WaterLoggingScreenState extends State<WaterLoggingScreen>
         'amount_ml': newAmount,
         'timestamp': log.timestamp.toUtc().toIso8601String(),
       };
-      final url = AuthService.apiUrl('/api/water/log/${log.id}');
+      final url = AuthService.apiUrl('/api/water/log/${log.id}').toString();
 
       _logApiRequest(
         name: 'WATER UPDATE LOG',

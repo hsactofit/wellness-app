@@ -35,7 +35,8 @@ class Challenge {
     required this.targetValue,
   });
 
-  bool get hasAutoTracking => metricType != null && targetValue != null && targetValue! > 0;
+  bool get hasAutoTracking =>
+      metricType != null && targetValue != null && targetValue! > 0;
 
   Color get color {
     switch (metricType) {
@@ -154,7 +155,7 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
     try {
       final token = await AuthService.instance.getAccessToken();
       final response = await http.get(
-        Uri.parse('${AuthService.apiBaseUrl}/api/rewards/balance'),
+        AuthService.apiUrl('/api/rewards/balance'),
         headers: {if (token != null) 'Authorization': 'Bearer $token'},
       );
       if (response.statusCode == 200) {
@@ -185,10 +186,10 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
 
     try {
       final token = await AuthService.instance.getAccessToken();
-      final url = '${AuthService.apiBaseUrl}/api/challenges';
+      final url = AuthService.apiUrl('/api/challenges');
 
       var response = await http.get(
-        Uri.parse(url),
+        url,
         headers: {if (token != null) 'Authorization': 'Bearer $token'},
       );
 
@@ -196,7 +197,7 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
         await AuthService.instance.refreshSessionToken();
         final newToken = await AuthService.instance.getAccessToken();
         response = await http.get(
-          Uri.parse(url),
+          url,
           headers: {if (newToken != null) 'Authorization': 'Bearer $newToken'},
         );
       }
@@ -253,18 +254,23 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
       final todayValue = _todayValueFor(challenge.metricType!);
       if (todayValue == null) continue;
 
-      final computedPct = (todayValue / challenge.targetValue! * 100).clamp(0.0, 100.0);
-      if (challenge.progressPct != null && (challenge.progressPct! - computedPct).abs() < 1.0) {
+      final computedPct = (todayValue / challenge.targetValue! * 100).clamp(
+        0.0,
+        100.0,
+      );
+      if (challenge.progressPct != null &&
+          (challenge.progressPct! - computedPct).abs() < 1.0) {
         continue;
       }
 
       try {
         final token = await AuthService.instance.getAccessToken();
-        final syncUrl =
-            '${AuthService.apiBaseUrl}/api/challenges/${challenge.id}/progress';
+        final syncUrl = AuthService.apiUrl(
+          '/api/challenges/${challenge.id}/progress',
+        );
 
         final response = await http.post(
-          Uri.parse(syncUrl),
+          syncUrl,
           headers: {
             'Content-Type': 'application/json',
             if (token != null) 'Authorization': 'Bearer $token',
@@ -293,11 +299,10 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
     });
     try {
       final token = await AuthService.instance.getAccessToken();
-      final url =
-          '${AuthService.apiBaseUrl}/api/challenges/${challenge.id}/join';
+      final url = AuthService.apiUrl('/api/challenges/${challenge.id}/join');
 
       var response = await http.post(
-        Uri.parse(url),
+        url,
         headers: {if (token != null) 'Authorization': 'Bearer $token'},
       );
 
@@ -305,7 +310,7 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
         await AuthService.instance.refreshSessionToken();
         final newToken = await AuthService.instance.getAccessToken();
         response = await http.post(
-          Uri.parse(url),
+          url,
           headers: {if (newToken != null) 'Authorization': 'Bearer $newToken'},
         );
       }
@@ -327,7 +332,9 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(detail ?? "Failed to join challenge: ${response.statusCode}"),
+            content: Text(
+              detail ?? "Failed to join challenge: ${response.statusCode}",
+            ),
             backgroundColor: Colors.redAccent,
           ),
         );
@@ -1010,7 +1017,9 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
               ),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: canJoin ? color : Colors.grey.withValues(alpha: 0.3),
+                  backgroundColor: canJoin
+                      ? color
+                      : Colors.grey.withValues(alpha: 0.3),
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
@@ -1026,7 +1035,10 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
                 onPressed: canJoin ? () => _joinChallenge(challenge) : null,
                 child: Text(
                   canJoin ? "Join Challenge" : challenge.timeLeft,
-                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ],
