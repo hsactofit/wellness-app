@@ -32,6 +32,7 @@ class ProfileStep extends StatelessWidget {
   });
 
   void _showGenderPicker(BuildContext context) {
+    FocusScope.of(context).unfocus();
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -116,7 +117,10 @@ class ProfileStep extends StatelessWidget {
         children: options.map((opt) {
           final isSelected = currentUnit.toLowerCase() == opt.toLowerCase();
           return GestureDetector(
-            onTap: () => onChanged(opt.toLowerCase()),
+            onTap: () {
+              FocusManager.instance.primaryFocus?.unfocus();
+              onChanged(opt.toLowerCase());
+            },
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 150),
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -224,6 +228,7 @@ class ProfileStep extends StatelessWidget {
     return Center(
       child: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
         padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
         child: Form(
           key: formKey,
@@ -274,6 +279,9 @@ class ProfileStep extends StatelessWidget {
                         fontSize: 15,
                       ),
                       textCapitalization: TextCapitalization.words,
+                      textInputAction: TextInputAction.next,
+                      onFieldSubmitted: (_) =>
+                          FocusScope.of(context).nextFocus(),
                       decoration: _inputDecoration(
                         hintText: "John Doe",
                         prefixIcon: Icons.person_outline_rounded,
@@ -316,6 +324,7 @@ class ProfileStep extends StatelessWidget {
                           ? "Please select your date of birth"
                           : null,
                       onTap: () async {
+                        FocusScope.of(context).unfocus();
                         final selectedDate = await showDatePicker(
                           context: context,
                           initialDate: DateTime(1998, 1, 1),
@@ -409,7 +418,14 @@ class ProfileStep extends StatelessWidget {
                     ),
                     TextFormField(
                       controller: heightController,
-                      keyboardType: TextInputType.number,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      textInputAction: TextInputAction.next,
+                      onFieldSubmitted: (_) =>
+                          FocusScope.of(context).nextFocus(),
+                      onTapOutside: (_) =>
+                          FocusManager.instance.primaryFocus?.unfocus(),
                       style: TextStyle(
                         color: isDark ? Colors.white : const Color(0xFF0F172A),
                         fontWeight: FontWeight.w500,
@@ -452,7 +468,14 @@ class ProfileStep extends StatelessWidget {
                     ),
                     TextFormField(
                       controller: weightController,
-                      keyboardType: TextInputType.number,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      textInputAction: TextInputAction.done,
+                      onFieldSubmitted: (_) =>
+                          FocusManager.instance.primaryFocus?.unfocus(),
+                      onTapOutside: (_) =>
+                          FocusManager.instance.primaryFocus?.unfocus(),
                       style: TextStyle(
                         color: isDark ? Colors.white : const Color(0xFF0F172A),
                         fontWeight: FontWeight.w500,
@@ -496,6 +519,7 @@ class ProfileStep extends StatelessWidget {
                     shadowColor: const Color(0xFF006D5B).withValues(alpha: 0.3),
                   ),
                   onPressed: () {
+                    FocusManager.instance.primaryFocus?.unfocus();
                     if (formKey.currentState!.validate()) {
                       onNext();
                     }

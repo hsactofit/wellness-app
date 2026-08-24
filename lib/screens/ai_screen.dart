@@ -86,7 +86,7 @@ class _AIScreenState extends State<AIScreen> {
         ..add({
           'isUser': false,
           'text':
-              "Hi! I'm your AI Buddy. ✨ Ask me about sleep, nutrition, hydration, or general fitness tips.",
+              "Hi! I'm your fitness coach. ✨ Ask me about sleep, nutrition, hydration, or general fitness tips.",
           'time': "Just now",
         });
     });
@@ -204,21 +204,42 @@ class _AIScreenState extends State<AIScreen> {
         children: [
           Positioned.fill(
             child: Container(
-              color: isDark ? const Color(0xFF0F0F12) : const Color(0xFFF6F8FC),
+              color: isDark ? const Color(0xFF0B1010) : const Color(0xFFF6F8FC),
             ),
           ),
           Positioned(
-            top: 150,
-            right: -100,
-            width: 300,
-            height: 300,
+            top: -110,
+            right: -70,
+            width: 280,
+            height: 280,
             child: Container(
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    Colors.teal.withValues(alpha: isDark ? 0.12 : 0.08),
-                    Colors.teal.withValues(alpha: 0.0),
+                    const Color(
+                      0xFF27D7A1,
+                    ).withValues(alpha: isDark ? 0.13 : 0.08),
+                    const Color(0xFF27D7A1).withValues(alpha: 0.0),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            top: 250,
+            left: -140,
+            width: 280,
+            height: 280,
+            child: Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    const Color(
+                      0xFFFF8A4C,
+                    ).withValues(alpha: isDark ? 0.07 : 0.05),
+                    const Color(0xFFFF8A4C).withValues(alpha: 0.0),
                   ],
                 ),
               ),
@@ -230,81 +251,106 @@ class _AIScreenState extends State<AIScreen> {
               children: [
                 Padding(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 12,
+                    horizontal: 16,
+                    vertical: 10,
                   ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: Colors.tealAccent.withValues(alpha: 0.3),
-                            width: 1.5,
-                          ),
-                        ),
-                        child: ClipOval(
-                          child: Image.asset(
-                            'assets/ai_buddy.png',
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => const Center(
-                              child: Text("✨", style: TextStyle(fontSize: 20)),
-                            ),
-                          ),
-                        ),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? Colors.white.withValues(alpha: 0.045)
+                          : Colors.white.withValues(alpha: 0.8),
+                      borderRadius: BorderRadius.circular(22),
+                      border: Border.all(
+                        color: isDark
+                            ? Colors.white.withValues(alpha: 0.09)
+                            : Colors.black.withValues(alpha: 0.05),
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              "AI Buddy",
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: textColor,
-                              ),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFFFF9A5B), Color(0xFFEE6254)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
                             ),
-                            const Row(
-                              children: [
-                                SizedBox(
-                                  width: 8,
-                                  height: 8,
-                                  child: DecoratedBox(
-                                    decoration: BoxDecoration(
-                                      color: Colors.greenAccent,
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(
+                                  0xFFFF7A53,
+                                ).withValues(alpha: 0.28),
+                                blurRadius: 12,
+                                offset: const Offset(0, 5),
+                              ),
+                            ],
+                          ),
+                          child: const Icon(
+                            Icons.fitness_center_rounded,
+                            color: Colors.white,
+                            size: 23,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                "Your Fitness Coach",
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: -0.25,
+                                  color: textColor,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Row(
+                                children: [
+                                  Container(
+                                    width: 7,
+                                    height: 7,
+                                    decoration: const BoxDecoration(
+                                      color: Color(0xFF2EE5A3),
                                       shape: BoxShape.circle,
                                     ),
                                   ),
-                                ),
-                                SizedBox(width: 6),
-                                Text(
-                                  "Online & Ready",
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: Colors.grey,
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    "Ready for your next rep",
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                      color: isDark
+                                          ? Colors.white54
+                                          : Colors.black54,
+                                    ),
                                   ),
-                                ),
-                              ],
-                            ),
-                          ],
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                      IconButton(
-                        tooltip: "New chat",
-                        onPressed: _isSending ? null : _startNewConversation,
-                        icon: Icon(
-                          Icons.edit_square,
-                          color: isDark ? Colors.white70 : Colors.black54,
-                          size: 22,
+                        IconButton(
+                          tooltip: "Start a new conversation",
+                          onPressed: _isSending ? null : _startNewConversation,
+                          icon: Icon(
+                            Icons.restart_alt_rounded,
+                            color: isDark ? Colors.white70 : Colors.black54,
+                            size: 22,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
-                const Divider(height: 1, color: Colors.white10),
                 Expanded(
                   child: _isLoadingHistory
                       ? const Center(
@@ -347,17 +393,27 @@ class _AIScreenState extends State<AIScreen> {
                             elevation: 0,
                             pressElevation: 0,
                             backgroundColor: isDark
-                                ? Colors.white.withValues(alpha: 0.04)
-                                : Colors.black.withValues(alpha: 0.03),
+                                ? Colors.white.withValues(alpha: 0.055)
+                                : Colors.white.withValues(alpha: 0.9),
                             side: BorderSide(
-                              color: isDark ? Colors.white10 : Colors.black12,
+                              color: isDark
+                                  ? Colors.white.withValues(alpha: 0.1)
+                                  : Colors.black.withValues(alpha: 0.08),
+                            ),
+                            avatar: Icon(
+                              [
+                                Icons.nightlight_round,
+                                Icons.restaurant_menu_rounded,
+                                Icons.local_fire_department_rounded,
+                                Icons.water_drop_rounded,
+                              ][index],
+                              size: 14,
+                              color: const Color(0xFFFF8A4C),
                             ),
                             label: Text(
                               text,
                               style: TextStyle(
-                                color: isDark
-                                    ? Colors.tealAccent
-                                    : Colors.teal[800],
+                                color: isDark ? Colors.white70 : Colors.black87,
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -391,7 +447,8 @@ class _AIScreenState extends State<AIScreen> {
                             style: TextStyle(color: textColor, fontSize: 14),
                             onSubmitted: (v) => _sendMessage(v),
                             decoration: InputDecoration(
-                              hintText: "Ask about sleep, nutrition, fitness…",
+                              hintText:
+                                  "Ask your coach about your next workout…",
                               hintStyle: TextStyle(
                                 color: isDark ? Colors.white30 : Colors.black38,
                                 fontSize: 13,
@@ -406,7 +463,7 @@ class _AIScreenState extends State<AIScreen> {
                         decoration: const BoxDecoration(
                           shape: BoxShape.circle,
                           gradient: LinearGradient(
-                            colors: [Colors.tealAccent, Colors.blueAccent],
+                            colors: [Color(0xFFFF8A4C), Color(0xFFEF5D51)],
                           ),
                         ),
                         child: IconButton(
@@ -456,10 +513,17 @@ class _AIScreenState extends State<AIScreen> {
         ),
         decoration: BoxDecoration(
           color: isUser
-              ? Colors.teal.withValues(alpha: 0.2)
+              ? null
               : (isDark
-                    ? Colors.white.withValues(alpha: 0.04)
-                    : Colors.black.withValues(alpha: 0.03)),
+                    ? Colors.white.withValues(alpha: 0.045)
+                    : Colors.white.withValues(alpha: 0.82)),
+          gradient: isUser
+              ? const LinearGradient(
+                  colors: [Color(0xFFFF8A4C), Color(0xFFEF5D51)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                )
+              : null,
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(16),
             topRight: const Radius.circular(16),
@@ -468,7 +532,7 @@ class _AIScreenState extends State<AIScreen> {
           ),
           border: Border.all(
             color: isUser
-                ? Colors.teal.withValues(alpha: 0.4)
+                ? const Color(0xFFFFB27D).withValues(alpha: 0.65)
                 : (isDark ? Colors.white10 : Colors.black12),
           ),
         ),
@@ -498,7 +562,9 @@ class _AIScreenState extends State<AIScreen> {
             : Text(
                 text,
                 style: TextStyle(
-                  color: isDark ? Colors.white : Colors.black87,
+                  color: isUser
+                      ? Colors.white
+                      : (isDark ? Colors.white : Colors.black87),
                   fontSize: 13,
                   height: 1.4,
                 ),
