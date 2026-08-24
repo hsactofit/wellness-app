@@ -423,6 +423,7 @@ class AuthService {
     String provider,
     String token, {
     String? name,
+    bool isLogin = false,
   }) async {
     try {
       final response = await http.post(
@@ -434,6 +435,7 @@ class AuthService {
           // SocialLoginIn) — the old prototype backend called it `token`.
           'id_token': token,
           'name': name,
+          'mode': isLogin ? 'login' : 'signup',
         }),
       );
 
@@ -461,6 +463,71 @@ class AuthService {
       }
       rethrow;
     }
+  }
+
+  Future<List<Map<String, dynamic>>> listSsoOrganizations() async {
+    final response = await http.get(apiUrl('/api/auth/sso/organizations'));
+    final data = _decodeResponseBody(response.body);
+    if (response.statusCode != 200) {
+      throw AuthException(_extractErrorMessage(data));
+    }
+    if (data is List) {
+      return data
+          .whereType<Map>()
+          .map((e) => Map<String, dynamic>.from(e))
+          .toList();
+    }
+    throw AuthException('Could not load organizations');
+  }
+
+  Future<Map<String, dynamic>> startSso({
+    required String email,
+    required String password,
+    required String corporateId,
+    required bool isLogin,
+  }) async {
+    final response = await http.post(
+      apiUrl('/api/auth/sso/start'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'email': email,
+        'password': password,
+        'corporate_id': corporateId,
+        'mode': isLogin ? 'login' : 'signup',
+      }),
+    );
+    final data = _decodeResponseBody(response.body);
+    if (response.statusCode != 200) {
+      throw AuthException(_extractErrorMessage(data));
+    }
+    return Map<String, dynamic>.from(data as Map);
+  }
+
+  Future<Map<String, dynamic>> verifySso({
+    required String email,
+    required String otp,
+    required String corporateId,
+  }) async {
+    final response = await http.post(
+      apiUrl('/api/auth/sso/verify'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'email': email,
+        'otp': otp,
+        'corporate_id': corporateId,
+      }),
+    );
+    final data = _decodeResponseBody(response.body);
+    if (response.statusCode != 200) {
+      throw AuthException(_extractErrorMessage(data));
+    }
+    final map = Map<String, dynamic>.from(data as Map);
+    final accessToken = map['access_token'];
+    final refreshToken = map['refresh_token'];
+    if (accessToken != null && refreshToken != null) {
+      await _saveTokens(accessToken as String, refreshToken as String);
+    }
+    return map;
   }
 
   // ---- Enrolment API (wellness-server /enrolments/*) ----
@@ -587,6 +654,9 @@ class AuthService {
     await prefs.remove('onboarding_data');
     await prefs.remove('healthSetupCompleted');
     await prefs.remove('healthConnectRequested');
+    await prefs.remove('sso_corporate_id');
+    await prefs.remove('sso_health_provider_linked');
+    await prefs.remove('user_provider');
     await HealthService.instance.resetLocalState();
   }
 

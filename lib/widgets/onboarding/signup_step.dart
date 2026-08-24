@@ -10,8 +10,9 @@ class SignupStep extends StatefulWidget {
   final TextEditingController nameController;
   final TextEditingController emailController;
   final TextEditingController passwordController;
-  final void Function(String provider) onSocialAuth;
+  final void Function(String provider, bool isLogin) onSocialAuth;
   final void Function(bool isLogin) onEmailSubmit;
+  final void Function(bool isLogin) onSsoPressed;
   final Future<void> Function(Map<String, dynamic> res, String email)
   onLoginWithCode;
 
@@ -23,6 +24,7 @@ class SignupStep extends StatefulWidget {
     required this.passwordController,
     required this.onSocialAuth,
     required this.onEmailSubmit,
+    required this.onSsoPressed,
     required this.onLoginWithCode,
   });
 
@@ -528,7 +530,7 @@ class _SignupStepState extends State<SignupStep> {
                                     ),
                                   ),
                                   onPressed: () =>
-                                      widget.onSocialAuth('Google'),
+                                      widget.onSocialAuth('Google', _isLogin),
                                   child: Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
@@ -571,7 +573,8 @@ class _SignupStepState extends State<SignupStep> {
                                       vertical: 14,
                                     ),
                                   ),
-                                  onPressed: () => widget.onSocialAuth('Apple'),
+                                  onPressed: () =>
+                                      widget.onSocialAuth('Apple', _isLogin),
                                   child: Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
@@ -596,6 +599,40 @@ class _SignupStepState extends State<SignupStep> {
                                 ),
                               ),
                             ],
+                          ),
+                          const SizedBox(height: 12),
+                          SizedBox(
+                            width: double.infinity,
+                            child: OutlinedButton.icon(
+                              style: OutlinedButton.styleFrom(
+                                backgroundColor: isDark
+                                    ? Colors.white.withValues(alpha: 0.03)
+                                    : Colors.white,
+                                side: BorderSide(
+                                  color: isDark
+                                      ? Colors.white12
+                                      : Colors.grey[300]!,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 14,
+                                ),
+                              ),
+                              onPressed: () => widget.onSsoPressed(_isLogin),
+                              icon: const Icon(Icons.domain_outlined, size: 18),
+                              label: Text(
+                                _isLogin
+                                    ? 'Login with SSO'
+                                    : 'Sign up with SSO',
+                                style: TextStyle(
+                                  color: isDark ? Colors.white : Colors.black87,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
                           ),
                         ],
                       ),

@@ -6,6 +6,7 @@ import '../services/auth_service.dart';
 import '../widgets/onboarding/signup_step.dart';
 import 'main_shell.dart';
 import 'onboarding_screen.dart';
+import 'sso_auth_screen.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -184,8 +185,24 @@ class _AuthScreenState extends State<AuthScreen>
     await _completeLogin(res, email, provider: 'email');
   }
 
+  Future<void> _openSso(bool isLogin) async {
+    final result = await Navigator.push<Map<String, dynamic>>(
+      context,
+      MaterialPageRoute(builder: (context) => SsoAuthScreen(isLogin: isLogin)),
+    );
+    if (result == null || !mounted) return;
+    final res = result['response'] as Map<String, dynamic>;
+    final corporateId = result['corporate_id'] as String?;
+    final email = result['email'] as String? ?? '';
+    if (corporateId != null) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('sso_corporate_id', corporateId);
+    }
+    await _completeLogin(res, email, provider: 'sso');
+  }
+
   // Handle Social Login (Google & Apple)
-  Future<void> _selectSocialAuth(String provider) async {
+  Future<void> _selectSocialAuth(String provider, bool isLogin) async {
     setState(() => _isSigningIn = true);
     try {
       final user = provider == 'Google'
@@ -200,6 +217,7 @@ class _AuthScreenState extends State<AuthScreen>
           provider,
           idToken,
           name: user.displayName,
+          isLogin: isLogin,
         );
         await _completeLogin(
           res,
@@ -217,14 +235,15 @@ class _AuthScreenState extends State<AuthScreen>
         );
       }
     } catch (e) {
+      try {
+        await AuthService.instance.signOut();
+      } catch (_) {}
       if (!mounted) return;
+      final message = e is AuthException
+          ? e.message
+          : "Failed to authenticate with $provider: ${e.toString().replaceAll('Exception: ', '')}";
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            "Failed to authenticate with $provider: ${e.toString().replaceAll('Exception: ', '')}",
-          ),
-          backgroundColor: Colors.redAccent,
-        ),
+        SnackBar(content: Text(message), backgroundColor: Colors.redAccent),
       );
     } finally {
       if (mounted) {
@@ -310,6 +329,7 @@ class _AuthScreenState extends State<AuthScreen>
               passwordController: _passwordController,
               onSocialAuth: _selectSocialAuth,
               onEmailSubmit: _handleEmailAuth,
+              onSsoPressed: _openSso,
               onLoginWithCode: _handleCodeLoginSuccess,
             ),
           ),

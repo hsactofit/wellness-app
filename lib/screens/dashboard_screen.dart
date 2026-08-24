@@ -639,10 +639,87 @@ class DashboardScreenState extends State<DashboardScreen>
     }
   }
 
+  Future<bool> _ensureSsoHealthProviderLinked() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (prefs.getString('user_provider') != 'sso') return true;
+    if (prefs.getBool('sso_health_provider_linked') == true) return true;
+
+    if (!mounted) return false;
+    final provider = await showModalBottomSheet<String>(
+      context: context,
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Text(
+                  'Link Apple or Google first',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Work-email SSO accounts need Apple or Google signed in before Health data can be read from Apple Health or Health Connect.',
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(context, 'Google'),
+                  child: const Text('Continue with Google'),
+                ),
+                const SizedBox(height: 8),
+                OutlinedButton(
+                  onPressed: () => Navigator.pop(context, 'Apple'),
+                  child: const Text('Continue with Apple'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Not now'),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+    if (provider == null) return false;
+
+    try {
+      final user = provider == 'Google'
+          ? await AuthService.instance.signInWithGoogle()
+          : await AuthService.instance.signInWithApple();
+      if (user == null) return false;
+      final idToken = await user.getIdToken();
+      if (idToken == null) return false;
+      await AuthService.instance.socialLoginBackend(
+        provider,
+        idToken,
+        name: user.displayName,
+        isLogin: false,
+      );
+      await prefs.setBool('sso_health_provider_linked', true);
+      return true;
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e is AuthException ? e.message : e.toString()),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+      return false;
+    }
+  }
+
   Future<void> _connectHealthServices({
     bool showSnackbarOnFailure = true,
   }) async {
     if (_isRequestingHealthPermissions) return;
+
+    final linked = await _ensureSsoHealthProviderLinked();
+    if (!linked) return;
 
     if (Platform.isAndroid &&
         _sdkStatus != HealthConnectSdkStatus.sdkAvailable) {

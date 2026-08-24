@@ -126,6 +126,13 @@ class _OnboardingScreenState extends State<OnboardingScreen>
             .toList();
         _loadingCompanyData = false;
       });
+      final prefs = await SharedPreferences.getInstance();
+      final ssoCorporateId = prefs.getString('sso_corporate_id');
+      if (ssoCorporateId != null &&
+          _corporates.any((c) => c.id == ssoCorporateId) &&
+          mounted) {
+        setState(() => _selectedCorporateId = ssoCorporateId);
+      }
     } catch (e) {
       if (!mounted) return;
       setState(() {
