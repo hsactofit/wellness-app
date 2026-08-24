@@ -46,3 +46,7 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Local distribution artifacts and machine-specific signing helpers
+/release/
+/tool/build_branded_android_apk.zsh
