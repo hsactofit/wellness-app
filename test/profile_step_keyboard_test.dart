@@ -65,4 +65,37 @@ void main() {
       ScrollViewKeyboardDismissBehavior.onDrag,
     );
   });
+
+  testWidgets('profile step offers a back-to-sign-in action', (
+    WidgetTester tester,
+  ) async {
+    var wentBack = false;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ProfileStep(
+            formKey: GlobalKey<FormState>(),
+            fullNameController: TextEditingController(),
+            dobController: TextEditingController(),
+            heightController: TextEditingController(),
+            weightController: TextEditingController(),
+            gender: 'Female',
+            onGenderChanged: (_) {},
+            heightUnit: 'cm',
+            onHeightUnitChanged: (_) {},
+            weightUnit: 'kg',
+            onWeightUnitChanged: (_) {},
+            onNext: () {},
+            onBack: () => wentBack = true,
+          ),
+        ),
+      ),
+    );
+    await tester.pump(const Duration(seconds: 2));
+
+    final backButton = find.text('Back to sign in');
+    await tester.ensureVisible(backButton);
+    await tester.tap(backButton);
+    expect(wentBack, isTrue);
+  });
 }

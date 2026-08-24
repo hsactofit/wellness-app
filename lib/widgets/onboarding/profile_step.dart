@@ -14,6 +14,7 @@ class ProfileStep extends StatelessWidget {
   final String weightUnit;
   final ValueChanged<String> onWeightUnitChanged;
   final VoidCallback onNext;
+  final VoidCallback? onBack;
 
   const ProfileStep({
     super.key,
@@ -29,6 +30,7 @@ class ProfileStep extends StatelessWidget {
     required this.weightUnit,
     required this.onWeightUnitChanged,
     required this.onNext,
+    this.onBack,
   });
 
   void _showGenderPicker(BuildContext context) {
@@ -545,6 +547,26 @@ class ProfileStep extends StatelessWidget {
                   ),
                 ),
               ),
+
+              if (onBack != null) ...[
+                const SizedBox(height: 12),
+                FadeSlideTransition(
+                  delay: const Duration(milliseconds: 380),
+                  child: Center(
+                    child: TextButton(
+                      onPressed: onBack,
+                      child: const Text(
+                        "Back to sign in",
+                        style: TextStyle(
+                          color: Color(0xFF64748B),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
 
               const SizedBox(height: 24),
 

@@ -7,6 +7,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:http/http.dart' as http;
+import '../config/api_config.dart';
 import 'health_service.dart';
 
 class AuthService {
@@ -50,10 +51,19 @@ class AuthService {
   /// Apple Sign-In & Firebase Auth
   Future<User?> signInWithApple() async {
     try {
+      if (defaultTargetPlatform == TargetPlatform.iOS) {
+        // Firebase drives the native iOS sheet and nonce. This is the
+        // supported iOS path; the plugin call below is for Android.
+        final appleProvider = AppleAuthProvider()
+          ..addScope('email')
+          ..addScope('name');
+        final userCredential = await _auth.signInWithProvider(appleProvider);
+        return userCredential.user;
+      }
+
       final rawNonce = _generateNonce();
       final sha256Nonce = _sha256ofString(rawNonce);
 
-      // Request Apple ID Authorization
       final appleIdCredential = await SignInWithApple.getAppleIDCredential(
         scopes: [
           AppleIDAuthorizationScopes.email,
@@ -62,21 +72,18 @@ class AuthService {
         nonce: sha256Nonce,
       );
 
-      // Create Firebase credential
       final OAuthProvider oAuthProvider = OAuthProvider('apple.com');
       final AuthCredential credential = oAuthProvider.credential(
         idToken: appleIdCredential.identityToken,
         rawNonce: rawNonce,
       );
 
-      // Authenticate with Firebase
       final UserCredential userCredential = await _auth.signInWithCredential(
         credential,
       );
       final User? user = userCredential.user;
 
       // Apple only returns name metadata on the first signup.
-      // If it exists, let's update the Firebase user profile display name.
       if (user != null) {
         String? displayName;
         if (appleIdCredential.givenName != null) {
@@ -95,7 +102,24 @@ class AuthService {
       return _auth.currentUser;
     } on SignInWithAppleAuthorizationException catch (e) {
       if (e.code == AuthorizationErrorCode.canceled) {
-        // User cancelled the sign-in flow
+        return null;
+      }
+      if (e.code == AuthorizationErrorCode.unknown) {
+        throw AuthException(
+          'Apple Sign In is not available here. On the simulator, open Settings and sign in with an Apple ID, enable Sign in with Apple for this App ID in Apple Developer, then do a full rebuild.',
+        );
+      }
+      rethrow;
+    } on FirebaseAuthException catch (e) {
+      final raw = '${e.code} ${e.message ?? ''}';
+      if (raw.contains('1000') ||
+          raw.contains('unknown') ||
+          e.code == 'unknown') {
+        throw AuthException(
+          'Apple Sign In is not available here. On the simulator, open Settings and sign in with an Apple ID, enable Sign in with Apple for this App ID in Apple Developer, then do a full rebuild.',
+        );
+      }
+      if (e.code == 'canceled' || e.code == 'web-context-canceled') {
         return null;
       }
       rethrow;
@@ -133,12 +157,10 @@ class AuthService {
   }
 
   // Base API URL — wellness-server (see medifit-kb/MEDIFIT_KB.md).
-  // Simulator builds use localhost by default. A real device can supply the
-  // Mac's LAN address with --dart-define=API_BASE_URL=http://<ip>:8000.
-  static const String apiBaseUrl = String.fromEnvironment(
-    'API_BASE_URL',
-    defaultValue: 'http://localhost:8000',
-  );
+  // Debug iOS/Android builds use this Mac's LAN address because a physical
+  // phone's localhost is the phone, not the API. Override with
+  // --dart-define=API_BASE_URL=https://...
+  static String get apiBaseUrl => ApiConfig.baseUrl;
 
   /// API route namespace. The development server uses `/api`; the deployed
   /// Wellness360 API is versioned under `/api/v1`.
@@ -429,6 +451,14 @@ class AuthService {
       }
     } catch (e) {
       debugPrint("Social Login API error: $e");
+      final message = e.toString();
+      if (message.contains('Connection refused') ||
+          message.contains('SocketException') ||
+          message.contains('Failed host lookup')) {
+        throw AuthException(
+          'Cannot reach the API at $apiBaseUrl. On a physical phone this must be your Mac Wi-Fi IP, and wellness-server must be running.',
+        );
+      }
       rethrow;
     }
   }

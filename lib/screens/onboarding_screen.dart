@@ -449,18 +449,45 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                     vertical: 16,
                   ),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      // Teal Square logo block from mockup
-                      Container(
-                        width: 32,
-                        height: 32,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF006D5B),
-                          borderRadius: BorderRadius.circular(8),
+                      if (_currentPage < 5)
+                        IconButton(
+                          tooltip: _currentPage == 0
+                              ? 'Back to sign in'
+                              : 'Previous step',
+                          onPressed: _prevPage,
+                          visualDensity: VisualDensity.compact,
+                          icon: Icon(
+                            Icons.arrow_back_ios_new_rounded,
+                            size: 18,
+                            color: isDark
+                                ? Colors.white
+                                : const Color(0xFF0F172A),
+                          ),
+                        ),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.asset(
+                          AppBrand.iconAssetPath,
+                          width: 32,
+                          height: 32,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Container(
+                            width: 32,
+                            height: 32,
+                            alignment: Alignment.center,
+                            color: const Color(0xFF006D5B),
+                            child: Text(
+                              AppBrand.name[0],
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
                         ),
                       ),
-                      // Sliding Indicator (only show for the input pages, i.e., page < 3)
+                      const Spacer(),
                       if (_currentPage < 5)
                         Row(
                           mainAxisSize: MainAxisSize.min,
@@ -521,6 +548,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                           setState(() => _weightUnit = val);
                         },
                         onNext: _nextPage,
+                        onBack: _prevPage,
                       ),
                       // Step 2: Lifestyle & Goals
                       GoalsStep(

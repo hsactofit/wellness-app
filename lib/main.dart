@@ -4,6 +4,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'app_brand.dart';
+import 'config/google_auth_config.dart';
 import 'screens/splash_screen.dart';
 import 'services/push_service.dart';
 import 'theme/app_theme.dart';
@@ -14,7 +15,9 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
-  await GoogleSignIn.instance.initialize();
+  await GoogleSignIn.instance.initialize(
+    serverClientId: GoogleAuthConfig.webClientId,
+  );
 
   final prefs = await SharedPreferences.getInstance();
   final themeStr = prefs.getString('theme_mode') ?? 'system';

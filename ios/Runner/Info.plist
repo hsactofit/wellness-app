@@ -43,8 +43,15 @@
 	<string>Allow access to health data to sync step counts, vitals, sleep, calories, weight, and blood pressure with your dashboard.</string>
 	<key>NSHealthUpdateUsageDescription</key>
 	<string>Allow access to write health data to log hydration intake details directly.</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Allow local network access so this debug build can reach the Medifit API running on your computer.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Allow location access to help confirm when you have left a Medifit facility and remind you to complete your workout session. Location is also used if you trigger SOS.</string>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

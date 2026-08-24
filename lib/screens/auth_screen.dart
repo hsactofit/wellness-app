@@ -113,13 +113,17 @@ class _AuthScreenState extends State<AuthScreen>
     Map<String, dynamic> res,
     String emailFallback, {
     required String provider,
+    String? nameFallback,
   }) async {
-    final backendUser = res['user'];
-    final bool isCompleted = backendUser['onboarding_completed'] ?? false;
+    final backendUser = res['user'] ?? <String, dynamic>{};
+    final bool isCompleted = backendUser['onboarding_completed'] == true;
 
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('user_email', backendUser['email'] ?? emailFallback);
-    await prefs.setString('user_name', backendUser['name'] ?? '');
+    await prefs.setString(
+      'user_name',
+      backendUser['name'] ?? nameFallback ?? '',
+    );
     await prefs.setString('user_provider', provider);
 
     if (isCompleted) {
@@ -189,7 +193,6 @@ class _AuthScreenState extends State<AuthScreen>
           : await AuthService.instance.signInWithApple();
 
       if (user != null) {
-        // Authenticate with Fast API
         final idToken = await user.getIdToken();
         if (idToken == null) throw Exception("Could not fetch ID token");
 
@@ -198,68 +201,12 @@ class _AuthScreenState extends State<AuthScreen>
           idToken,
           name: user.displayName,
         );
-
-        final backendUser = res['user'];
-        final bool isCompleted = backendUser['onboarding_completed'] ?? false;
-
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString(
-          'user_email',
-          backendUser['email'] ?? user.email ?? '',
+        await _completeLogin(
+          res,
+          user.email ?? '',
+          provider: provider.toLowerCase(),
+          nameFallback: user.displayName,
         );
-        await prefs.setString(
-          'user_name',
-          backendUser['name'] ?? user.displayName ?? '',
-        );
-        await prefs.setString('user_provider', provider.toLowerCase());
-
-        if (isCompleted) {
-          final permissions = backendUser['permissions'] ?? {};
-          final bool healthSyncEnabled =
-              permissions['health_connect_connected'] ?? false;
-          await prefs.setBool('health_sync_enabled', healthSyncEnabled);
-
-          if (backendUser['last_sync_date'] != null) {
-            await prefs.setString(
-              'last_sync_timestamp',
-              backendUser['last_sync_date'],
-            );
-          }
-
-          // Save onboarding completed in SharedPreferences
-          await prefs.setString(
-            'onboarding_data',
-            jsonEncode({
-              'onboarding_completed': true,
-              'completed_at':
-                  backendUser['completed_at'] ??
-                  DateTime.now().toUtc().toIso8601String(),
-              'auth': {
-                'provider': provider.toLowerCase(),
-                'name': backendUser['name'] ?? user.displayName ?? '',
-                'email': backendUser['email'] ?? user.email ?? '',
-              },
-              'profile': backendUser['profile'] ?? {},
-              'goals': backendUser['goals'] ?? [],
-              'permissions': backendUser['permissions'] ?? {},
-            }),
-          );
-          await prefs.setBool('onboarding_completed', true);
-
-          if (!mounted) return;
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const MainShell()),
-          );
-        } else {
-          if (!mounted) return;
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const OnboardingScreen(initialPage: 0),
-            ),
-          );
-        }
       } else {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
