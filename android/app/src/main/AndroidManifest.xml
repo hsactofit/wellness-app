@@ -26,9 +26,9 @@
     <uses-permission android:name="android.permission.health.READ_NUTRITION"/>
 
     <application
-        android:label="Medifit Wellness"
+        android:label="${appLabel}"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="${appIcon}"
         android:enableOnBackInvokedCallback="true">
         <activity
             android:name=".MainActivity"

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../app_brand.dart';
 import '../../services/auth_service.dart';
 import '../app_brand_logo.dart';
 import '../glass_card.dart';
@@ -660,7 +661,7 @@ class _SignupStepState extends State<SignupStep> {
                       Text(
                         _isLogin
                             ? "SECURE, HIPAA COMPLIANT PORTAL"
-                            : "2026 Medifit Wellness. Secure HIPAA compliant registration.",
+                            : "2026 ${AppBrand.wellnessName}. Secure HIPAA compliant registration.",
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.bold,

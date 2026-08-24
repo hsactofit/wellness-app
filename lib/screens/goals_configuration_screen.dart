@@ -63,10 +63,10 @@ class _GoalsConfigurationScreenState extends State<GoalsConfigurationScreen>
 
     try {
       final token = await AuthService.instance.getAccessToken();
-      final url = '${AuthService.apiBaseUrl}/api/health/goals';
+      final url = AuthService.apiUrl('/api/health/goals');
 
       var response = await http.get(
-        Uri.parse(url),
+        url,
         headers: {if (token != null) 'Authorization': 'Bearer $token'},
       );
 
@@ -74,7 +74,7 @@ class _GoalsConfigurationScreenState extends State<GoalsConfigurationScreen>
         await AuthService.instance.refreshSessionToken();
         final newToken = await AuthService.instance.getAccessToken();
         response = await http.get(
-          Uri.parse(url),
+          url,
           headers: {if (newToken != null) 'Authorization': 'Bearer $newToken'},
         );
       }
@@ -113,10 +113,10 @@ class _GoalsConfigurationScreenState extends State<GoalsConfigurationScreen>
     bool syncFailed = false;
     try {
       final token = await AuthService.instance.getAccessToken();
-      final syncUrl = '${AuthService.apiBaseUrl}/api/health/goals';
+      final syncUrl = AuthService.apiUrl('/api/health/goals');
 
       var response = await http.put(
-        Uri.parse(syncUrl),
+        syncUrl,
         headers: {
           'Content-Type': 'application/json',
           if (token != null) 'Authorization': 'Bearer $token',
@@ -134,7 +134,7 @@ class _GoalsConfigurationScreenState extends State<GoalsConfigurationScreen>
         await AuthService.instance.refreshSessionToken();
         final newToken = await AuthService.instance.getAccessToken();
         response = await http.put(
-          Uri.parse(syncUrl),
+          syncUrl,
           headers: {
             'Content-Type': 'application/json',
             if (newToken != null) 'Authorization': 'Bearer $newToken',

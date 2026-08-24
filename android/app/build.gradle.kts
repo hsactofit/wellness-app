@@ -6,6 +6,19 @@ plugins {
     id("com.google.gms.google-services")
 }
 
+val selectedBrand = providers.gradleProperty("appBrand").orElse("medifit").get()
+val isMednovationsBrand = selectedBrand.equals("mednovations", ignoreCase = true)
+val releaseStoreFilePath = providers.environmentVariable("WELLNESS_ANDROID_KEYSTORE_FILE").orNull
+val releaseStorePassword = providers.environmentVariable("WELLNESS_ANDROID_KEYSTORE_PASSWORD").orNull
+val releaseKeyAlias = providers.environmentVariable("WELLNESS_ANDROID_KEY_ALIAS").orNull
+val releaseKeyPassword = providers.environmentVariable("WELLNESS_ANDROID_KEY_PASSWORD").orNull
+val hasReleaseSigning = listOf(
+    releaseStoreFilePath,
+    releaseStorePassword,
+    releaseKeyAlias,
+    releaseKeyPassword,
+).all { !it.isNullOrBlank() }
+
 android {
     namespace = "com.actofit.arhamsecure"
     compileSdk = flutter.compileSdkVersion
@@ -29,21 +42,23 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        manifestPlaceholders["appLabel"] = if (isMednovationsBrand) {
+            "Mednovations Wellness"
+        } else {
+            "Medifit Wellness"
+        }
+        manifestPlaceholders["appIcon"] = if (isMednovationsBrand) {
+            "@mipmap/ic_launcher_mednovations"
+        } else {
+            "@mipmap/ic_launcher"
+        }
     }
 
-    val releaseKeystoreFile = System.getenv("WELLNESS_ANDROID_KEYSTORE_FILE")
-    val releaseKeystorePassword = System.getenv("WELLNESS_ANDROID_KEYSTORE_PASSWORD")
-    val releaseKeyAlias = System.getenv("WELLNESS_ANDROID_KEY_ALIAS")
-    val releaseKeyPassword = System.getenv("WELLNESS_ANDROID_KEY_PASSWORD")
-
     signingConfigs {
-        if (!releaseKeystoreFile.isNullOrBlank() &&
-            !releaseKeystorePassword.isNullOrBlank() &&
-            !releaseKeyAlias.isNullOrBlank() &&
-            !releaseKeyPassword.isNullOrBlank()) {
-            create("clientRelease") {
-                storeFile = file(releaseKeystoreFile)
-                storePassword = releaseKeystorePassword
+        if (hasReleaseSigning) {
+            create("release") {
+                storeFile = file(releaseStoreFilePath!!)
+                storePassword = releaseStorePassword
                 keyAlias = releaseKeyAlias
                 keyPassword = releaseKeyPassword
             }
@@ -52,8 +67,13 @@ android {
 
     buildTypes {
         release {
-            signingConfig = signingConfigs.findByName("clientRelease")
-                ?: signingConfigs.getByName("debug")
+            // The local build helper supplies these values from macOS Keychain.
+            // Retain debug signing only for a developer's local release test.
+            signingConfig = if (hasReleaseSigning) {
+                signingConfigs.getByName("release")
+            } else {
+                signingConfigs.getByName("debug")
+            }
         }
     }
 }

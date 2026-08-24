@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:wellnessconnect/app_brand.dart';
 import 'package:wellnessconnect/widgets/app_brand_logo.dart';
 
 void main() {
@@ -17,6 +18,6 @@ void main() {
 
     expect(logo.height, 108);
     expect(logo.elevated, isTrue);
-    expect(image.image, const AssetImage(AppBrandLogo.assetPath));
+    expect(image.image, AssetImage(AppBrand.logoAssetPath));
   });
 }

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import '../app_brand.dart';
 import '../services/workout_session_service.dart';
 import '../widgets/glass_card.dart';
 
@@ -1362,7 +1363,7 @@ class _MemberPinDialogState extends State<_MemberPinDialog> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Enter the code issued when you became a Medifit member to start your workout at ${widget.facilityName}.',
+            'Enter the code issued when you became a ${AppBrand.name} member to start your workout at ${widget.facilityName}.',
           ),
           const SizedBox(height: 16),
           TextField(

@@ -3,6 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'app_brand.dart';
 import 'screens/splash_screen.dart';
 import 'services/push_service.dart';
 import 'theme/app_theme.dart';
@@ -37,7 +38,7 @@ class MyApp extends StatelessWidget {
       valueListenable: themeNotifier,
       builder: (context, currentThemeMode, _) {
         return MaterialApp(
-          title: 'Medifit Wellness',
+          title: AppBrand.wellnessName,
           debugShowCheckedModeBanner: false,
           themeMode: currentThemeMode,
           theme: AppTheme.light(),
