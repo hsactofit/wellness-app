@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../app_brand_logo.dart';
 import '../glass_card.dart';
 import 'fade_slide_transition.dart';
 
@@ -103,7 +104,9 @@ class _WelcomeStepState extends State<WelcomeStep>
                                 ),
                                 padding: const EdgeInsets.all(16),
                                 child: Image.asset(
-                                  widget.imagePath!,
+                                  widget.isFirst
+                                      ? AppBrandLogo.assetPath
+                                      : widget.imagePath!,
                                   fit: BoxFit.contain,
                                 ),
                               )

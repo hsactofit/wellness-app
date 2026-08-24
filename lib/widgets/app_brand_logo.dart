@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Brand wordmark (`logo_2.png`): wide aspect ratio, white text, transparent bg.
-/// Renders on a dark plate so the mark stays readable in light and dark themes.
+/// Brand wordmark (`logo_2.png`) displayed on a dark plate.
 class AppBrandLogo extends StatelessWidget {
   /// Overall height of the logo plate (width is derived from aspect ratio).
   final double height;
@@ -45,8 +44,8 @@ class AppBrandLogo extends StatelessWidget {
 
   static const String assetPath = 'assets/logo_2.png';
 
-  /// Intrinsic wordmark ratio ~ 2.6:1 (width:height) for logo_2.
-  static const double aspectRatio = 2.6;
+  /// Intrinsic ratio of the MFit logo crop (width:height).
+  static const double aspectRatio = 1.2;
 
   @override
   Widget build(BuildContext context) {
