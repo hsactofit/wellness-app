@@ -159,6 +159,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   }
 
   void _nextPage() {
+    FocusManager.instance.primaryFocus?.unfocus();
     if (_currentPage < _totalPages - 1) {
       _pageController.nextPage(
         duration: const Duration(milliseconds: 450),
@@ -168,6 +169,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   }
 
   void _prevPage() async {
+    FocusManager.instance.primaryFocus?.unfocus();
     if (_currentPage > 0) {
       _pageController.previousPage(
         duration: const Duration(milliseconds: 450),

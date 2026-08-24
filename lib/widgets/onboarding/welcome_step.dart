@@ -104,7 +104,7 @@ class _WelcomeStepState extends State<WelcomeStep>
                                 ),
                                 padding: const EdgeInsets.all(16),
                                 child: Image.asset(
-                                  AppBrand.isMednovations && widget.isFirst
+                                  widget.isFirst
                                       ? AppBrand.logoAssetPath
                                       : widget.imagePath!,
                                   fit: BoxFit.contain,

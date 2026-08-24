@@ -141,7 +141,10 @@ class MainShellState extends State<MainShell> with WidgetsBindingObserver {
           IndexedStack(
             index: _currentIndex,
             children: [
-              DashboardScreen(key: _dashboardKey),
+              DashboardScreen(
+                key: _dashboardKey,
+                onOpenChallenges: () => setIndex(1),
+              ),
               const ChallengesScreen(),
               const AIScreen(),
               const ProgressScreen(),
@@ -282,45 +285,46 @@ class MainShellState extends State<MainShell> with WidgetsBindingObserver {
 
   Widget _buildCenterAINavItem(int index) {
     final isSelected = _currentIndex == index;
-    // ignore: unused_local_variable
-    final theme = Theme.of(context);
 
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _currentIndex = index;
-        });
-      },
-      child: Container(
-        width: 48,
-        height: 48,
-        margin: const EdgeInsets.symmetric(horizontal: 4),
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: const LinearGradient(
-            colors: [Color(0xFFFF6D55), Color(0xFF8F6BFF)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          border: Border.all(
-            color: isSelected ? Colors.white : Colors.white38,
-            width: isSelected ? 2 : 1,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(
-                0xFFFF6D55,
-              ).withValues(alpha: isSelected ? 0.4 : 0.15),
-              blurRadius: 8,
-              spreadRadius: 1,
-              offset: const Offset(0, 3),
+    return Semantics(
+      button: true,
+      label: 'Open Fitness Coach',
+      child: GestureDetector(
+        onTap: () {
+          setState(() {
+            _currentIndex = index;
+          });
+        },
+        child: Container(
+          width: 48,
+          height: 48,
+          margin: const EdgeInsets.symmetric(horizontal: 4),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: const LinearGradient(
+              colors: [Color(0xFFFF8A4C), Color(0xFFEF5D51)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
             ),
-          ],
-        ),
-        child: ClipOval(
-          child: Padding(
-            padding: const EdgeInsets.all(2.0),
-            child: Image.asset('assets/ai_buddy.png', fit: BoxFit.cover),
+            border: Border.all(
+              color: isSelected ? Colors.white : Colors.white38,
+              width: isSelected ? 2 : 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(
+                  0xFFFF6D55,
+                ).withValues(alpha: isSelected ? 0.38 : 0.16),
+                blurRadius: 10,
+                spreadRadius: 1,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: const Icon(
+            Icons.fitness_center_rounded,
+            color: Colors.white,
+            size: 22,
           ),
         ),
       ),

@@ -70,6 +70,10 @@ class WorkoutSessionService {
   static const _latitudeKey = 'gym_facility_latitude';
   static const _longitudeKey = 'gym_facility_longitude';
   static const _radiusKey = 'gym_geofence_radius_m';
+  // Keep this separate from the server's attendance time. The server can
+  // return an already-open record, but the first reminder must wait one hour
+  // from the member's successful local check-in.
+  static const _hourlyPromptAnchorKey = 'gym_hourly_prompt_anchor_at';
   static const _lastHourlyPromptKey = 'gym_last_hourly_prompt_at';
 
   Timer? _hourlyTimer;
@@ -77,6 +81,7 @@ class WorkoutSessionService {
   WorkoutSessionPrompt? _promptHandler;
   bool _promptInProgress = false;
   bool _outsideFacility = false;
+  bool _wasInsideFacility = false;
 
   /// Notifies open workout screens when another part of the app changes the
   /// persisted session (for example, the global hourly/geofence prompt).
@@ -137,8 +142,9 @@ class WorkoutSessionService {
     required String fallbackFacilityPlace,
   }) async {
     final prefs = await SharedPreferences.getInstance();
+    final localCheckInAt = DateTime.now();
     final checkInAt =
-        session['check_in_at'] as String? ?? DateTime.now().toIso8601String();
+        session['check_in_at'] as String? ?? localCheckInAt.toIso8601String();
     final name = session['facility_name'] as String? ?? fallbackFacilityName;
     final latitude = (session['facility_latitude'] as num?)?.toDouble();
     final longitude = (session['facility_longitude'] as num?)?.toDouble();
@@ -149,6 +155,10 @@ class WorkoutSessionService {
     await prefs.setString(_placeKey, fallbackFacilityPlace);
     await prefs.setString(_checkInKey, checkInAt);
     await prefs.setString(_sessionIdKey, session['id']?.toString() ?? '');
+    await prefs.setString(
+      _hourlyPromptAnchorKey,
+      localCheckInAt.toIso8601String(),
+    );
     await prefs.remove(_lastHourlyPromptKey);
 
     if (latitude != null && longitude != null) {
@@ -197,6 +207,7 @@ class WorkoutSessionService {
     await prefs.remove(_latitudeKey);
     await prefs.remove(_longitudeKey);
     await prefs.remove(_radiusKey);
+    await prefs.remove(_hourlyPromptAnchorKey);
     await prefs.remove(_lastHourlyPromptKey);
     await prefs.remove('gym_logged_exercises');
     await prefs.setString(
@@ -229,6 +240,7 @@ class WorkoutSessionService {
     await _positionSubscription?.cancel();
     _positionSubscription = null;
     _outsideFacility = false;
+    _wasInsideFacility = false;
   }
 
   Future<void> _scheduleHourlyPrompt(ActiveWorkoutSession session) async {
@@ -237,7 +249,10 @@ class WorkoutSessionService {
     final lastPrompt = DateTime.tryParse(
       prefs.getString(_lastHourlyPromptKey) ?? '',
     );
-    final anchor = lastPrompt ?? session.checkInAt;
+    final localCheckInAnchor = DateTime.tryParse(
+      prefs.getString(_hourlyPromptAnchorKey) ?? '',
+    );
+    final anchor = lastPrompt ?? localCheckInAnchor ?? session.checkInAt;
     var delay = const Duration(hours: 1) - DateTime.now().difference(anchor);
     if (delay.isNegative || delay == Duration.zero) delay = Duration.zero;
 
@@ -293,10 +308,15 @@ class WorkoutSessionService {
     final confidentlyOutside =
         distance - position.accuracy > session.geofenceRadiusMeters;
     if (!confidentlyOutside) {
+      // Leaving is meaningful only after the member has actually been inside
+      // this facility during the current monitoring period. This prevents a
+      // simulator's default location (or an initial stale GPS fix) from
+      // immediately looking like the member has left right after check-in.
+      _wasInsideFacility = true;
       _outsideFacility = false;
       return;
     }
-    if (_outsideFacility) return;
+    if (!_wasInsideFacility || _outsideFacility) return;
     _outsideFacility = true;
     await _triggerPrompt(session, WorkoutSessionPromptReason.leftFacility);
   }
