@@ -85,7 +85,9 @@ class DashboardScreenState extends State<DashboardScreen>
   int? _sleepSubscore;
   int? _nutritionSubscore;
   int? _mindfulnessSubscore;
-  Future<List<Map<String, dynamic>>>? _dailyRecordsFuture;
+  Future<List<Map<String, dynamic>>> _dailyRecordsFuture = Future.value(
+    <Map<String, dynamic>>[],
+  );
 
   // Gym Check-in tracking fields
   bool _gymCheckedIn = false;
@@ -175,9 +177,9 @@ class DashboardScreenState extends State<DashboardScreen>
     PushService.instance.notificationRefreshSignal.addListener(
       _handleNotificationRefresh,
     );
-    _dailyRecordsFuture = HealthService.instance.fetchDailyHealthDataForPeriod(
-      days: 7,
-    );
+    // Do not read HealthKit/Health Connect until this member has connected
+    // it. In particular, a fresh SSO session on iOS has no HealthKit grant
+    // yet, and eager reads produce platform errors while the dashboard opens.
     _checkStatusAndSync();
 
     _waterWaveController = AnimationController(
@@ -836,15 +838,23 @@ class DashboardScreenState extends State<DashboardScreen>
     bool forceSync = false,
     bool showSyncIndicator = true,
   }) async {
-    setState(() {
-      if (showSyncIndicator) {
-        _isSyncing = true;
-      }
-      _dailyRecordsFuture = HealthService.instance
-          .fetchDailyHealthDataForPeriod(days: 7, forceRefresh: forceSync);
-    });
     try {
       final prefs = await SharedPreferences.getInstance();
+      final healthSyncEnabled = prefs.getBool('health_sync_enabled') ?? false;
+      final dailyRecordsFuture = healthSyncEnabled
+          ? HealthService.instance.fetchDailyHealthDataForPeriod(
+              days: 7,
+              forceRefresh: forceSync,
+            )
+          : Future.value(<Map<String, dynamic>>[]);
+
+      if (!mounted) return;
+      setState(() {
+        if (showSyncIndicator) {
+          _isSyncing = true;
+        }
+        _dailyRecordsFuture = dailyRecordsFuture;
+      });
 
       // Set basic user info state before syncing from API
       setState(() {
@@ -868,7 +878,7 @@ class DashboardScreenState extends State<DashboardScreen>
       if (email.isNotEmpty) {
         List<Map<String, dynamic>> syncData = [];
         try {
-          syncData = await _dailyRecordsFuture!;
+          syncData = await dailyRecordsFuture;
         } catch (e) {
           debugPrint(
             "Failed to fetch daily records for sync. Proceeding with empty. Error: $e",

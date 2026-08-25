@@ -115,7 +115,6 @@ class _SsoAuthScreenState extends State<SsoAuthScreen> {
       if (!mounted) return;
       final otp = await _promptForOtp(
         start['message'] as String? ?? 'Enter the verification code.',
-        start['dummy_otp'] as String?,
       );
       if (otp == null || otp.isEmpty) return;
 
@@ -146,57 +145,12 @@ class _SsoAuthScreenState extends State<SsoAuthScreen> {
     }
   }
 
-  Future<String?> _promptForOtp(String message, String? dummyOtp) async {
-    final otpController = TextEditingController();
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final result = await showDialog<String>(
+  Future<String?> _promptForOtp(String message) async {
+    return showDialog<String>(
       context: context,
       barrierDismissible: false,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Work email verification'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(message),
-              if (dummyOtp != null && dummyOtp.isNotEmpty) ...[
-                const SizedBox(height: 8),
-                Text(
-                  'Test code: $dummyOtp',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF0F52BA),
-                  ),
-                ),
-              ],
-              const SizedBox(height: 16),
-              TextField(
-                controller: otpController,
-                keyboardType: TextInputType.number,
-                maxLength: 6,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                decoration: _decoration('000000').copyWith(counterText: ''),
-              ),
-            ],
-          ),
-          backgroundColor: isDark ? const Color(0xFF1E1E26) : Colors.white,
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () =>
-                  Navigator.pop(context, otpController.text.trim()),
-              child: const Text('Verify'),
-            ),
-          ],
-        );
-      },
+      builder: (_) => _SsoOtpDialog(message: message),
     );
-    otpController.dispose();
-    return result;
   }
 
   @override
@@ -368,6 +322,94 @@ class _SsoAuthScreenState extends State<SsoAuthScreen> {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Owns its controller so it remains alive for the dialog route's exit
+/// animation. Disposing it immediately after [showDialog] returns causes a
+/// transient framework error while the TextField is still being painted.
+class _SsoOtpDialog extends StatefulWidget {
+  const _SsoOtpDialog({required this.message});
+
+  final String message;
+
+  @override
+  State<_SsoOtpDialog> createState() => _SsoOtpDialogState();
+}
+
+class _SsoOtpDialogState extends State<_SsoOtpDialog> {
+  final _otpController = TextEditingController();
+
+  InputDecoration _decoration(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return InputDecoration(
+      hintText: '6-digit code',
+      hintStyle: TextStyle(
+        color: isDark ? Colors.white30 : Colors.black38,
+        fontSize: 14,
+      ),
+      filled: true,
+      fillColor: isDark
+          ? const Color(0xFF1E1E26).withValues(alpha: 0.5)
+          : Colors.white.withValues(alpha: 0.8),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide(
+          color: isDark ? Colors.white12 : Colors.grey[300]!,
+        ),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide(
+          color: isDark ? Colors.white12 : Colors.grey[300]!,
+        ),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: Color(0xFF0F52BA), width: 1.4),
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _otpController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return AlertDialog(
+      title: const Text('Work email verification'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(widget.message),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _otpController,
+            keyboardType: TextInputType.number,
+            maxLength: 6,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            decoration: _decoration(context).copyWith(counterText: ''),
+          ),
+        ],
+      ),
+      backgroundColor: isDark ? const Color(0xFF1E1E26) : Colors.white,
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          onPressed: () => Navigator.pop(context, _otpController.text.trim()),
+          child: const Text('Verify'),
+        ),
+      ],
     );
   }
 }
