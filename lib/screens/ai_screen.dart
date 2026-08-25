@@ -55,19 +55,7 @@ class _AIScreenState extends State<AIScreen> {
               _conversationId = id;
               _messages
                 ..clear()
-                ..addAll(
-                  items.map((raw) {
-                    final m = Map<String, dynamic>.from(raw as Map);
-                    final role = (m['role'] as String? ?? '').toLowerCase();
-                    return {
-                      'isUser': role == 'user',
-                      'text': m['content'] as String? ?? '',
-                      'time': _formatTime(m['created_at'] as String?),
-                      if (m['meal_analysis'] is Map)
-                        'mealAnalysis': Map<String, dynamic>.from(m['meal_analysis'] as Map),
-                    };
-                  }),
-                );
+                ..addAll(_messagesFromHistory(items));
             });
             _scrollToBottom();
             return;
@@ -81,6 +69,22 @@ class _AIScreenState extends State<AIScreen> {
     }
 
     _loadInitialGreeting();
+  }
+
+  List<Map<String, dynamic>> _messagesFromHistory(List<dynamic> items) {
+    return items.whereType<Map>().map((raw) {
+      final message = Map<String, dynamic>.from(raw);
+      final role = (message['role'] as String? ?? '').toLowerCase();
+      return {
+        'isUser': role == 'user',
+        'text': message['content'] as String? ?? '',
+        'time': _formatTime(message['created_at'] as String?),
+        if (message['meal_analysis'] is Map)
+          'mealAnalysis': Map<String, dynamic>.from(
+            message['meal_analysis'] as Map,
+          ),
+      };
+    }).toList();
   }
 
   void _loadInitialGreeting() {
@@ -150,7 +154,9 @@ class _AIScreenState extends State<AIScreen> {
           'text': reply,
           'time': "Just now",
           if (resData['meal_analysis'] is Map)
-            'mealAnalysis': Map<String, dynamic>.from(resData['meal_analysis'] as Map),
+            'mealAnalysis': Map<String, dynamic>.from(
+              resData['meal_analysis'] as Map,
+            ),
         };
         _isSending = false;
       });
@@ -179,6 +185,236 @@ class _AIScreenState extends State<AIScreen> {
       _messages.clear();
     });
     _loadInitialGreeting();
+  }
+
+  Future<void> _openConversationHistory() async {
+    if (_isSending || _isLoadingHistory) return;
+
+    final conversationsFuture = ApiService.instance.listAiChatConversations();
+    final selectedConversationId = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (sheetContext) {
+        final sheetTheme = Theme.of(sheetContext);
+        final sheetIsDark = sheetTheme.brightness == Brightness.dark;
+        final sheetTextColor = sheetIsDark ? Colors.white : Colors.black87;
+        return FractionallySizedBox(
+          heightFactor: 0.68,
+          child: Container(
+            decoration: BoxDecoration(
+              color: sheetIsDark ? const Color(0xFF151B1B) : Colors.white,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(26),
+              ),
+            ),
+            child: SafeArea(
+              top: false,
+              child: FutureBuilder<List<dynamic>>(
+                future: conversationsFuture,
+                builder: (context, snapshot) {
+                  Widget content;
+                  if (snapshot.connectionState != ConnectionState.done) {
+                    content = const Center(
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    );
+                  } else if (snapshot.hasError) {
+                    content = Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Text(
+                          'Could not load your chat history. Please try again.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: sheetIsDark
+                                ? Colors.white70
+                                : Colors.black54,
+                          ),
+                        ),
+                      ),
+                    );
+                  } else {
+                    final conversations = snapshot.data ?? const <dynamic>[];
+                    content = conversations.isEmpty
+                        ? Center(
+                            child: Text(
+                              'Your previous chats will appear here.',
+                              style: TextStyle(
+                                color: sheetIsDark
+                                    ? Colors.white70
+                                    : Colors.black54,
+                              ),
+                            ),
+                          )
+                        : ListView.separated(
+                            padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
+                            itemCount: conversations.length,
+                            separatorBuilder: (_, _) => Divider(
+                              height: 1,
+                              color: sheetIsDark
+                                  ? Colors.white10
+                                  : Colors.black12,
+                            ),
+                            itemBuilder: (context, index) {
+                              final raw = conversations[index];
+                              if (raw is! Map) return const SizedBox.shrink();
+                              final conversation = Map<String, dynamic>.from(
+                                raw,
+                              );
+                              final id = conversation['id']?.toString();
+                              if (id == null) return const SizedBox.shrink();
+                              final title =
+                                  (conversation['title'] as String? ?? '')
+                                      .trim();
+                              final preview =
+                                  (conversation['last_message_preview']
+                                              as String? ??
+                                          '')
+                                      .trim();
+                              return ListTile(
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 4,
+                                  vertical: 4,
+                                ),
+                                leading: Icon(
+                                  Icons.forum_outlined,
+                                  color: id == _conversationId
+                                      ? const Color(0xFFFF7A53)
+                                      : (sheetIsDark
+                                            ? Colors.white60
+                                            : Colors.black54),
+                                ),
+                                title: Text(
+                                  title.isEmpty ? 'New conversation' : title,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color: sheetTextColor,
+                                    fontWeight: id == _conversationId
+                                        ? FontWeight.w700
+                                        : FontWeight.w600,
+                                  ),
+                                ),
+                                subtitle: Text(
+                                  preview.isEmpty
+                                      ? _formatConversationDate(
+                                          conversation['started_at'] as String?,
+                                        )
+                                      : preview,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color: sheetIsDark
+                                        ? Colors.white60
+                                        : Colors.black54,
+                                  ),
+                                ),
+                                trailing: id == _conversationId
+                                    ? const Icon(
+                                        Icons.check_circle_rounded,
+                                        color: Color(0xFFFF7A53),
+                                        size: 20,
+                                      )
+                                    : null,
+                                onTap: () => Navigator.of(sheetContext).pop(id),
+                              );
+                            },
+                          );
+                  }
+
+                  return Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 16, 12, 8),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                'Chat history',
+                                style: sheetTheme.textTheme.titleLarge
+                                    ?.copyWith(
+                                      color: sheetTextColor,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                              ),
+                            ),
+                            IconButton(
+                              tooltip: 'Close',
+                              onPressed: () => Navigator.of(sheetContext).pop(),
+                              icon: Icon(
+                                Icons.close_rounded,
+                                color: sheetIsDark
+                                    ? Colors.white70
+                                    : Colors.black54,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Expanded(child: content),
+                    ],
+                  );
+                },
+              ),
+            ),
+          ),
+        );
+      },
+    );
+
+    if (selectedConversationId != null && mounted) {
+      await _loadConversation(selectedConversationId);
+    }
+  }
+
+  Future<void> _loadConversation(String conversationId) async {
+    if (_isSending || _isLoadingHistory) return;
+    setState(() => _isLoadingHistory = true);
+    try {
+      final items = await ApiService.instance.getAiChatConversationMessages(
+        conversationId,
+      );
+      if (!mounted) return;
+      setState(() {
+        _conversationId = conversationId;
+        _messages
+          ..clear()
+          ..addAll(_messagesFromHistory(items));
+      });
+      _scrollToBottom();
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(error.toString().replaceFirst('Exception: ', '')),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoadingHistory = false);
+    }
+  }
+
+  String _formatConversationDate(String? iso) {
+    if (iso == null || iso.isEmpty) return 'Earlier conversation';
+    try {
+      final date = DateTime.parse(iso).toLocal();
+      final now = DateTime.now();
+      if (date.year == now.year &&
+          date.month == now.month &&
+          date.day == now.day) {
+        return 'Today, ${_formatTime(iso)}';
+      }
+      final yesterday = now.subtract(const Duration(days: 1));
+      if (date.year == yesterday.year &&
+          date.month == yesterday.month &&
+          date.day == yesterday.day) {
+        return 'Yesterday, ${_formatTime(iso)}';
+      }
+      return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+    } catch (_) {
+      return 'Earlier conversation';
+    }
   }
 
   void _scrollToBottom() {
@@ -346,12 +582,31 @@ class _AIScreenState extends State<AIScreen> {
                           ),
                         ),
                         IconButton(
-                          tooltip: "Start a new conversation",
-                          onPressed: _isSending ? null : _startNewConversation,
+                          tooltip: 'Chat history',
+                          onPressed: _isSending || _isLoadingHistory
+                              ? null
+                              : _openConversationHistory,
                           icon: Icon(
-                            Icons.restart_alt_rounded,
+                            Icons.history_rounded,
                             color: isDark ? Colors.white70 : Colors.black54,
                             size: 22,
+                          ),
+                        ),
+                        TextButton.icon(
+                          onPressed: _isSending ? null : _startNewConversation,
+                          icon: const Icon(
+                            Icons.add_comment_outlined,
+                            size: 17,
+                          ),
+                          label: const Text('New'),
+                          style: TextButton.styleFrom(
+                            foregroundColor: const Color(0xFFFF7A53),
+                            minimumSize: const Size(0, 40),
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                            visualDensity: VisualDensity.compact,
+                            textStyle: const TextStyle(
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
                         ),
                       ],
@@ -381,7 +636,9 @@ class _AIScreenState extends State<AIScreen> {
                               isTyping: msg['isTyping'] == true,
                               analysis: msg['mealAnalysis'] is Map
                                   ? MealAnalysis.fromJson(
-                                      Map<String, dynamic>.from(msg['mealAnalysis'] as Map),
+                                      Map<String, dynamic>.from(
+                                        msg['mealAnalysis'] as Map,
+                                      ),
                                     )
                                   : null,
                               onCommit: () => _commitChatAnalysis(index),
@@ -581,7 +838,9 @@ class _AIScreenState extends State<AIScreen> {
                   Text(
                     text,
                     style: TextStyle(
-                      color: isUser ? Colors.white : (isDark ? Colors.white : Colors.black87),
+                      color: isUser
+                          ? Colors.white
+                          : (isDark ? Colors.white : Colors.black87),
                       fontSize: 13,
                       height: 1.4,
                     ),
@@ -609,40 +868,99 @@ class _AIScreenState extends State<AIScreen> {
         updated['status'] = 'logged';
         _messages[index]['mealAnalysis'] = updated;
       });
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Meal added to your tracker.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Meal added to your tracker.')),
+      );
     } catch (error) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.toString().replaceFirst('Exception: ', ''))));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(error.toString().replaceFirst('Exception: ', '')),
+          ),
+        );
+      }
     }
   }
 
-  Widget _mealAnalysisCard(MealAnalysis analysis, bool isDark, VoidCallback? onCommit) {
+  Widget _mealAnalysisCard(
+    MealAnalysis analysis,
+    bool isDark,
+    VoidCallback? onCommit,
+  ) {
     final saved = analysis.status == 'logged';
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: isDark ? Colors.black.withValues(alpha: .18) : const Color(0xFFFFF5EE),
+        color: isDark
+            ? Colors.black.withValues(alpha: .18)
+            : const Color(0xFFFFF5EE),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(analysis.needsClarification ? 'Tell me a little more' : 'AI meal estimate', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFFFF8A4C))),
+          Text(
+            analysis.needsClarification
+                ? 'Tell me a little more'
+                : 'AI meal estimate',
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+              color: Color(0xFFFF8A4C),
+            ),
+          ),
           if (!analysis.needsClarification) ...[
             const SizedBox(height: 4),
-            Text('${analysis.calories ?? 0} kcal · ${(analysis.proteinG ?? 0).toStringAsFixed(1)}g protein', style: TextStyle(color: isDark ? Colors.white : Colors.black87, fontWeight: FontWeight.w800)),
+            Text(
+              '${analysis.calories ?? 0} kcal · ${(analysis.proteinG ?? 0).toStringAsFixed(1)}g protein',
+              style: TextStyle(
+                color: isDark ? Colors.white : Colors.black87,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
           ],
           const SizedBox(height: 8),
-          Row(children: [
-            Expanded(child: TextButton(onPressed: () {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => NutritionLoggingScreen(initialAnalysis: analysis)));
-            }, child: Text(analysis.needsClarification ? 'Edit details' : 'Review'))),
-            if (!analysis.needsClarification && !saved) ...[
-              const SizedBox(width: 4),
-              Expanded(child: FilledButton(onPressed: onCommit, child: const Text('Add to tracker'))),
+          Row(
+            children: [
+              Expanded(
+                child: TextButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            NutritionLoggingScreen(initialAnalysis: analysis),
+                      ),
+                    );
+                  },
+                  child: Text(
+                    analysis.needsClarification ? 'Edit details' : 'Review',
+                  ),
+                ),
+              ),
+              if (!analysis.needsClarification && !saved) ...[
+                const SizedBox(width: 4),
+                Expanded(
+                  child: FilledButton(
+                    onPressed: onCommit,
+                    child: const Text('Add to tracker'),
+                  ),
+                ),
+              ],
+              if (saved)
+                const Expanded(
+                  child: Text(
+                    'Tracked',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Color(0xFF43B581),
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
             ],
-            if (saved) const Expanded(child: Text('Tracked', textAlign: TextAlign.center, style: TextStyle(color: Color(0xFF43B581), fontWeight: FontWeight.w800))),
-          ]),
+          ),
         ],
       ),
     );
