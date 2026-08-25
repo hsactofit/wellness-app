@@ -34,6 +34,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   double _height = 0.0;
   double _weight = 0.0;
   String? _checkinCode;
+  String? _companyName;
+  String? _companyLogoUrl;
   bool _hcConnected = false;
   bool _isLoading = true;
 
@@ -62,6 +64,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
         final profileData = await ApiService.instance.fetchUserProfile();
         final name = profileData['name'] ?? "User";
         final email = profileData['email'] ?? "";
+        final company = profileData['company'];
+        final companyName = company is Map
+            ? _optionalText(company['name'])
+            : null;
+        final companyLogoUrl = company is Map
+            ? _optionalText(company['logo_url'])
+            : null;
 
         final profile = profileData['profile'] ?? {};
         final dob = profile['dob'] ?? "Not set";
@@ -100,6 +109,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _height = height;
           _weight = weight;
           _checkinCode = checkinCode ?? localCheckinCode;
+          _companyName = companyName;
+          _companyLogoUrl = companyLogoUrl;
 
           _notifAiTips = aiTips;
           _notifRewards = rewards;
@@ -127,6 +138,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         final Map<String, dynamic> data = jsonDecode(jsonStr);
         final profile = data['profile'] ?? {};
         final auth = data['auth'] ?? {};
+        final company = data['company'];
         final permissions = data['permissions'] ?? {};
         final notifications = permissions['notifications'] ?? {};
 
@@ -139,6 +151,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _height = (profile['height'] ?? 0.0).toDouble();
           _weight = (profile['weight'] ?? 0.0).toDouble();
           _checkinCode = localCheckinCode;
+          _companyName = company is Map ? _optionalText(company['name']) : null;
+          _companyLogoUrl = company is Map
+              ? _optionalText(company['logo_url'])
+              : null;
           _notifAiTips = notifications['ai_tips'] as bool? ?? true;
           _notifRewards = notifications['rewards'] as bool? ?? false;
           _notifDailyReminder =
@@ -171,6 +187,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
       debugPrint("Error loading profile: $e");
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  String? _optionalText(dynamic value) {
+    if (value is! String) return null;
+    final text = value.trim();
+    return text.isEmpty ? null : text;
   }
 
   double _calculateBMI() {
@@ -1146,6 +1168,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           color: secondary,
                         ),
                       ),
+                      if (_companyName != null) ...[
+                        const SizedBox(height: 8),
+                        _buildCompanyBadge(isDark, textColor, secondary),
+                      ],
                       if (age != null) ...[
                         const SizedBox(height: 8),
                         Container(
@@ -1212,6 +1238,110 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCompanyBadge(bool isDark, Color textColor, Color? secondary) {
+    final companyName = _companyName!;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        color: isDark
+            ? Colors.white.withValues(alpha: 0.07)
+            : Colors.black.withValues(alpha: 0.04),
+        border: Border.all(
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.10)
+              : Colors.black.withValues(alpha: 0.06),
+        ),
+      ),
+      child: Row(
+        children: [
+          _buildCompanyMark(isDark, companyName),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'MEMBER OF',
+                  style: TextStyle(
+                    fontSize: 8.5,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.7,
+                    color: secondary?.withValues(alpha: 0.8),
+                  ),
+                ),
+                const SizedBox(height: 1),
+                Text(
+                  companyName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                    color: textColor,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCompanyMark(bool isDark, String companyName) {
+    final initials = companyName
+        .split(RegExp(r'\s+'))
+        .where((word) => word.isNotEmpty)
+        .take(2)
+        .map((word) => word[0])
+        .join()
+        .toUpperCase();
+    final fallback = Container(
+      width: 30,
+      height: 30,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        gradient: const LinearGradient(colors: [_violet, _sky]),
+      ),
+      child: Text(
+        initials.isEmpty ? 'C' : initials,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 11,
+          fontWeight: FontWeight.w900,
+        ),
+      ),
+    );
+    final logoUrl = _companyLogoUrl;
+    if (logoUrl == null) return fallback;
+
+    return Container(
+      width: 30,
+      height: 30,
+      padding: const EdgeInsets.all(2),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        color: isDark ? Colors.white : const Color(0xFFF8F8FA),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(6),
+        child: Image.network(
+          logoUrl,
+          fit: BoxFit.contain,
+          loadingBuilder: (context, child, loadingProgress) {
+            return loadingProgress == null ? child : fallback;
+          },
+          errorBuilder: (context, error, stackTrace) => fallback,
         ),
       ),
     );
