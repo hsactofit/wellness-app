@@ -33,6 +33,7 @@ class _UpdateHealthCameraScreenState extends State<UpdateHealthCameraScreen>
   String? _temporaryImagePath;
   String? _errorMessage;
   FlashMode _flashMode = FlashMode.off;
+  Offset? _focusPoint;
 
   @override
   void initState() {
@@ -223,6 +224,21 @@ class _UpdateHealthCameraScreenState extends State<UpdateHealthCameraScreen>
     }
   }
 
+  Future<void> _focusAt(Offset localPosition, Size previewSize) async {
+    final controller = _cameraController;
+    if (controller == null || previewSize.isEmpty) return;
+    final point = Offset(
+      (localPosition.dx / previewSize.width).clamp(0.0, 1.0).toDouble(),
+      (localPosition.dy / previewSize.height).clamp(0.0, 1.0).toDouble(),
+    );
+    try {
+      await controller.setFocusPoint(point);
+      if (mounted) setState(() => _focusPoint = localPosition);
+    } on CameraException catch (_) {
+      // Some hardware has fixed focus; the framing guidance still applies.
+    }
+  }
+
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
@@ -329,7 +345,16 @@ class _UpdateHealthCameraScreenState extends State<UpdateHealthCameraScreen>
     return Stack(
       fit: StackFit.expand,
       children: [
-        CameraPreview(controller),
+        Positioned.fill(
+          child: LayoutBuilder(
+            builder: (context, constraints) => GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTapDown: (details) =>
+                  _focusAt(details.localPosition, constraints.biggest),
+              child: CameraPreview(controller),
+            ),
+          ),
+        ),
         Center(
           child: AspectRatio(
             aspectRatio: 3 / 4,
@@ -341,12 +366,27 @@ class _UpdateHealthCameraScreenState extends State<UpdateHealthCameraScreen>
             ),
           ),
         ),
+        if (_focusPoint != null)
+          Positioned(
+            left: _focusPoint!.dx - 24,
+            top: _focusPoint!.dy - 24,
+            child: IgnorePointer(
+              child: Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.amberAccent, width: 2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+          ),
         const Positioned(
           left: 28,
           right: 28,
           bottom: 120,
           child: Text(
-            'Fit the whole report inside the frame. Keep labels and numbers sharp and glare-free.',
+            'Fit the whole report inside the frame. Tap text to focus; keep labels and numbers sharp and glare-free.',
             textAlign: TextAlign.center,
             style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
           ),
