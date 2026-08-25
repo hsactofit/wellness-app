@@ -66,8 +66,13 @@ class WorkoutPlanDay {
       day: json['day']?.toString() ?? '',
       focus: json['focus']?.toString(),
       isRestDay: json['is_rest_day'] as bool? ?? false,
-      exercises: (json['exercises'] as List<dynamic>?)
-              ?.map((e) => WorkoutExercise.fromJson(Map<String, dynamic>.from(e as Map)))
+      exercises:
+          (json['exercises'] as List<dynamic>?)
+              ?.map(
+                (e) => WorkoutExercise.fromJson(
+                  Map<String, dynamic>.from(e as Map),
+                ),
+              )
               .toList() ??
           const [],
     );
@@ -109,14 +114,47 @@ class WorkoutPlan {
       goal: json['goal']?.toString(),
       experience: json['experience']?.toString(),
       location: json['location']?.toString(),
-      equipment: (json['equipment'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? const [],
-      sessionMinutes: (json['session_minutes'] as num?)?.toInt() ?? 45,
-      daysPerWeek: (json['days_per_week'] as num?)?.toInt() ?? 4,
-      days: (json['days'] as List<dynamic>?)
-              ?.map((d) => WorkoutPlanDay.fromJson(Map<String, dynamic>.from(d as Map)))
+      equipment:
+          (json['equipment'] as List<dynamic>?)
+              ?.map((e) => e.toString())
               .toList() ??
           const [],
-      createdAt: DateTime.tryParse(json['created_at']?.toString() ?? '') ?? DateTime.now(),
+      sessionMinutes: (json['session_minutes'] as num?)?.toInt() ?? 45,
+      daysPerWeek: (json['days_per_week'] as num?)?.toInt() ?? 4,
+      days:
+          (json['days'] as List<dynamic>?)
+              ?.map(
+                (d) => WorkoutPlanDay.fromJson(
+                  Map<String, dynamic>.from(d as Map),
+                ),
+              )
+              .toList() ??
+          const [],
+      createdAt:
+          DateTime.tryParse(json['created_at']?.toString() ?? '') ??
+          DateTime.now(),
+    );
+  }
+
+  factory WorkoutPlan.fromReviewedJson(Map<String, dynamic> json) {
+    return WorkoutPlan(
+      id: json['id']?.toString() ?? '',
+      title: json['title']?.toString() ?? 'Workout Plan',
+      summary: json['summary']?.toString(),
+      sessionMinutes: 45,
+      daysPerWeek: 4,
+      days:
+          (json['content'] as List<dynamic>?)
+              ?.map(
+                (day) => WorkoutPlanDay.fromJson(
+                  Map<String, dynamic>.from(day as Map),
+                ),
+              )
+              .toList() ??
+          const [],
+      createdAt:
+          DateTime.tryParse(json['created_at']?.toString() ?? '') ??
+          DateTime.now(),
     );
   }
 
@@ -185,8 +223,12 @@ class NutritionPlanDay {
     return NutritionPlanDay(
       day: json['day']?.toString() ?? '',
       totalCalories: (json['total_calories'] as num?)?.toInt(),
-      meals: (json['meals'] as List<dynamic>?)
-              ?.map((m) => NutritionMeal.fromJson(Map<String, dynamic>.from(m as Map)))
+      meals:
+          (json['meals'] as List<dynamic>?)
+              ?.map(
+                (m) =>
+                    NutritionMeal.fromJson(Map<String, dynamic>.from(m as Map)),
+              )
               .toList() ??
           const [],
     );
@@ -224,15 +266,48 @@ class NutritionPlan {
       title: json['title']?.toString() ?? 'Nutrition Plan',
       summary: json['summary']?.toString(),
       dietary: json['dietary']?.toString(),
-      allergies: (json['allergies'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? const [],
+      allergies:
+          (json['allergies'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          const [],
       mealsPerDay: (json['meals_per_day'] as num?)?.toInt() ?? 3,
       calorieTarget: (json['calorie_target'] as num?)?.toInt(),
       cuisine: json['cuisine']?.toString(),
-      days: (json['days'] as List<dynamic>?)
-              ?.map((d) => NutritionPlanDay.fromJson(Map<String, dynamic>.from(d as Map)))
+      days:
+          (json['days'] as List<dynamic>?)
+              ?.map(
+                (d) => NutritionPlanDay.fromJson(
+                  Map<String, dynamic>.from(d as Map),
+                ),
+              )
               .toList() ??
           const [],
-      createdAt: DateTime.tryParse(json['created_at']?.toString() ?? '') ?? DateTime.now(),
+      createdAt:
+          DateTime.tryParse(json['created_at']?.toString() ?? '') ??
+          DateTime.now(),
+    );
+  }
+
+  factory NutritionPlan.fromReviewedJson(Map<String, dynamic> json) {
+    final days =
+        (json['content'] as List<dynamic>?)
+            ?.map(
+              (day) => NutritionPlanDay.fromJson(
+                Map<String, dynamic>.from(day as Map),
+              ),
+            )
+            .toList() ??
+        const <NutritionPlanDay>[];
+    return NutritionPlan(
+      id: json['id']?.toString() ?? '',
+      title: json['title']?.toString() ?? 'Nutrition Plan',
+      summary: json['summary']?.toString(),
+      mealsPerDay: days.isEmpty ? 3 : days.first.meals.length,
+      days: days,
+      createdAt:
+          DateTime.tryParse(json['created_at']?.toString() ?? '') ??
+          DateTime.now(),
     );
   }
 
@@ -289,7 +364,11 @@ class TodayPlanSnapshot {
     if (plan == null) return const TodayPlanSnapshot(kind: PlanKind.workout);
     final today = plan.dayFor(currentWeekdayName());
     if (today == null) {
-      return TodayPlanSnapshot(kind: PlanKind.workout, planTitle: plan.title, hasPlan: true);
+      return TodayPlanSnapshot(
+        kind: PlanKind.workout,
+        planTitle: plan.title,
+        hasPlan: true,
+      );
     }
     return TodayPlanSnapshot(
       kind: PlanKind.workout,
@@ -305,13 +384,21 @@ class TodayPlanSnapshot {
     if (plan == null) return const TodayPlanSnapshot(kind: PlanKind.nutrition);
     final today = plan.dayFor(currentWeekdayName());
     if (today == null) {
-      return TodayPlanSnapshot(kind: PlanKind.nutrition, planTitle: plan.title, hasPlan: true);
+      return TodayPlanSnapshot(
+        kind: PlanKind.nutrition,
+        planTitle: plan.title,
+        hasPlan: true,
+      );
     }
-    final kcal = today.totalCalories ?? today.meals.fold<int>(0, (s, m) => s + (m.calories ?? 0));
+    final kcal =
+        today.totalCalories ??
+        today.meals.fold<int>(0, (s, m) => s + (m.calories ?? 0));
     return TodayPlanSnapshot(
       kind: PlanKind.nutrition,
       planTitle: plan.title,
-      subtitle: kcal > 0 ? '$kcal kcal across ${today.meals.length} meals' : null,
+      subtitle: kcal > 0
+          ? '$kcal kcal across ${today.meals.length} meals'
+          : null,
       itemCount: today.meals.length,
       hasPlan: true,
     );

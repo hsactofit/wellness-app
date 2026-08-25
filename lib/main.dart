@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'app_brand.dart';
 import 'config/google_auth_config.dart';
 import 'screens/splash_screen.dart';
+import 'services/body_composition_ocr_service.dart';
 import 'services/push_service.dart';
 import 'theme/app_theme.dart';
 
@@ -13,6 +14,7 @@ final ValueNotifier<ThemeMode> themeNotifier = ValueNotifier(ThemeMode.system);
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await BodyCompositionOcrService.instance.clearAbandonedTemporaryCapture();
   await Firebase.initializeApp();
   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
   await GoogleSignIn.instance.initialize(

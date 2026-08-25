@@ -202,6 +202,24 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     });
   }
 
+  String _apiDob() {
+    final parts = _dobController.text.trim().split('-');
+    if (parts.length != 3) return '';
+    return '${parts[2]}-${parts[1]}-${parts[0]}';
+  }
+
+  double? _heightInCm() {
+    final value = double.tryParse(_heightController.text.trim());
+    if (value == null) return null;
+    return _heightUnit.toLowerCase() == 'in' ? value * 2.54 : value;
+  }
+
+  double? _weightInKg() {
+    final value = double.tryParse(_weightController.text.trim());
+    if (value == null) return null;
+    return _weightUnit.toLowerCase() == 'lbs' ? value * 0.45359237 : value;
+  }
+
   Future<void> _startSyncAndFinish() async {
     _nextPage(); // Move to SyncProgressStep
     setState(() {
@@ -244,6 +262,12 @@ class _OnboardingScreenState extends State<OnboardingScreen>
         corporateId: _selectedCorporateId!,
         facilityId: _selectedFacilityId!,
         goal: _selectedGoals.isNotEmpty ? _selectedGoals.first : null,
+        goals: _selectedGoals,
+        activityLevel: _activityLevel,
+        dob: _apiDob(),
+        gender: _gender,
+        heightCm: _heightInCm(),
+        weightKg: _weightInKg(),
       );
 
       final declaredCondition = _noConditions || _selectedConditions.isEmpty

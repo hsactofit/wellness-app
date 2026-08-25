@@ -3,10 +3,8 @@ import '../models/plan_models.dart';
 import '../services/api_service.dart';
 import '../widgets/glass_card.dart';
 
-/// Real AI-generated workout/nutrition plans, backed by /api/ai/*-plan.
-/// One LLM call per generation, server rate-limited to once per 24h per
-/// plan type — this screen mirrors that cooldown client-side so the button
-/// is disabled proactively, but the server is the actual source of truth.
+/// Reviewed workout/nutrition plans. A member supplies preferences, then the
+/// company specialist generates, reviews, and approves the AI-assisted plan.
 class PlanScreen extends StatefulWidget {
   final PlanKind kind;
   final VoidCallback? onPlanChanged;
@@ -29,6 +27,8 @@ class _PlanScreenState extends State<PlanScreen> {
   bool _isGenerating = false;
   String? _loadError;
   String? _generateError;
+  Map<String, dynamic>? _planState;
+  bool _consentChecked = false;
 
   WorkoutPlan? _workoutPlan;
   NutritionPlan? _nutritionPlan;
@@ -71,14 +71,21 @@ class _PlanScreenState extends State<PlanScreen> {
       _loadError = null;
     });
     try {
-      if (_isWorkoutKind) {
-        final w = await ApiService.instance.getLatestWorkoutPlan();
-        _workoutPlan = w != null ? WorkoutPlan.fromJson(w) : null;
-      } else {
-        final n = await ApiService.instance.getLatestNutritionPlan();
-        _nutritionPlan = n != null ? NutritionPlan.fromJson(n) : null;
-      }
-      if (mounted) setState(() => _isLoading = false);
+      final state = await ApiService.instance.getReviewedPlanState(
+        _isWorkoutKind ? 'workout' : 'nutrition',
+      );
+      final active = state['active_plan'];
+      if (!mounted) return;
+      setState(() {
+        _planState = state;
+        _workoutPlan = _isWorkoutKind && active is Map
+            ? WorkoutPlan.fromReviewedJson(Map<String, dynamic>.from(active))
+            : null;
+        _nutritionPlan = !_isWorkoutKind && active is Map
+            ? NutritionPlan.fromReviewedJson(Map<String, dynamic>.from(active))
+            : null;
+        _isLoading = false;
+      });
     } catch (e) {
       if (mounted) {
         setState(() {
@@ -89,54 +96,62 @@ class _PlanScreenState extends State<PlanScreen> {
     }
   }
 
-  Duration? get _cooldownRemaining {
-    final createdAt = _isWorkoutKind
-        ? _workoutPlan?.createdAt
-        : _nutritionPlan?.createdAt;
-    if (createdAt == null) return null;
-    final elapsed = DateTime.now().difference(createdAt);
-    final remaining = const Duration(hours: 24) - elapsed;
-    return remaining.isNegative ? null : remaining;
+  bool get _hasAiConsent {
+    final consent = _planState?['consent'];
+    return consent is Map && consent['granted'] == true;
   }
 
-  String _formatDuration(Duration d) {
-    final h = d.inHours;
-    final m = d.inMinutes % 60;
-    if (h > 0) return '${h}h ${m}m';
-    return '${m.clamp(1, 59)}m';
+  bool get _canRequest => _planState?['can_request'] == true;
+
+  Map<String, dynamic>? get _request {
+    final request = _planState?['request'];
+    return request is Map ? Map<String, dynamic>.from(request) : null;
   }
 
-  Future<void> _generate() async {
+  Future<void> _requestPlan() async {
+    if (!_hasAiConsent && !_consentChecked) {
+      setState(() {
+        _generateError =
+            'Please confirm AI processing consent before requesting your plan.';
+      });
+      return;
+    }
     setState(() {
       _isGenerating = true;
       _generateError = null;
     });
     try {
-      if (_isWorkoutKind) {
-        final body = {
-          'goal': _goal,
-          'experience': _experience,
-          'location': _location,
-          'equipment': _equipment.toList(),
-          'session_minutes': _sessionMinutes.round(),
-          'days_per_week': _daysPerWeek.round(),
-        };
-        final result = await ApiService.instance.generateWorkoutPlan(body);
-        _workoutPlan = WorkoutPlan.fromJson(result);
-      } else {
-        final body = {
-          'dietary': _dietary == 'No preference' ? null : _dietary,
-          'allergies': _allergies,
-          'meals_per_day': _mealsPerDay.round(),
-          if (_setCalorieTarget) 'calorie_target': _calorieTarget.round(),
-          if (_cuisineCtrl.text.trim().isNotEmpty)
-            'cuisine': _cuisineCtrl.text.trim(),
-        };
-        final result = await ApiService.instance.generateNutritionPlan(body);
-        _nutritionPlan = NutritionPlan.fromJson(result);
+      if (!_hasAiConsent) {
+        await ApiService.instance.updateReviewedPlanConsent(true);
       }
+      final preferences = _isWorkoutKind
+          ? <String, dynamic>{
+              'goal': _goal,
+              'experience': _experience,
+              'location': _location,
+              'equipment': _equipment.toList(),
+              'session_minutes': _sessionMinutes.round(),
+              'days_per_week': _daysPerWeek.round(),
+            }
+          : <String, dynamic>{
+              'dietary': _dietary == 'No preference' ? null : _dietary,
+              'allergies': _allergies,
+              'meals_per_day': _mealsPerDay.round(),
+              if (_setCalorieTarget) 'calorie_target': _calorieTarget.round(),
+              if (_cuisineCtrl.text.trim().isNotEmpty)
+                'cuisine': _cuisineCtrl.text.trim(),
+            };
+      final state = await ApiService.instance.requestReviewedPlan(
+        _isWorkoutKind ? 'workout' : 'nutrition',
+        {'preferences': preferences},
+      );
       widget.onPlanChanged?.call();
-      if (mounted) setState(() => _isGenerating = false);
+      if (mounted) {
+        setState(() {
+          _planState = state;
+          _isGenerating = false;
+        });
+      }
     } catch (e) {
       if (mounted) {
         setState(() {
@@ -234,7 +249,7 @@ class _PlanScreenState extends State<PlanScreen> {
                       ? _buildErrorState(isDark, textColor)
                       : hasPlan
                       ? _buildPlanView(isDark, textColor)
-                      : _buildGenerateForm(isDark, textColor),
+                      : _buildMemberState(isDark, textColor),
                 ),
               ],
             ),
@@ -273,9 +288,267 @@ class _PlanScreenState extends State<PlanScreen> {
     );
   }
 
+  Widget _buildMemberState(bool isDark, Color textColor) {
+    if (_canRequest) return _buildGenerateForm(isDark, textColor);
+
+    final request = _request;
+    if (request?['status'] == 'consent_required') {
+      return _buildConsentRequiredState(isDark, textColor);
+    }
+
+    final status = request?['status']?.toString();
+    final specialist = _isWorkoutKind ? 'trainer' : 'dietitian';
+    final message = switch (status) {
+      'requested' => 'Your request has been sent to your company $specialist.',
+      'claimed' => 'Your company $specialist is preparing your plan.',
+      'generating' =>
+        'Your company $specialist is generating a draft for review.',
+      'review_ready' =>
+        'Your company $specialist is reviewing your plan before approval.',
+      'generation_failed' =>
+        'Your company $specialist has been notified to retry your plan.',
+      _ => 'Your plan renewal is being prepared by your company $specialist.',
+    };
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: GlassCard(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(_emoji, style: const TextStyle(fontSize: 38)),
+              const SizedBox(height: 14),
+              Text(
+                'Your ${_isWorkoutKind ? 'workout' : 'diet'} plan is in review',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: textColor,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 16,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                message,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: isDark ? Colors.grey[400] : Colors.grey[600],
+                  fontSize: 12.5,
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: 16),
+              OutlinedButton.icon(
+                onPressed: _load,
+                icon: const Icon(Icons.refresh_rounded, size: 17),
+                label: const Text('Check status'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildConsentRequiredState(bool isDark, Color textColor) {
+    final disclosure = (_planState?['consent'] is Map)
+        ? (_planState!['consent'] as Map)['disclosure_text']?.toString()
+        : null;
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: GlassCard(
+          padding: const EdgeInsets.all(22),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                _emoji,
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 38),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Confirm AI processing consent',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: textColor,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 16,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                disclosure ??
+                    'Your company specialist uses AI to prepare a plan from the health and preference information you provide. They review the plan before you can see it.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: isDark ? Colors.grey[400] : Colors.grey[600],
+                  fontSize: 12.5,
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: 12),
+              CheckboxListTile(
+                contentPadding: EdgeInsets.zero,
+                value: _consentChecked,
+                activeColor: _accent,
+                onChanged: (value) =>
+                    setState(() => _consentChecked = value ?? false),
+                title: Text(
+                  'I consent to this AI processing',
+                  style: TextStyle(
+                    color: textColor,
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              if (_generateError != null) ...[
+                Text(
+                  _generateError!,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Colors.redAccent, fontSize: 12),
+                ),
+                const SizedBox(height: 8),
+              ],
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _accent,
+                  foregroundColor: Colors.white,
+                ),
+                onPressed: _isGenerating ? null : _grantRenewalConsent,
+                child: Text(_isGenerating ? 'Saving…' : 'Confirm consent'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _grantRenewalConsent() async {
+    if (!_consentChecked) {
+      setState(() => _generateError = 'Please confirm consent to continue.');
+      return;
+    }
+    setState(() {
+      _isGenerating = true;
+      _generateError = null;
+    });
+    try {
+      await ApiService.instance.updateReviewedPlanConsent(true);
+      await _load();
+      if (mounted) setState(() => _isGenerating = false);
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _generateError = e.toString().replaceFirst('Exception: ', '');
+          _isGenerating = false;
+        });
+      }
+    }
+  }
+
+  String _formatPlanDate(BuildContext context, dynamic value) {
+    final date = DateTime.tryParse(value?.toString() ?? '');
+    if (date == null) return 'the end of the plan period';
+    return MaterialLocalizations.of(context).formatMediumDate(date.toLocal());
+  }
+
+  Widget _buildPlanTiming(BuildContext context, Color? secondaryTextColor) {
+    final active = _planState?['active_plan'];
+    if (active is! Map) return const SizedBox.shrink();
+    final duration = active['duration_weeks']?.toString() ?? '4';
+    final upcoming = _planState?['upcoming_plan'];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Reviewed and approved by your company ${_isWorkoutKind ? 'trainer' : 'dietitian'} · $duration-week plan · active until ${_formatPlanDate(context, active['valid_until'])}',
+          style: TextStyle(
+            color: secondaryTextColor,
+            fontSize: 11.5,
+            height: 1.35,
+          ),
+        ),
+        if (upcoming is Map) ...[
+          const SizedBox(height: 6),
+          Text(
+            'Your next reviewed plan is scheduled to begin ${_formatPlanDate(context, upcoming['valid_from'])}.',
+            style: TextStyle(
+              color: _accent,
+              fontSize: 11.5,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildTimeline(Color textColor, Color? secondaryTextColor) {
+    final active = _planState?['active_plan'];
+    final rawTimeline = active is Map ? active['timeline'] : null;
+    if (rawTimeline is! List || rawTimeline.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'PLAN TIMELINE',
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 0.8,
+            color: secondaryTextColor,
+          ),
+        ),
+        const SizedBox(height: 8),
+        ...rawTimeline.map((entry) {
+          final week = Map<String, dynamic>.from(entry as Map);
+          final checkpoints =
+              (week['checkpoints'] as List<dynamic>?)?.join(' · ') ?? '';
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: GlassCard(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Week ${week['week']}: ${week['focus']}',
+                    style: TextStyle(
+                      color: textColor,
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  if (checkpoints.isNotEmpty) ...[
+                    const SizedBox(height: 3),
+                    Text(
+                      checkpoints,
+                      style: TextStyle(
+                        color: secondaryTextColor,
+                        fontSize: 11.5,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          );
+        }),
+      ],
+    );
+  }
+
   Widget _buildPlanView(bool isDark, Color textColor) {
     final secondaryTextColor = isDark ? Colors.grey[400] : Colors.grey[600];
-    final cooldown = _cooldownRemaining;
 
     final title = _isWorkoutKind ? _workoutPlan!.title : _nutritionPlan!.title;
     final summary = _isWorkoutKind
@@ -331,56 +604,13 @@ class _PlanScreenState extends State<PlanScreen> {
                       ? _workoutBadges()
                       : _nutritionBadges(),
                 ),
-                const SizedBox(height: 16),
-                if (_generateError != null) ...[
-                  Text(
-                    _generateError!,
-                    style: const TextStyle(
-                      color: Colors.redAccent,
-                      fontSize: 11.5,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                ],
-                ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: cooldown != null
-                        ? Colors.grey.withValues(alpha: 0.25)
-                        : _accent,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                  ),
-                  onPressed: (_isGenerating || cooldown != null)
-                      ? null
-                      : _generate,
-                  icon: _isGenerating
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                      : const Icon(Icons.refresh_rounded, size: 18),
-                  label: Text(
-                    _isGenerating
-                        ? "Generating…"
-                        : cooldown != null
-                        ? "Regenerate in ${_formatDuration(cooldown)}"
-                        : "Regenerate plan",
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w800,
-                      fontSize: 12.5,
-                    ),
-                  ),
-                ),
+                const SizedBox(height: 12),
+                _buildPlanTiming(context, secondaryTextColor),
               ],
             ),
           ),
+          const SizedBox(height: 16),
+          _buildTimeline(textColor, secondaryTextColor),
           const SizedBox(height: 16),
           Text(
             "$days-DAY SCHEDULE",
@@ -683,6 +913,9 @@ class _PlanScreenState extends State<PlanScreen> {
 
   Widget _buildGenerateForm(bool isDark, Color textColor) {
     final secondaryTextColor = isDark ? Colors.grey[400] : Colors.grey[600];
+    final disclosure = (_planState?['consent'] is Map)
+        ? (_planState!['consent'] as Map)['disclosure_text']?.toString()
+        : null;
 
     return SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
@@ -698,7 +931,7 @@ class _PlanScreenState extends State<PlanScreen> {
                 Text(_emoji, style: const TextStyle(fontSize: 34)),
                 const SizedBox(height: 12),
                 Text(
-                  "No $_title yet",
+                  "Request your $_title",
                   style: TextStyle(
                     fontWeight: FontWeight.w900,
                     fontSize: 16,
@@ -707,7 +940,7 @@ class _PlanScreenState extends State<PlanScreen> {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  "Tell us a bit about your goals and we'll generate one for you.",
+                  "Share your preferences. Your company ${_isWorkoutKind ? 'trainer' : 'dietitian'} will create and approve the plan before it appears here.",
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: secondaryTextColor,
@@ -724,6 +957,42 @@ class _PlanScreenState extends State<PlanScreen> {
           else
             _buildNutritionForm(isDark, textColor),
           const SizedBox(height: 20),
+          GlassCard(
+            padding: const EdgeInsets.all(14),
+            child: Column(
+              children: [
+                Text(
+                  disclosure ??
+                      'AI is used to prepare a draft from the health and preference information you provide. Your company specialist reviews it before approval.',
+                  style: TextStyle(
+                    color: secondaryTextColor,
+                    fontSize: 11.5,
+                    height: 1.35,
+                  ),
+                ),
+                CheckboxListTile(
+                  contentPadding: EdgeInsets.zero,
+                  value: _hasAiConsent || _consentChecked,
+                  activeColor: _accent,
+                  onChanged: _hasAiConsent
+                      ? null
+                      : (value) =>
+                            setState(() => _consentChecked = value ?? false),
+                  title: Text(
+                    _hasAiConsent
+                        ? 'AI processing consent already confirmed'
+                        : 'I consent to this AI processing',
+                    style: TextStyle(
+                      color: textColor,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
           if (_generateError != null) ...[
             Text(
               _generateError!,
@@ -741,7 +1010,7 @@ class _PlanScreenState extends State<PlanScreen> {
               ),
               padding: const EdgeInsets.symmetric(vertical: 14),
             ),
-            onPressed: _isGenerating ? null : _generate,
+            onPressed: _isGenerating ? null : _requestPlan,
             icon: _isGenerating
                 ? const SizedBox(
                     width: 18,
@@ -753,7 +1022,9 @@ class _PlanScreenState extends State<PlanScreen> {
                   )
                 : const Text("✨", style: TextStyle(fontSize: 16)),
             label: Text(
-              _isGenerating ? "Generating your plan…" : "Generate plan",
+              _isGenerating
+                  ? "Sending request…"
+                  : "Get ${_isWorkoutKind ? 'workout' : 'diet'} plan",
               style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
             ),
           ),

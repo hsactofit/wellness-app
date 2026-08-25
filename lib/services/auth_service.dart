@@ -582,11 +582,23 @@ class AuthService {
     required String corporateId,
     required String facilityId,
     String? goal,
+    List<String> goals = const [],
+    String? activityLevel,
+    String? dob,
+    String? gender,
+    double? heightCm,
+    double? weightKg,
   }) {
     return _authedPost('/api/enrolments/me/start', {
       'corporate_id': corporateId,
       'facility_id': facilityId,
       'goal': goal,
+      'goals': goals,
+      'activity_level': activityLevel,
+      'dob': dob,
+      'gender': gender,
+      'height_cm': heightCm,
+      'weight_kg': weightKg,
     });
   }
 

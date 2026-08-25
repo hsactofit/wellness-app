@@ -26,7 +26,11 @@ import 'mood_checkin_screen.dart';
 import 'plan_screen.dart';
 import 'profile_screen.dart';
 import 'notifications_screen.dart';
+import 'body_composition_report_review_screen.dart';
+import 'body_composition_reports_screen.dart';
+import 'update_health_camera_screen.dart';
 import '../models/plan_models.dart';
+import '../models/body_composition_report.dart';
 import '../widgets/water/wave_painter.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -113,6 +117,7 @@ class DashboardScreenState extends State<DashboardScreen>
   double? _apiStepsTarget;
   // ignore: unused_field
   String? _apiStepsStatus;
+  double? _apiWeeklyAverageStepsValue;
 
   double? _apiCaloriesValue;
   double? _apiCaloriesTarget;
@@ -953,31 +958,23 @@ class DashboardScreenState extends State<DashboardScreen>
         final int nutriSub = syncData['nutrition_subscore'] ?? 0;
         final int mindSub = syncData['mindfulness_subscore'] ?? 0;
 
-        // Nutrition macros — wellness-server's dashboard response has no
-        // macro-aggregate fields (there's no protein_today/carbs_today/
-        // fat_today anywhere in DashboardOut), so derive today's totals
-        // from the member's real meal logs instead of reading fields that
-        // don't exist.
+        // Nutrition totals are calculated server-side from saved MealLog
+        // values in the member's local calendar day. This preserves the AI
+        // estimate's calories instead of reconstructing them from macros.
         double apiProtein = 0.0;
         double apiCarbs = 0.0;
         double apiFat = 0.0;
+        double apiNutriCal = 0.0;
         try {
-          final logsRes = await ApiService.instance.fetchNutritionLogs(email);
-          final logs = logsRes['logs'] as List<dynamic>? ?? [];
-          final todayStr = DateTime.now().toIso8601String().substring(0, 10);
-          for (final log in logs) {
-            final loggedAt =
-                (log['logged_at'] ?? log['timestamp'])?.toString() ?? '';
-            if (!loggedAt.startsWith(todayStr)) continue;
-            final macros = log['macros'] as Map<String, dynamic>? ?? {};
-            apiProtein += (macros['protein'] as num?)?.toDouble() ?? 0.0;
-            apiCarbs += (macros['carbs'] as num?)?.toDouble() ?? 0.0;
-            apiFat += (macros['fats'] as num?)?.toDouble() ?? 0.0;
-          }
+          final tracker = await ApiService.instance.fetchNutritionTracker();
+          final today = tracker.today;
+          apiNutriCal = (today['calories'] as num?)?.toDouble() ?? 0.0;
+          apiProtein = (today['protein_g'] as num?)?.toDouble() ?? 0.0;
+          apiCarbs = (today['carbs_g'] as num?)?.toDouble() ?? 0.0;
+          apiFat = (today['fats_g'] as num?)?.toDouble() ?? 0.0;
         } catch (e) {
-          debugPrint("Failed to derive today's macros from nutrition logs: $e");
+          debugPrint("Failed to load today's nutrition totals: $e");
         }
-        final double apiNutriCal = apiProtein * 4 + apiCarbs * 4 + apiFat * 9;
 
         // ── Parse widgets[] array ─────────────────────────────────────────────
         final List<dynamic> widgetsData = resData['widgets'] ?? [];
@@ -1010,6 +1007,14 @@ class DashboardScreenState extends State<DashboardScreen>
             stepsW['target']?.toString() ?? '',
           );
           parsedStepsStatus = stepsW['status']?.toString();
+        }
+
+        double? parsedWeeklyAverageStepsVal;
+        final weeklyAverageStepsW = findWidget('Weekly Average Steps');
+        if (weeklyAverageStepsW != null) {
+          parsedWeeklyAverageStepsVal = double.tryParse(
+            weeklyAverageStepsW['value']?.toString() ?? '',
+          );
         }
 
         // Calories Burned
@@ -1118,6 +1123,7 @@ class DashboardScreenState extends State<DashboardScreen>
           _apiStepsValue = parsedStepsVal;
           _apiStepsTarget = parsedStepsTarget;
           _apiStepsStatus = parsedStepsStatus;
+          _apiWeeklyAverageStepsValue = parsedWeeklyAverageStepsVal;
 
           _apiCaloriesValue = parsedCalVal;
           _apiCaloriesTarget = parsedCalTarget;
@@ -1151,7 +1157,7 @@ class DashboardScreenState extends State<DashboardScreen>
         });
 
         debugPrint(
-          "✅ Dashboard synced — score: $score, steps: $parsedStepsVal, calories: $parsedCalVal, sleep: $parsedSleepVal, water: $parsedWaterVal, rewards: $parsedRewardPoints, challenges: $parsedChallengesVal",
+          "✅ Dashboard synced — daily steps: $parsedStepsVal, weekly average steps: $parsedWeeklyAverageStepsVal, score: $score, calories: $parsedCalVal, sleep: $parsedSleepVal, water: $parsedWaterVal, rewards: $parsedRewardPoints, challenges: $parsedChallengesVal",
         );
       } catch (e) {
         debugPrint("Error in _syncAndRefreshDashboard combined flow: $e");
@@ -3041,14 +3047,14 @@ class DashboardScreenState extends State<DashboardScreen>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            "Nutrition Summary",
+                            "Meal Tracker",
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 18,
                             ),
                           ),
                           Text(
-                            "Today's macros and intake",
+                            "Today’s calories and protein",
                             style: TextStyle(color: Colors.grey, fontSize: 12),
                           ),
                         ],
@@ -3061,7 +3067,7 @@ class DashboardScreenState extends State<DashboardScreen>
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     const Text(
-                      "Calories",
+                      "Calories today",
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                     Text(
@@ -3093,7 +3099,7 @@ class DashboardScreenState extends State<DashboardScreen>
                 const SizedBox(height: 12),
                 Center(
                   child: Text(
-                    "Tap to log food ›",
+                    "Log a meal ›",
                     style: TextStyle(
                       fontSize: 12,
                       color: Colors.orangeAccent.withValues(alpha: 0.8),
@@ -3367,7 +3373,8 @@ class DashboardScreenState extends State<DashboardScreen>
 
   Widget _buildStepsCard(
     bool isDark,
-    double steps,
+    double dailySteps,
+    double? weeklyAverageSteps,
     double goal,
     VoidCallback onTap,
   ) {
@@ -3386,7 +3393,7 @@ class DashboardScreenState extends State<DashboardScreen>
         ? const Color(0xFF1F3530).withValues(alpha: 0.8)
         : const Color(0xFFB9DDD3);
     final textColor = isDark ? Colors.white : const Color(0xFF1E2843);
-    final progress = (steps / goal).clamp(0.0, 1.0);
+    final progress = (dailySteps / goal).clamp(0.0, 1.0);
 
     return Container(
       height: 140,
@@ -3430,14 +3437,29 @@ class DashboardScreenState extends State<DashboardScreen>
                     ),
                   ],
                 ),
-                Text(
-                  _formatWithCommas(steps.round()),
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.w900,
-                    color: textColor,
-                    letterSpacing: -0.5,
-                  ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildStepValue(
+                        label: 'Daily Steps',
+                        value: dailySteps,
+                        textColor: textColor,
+                      ),
+                    ),
+                    Container(
+                      height: 38,
+                      width: 1,
+                      color: isDark ? Colors.white12 : Colors.black12,
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: _buildStepValue(
+                        label: 'Weekly Average',
+                        value: weeklyAverageSteps,
+                        textColor: textColor,
+                      ),
+                    ),
+                  ],
                 ),
                 Row(
                   children: [
@@ -3472,6 +3494,37 @@ class DashboardScreenState extends State<DashboardScreen>
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildStepValue({
+    required String label,
+    required double? value,
+    required Color textColor,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w800,
+            color: textColor.withValues(alpha: 0.62),
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          value == null ? '--' : _formatWithCommas(value.round()),
+          style: TextStyle(
+            fontSize: 21,
+            fontWeight: FontWeight.w900,
+            color: textColor,
+            letterSpacing: -0.5,
+          ),
+          overflow: TextOverflow.ellipsis,
+        ),
+      ],
     );
   }
 
@@ -4008,9 +4061,9 @@ class DashboardScreenState extends State<DashboardScreen>
                     child: _buildTodayPlansSection(theme, isDark),
                   ),
 
-                  // Face Scan Banner
+                  // Update your health
                   SliverToBoxAdapter(
-                    child: _buildFaceScanBanner(theme, isDark),
+                    child: _buildUpdateYourHealthBanner(theme, isDark),
                   ),
 
                   // Asymmetric Staggered Width Rows: Row 1 (Steps wide + HR circle), Row 2 (Calories + Sleep wide)
@@ -4033,6 +4086,7 @@ class DashboardScreenState extends State<DashboardScreen>
                                 child: _buildStepsCard(
                                   isDark,
                                   _apiStepsValue ?? _healthData.steps,
+                                  _apiWeeklyAverageStepsValue,
                                   _apiStepsTarget ?? _stepGoal,
                                   () => _navigateToMetricDetail(
                                     'steps',
@@ -4469,14 +4523,66 @@ class DashboardScreenState extends State<DashboardScreen>
     );
   }
 
-  Widget _buildFaceScanBanner(ThemeData theme, bool isDark) {
+  Future<void> _openUpdateYourHealth() async {
+    final draft = await Navigator.of(context).push(
+      MaterialPageRoute<BodyCompositionDraft>(
+        builder: (_) => const UpdateHealthCameraScreen(),
+      ),
+    );
+    if (draft == null || !mounted) return;
+    final report = await Navigator.of(context).push(
+      MaterialPageRoute<BodyCompositionReport>(
+        builder: (_) => BodyCompositionReportReviewScreen(draft: draft),
+      ),
+    );
+    if (report == null || !mounted) return;
+    await _fetchRealData(forceSync: true, showSyncIndicator: false);
+    if (!mounted) return;
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        icon: const Icon(Icons.health_and_safety_outlined, color: Colors.green),
+        title: const Text('Health report uploaded'),
+        content: Text(
+          report.calculatedBmi == null
+              ? 'Your report is saved. Add your height in Profile to calculate app BMI.'
+              : 'Your report is saved. Your current app BMI is ${report.calculatedBmi!.toStringAsFixed(1)}.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Done'),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.of(dialogContext).pop();
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const BodyCompositionReportsScreen(),
+                ),
+              );
+            },
+            child: const Text('View Reports'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _openHealthReports() {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const BodyCompositionReportsScreen()),
+    );
+  }
+
+  Widget _buildUpdateYourHealthBanner(ThemeData theme, bool isDark) {
     final textColor = isDark ? Colors.white : Colors.black87;
     final secondaryTextColor = isDark ? Colors.grey[400] : Colors.grey[600];
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Container(
-        height: 100,
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(22),
           gradient: LinearGradient(
@@ -4493,76 +4599,57 @@ class DashboardScreenState extends State<DashboardScreen>
             width: 1.3,
           ),
         ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(22),
-          child: Stack(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Row(
-                      children: [
-                        Text(
-                          "Scan your face, ",
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w700,
-                            color: textColor,
-                          ),
-                        ),
-                        const Text(
-                          "read 9 vitals.",
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w900,
-                            color: Color(0xFFFF6D55),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      "HR • BP • SpO2 • HRV • Stress",
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: secondaryTextColor,
-                      ),
-                    ),
-                  ],
-                ),
+        child: Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: const Color(0xFF2ECAE5).withValues(alpha: 0.14),
+                shape: BoxShape.circle,
               ),
-              Positioned(
-                right: 20,
-                top: 0,
-                bottom: 0,
-                child: Center(
-                  child: Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFF6D55).withValues(alpha: 0.12),
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: const Color(0xFFFF6D55).withValues(alpha: 0.3),
-                        width: 1.5,
-                      ),
-                    ),
-                    child: const Center(
-                      child: Icon(
-                        Icons.face_retouching_natural_rounded,
-                        color: Color(0xFFFF6D55),
-                        size: 22,
-                      ),
+              child: const Icon(
+                Icons.monitor_weight_outlined,
+                color: Color(0xFF2ECAE5),
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Update Your Health',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w900,
+                      color: textColor,
                     ),
                   ),
-                ),
+                  const SizedBox(height: 3),
+                  Text(
+                    'Scan your gym BMI or body-composition report.',
+                    style: TextStyle(fontSize: 11, color: secondaryTextColor),
+                  ),
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 8,
+                    children: [
+                      FilledButton.icon(
+                        onPressed: _openUpdateYourHealth,
+                        icon: const Icon(Icons.camera_alt_outlined, size: 16),
+                        label: const Text('Scan Report'),
+                      ),
+                      TextButton(
+                        onPressed: _openHealthReports,
+                        child: const Text('View Reports'),
+                      ),
+                    ],
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -4721,9 +4808,10 @@ class DashboardScreenState extends State<DashboardScreen>
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
                     _buildQuickAccessItem(
-                      "📷",
-                      "Face Scan",
-                      const Color(0xFFFF6D55),
+                      "📄",
+                      "Health Reports",
+                      const Color(0xFF2ECAE5),
+                      onTap: _openHealthReports,
                     ),
                     _buildQuickAccessItem(
                       "🍲",
@@ -4733,7 +4821,10 @@ class DashboardScreenState extends State<DashboardScreen>
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => const NutritionLoggingScreen(),
+                            builder: (_) => NutritionLoggingScreen(
+                              onFoodLogged: () =>
+                                  _fetchRealData(forceSync: true),
+                            ),
                           ),
                         );
                       },

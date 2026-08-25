@@ -38,7 +38,7 @@
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>
-	<string>Allow camera access to scan QR codes for checking in to partner gyms.</string>
+	<string>Allow camera access to scan gym BMI and body-composition reports so you can update your health data.</string>
 	<key>NSHealthShareUsageDescription</key>
 	<string>Allow access to health data to sync step counts, vitals, sleep, calories, weight, and blood pressure with your dashboard.</string>
 	<key>NSHealthUpdateUsageDescription</key>

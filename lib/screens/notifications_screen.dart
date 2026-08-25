@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../models/plan_models.dart';
+import '../screens/plan_screen.dart';
 import '../services/api_service.dart';
 
 class NotificationsScreen extends StatefulWidget {
@@ -62,6 +64,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       'attendance' => Icons.fitness_center_rounded,
       'program' => Icons.event_note_rounded,
       'reward' => Icons.emoji_events_outlined,
+      'plan' => Icons.assignment_turned_in_outlined,
       'support' => Icons.support_agent_rounded,
       _ => Icons.notifications_outlined,
     };
@@ -86,6 +89,18 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     if (difference.inDays < 1) return '${difference.inHours}h ago';
     if (difference.inDays < 7) return '${difference.inDays}d ago';
     return '${date.day}/${date.month}/${date.year}';
+  }
+
+  void _openAction(String? actionTo) {
+    final kind = switch (actionTo) {
+      '/plans/nutrition' => PlanKind.nutrition,
+      '/plans/workout' => PlanKind.workout,
+      _ => null,
+    };
+    if (kind == null) return;
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => PlanScreen(kind: kind)));
   }
 
   @override
@@ -147,74 +162,105 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                         final item = notifications[index];
                         final priority = item['priority']?.toString() ?? '';
                         final color = _colorForPriority(priority);
-                        return Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: isDark
-                                ? Colors.white.withValues(alpha: 0.05)
-                                : Colors.white,
-                            borderRadius: BorderRadius.circular(18),
-                            border: Border.all(
-                              color: color.withValues(alpha: 0.18),
+                        final actionTo = item['action_to']?.toString();
+                        final actionLabel = item['action_label']?.toString();
+                        return GestureDetector(
+                          onTap: actionTo?.startsWith('/plans/') == true
+                              ? () => _openAction(actionTo)
+                              : null,
+                          child: Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: isDark
+                                  ? Colors.white.withValues(alpha: 0.05)
+                                  : Colors.white,
+                              borderRadius: BorderRadius.circular(18),
+                              border: Border.all(
+                                color: color.withValues(alpha: 0.18),
+                              ),
                             ),
-                          ),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Container(
-                                width: 42,
-                                height: 42,
-                                decoration: BoxDecoration(
-                                  color: color.withValues(alpha: 0.12),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Icon(
-                                  _iconForCategory(
-                                    item['category']?.toString() ?? '',
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Container(
+                                  width: 42,
+                                  height: 42,
+                                  decoration: BoxDecoration(
+                                    color: color.withValues(alpha: 0.12),
+                                    shape: BoxShape.circle,
                                   ),
-                                  color: color,
-                                  size: 21,
+                                  child: Icon(
+                                    _iconForCategory(
+                                      item['category']?.toString() ?? '',
+                                    ),
+                                    color: color,
+                                    size: 21,
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      item['title']?.toString() ??
-                                          'Notification',
-                                      style: const TextStyle(
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.w800,
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        item['title']?.toString() ??
+                                            'Notification',
+                                        style: const TextStyle(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w800,
+                                        ),
                                       ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      item['body']?.toString() ?? '',
-                                      style: TextStyle(
-                                        height: 1.35,
-                                        fontSize: 13,
-                                        color: isDark
-                                            ? Colors.white60
-                                            : Colors.black54,
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        item['body']?.toString() ?? '',
+                                        style: TextStyle(
+                                          height: 1.35,
+                                          fontSize: 13,
+                                          color: isDark
+                                              ? Colors.white60
+                                              : Colors.black54,
+                                        ),
                                       ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      _formatCreatedAt(item['created_at']),
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w600,
-                                        color: isDark
-                                            ? Colors.white38
-                                            : Colors.black38,
+                                      const SizedBox(height: 8),
+                                      Row(
+                                        children: [
+                                          Text(
+                                            _formatCreatedAt(
+                                              item['created_at'],
+                                            ),
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.w600,
+                                              color: isDark
+                                                  ? Colors.white38
+                                                  : Colors.black38,
+                                            ),
+                                          ),
+                                          if (actionTo?.startsWith('/plans/') ==
+                                              true) ...[
+                                            const Spacer(),
+                                            Text(
+                                              actionLabel ?? 'View plan',
+                                              style: TextStyle(
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.w800,
+                                                color: color,
+                                              ),
+                                            ),
+                                            Icon(
+                                              Icons.chevron_right_rounded,
+                                              color: color,
+                                              size: 16,
+                                            ),
+                                          ],
+                                        ],
                                       ),
-                                    ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         );
                       },

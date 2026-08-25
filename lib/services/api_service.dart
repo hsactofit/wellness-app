@@ -3,6 +3,8 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'auth_service.dart';
 import '../screens/challenges_screen.dart';
+import '../models/meal_analysis.dart';
+import '../models/body_composition_report.dart';
 
 class ApiService {
   ApiService._privateConstructor();
@@ -444,6 +446,60 @@ class ApiService {
     }
   }
 
+  Future<MealAnalysis> createMealAnalysis(String description) async {
+    final response = await _post(
+      '/api/nutrition/meal-analyses',
+      body: {'description': description},
+    );
+    if (response.statusCode == 201) {
+      return MealAnalysis.fromJson(
+        Map<String, dynamic>.from(jsonDecode(response.body)),
+      );
+    }
+    throw Exception(_aiErrorDetail(response));
+  }
+
+  Future<MealAnalysis> updateMealAnalysis(String id, String description) async {
+    final response = await _put(
+      '/api/nutrition/meal-analyses/$id',
+      body: {'description': description},
+    );
+    if (response.statusCode == 200) {
+      return MealAnalysis.fromJson(
+        Map<String, dynamic>.from(jsonDecode(response.body)),
+      );
+    }
+    throw Exception(_aiErrorDetail(response));
+  }
+
+  Future<Map<String, dynamic>> commitMealAnalysis(String id) async {
+    final response = await _post('/api/nutrition/meal-analyses/$id/commit');
+    if (response.statusCode == 200) {
+      return Map<String, dynamic>.from(jsonDecode(response.body));
+    }
+    throw Exception(_aiErrorDetail(response));
+  }
+
+  Future<NutritionTracker> fetchNutritionTracker({int days = 7}) async {
+    final now = DateTime.now();
+    final localDate = now.toIso8601String().substring(0, 10);
+    final offsetMinutes = now.timeZoneOffset.inMinutes;
+    final response = await _get(
+      '/api/nutrition/tracker',
+      queryParams: {
+        'local_date': localDate,
+        'utc_offset_minutes': '$offsetMinutes',
+        'days': '$days',
+      },
+    );
+    if (response.statusCode == 200) {
+      return NutritionTracker.fromJson(
+        Map<String, dynamic>.from(jsonDecode(response.body)),
+      );
+    }
+    throw Exception(_aiErrorDetail(response));
+  }
+
   /// NOT IMPLEMENTED on wellness-server — there is no nutrition trend/graph
   /// endpoint yet (see medifit-kb/MEDIFIT_KB.md §3). Left in place so
   /// callers compile, but this will always fail until that endpoint exists.
@@ -510,7 +566,8 @@ class ApiService {
 
   /// GET /health/dashboard (current member, via Bearer token).
   Future<Map<String, dynamic>> getDashboard(String email) async {
-    final response = await _get('/api/health/dashboard');
+    final localDay = DateTime.now().toIso8601String().substring(0, 10);
+    final response = await _get('/api/health/dashboard?day=$localDay');
     if (response.statusCode == 200) {
       return Map<String, dynamic>.from(jsonDecode(response.body));
     } else {
@@ -518,6 +575,49 @@ class ApiService {
         "Failed to get dashboard: ${response.statusCode} - ${response.body}",
       );
     }
+  }
+
+  // ── Member body-composition reports ─────────────────────────────
+
+  Future<BodyCompositionReport> uploadBodyCompositionReport(
+    BodyCompositionDraft draft, {
+    required bool memberCorrected,
+  }) async {
+    final response = await _post(
+      '/api/health/body-composition-reports',
+      body: {
+        'measured_at': draft.measuredAt.toUtc().toIso8601String(),
+        'client_submission_id': draft.clientSubmissionId,
+        'ocr_transcript': draft.ocrTranscript,
+        'measurements': draft.measurements.toJson(),
+        'member_corrected': memberCorrected,
+      },
+    );
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return BodyCompositionReport.fromJson(
+        Map<String, dynamic>.from(jsonDecode(response.body) as Map),
+      );
+    }
+    throw Exception(
+      'Failed to upload health report: ${response.statusCode} ${response.body}',
+    );
+  }
+
+  Future<List<BodyCompositionReport>> fetchBodyCompositionReports() async {
+    final response = await _get('/api/health/body-composition-reports');
+    if (response.statusCode == 200) {
+      final payload = jsonDecode(response.body) as List<dynamic>;
+      return payload
+          .map(
+            (item) => BodyCompositionReport.fromJson(
+              Map<String, dynamic>.from(item as Map),
+            ),
+          )
+          .toList();
+    }
+    throw Exception(
+      'Failed to load health reports: ${response.statusCode} ${response.body}',
+    );
   }
 
   // ── Mental Wellness API ────────────────────────────────────────
@@ -695,6 +795,40 @@ class ApiService {
   ) async {
     final response = await _post('/api/ai/workout-plan/generate', body: body);
     if (response.statusCode == 200 || response.statusCode == 201) {
+      return Map<String, dynamic>.from(jsonDecode(response.body));
+    }
+    throw Exception(_aiErrorDetail(response));
+  }
+
+  // ── Reviewed plan workflow ──────────────────────────────────────
+  // A member asks for a plan; the company dietician or trainer creates an
+  // AI-assisted draft, reviews it, and approves the version the member sees.
+
+  Future<Map<String, dynamic>> getReviewedPlanState(String planType) async {
+    final response = await _get('/api/plans/$planType');
+    if (response.statusCode == 200) {
+      return Map<String, dynamic>.from(jsonDecode(response.body));
+    }
+    throw Exception(_aiErrorDetail(response));
+  }
+
+  Future<Map<String, dynamic>> requestReviewedPlan(
+    String planType,
+    Map<String, dynamic> body,
+  ) async {
+    final response = await _post('/api/plans/$planType/requests', body: body);
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return Map<String, dynamic>.from(jsonDecode(response.body));
+    }
+    throw Exception(_aiErrorDetail(response));
+  }
+
+  Future<Map<String, dynamic>> updateReviewedPlanConsent(bool granted) async {
+    final response = await _put(
+      '/api/plans/ai-consent',
+      body: {'granted': granted},
+    );
+    if (response.statusCode == 200) {
       return Map<String, dynamic>.from(jsonDecode(response.body));
     }
     throw Exception(_aiErrorDetail(response));

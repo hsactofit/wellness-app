@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+
+import '../models/meal_analysis.dart';
+import 'nutrition_logging_screen.dart';
 import '../services/api_service.dart';
 import '../widgets/glass_card.dart';
 
@@ -60,6 +63,8 @@ class _AIScreenState extends State<AIScreen> {
                       'isUser': role == 'user',
                       'text': m['content'] as String? ?? '',
                       'time': _formatTime(m['created_at'] as String?),
+                      if (m['meal_analysis'] is Map)
+                        'mealAnalysis': Map<String, dynamic>.from(m['meal_analysis'] as Map),
                     };
                   }),
                 );
@@ -144,6 +149,8 @@ class _AIScreenState extends State<AIScreen> {
           'isUser': false,
           'text': reply,
           'time': "Just now",
+          if (resData['meal_analysis'] is Map)
+            'mealAnalysis': Map<String, dynamic>.from(resData['meal_analysis'] as Map),
         };
         _isSending = false;
       });
@@ -372,6 +379,12 @@ class _AIScreenState extends State<AIScreen> {
                               isUser,
                               isDark,
                               isTyping: msg['isTyping'] == true,
+                              analysis: msg['mealAnalysis'] is Map
+                                  ? MealAnalysis.fromJson(
+                                      Map<String, dynamic>.from(msg['mealAnalysis'] as Map),
+                                    )
+                                  : null,
+                              onCommit: () => _commitChatAnalysis(index),
                             );
                           },
                         ),
@@ -502,6 +515,8 @@ class _AIScreenState extends State<AIScreen> {
     bool isUser,
     bool isDark, {
     bool isTyping = false,
+    MealAnalysis? analysis,
+    VoidCallback? onCommit,
   }) {
     return Align(
       alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
@@ -559,16 +574,76 @@ class _AIScreenState extends State<AIScreen> {
                   ),
                 ],
               )
-            : Text(
-                text,
-                style: TextStyle(
-                  color: isUser
-                      ? Colors.white
-                      : (isDark ? Colors.white : Colors.black87),
-                  fontSize: 13,
-                  height: 1.4,
-                ),
+            : Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    text,
+                    style: TextStyle(
+                      color: isUser ? Colors.white : (isDark ? Colors.white : Colors.black87),
+                      fontSize: 13,
+                      height: 1.4,
+                    ),
+                  ),
+                  if (!isUser && analysis != null) ...[
+                    const SizedBox(height: 10),
+                    _mealAnalysisCard(analysis, isDark, onCommit),
+                  ],
+                ],
               ),
+      ),
+    );
+  }
+
+  Future<void> _commitChatAnalysis(int index) async {
+    final raw = _messages[index]['mealAnalysis'];
+    if (raw is! Map) return;
+    final analysis = MealAnalysis.fromJson(Map<String, dynamic>.from(raw));
+    if (analysis.needsClarification || analysis.status == 'logged') return;
+    try {
+      await ApiService.instance.commitMealAnalysis(analysis.id);
+      if (!mounted) return;
+      setState(() {
+        final updated = Map<String, dynamic>.from(raw);
+        updated['status'] = 'logged';
+        _messages[index]['mealAnalysis'] = updated;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Meal added to your tracker.')));
+    } catch (error) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.toString().replaceFirst('Exception: ', ''))));
+    }
+  }
+
+  Widget _mealAnalysisCard(MealAnalysis analysis, bool isDark, VoidCallback? onCommit) {
+    final saved = analysis.status == 'logged';
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: isDark ? Colors.black.withValues(alpha: .18) : const Color(0xFFFFF5EE),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(analysis.needsClarification ? 'Tell me a little more' : 'AI meal estimate', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFFFF8A4C))),
+          if (!analysis.needsClarification) ...[
+            const SizedBox(height: 4),
+            Text('${analysis.calories ?? 0} kcal · ${(analysis.proteinG ?? 0).toStringAsFixed(1)}g protein', style: TextStyle(color: isDark ? Colors.white : Colors.black87, fontWeight: FontWeight.w800)),
+          ],
+          const SizedBox(height: 8),
+          Row(children: [
+            Expanded(child: TextButton(onPressed: () {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => NutritionLoggingScreen(initialAnalysis: analysis)));
+            }, child: Text(analysis.needsClarification ? 'Edit details' : 'Review'))),
+            if (!analysis.needsClarification && !saved) ...[
+              const SizedBox(width: 4),
+              Expanded(child: FilledButton(onPressed: onCommit, child: const Text('Add to tracker'))),
+            ],
+            if (saved) const Expanded(child: Text('Tracked', textAlign: TextAlign.center, style: TextStyle(color: Color(0xFF43B581), fontWeight: FontWeight.w800))),
+          ]),
+        ],
       ),
     );
   }
