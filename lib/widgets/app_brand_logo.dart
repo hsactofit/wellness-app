@@ -43,7 +43,7 @@ class AppBrandLogo extends StatelessWidget {
       padding = const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
       elevated = true;
 
-  /// Original/default Medifit asset kept as a constant for existing callers.
+  /// Original/default Medifit wordmark kept as a constant for existing callers.
   static const String assetPath = 'assets/logo_2.png';
 
   static String get selectedAssetPath => AppBrand.logoAssetPath;

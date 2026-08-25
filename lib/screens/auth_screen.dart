@@ -193,10 +193,19 @@ class _AuthScreenState extends State<AuthScreen>
     if (result == null || !mounted) return;
     final res = result['response'] as Map<String, dynamic>;
     final corporateId = result['corporate_id'] as String?;
+    final corporate = result['corporate'] as Map<String, dynamic>?;
     final email = result['email'] as String? ?? '';
     if (corporateId != null) {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('sso_corporate_id', corporateId);
+      final corporateName = corporate?['name'];
+      if (corporateName is String && corporateName.isNotEmpty) {
+        await prefs.setString('sso_corporate_name', corporateName);
+      }
+      final corporateLogoUrl = corporate?['logo_url'];
+      if (corporateLogoUrl is String && corporateLogoUrl.isNotEmpty) {
+        await prefs.setString('sso_corporate_logo_url', corporateLogoUrl);
+      }
     }
     await _completeLogin(res, email, provider: 'sso');
   }

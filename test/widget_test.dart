@@ -19,5 +19,6 @@ void main() {
     expect(logo.height, 108);
     expect(logo.elevated, isTrue);
     expect(image.image, AssetImage(AppBrand.logoAssetPath));
+    expect(AppBrand.logoAspectRatio, 2.6);
   });
 }

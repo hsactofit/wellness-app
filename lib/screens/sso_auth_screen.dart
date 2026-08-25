@@ -128,6 +128,9 @@ class _SsoAuthScreenState extends State<SsoAuthScreen> {
       Navigator.pop(context, {
         'response': res,
         'corporate_id': _selectedCorporateId,
+        'corporate': _organizations.cast<Map<String, dynamic>>().firstWhere(
+          (organization) => organization['id'] == _selectedCorporateId,
+        ),
         'email': _emailController.text.trim(),
       });
     } catch (e) {

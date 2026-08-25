@@ -667,6 +667,8 @@ class AuthService {
     await prefs.remove('healthSetupCompleted');
     await prefs.remove('healthConnectRequested');
     await prefs.remove('sso_corporate_id');
+    await prefs.remove('sso_corporate_name');
+    await prefs.remove('sso_corporate_logo_url');
     await prefs.remove('sso_health_provider_linked');
     await prefs.remove('user_provider');
     await HealthService.instance.resetLocalState();

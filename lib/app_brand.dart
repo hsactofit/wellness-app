@@ -24,5 +24,5 @@ class AppBrand {
       ? 'assets/branding/mednovations_launcher.png'
       : 'assets/app_logo.png';
 
-  static double get logoAspectRatio => isMednovations ? 1.46 : 1.2;
+  static double get logoAspectRatio => isMednovations ? 1.46 : 2.6;
 }

@@ -12,6 +12,7 @@ import '../services/push_service.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/metric_card.dart';
 import '../widgets/concentric_rings_chart.dart';
+import '../widgets/app_brand_logo.dart';
 import '../widgets/medical/medical_records_section.dart';
 import '../widgets/medical/medical_consent_sheet.dart';
 import '../services/auth_service.dart';
@@ -1716,28 +1717,45 @@ class DashboardScreenState extends State<DashboardScreen>
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  dateHeaderString,
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: isDark ? Colors.white60 : Colors.black54,
-                    letterSpacing: 0.5,
+            Expanded(
+              child: Row(
+                children: [
+                  const AppBrandLogo(
+                    height: 32,
+                    maxWidth: 92,
+                    borderRadius: 8,
+                    padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
                   ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  _getTimeBasedGreeting(),
-                  style: theme.textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: -0.6,
-                    color: isDark ? Colors.white : Colors.black87,
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          dateHeaderString,
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: isDark ? Colors.white60 : Colors.black54,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          _getTimeBasedGreeting(),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.headlineSmall?.copyWith(
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: -0.6,
+                            color: isDark ? Colors.white : Colors.black87,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
             Row(
               children: [

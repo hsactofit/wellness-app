@@ -8,6 +8,7 @@ import '../widgets/onboarding/company_step.dart';
 import '../widgets/onboarding/medical_step.dart';
 import '../widgets/onboarding/consent_step.dart';
 import '../widgets/onboarding/sync_progress_step.dart';
+import '../widgets/app_brand_logo.dart';
 import 'auth_screen.dart';
 import 'main_shell.dart';
 
@@ -496,26 +497,13 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                                 : const Color(0xFF0F172A),
                           ),
                         ),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: Image.asset(
-                          AppBrand.iconAssetPath,
-                          width: 32,
-                          height: 32,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => Container(
-                            width: 32,
-                            height: 32,
-                            alignment: Alignment.center,
-                            color: const Color(0xFF006D5B),
-                            child: Text(
-                              AppBrand.name[0],
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                          ),
+                      const AppBrandLogo(
+                        height: 32,
+                        maxWidth: 92,
+                        borderRadius: 8,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 4,
                         ),
                       ),
                       const Spacer(),
