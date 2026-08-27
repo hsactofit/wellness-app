@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import '../models/plan_models.dart';
 import '../services/api_service.dart';
+import '../services/reviewed_plan_pdf_service.dart';
 import '../widgets/glass_card.dart';
 
 /// Reviewed workout/nutrition plans. A member supplies preferences, then the
@@ -15,7 +18,7 @@ class PlanScreen extends StatefulWidget {
   State<PlanScreen> createState() => _PlanScreenState();
 }
 
-class _PlanScreenState extends State<PlanScreen> {
+class _PlanScreenState extends State<PlanScreen> with WidgetsBindingObserver {
   bool _isWorkout(PlanKind k) => k == PlanKind.workout;
   bool get _isWorkoutKind => _isWorkout(widget.kind);
   Color get _accent =>
@@ -25,6 +28,8 @@ class _PlanScreenState extends State<PlanScreen> {
 
   bool _isLoading = true;
   bool _isGenerating = false;
+  bool _isDownloadingReport = false;
+  bool _isFetchingState = false;
   String? _loadError;
   String? _generateError;
   Map<String, dynamic>? _planState;
@@ -34,6 +39,7 @@ class _PlanScreenState extends State<PlanScreen> {
   NutritionPlan? _nutritionPlan;
 
   final Set<int> _expandedDays = {};
+  Timer? _pendingPlanRefreshTimer;
 
   // Workout form state
   String _goal = 'General fitness';
@@ -55,21 +61,62 @@ class _PlanScreenState extends State<PlanScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _load();
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _pendingPlanRefreshTimer?.cancel();
     _allergyCtrl.dispose();
     _cuisineCtrl.dispose();
     super.dispose();
   }
 
-  Future<void> _load() async {
-    setState(() {
-      _isLoading = true;
-      _loadError = null;
-    });
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _load(silent: true);
+    }
+  }
+
+  Map<String, dynamic>? get _activePlan {
+    final active = _planState?['active_plan'];
+    return active is Map ? Map<String, dynamic>.from(active) : null;
+  }
+
+  bool get _hasPendingRequest {
+    if (_activePlan != null) return false;
+    final status = _request?['status']?.toString();
+    return {
+      'requested',
+      'claimed',
+      'generating',
+      'review_ready',
+    }.contains(status);
+  }
+
+  void _configurePendingPlanRefresh() {
+    _pendingPlanRefreshTimer?.cancel();
+    _pendingPlanRefreshTimer = null;
+    if (!_hasPendingRequest) return;
+    _pendingPlanRefreshTimer = Timer.periodic(
+      const Duration(seconds: 20),
+      (_) => _load(silent: true),
+    );
+  }
+
+  Future<void> _load({bool silent = false}) async {
+    if (_isFetchingState) return;
+    _isFetchingState = true;
+    final hadActivePlan = _activePlan != null;
+    if (!silent) {
+      setState(() {
+        _isLoading = true;
+        _loadError = null;
+      });
+    }
     try {
       final state = await ApiService.instance.getReviewedPlanState(
         _isWorkoutKind ? 'workout' : 'nutrition',
@@ -86,13 +133,19 @@ class _PlanScreenState extends State<PlanScreen> {
             : null;
         _isLoading = false;
       });
+      _configurePendingPlanRefresh();
+      if (!hadActivePlan && _activePlan != null) {
+        widget.onPlanChanged?.call();
+      }
     } catch (e) {
-      if (mounted) {
+      if (mounted && !silent) {
         setState(() {
           _loadError = e.toString().replaceFirst('Exception: ', '');
           _isLoading = false;
         });
       }
+    } finally {
+      _isFetchingState = false;
     }
   }
 
@@ -151,6 +204,7 @@ class _PlanScreenState extends State<PlanScreen> {
           _planState = state;
           _isGenerating = false;
         });
+        _configurePendingPlanRefresh();
       }
     } catch (e) {
       if (mounted) {
@@ -168,6 +222,9 @@ class _PlanScreenState extends State<PlanScreen> {
     final isDark = theme.brightness == Brightness.dark;
     final textColor = isDark ? Colors.white : Colors.black87;
 
+    // Render only after the approved response has been parsed into the
+    // member-facing model. This keeps the screen resilient if a malformed
+    // response ever reaches the app.
     final hasPlan = _isWorkoutKind
         ? _workoutPlan != null
         : _nutritionPlan != null;
@@ -453,6 +510,35 @@ class _PlanScreenState extends State<PlanScreen> {
     }
   }
 
+  Future<void> _downloadPdfReport() async {
+    final active = _activePlan;
+    if (active == null || _isDownloadingReport) return;
+    setState(() => _isDownloadingReport = true);
+    try {
+      await ReviewedPlanPdfService.shareApprovedPlan(
+        kind: widget.kind,
+        plan: active,
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('PDF ready. Choose Save to Files or share it.'),
+          ),
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not create the PDF report. Please try again.'),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isDownloadingReport = false);
+    }
+  }
+
   String _formatPlanDate(BuildContext context, dynamic value) {
     final date = DateTime.tryParse(value?.toString() ?? '');
     if (date == null) return 'the end of the plan period';
@@ -606,6 +692,28 @@ class _PlanScreenState extends State<PlanScreen> {
                 ),
                 const SizedBox(height: 12),
                 _buildPlanTiming(context, secondaryTextColor),
+                const SizedBox(height: 14),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: _isDownloadingReport ? null : _downloadPdfReport,
+                    icon: _isDownloadingReport
+                        ? SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: _accent,
+                            ),
+                          )
+                        : const Icon(Icons.picture_as_pdf_outlined, size: 18),
+                    label: Text(
+                      _isDownloadingReport
+                          ? 'Preparing PDF report...'
+                          : 'Download PDF report',
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
