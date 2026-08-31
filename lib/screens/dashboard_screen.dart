@@ -25,7 +25,6 @@ import 'nutrition_logging_screen.dart';
 import 'sos_screen.dart';
 import 'mood_checkin_screen.dart';
 import 'plan_screen.dart';
-import 'profile_screen.dart';
 import 'notifications_screen.dart';
 import 'body_composition_report_review_screen.dart';
 import 'body_composition_reports_screen.dart';
@@ -1728,40 +1727,27 @@ class DashboardScreenState extends State<DashboardScreen>
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Expanded(
-              child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const AppBrandLogo(
-                    height: 32,
-                    maxWidth: 92,
-                    borderRadius: 8,
-                    padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                  Text(
+                    dateHeaderString,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? Colors.white60 : Colors.black54,
+                      letterSpacing: 0.5,
+                    ),
                   ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          dateHeaderString,
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: isDark ? Colors.white60 : Colors.black54,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          _getTimeBasedGreeting(),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: -0.6,
-                            color: isDark ? Colors.white : Colors.black87,
-                          ),
-                        ),
-                      ],
+                  const SizedBox(height: 2),
+                  Text(
+                    _getTimeBasedGreeting(),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: -0.6,
+                      color: isDark ? Colors.white : Colors.black87,
                     ),
                   ),
                 ],
@@ -1813,46 +1799,11 @@ class DashboardScreenState extends State<DashboardScreen>
                   ),
                 ),
                 const SizedBox(width: 8),
-                // Profile Avatar Initial Button (Circular)
-                Semantics(
-                  button: true,
-                  label: 'Open profile',
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => const ProfileScreen(),
-                        ),
-                      );
-                    },
-                    child: Container(
-                      width: 38,
-                      height: 38,
-                      decoration: BoxDecoration(
-                        color: isDark
-                            ? Colors.white.withValues(alpha: 0.06)
-                            : Colors.white,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: isDark
-                              ? Colors.white10
-                              : Colors.black.withValues(alpha: 0.08),
-                          width: 1.2,
-                        ),
-                      ),
-                      child: Center(
-                        child: Text(
-                          "P",
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w800,
-                            color: isDark ? Colors.white : Colors.black87,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
+                const AppBrandLogo(
+                  height: 32,
+                  maxWidth: 92,
+                  borderRadius: 8,
+                  padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
                 ),
               ],
             ),
