@@ -1,12 +1,9 @@
 import 'dart:convert';
-import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:health/health.dart';
 import '../app_brand.dart';
 import '../services/auth_service.dart';
-import '../services/health_service.dart';
 import '../services/api_service.dart';
 import '../widgets/glass_card.dart';
 import '../main.dart';
@@ -36,7 +33,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String? _checkinCode;
   String? _companyName;
   String? _companyLogoUrl;
-  bool _hcConnected = false;
   bool _isLoading = true;
 
   bool _notifAiTips = true;
@@ -58,8 +54,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final prefs = await SharedPreferences.getInstance();
       final localCheckinCode = prefs.getString('member_checkin_code');
 
-      _hcConnected = prefs.getBool('healthSetupCompleted') ?? false;
-
       try {
         final profileData = await ApiService.instance.fetchUserProfile();
         final name = profileData['name'] ?? "User";
@@ -80,9 +74,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         final checkinCode = profileData['checkin_code'] as String?;
 
         final permissions = profileData['permissions'] ?? {};
-        final hcConnectedApi =
-            permissions['health_connect_connected'] as bool? ?? false;
-
         final notifications = permissions['notifications'] ?? {};
         final aiTips = notifications['ai_tips'] as bool? ?? true;
         final rewards = notifications['rewards'] as bool? ?? false;
@@ -94,11 +85,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             notifications['challenge_updates'] as bool? ?? false;
         final hydrationReminder =
             notifications['hydration_reminder'] as bool? ?? true;
-
-        if (hcConnectedApi != _hcConnected) {
-          _hcConnected = hcConnectedApi;
-          await prefs.setBool('healthSetupCompleted', hcConnectedApi);
-        }
 
         if (!mounted) return;
         setState(() {
@@ -446,127 +432,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           themeNotifier.value = ThemeMode.system;
         }
       });
-    }
-  }
-
-  Future<void> _toggleHealthConnect(bool enable) async {
-    final prefs = await SharedPreferences.getInstance();
-
-    if (enable) {
-      if (Platform.isAndroid) {
-        final status = await HealthService.instance.getAndroidSdkStatus();
-        if (status != HealthConnectSdkStatus.sdkAvailable) {
-          if (!mounted) return;
-          final download = await showDialog<bool>(
-            context: context,
-            builder: (context) {
-              final isDark = Theme.of(context).brightness == Brightness.dark;
-              return AlertDialog(
-                backgroundColor: isDark
-                    ? const Color(0xFF1E1E26)
-                    : Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                title: const Text(
-                  "Install Health Connect",
-                  style: TextStyle(fontWeight: FontWeight.w900),
-                ),
-                content: const Text(
-                  "Health Connect is not installed on this device. Would you like to download it from the Google Play Store to sync your fitness data?",
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context, false),
-                    child: const Text(
-                      "Cancel",
-                      style: TextStyle(color: Colors.grey),
-                    ),
-                  ),
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: _mint,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    onPressed: () => Navigator.pop(context, true),
-                    child: const Text("Download"),
-                  ),
-                ],
-              );
-            },
-          );
-
-          if (download == true) {
-            await HealthService.instance.installHealthConnect();
-          }
-          return;
-        }
-      }
-
-      final permissionGranted = await HealthService.instance
-          .requestPermissions();
-      if (permissionGranted) {
-        await prefs.setBool('healthSetupCompleted', true);
-        await prefs.setBool('health_sync_enabled', true);
-        setState(() => _hcConnected = true);
-
-        try {
-          await ApiService.instance.updateUserProfile({
-            "permissions": {"health_connect_connected": true},
-          });
-        } catch (e) {
-          debugPrint("Failed to sync Health Connect status with server: $e");
-        }
-
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text("Connected to Health Connect successfully"),
-              backgroundColor: _mint,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
-              ),
-            ),
-          );
-        }
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                "Permissions denied. Cannot connect to Health Connect.",
-              ),
-              backgroundColor: Colors.redAccent,
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-        }
-      }
-    } else {
-      await prefs.setBool('healthSetupCompleted', false);
-      await prefs.setBool('health_sync_enabled', false);
-      setState(() => _hcConnected = false);
-
-      try {
-        await ApiService.instance.updateUserProfile({
-          "permissions": {"health_connect_connected": false},
-        });
-      } catch (e) {
-        debugPrint("Failed to sync Health Connect status with server: $e");
-      }
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Health Connect integration disabled."),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
     }
   }
 
@@ -952,23 +817,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 ),
                               ).then((_) => _loadProfileData());
                             },
-                          ),
-                          _divider(isDark),
-                          _settingTile(
-                            isDark: isDark,
-                            textColor: textColor,
-                            secondary: secondary,
-                            icon: Icons.health_and_safety_outlined,
-                            color: _mint,
-                            title: 'Health Connect',
-                            subtitle: _hcConnected
-                                ? 'Connected · auto-syncing data'
-                                : 'Not connected · tap switch to set up',
-                            trailing: Switch.adaptive(
-                              value: _hcConnected,
-                              onChanged: _toggleHealthConnect,
-                              activeThumbColor: _mint,
-                            ),
                           ),
                         ],
                       ),
