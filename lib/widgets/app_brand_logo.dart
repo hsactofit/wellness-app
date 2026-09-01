@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../app_brand.dart';
 
-/// Renders the wordmark selected for the current build.
+/// Renders the logo selected for the current build.
 class AppBrandLogo extends StatelessWidget {
   /// Overall height of the logo plate (width is derived from aspect ratio).
   final double height;
@@ -43,8 +43,8 @@ class AppBrandLogo extends StatelessWidget {
       padding = const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
       elevated = true;
 
-  /// Original/default Medifit wordmark kept as a constant for existing callers.
-  static const String assetPath = 'assets/logo_2.png';
+  /// Default Medifit logo kept as a constant for existing callers.
+  static const String assetPath = 'assets/app_logo.png';
 
   static String get selectedAssetPath => AppBrand.logoAssetPath;
 
