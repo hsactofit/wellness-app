@@ -823,10 +823,13 @@ class ApiService {
     throw Exception(_aiErrorDetail(response));
   }
 
-  Future<Map<String, dynamic>> updateReviewedPlanConsent(bool granted) async {
+  Future<Map<String, dynamic>> updateReviewedPlanConsent(
+    String planType,
+    bool granted,
+  ) async {
     final response = await _put(
       '/api/plans/ai-consent',
-      body: {'granted': granted},
+      body: {'plan_type': planType, 'granted': granted},
     );
     if (response.statusCode == 200) {
       return Map<String, dynamic>.from(jsonDecode(response.body));

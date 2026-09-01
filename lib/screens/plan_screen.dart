@@ -6,6 +6,46 @@ import '../services/api_service.dart';
 import '../services/reviewed_plan_pdf_service.dart';
 import '../widgets/glass_card.dart';
 
+String reviewedPlanConsentWarning(String planLabel) =>
+    'Please confirm AI processing consent before requesting your $planLabel plan.';
+
+class PlanConsentCheckbox extends StatelessWidget {
+  final String planLabel;
+  final bool value;
+  final Color accent;
+  final Color textColor;
+  final ValueChanged<bool?> onChanged;
+  final double fontSize;
+
+  const PlanConsentCheckbox({
+    super.key,
+    required this.planLabel,
+    required this.value,
+    required this.accent,
+    required this.textColor,
+    required this.onChanged,
+    this.fontSize = 12,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return CheckboxListTile(
+      contentPadding: EdgeInsets.zero,
+      value: value,
+      activeColor: accent,
+      onChanged: onChanged,
+      title: Text(
+        'I consent to AI processing for my $planLabel plan',
+        style: TextStyle(
+          color: textColor,
+          fontSize: fontSize,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+}
+
 /// Reviewed workout/nutrition plans. A member supplies preferences, then the
 /// company specialist generates, reviews, and approves the AI-assisted plan.
 class PlanScreen extends StatefulWidget {
@@ -24,6 +64,8 @@ class _PlanScreenState extends State<PlanScreen> with WidgetsBindingObserver {
   Color get _accent =>
       _isWorkoutKind ? const Color(0xFF5B8CFF) : const Color(0xFFFF9F43);
   String get _title => _isWorkoutKind ? 'Workout Plan' : 'Nutrition Plan';
+  String get _planType => _isWorkoutKind ? 'workout' : 'nutrition';
+  String get _planLabel => _isWorkoutKind ? 'workout' : 'nutrition';
   String get _emoji => _isWorkoutKind ? '💪' : '🥗';
 
   bool _isLoading = true;
@@ -149,11 +191,6 @@ class _PlanScreenState extends State<PlanScreen> with WidgetsBindingObserver {
     }
   }
 
-  bool get _hasAiConsent {
-    final consent = _planState?['consent'];
-    return consent is Map && consent['granted'] == true;
-  }
-
   bool get _canRequest => _planState?['can_request'] == true;
 
   Map<String, dynamic>? get _request {
@@ -162,11 +199,8 @@ class _PlanScreenState extends State<PlanScreen> with WidgetsBindingObserver {
   }
 
   Future<void> _requestPlan() async {
-    if (!_hasAiConsent && !_consentChecked) {
-      setState(() {
-        _generateError =
-            'Please confirm AI processing consent before requesting your plan.';
-      });
+    if (!_consentChecked) {
+      _showConsentWarning();
       return;
     }
     setState(() {
@@ -174,9 +208,7 @@ class _PlanScreenState extends State<PlanScreen> with WidgetsBindingObserver {
       _generateError = null;
     });
     try {
-      if (!_hasAiConsent) {
-        await ApiService.instance.updateReviewedPlanConsent(true);
-      }
+      await ApiService.instance.updateReviewedPlanConsent(_planType, true);
       final preferences = _isWorkoutKind
           ? <String, dynamic>{
               'goal': _goal,
@@ -194,10 +226,9 @@ class _PlanScreenState extends State<PlanScreen> with WidgetsBindingObserver {
               if (_cuisineCtrl.text.trim().isNotEmpty)
                 'cuisine': _cuisineCtrl.text.trim(),
             };
-      final state = await ApiService.instance.requestReviewedPlan(
-        _isWorkoutKind ? 'workout' : 'nutrition',
-        {'preferences': preferences},
-      );
+      final state = await ApiService.instance.requestReviewedPlan(_planType, {
+        'preferences': preferences,
+      });
       widget.onPlanChanged?.call();
       if (mounted) {
         setState(() {
@@ -214,6 +245,16 @@ class _PlanScreenState extends State<PlanScreen> with WidgetsBindingObserver {
         });
       }
     }
+  }
+
+  void _showConsentWarning() {
+    final message = reviewedPlanConsentWarning(_planLabel);
+    setState(() => _generateError = message);
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.hideCurrentSnackBar();
+    messenger.showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: Colors.orange.shade800),
+    );
   }
 
   @override
@@ -449,20 +490,16 @@ class _PlanScreenState extends State<PlanScreen> with WidgetsBindingObserver {
                 ),
               ),
               const SizedBox(height: 12),
-              CheckboxListTile(
-                contentPadding: EdgeInsets.zero,
+              PlanConsentCheckbox(
+                planLabel: _planLabel,
                 value: _consentChecked,
-                activeColor: _accent,
-                onChanged: (value) =>
-                    setState(() => _consentChecked = value ?? false),
-                title: Text(
-                  'I consent to this AI processing',
-                  style: TextStyle(
-                    color: textColor,
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
+                accent: _accent,
+                textColor: textColor,
+                onChanged: (value) => setState(() {
+                  _consentChecked = value ?? false;
+                  _generateError = null;
+                }),
+                fontSize: 12.5,
               ),
               if (_generateError != null) ...[
                 Text(
@@ -489,7 +526,7 @@ class _PlanScreenState extends State<PlanScreen> with WidgetsBindingObserver {
 
   Future<void> _grantRenewalConsent() async {
     if (!_consentChecked) {
-      setState(() => _generateError = 'Please confirm consent to continue.');
+      _showConsentWarning();
       return;
     }
     setState(() {
@@ -497,7 +534,7 @@ class _PlanScreenState extends State<PlanScreen> with WidgetsBindingObserver {
       _generateError = null;
     });
     try {
-      await ApiService.instance.updateReviewedPlanConsent(true);
+      await ApiService.instance.updateReviewedPlanConsent(_planType, true);
       await _load();
       if (mounted) setState(() => _isGenerating = false);
     } catch (e) {
@@ -1078,24 +1115,15 @@ class _PlanScreenState extends State<PlanScreen> with WidgetsBindingObserver {
                     height: 1.35,
                   ),
                 ),
-                CheckboxListTile(
-                  contentPadding: EdgeInsets.zero,
-                  value: _hasAiConsent || _consentChecked,
-                  activeColor: _accent,
-                  onChanged: _hasAiConsent
-                      ? null
-                      : (value) =>
-                            setState(() => _consentChecked = value ?? false),
-                  title: Text(
-                    _hasAiConsent
-                        ? 'AI processing consent already confirmed'
-                        : 'I consent to this AI processing',
-                    style: TextStyle(
-                      color: textColor,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
+                PlanConsentCheckbox(
+                  planLabel: _planLabel,
+                  value: _consentChecked,
+                  accent: _accent,
+                  textColor: textColor,
+                  onChanged: (value) => setState(() {
+                    _consentChecked = value ?? false;
+                    _generateError = null;
+                  }),
                 ),
               ],
             ),
