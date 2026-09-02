@@ -88,6 +88,7 @@ class _NutritionLoggingScreenState extends State<NutritionLoggingScreen> {
       _showError('Please describe what you ate and how much.');
       return;
     }
+    _descriptionFocus.unfocus();
     setState(() => _estimating = true);
     try {
       final result = _analysis == null
@@ -185,6 +186,8 @@ class _NutritionLoggingScreenState extends State<NutritionLoggingScreen> {
           : RefreshIndicator(
               onRefresh: _load,
               child: ListView(
+                keyboardDismissBehavior:
+                    ScrollViewKeyboardDismissBehavior.onDrag,
                 physics: const AlwaysScrollableScrollPhysics(
                   parent: BouncingScrollPhysics(),
                 ),
@@ -314,6 +317,9 @@ class _NutritionLoggingScreenState extends State<NutritionLoggingScreen> {
           minLines: 2,
           maxLines: 4,
           textCapitalization: TextCapitalization.sentences,
+          textInputAction: TextInputAction.done,
+          onSubmitted: (_) => _descriptionFocus.unfocus(),
+          onTapOutside: (_) => _descriptionFocus.unfocus(),
           decoration: InputDecoration(
             hintText: 'e.g., 3 bananas and 1 cup of yogurt',
             filled: true,

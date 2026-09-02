@@ -2216,49 +2216,28 @@ class DashboardScreenState extends State<DashboardScreen>
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  "Your dashboard will automatically update when your connected fitness app syncs new health data.",
+                  "We automatically check your connected fitness app whenever you open or return to Medifit. New health data will appear here when available.",
                   style: TextStyle(
                     color: secondaryTextColor,
                     fontSize: 12,
                     height: 1.4,
                   ),
                 ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blueAccent,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                        ),
-                        onPressed: () {
-                          _syncData();
-                        },
-                        child: const Text(
-                          "Refresh Health Data",
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
+                const SizedBox(height: 8),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton(
+                    onPressed: () {
+                      _setSetupCompleted(false);
+                    },
+                    child: const Text(
+                      "View Sync Guide",
+                      style: TextStyle(
+                        color: Colors.blueAccent,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    TextButton(
-                      onPressed: () {
-                        _setSetupCompleted(false);
-                      },
-                      child: const Text(
-                        "View Sync Guide",
-                        style: TextStyle(
-                          color: Colors.blueAccent,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ],
             ),
