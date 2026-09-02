@@ -9,6 +9,7 @@ import 'package:uuid/uuid.dart';
 
 import 'auth_service.dart';
 import 'background_workout_service.dart';
+import 'facility_rating_service.dart';
 
 enum WorkoutSessionPromptReason { hourly, slotEnd, leftFacility }
 
@@ -52,9 +53,10 @@ class WorkoutSessionException implements Exception {
 }
 
 class WorkoutCheckoutResult {
-  const WorkoutCheckoutResult({required this.checkOutAt});
+  const WorkoutCheckoutResult({required this.checkOutAt, this.ratingRequest});
 
   final DateTime checkOutAt;
+  final FacilityRatingPrompt? ratingRequest;
 }
 
 typedef WorkoutSessionPrompt =
@@ -254,17 +256,19 @@ class WorkoutSessionService {
       await prefs.remove(_longitudeKey);
       await prefs.remove(_radiusKey);
     }
-    final nativeGeofenceRegistered =
-        await BackgroundWorkoutService.instance.start(
-      sessionId: session['id']?.toString() ?? '',
-      facilityName: name,
-      checkInAt: DateTime.tryParse(checkInAt),
-      slotEndAt: DateTime.tryParse(session['slot_end_at']?.toString() ?? ''),
-      bookingId: session['booking_id']?.toString(),
-      latitude: latitude,
-      longitude: longitude,
-      geofenceRadiusMeters: radius,
-    );
+    final nativeGeofenceRegistered = await BackgroundWorkoutService.instance
+        .start(
+          sessionId: session['id']?.toString() ?? '',
+          facilityName: name,
+          checkInAt: DateTime.tryParse(checkInAt),
+          slotEndAt: DateTime.tryParse(
+            session['slot_end_at']?.toString() ?? '',
+          ),
+          bookingId: session['booking_id']?.toString(),
+          latitude: latitude,
+          longitude: longitude,
+          geofenceRadiusMeters: radius,
+        );
     await prefs.setBool(_nativeGeofenceKey, nativeGeofenceRegistered);
   }
 
@@ -297,7 +301,13 @@ class WorkoutSessionService {
         DateTime.tryParse(responseData['check_out_at'] as String? ?? '') ??
         DateTime.now();
     await clearLocalSession(checkOutAt: checkOutAt);
-    return WorkoutCheckoutResult(checkOutAt: checkOutAt);
+    final rawRating = responseData['rating_request'];
+    return WorkoutCheckoutResult(
+      checkOutAt: checkOutAt,
+      ratingRequest: rawRating is Map
+          ? FacilityRatingPrompt.fromJson(rawRating)
+          : null,
+    );
   }
 
   Future<void> continueWorkout({String? reason}) async {

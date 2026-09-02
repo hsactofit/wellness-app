@@ -136,7 +136,7 @@ class FacilityBookingService {
       '/api/facility-workout-data-consent',
       body: {
         'granted': granted,
-        'disclosure_version': 'facility-workout-data-v1',
+        'disclosure_version': 'facility-workout-data-v2',
       },
     );
     return _expect(
@@ -277,7 +277,7 @@ class FacilityWorkoutDataConsent {
         active: body['active'] == true,
         disclosureVersion:
             body['disclosure_version']?.toString() ??
-            'facility-workout-data-v1',
+            'facility-workout-data-v2',
         grantedAt: body['granted_at'] == null
             ? null
             : DateTime.tryParse(body['granted_at'].toString()),

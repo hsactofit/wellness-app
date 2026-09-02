@@ -8,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../app_brand.dart';
 import '../services/facility_booking_service.dart';
+import '../services/facility_rating_service.dart';
 import '../services/workout_session_service.dart';
 import '../widgets/glass_card.dart';
 
@@ -29,6 +30,7 @@ enum _AccessView { home, facilities, instantFacilities, instantStatus, scanner }
 
 class _GymCheckinScreenState extends State<GymCheckinScreen> {
   final _bookingService = FacilityBookingService.instance;
+  final _ratingService = FacilityRatingService.instance;
   final _manualFacilityController = TextEditingController();
   final _reasonController = TextEditingController();
   final _completedItems = <String>{};
@@ -40,6 +42,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen> {
   FacilityAccessRequest? _accessRequest;
   EligibleFacility? _instantFacility;
   ActiveWorkoutSession? _session;
+  FacilityRatingPrompt? _pendingRating;
   MobileScannerController? _scannerController;
   Timer? _timer;
   Timer? _requestPollTimer;
@@ -51,6 +54,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen> {
   bool _loading = true;
   bool _actionInProgress = false;
   bool _cameraPermissionGranted = false;
+  bool _ratingDialogOpen = false;
 
   @override
   void initState() {
@@ -97,6 +101,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen> {
     } else {
       await _loadFacilities();
       await _loadBookings();
+      await _restorePendingRating(present: true);
     }
   }
 
@@ -139,6 +144,44 @@ class _GymCheckinScreenState extends State<GymCheckinScreen> {
       if (mounted) setState(() => _bookings = bookings);
     } catch (_) {
       // A booking list is supplementary; discovery remains usable offline.
+    }
+  }
+
+  Future<void> _restorePendingRating({bool present = false}) async {
+    try {
+      final pending = await _ratingService.pending();
+      if (!mounted) return;
+      setState(() => _pendingRating = pending);
+      if (present && pending != null) await _presentRating(pending);
+    } on FacilityRatingException catch (error) {
+      if (mounted) _showSnack(error.message, isError: true);
+    } catch (_) {
+      // A temporary offline state must not erase a feedback item the server
+      // will re-surface before the next facility mutation.
+    }
+  }
+
+  Future<bool> _ensureRatingComplete() async {
+    if (_pendingRating == null) await _restorePendingRating();
+    final pending = _pendingRating;
+    if (pending == null) return true;
+    await _presentRating(pending);
+    return _pendingRating == null;
+  }
+
+  Future<void> _presentRating(FacilityRatingPrompt prompt) async {
+    if (!mounted || _ratingDialogOpen) return;
+    _ratingDialogOpen = true;
+    final submitted = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => _FacilityRatingDialog(prompt: prompt),
+    );
+    _ratingDialogOpen = false;
+    if (!mounted) return;
+    if (submitted == true) {
+      setState(() => _pendingRating = null);
+      _showSnack('Thanks — your facility feedback was submitted.');
     }
   }
 
@@ -203,7 +246,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen> {
         builder: (dialogContext) => AlertDialog(
           title: const Text('Facility workout-data sharing'),
           content: Text(
-            'To $action, please approve sharing your member-approved body-composition reports, saved comparisons, and facility workout results with qualifying managers. Raw OCR text, medical records, diagnoses, clinical notes, unrelated vitals, and workouts from other facilities are never shared.',
+            'To $action, approve sharing your identity, facility attendance, facility workout report, and facility feedback with your assigned facility manager and your organisation’s corporate admin. Medical history, raw OCR, unrelated vitals, and workouts at unrelated facilities are never shared.',
           ),
           actions: [
             TextButton(
@@ -240,6 +283,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen> {
 
   Future<void> _bookSlot(EligibleFacility facility, FacilitySlot slot) async {
     if (slot.remaining <= 0 || slot.isStarted) return;
+    if (!await _ensureRatingComplete()) return;
     if (!await _ensureWorkoutDataConsent(action: 'book this slot')) return;
     setState(() => _actionInProgress = true);
     try {
@@ -356,6 +400,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen> {
   }
 
   Future<void> _requestCapacity(EligibleFacility facility) async {
+    if (!await _ensureRatingComplete()) return;
     if (!await _ensureWorkoutDataConsent(
       action: 'request a capacity override',
     )) {
@@ -384,6 +429,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen> {
   }
 
   Future<void> _requestInstant(EligibleFacility facility) async {
+    if (!await _ensureRatingComplete()) return;
     if (!await _ensureWorkoutDataConsent(action: 'request instant check-in')) {
       return;
     }
@@ -476,6 +522,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen> {
   Future<void> _acceptSuggestion() async {
     final requestId = _instantRequestId;
     if (requestId == null || _accessRequest?.suggestedSlotId == null) return;
+    if (!await _ensureRatingComplete()) return;
     if (!await _ensureWorkoutDataConsent(
       action: 'accept this suggested slot',
     )) {
@@ -570,6 +617,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen> {
       _showSnack('This QR belongs to another facility.', isError: true);
       return;
     }
+    if (!await _ensureRatingComplete()) return;
     if (!await _ensureWorkoutDataConsent(action: 'check in')) return;
     _scannerController?.stop();
     if (!mounted) return;
@@ -654,6 +702,11 @@ class _GymCheckinScreenState extends State<GymCheckinScreen> {
       _showSnack('Checked out at ${_formatTime(result.checkOutAt)}.');
       await _loadFacilities();
       await _loadBookings();
+      if (!mounted) return;
+      if (result.ratingRequest != null) {
+        setState(() => _pendingRating = result.ratingRequest);
+        await _presentRating(result.ratingRequest!);
+      }
     } on WorkoutSessionException catch (error) {
       if (mounted) _showSnack(error.message, isError: true);
     } catch (_) {
@@ -1366,6 +1419,182 @@ class _MemberPinDialog extends StatefulWidget {
 
   @override
   State<_MemberPinDialog> createState() => _MemberPinDialogState();
+}
+
+class _FacilityRatingDialog extends StatefulWidget {
+  const _FacilityRatingDialog({required this.prompt});
+
+  final FacilityRatingPrompt prompt;
+
+  @override
+  State<_FacilityRatingDialog> createState() => _FacilityRatingDialogState();
+}
+
+class _FacilityRatingDialogState extends State<_FacilityRatingDialog> {
+  final _commentController = TextEditingController();
+  int _overall = 0;
+  int _service = 0;
+  int _cleanliness = 0;
+  int _equipment = 0;
+  int _amenities = 0;
+  bool _submitting = false;
+  String? _error;
+
+  @override
+  void dispose() {
+    _commentController.dispose();
+    super.dispose();
+  }
+
+  bool get _complete =>
+      _overall > 0 &&
+      _service > 0 &&
+      _cleanliness > 0 &&
+      _equipment > 0 &&
+      _amenities > 0 &&
+      _commentController.text.trim().isNotEmpty;
+
+  Future<void> _submit() async {
+    if (!_complete) {
+      setState(
+        () => _error =
+            'Rate every area and add a short comment before submitting.',
+      );
+      return;
+    }
+    setState(() {
+      _submitting = true;
+      _error = null;
+    });
+    try {
+      await FacilityRatingService.instance.submit(
+        widget.prompt,
+        overallRating: _overall,
+        serviceRating: _service,
+        cleanlinessRating: _cleanliness,
+        equipmentRating: _equipment,
+        amenitiesRating: _amenities,
+        comment: _commentController.text,
+      );
+      if (mounted) Navigator.pop(context, true);
+    } on FacilityRatingException catch (error) {
+      if (mounted) setState(() => _error = error.message);
+    } catch (_) {
+      if (mounted) {
+        setState(() => _error = 'Could not submit feedback. Try again.');
+      }
+    } finally {
+      if (mounted) setState(() => _submitting = false);
+    }
+  }
+
+  Widget _ratingRow(String label, int value, ValueChanged<int> onChanged) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(
+        children: [
+          Expanded(child: Text(label)),
+          ...List.generate(
+            5,
+            (index) => IconButton(
+              visualDensity: VisualDensity.compact,
+              tooltip: '${index + 1} of 5',
+              onPressed: _submitting
+                  ? null
+                  : () => setState(() => onChanged(index + 1)),
+              icon: Icon(
+                index < value ? Icons.star_rounded : Icons.star_border_rounded,
+                color: index < value ? Colors.amber.shade800 : Colors.grey,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text('Rate ${widget.prompt.facilityName}'),
+      content: SizedBox(
+        width: 460,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Your first completed visit helps your organisation understand the facility experience.',
+              ),
+              const SizedBox(height: 12),
+              _ratingRow(
+                'Overall experience',
+                _overall,
+                (value) => _overall = value,
+              ),
+              _ratingRow(
+                'Staff and service',
+                _service,
+                (value) => _service = value,
+              ),
+              _ratingRow(
+                'Cleanliness',
+                _cleanliness,
+                (value) => _cleanliness = value,
+              ),
+              _ratingRow(
+                'Equipment and resources',
+                _equipment,
+                (value) => _equipment = value,
+              ),
+              _ratingRow(
+                'Amenities and comfort',
+                _amenities,
+                (value) => _amenities = value,
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _commentController,
+                enabled: !_submitting,
+                minLines: 2,
+                maxLines: 5,
+                maxLength: 500,
+                onChanged: (_) {
+                  if (_error != null) setState(() => _error = null);
+                },
+                decoration: const InputDecoration(
+                  labelText: 'Comment',
+                  hintText: 'Tell us what worked well or could improve.',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              if (_error != null) ...[
+                const SizedBox(height: 8),
+                Text(_error!, style: const TextStyle(color: Colors.redAccent)),
+              ],
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _submitting ? null : () => Navigator.pop(context, false),
+          child: const Text('Rate later'),
+        ),
+        FilledButton(
+          onPressed: _submitting ? null : _submit,
+          child: _submitting
+              ? const SizedBox(
+                  height: 18,
+                  width: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text('Submit rating'),
+        ),
+      ],
+    );
+  }
 }
 
 class _MemberPinDialogState extends State<_MemberPinDialog> {
