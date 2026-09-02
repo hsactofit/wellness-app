@@ -1,1329 +1,1362 @@
 import 'dart:async';
 import 'dart:convert';
+
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:url_launcher/url_launcher.dart';
+
 import '../app_brand.dart';
+import '../services/facility_booking_service.dart';
 import '../services/workout_session_service.dart';
 import '../widgets/glass_card.dart';
 
+/// Member-facing facility access surface.
+///
+/// A booking or an approved instant request is always carried through to the
+/// server check-in call. The QR and four-digit member code are still required
+/// at the door, so a stale booking/request cannot be used by itself.
 class GymCheckinScreen extends StatefulWidget {
-  final VoidCallback? onStatusChanged;
   const GymCheckinScreen({super.key, this.onStatusChanged});
+
+  final VoidCallback? onStatusChanged;
 
   @override
   State<GymCheckinScreen> createState() => _GymCheckinScreenState();
 }
 
-class _GymCheckinScreenState extends State<GymCheckinScreen>
-    with TickerProviderStateMixin {
-  bool _isCheckedIn = false;
-  String? _gymName;
-  String? _gymPlace;
-  DateTime? _checkInTime;
+enum _AccessView { home, facilities, instantFacilities, instantStatus, scanner }
 
-  bool _isLoading = false;
-  Timer? _timer;
-  Duration _elapsed = Duration.zero;
+class _GymCheckinScreenState extends State<GymCheckinScreen> {
+  final _bookingService = FacilityBookingService.instance;
+  final _manualFacilityController = TextEditingController();
+  final _reasonController = TextEditingController();
+  final _completedItems = <String>{};
 
-  // Camera permission tracking
-  bool _cameraPermissionGranted = false;
-
-  // Manual facility-code entry — fallback when the camera/QR isn't usable
-  // (no camera, damaged/missing QR sticker, or the QR still encodes the old
-  // freeform {name, place} payload instead of a real Facility.code).
-  bool _showManualEntry = false;
-  final TextEditingController _manualCodeController = TextEditingController();
-
-  // Real Camera barcode/QR scanner controller
+  _AccessView _view = _AccessView.home;
+  DateTime _selectedDay = DateTime.now();
+  FacilityPage? _facilityPage;
+  List<MemberBooking> _bookings = const [];
+  FacilityAccessRequest? _accessRequest;
+  EligibleFacility? _instantFacility;
+  ActiveWorkoutSession? _session;
   MobileScannerController? _scannerController;
-
-  // Camera mock scanner states
-  late AnimationController _scannerAnimController;
-  late Animation<double> _scannerLinePosition;
-
-  // Checkout exercise logging
-  final List<Map<String, dynamic>> _loggedExercises = [];
-
-  final List<String> _popularExercises = [
-    "Bench Press",
-    "Squats",
-    "Treadmill Running",
-    "Deadlift",
-    "Bicep Curl",
-    "Leg Press",
-    "Shoulder Press",
-    "Pull-ups",
-    "Push-ups",
-    "Plank",
-  ];
+  Timer? _timer;
+  Timer? _requestPollTimer;
+  Duration _elapsed = Duration.zero;
+  int _facilityPageNumber = 1;
+  String? _expectedFacilityCode;
+  String? _bookingId;
+  String? _instantRequestId;
+  bool _loading = true;
+  bool _actionInProgress = false;
+  bool _cameraPermissionGranted = false;
 
   @override
   void initState() {
     super.initState();
     WorkoutSessionService.instance.sessionRefreshSignal.addListener(
-      _handleExternalSessionChange,
+      _reloadSession,
     );
-    _loadCheckinState();
-    _checkCameraPermission();
-
-    // Setup pulse scan line animation
-    _scannerAnimController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 2),
-    )..repeat(reverse: true);
-
-    _scannerLinePosition = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _scannerAnimController, curve: Curves.easeInOut),
-    );
-  }
-
-  void _initScanner() {
-    if (_scannerController == null &&
-        _cameraPermissionGranted &&
-        !_isCheckedIn) {
-      setState(() {
-        _scannerController = MobileScannerController();
-      });
-    }
-  }
-
-  Future<void> _checkCameraPermission() async {
-    final status = await Permission.camera.status;
-    if (mounted) {
-      setState(() {
-        _cameraPermissionGranted = status.isGranted;
-      });
-      if (status.isGranted) {
-        _initScanner();
-      }
-    }
-  }
-
-  Future<void> _requestCameraPermission() async {
-    final status = await Permission.camera.request();
-    if (mounted) {
-      setState(() {
-        _cameraPermissionGranted = status.isGranted;
-      });
-      if (status.isGranted) {
-        _initScanner();
-      }
-    }
+    _load();
   }
 
   @override
   void dispose() {
     WorkoutSessionService.instance.sessionRefreshSignal.removeListener(
-      _handleExternalSessionChange,
+      _reloadSession,
     );
     _timer?.cancel();
-    _scannerAnimController.dispose();
+    _requestPollTimer?.cancel();
     _scannerController?.dispose();
-    _manualCodeController.dispose();
+    _manualFacilityController.dispose();
+    _reasonController.dispose();
     super.dispose();
   }
 
-  void _handleExternalSessionChange() {
-    _loadCheckinState();
-  }
-
-  Future<void> _loadCheckinState() async {
-    final prefs = await SharedPreferences.getInstance();
-    final isCheckedIn = prefs.getBool('gym_checked_in') ?? false;
+  Future<void> _load() async {
+    ActiveWorkoutSession? session;
+    try {
+      session = await WorkoutSessionService.instance.recoverActiveSession();
+    } catch (_) {
+      // A transient API failure should not hide the local recovery cache or
+      // prevent normal facility discovery.
+      session = await WorkoutSessionService.instance.loadActiveSession();
+    }
     if (!mounted) return;
-    if (isCheckedIn) {
-      final name = prefs.getString('gym_name');
-      final place = prefs.getString('gym_place');
-      final timeStr = prefs.getString('gym_check_in_time');
-      final checkInTime = timeStr != null ? DateTime.tryParse(timeStr) : null;
-
-      setState(() {
-        _isCheckedIn = true;
-        _gymName = name;
-        _gymPlace = place;
-        _checkInTime = checkInTime;
-      });
+    setState(() {
+      _session = session;
+      _loading = false;
+    });
+    if (session != null) {
+      _completedItems.clear();
       _startTimer();
-      await _loadLoggedExercises();
-    } else {
-      _timer?.cancel();
-      setState(() {
-        _isCheckedIn = false;
-        _gymName = null;
-        _gymPlace = null;
-        _checkInTime = null;
-        _elapsed = Duration.zero;
-        _loggedExercises.clear();
-      });
-    }
-  }
-
-  Future<void> _saveLoggedExercises() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(
-        'gym_logged_exercises',
-        jsonEncode(_loggedExercises),
+      await WorkoutSessionService.instance.startMonitoring(
+        requestLocationPermission: true,
       );
-    } catch (e) {
-      debugPrint("Error saving logged exercises: $e");
+    } else {
+      await _loadFacilities();
+      await _loadBookings();
     }
   }
 
-  Future<void> _loadLoggedExercises() async {
+  Future<void> _reloadSession() async {
+    final session = await WorkoutSessionService.instance.loadActiveSession();
+    if (!mounted) return;
+    if (session == null && _session != null) {
+      setState(() {
+        _session = null;
+        _view = _AccessView.home;
+      });
+      _timer?.cancel();
+      widget.onStatusChanged?.call();
+      return;
+    }
+    if (session != null && _session == null) {
+      setState(() => _session = session);
+      _startTimer();
+    }
+  }
+
+  Future<void> _loadFacilities() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final jsonStr = prefs.getString('gym_logged_exercises');
-      if (jsonStr != null) {
-        final List<dynamic> decoded = jsonDecode(jsonStr);
-        setState(() {
-          _loggedExercises.clear();
-          _loggedExercises.addAll(
-            decoded.map((e) => Map<String, dynamic>.from(e as Map)),
-          );
-        });
-      }
-    } catch (e) {
-      debugPrint("Error loading logged exercises: $e");
+      final page = await _bookingService.fetchFacilities(
+        _selectedDay,
+        page: _facilityPageNumber,
+      );
+      if (!mounted) return;
+      setState(() => _facilityPage = page);
+    } on FacilityBookingException catch (error) {
+      if (mounted) _showSnack(error.message, isError: true);
+    } catch (_) {
+      if (mounted) _showSnack('Could not load facilities.', isError: true);
+    }
+  }
+
+  Future<void> _loadBookings() async {
+    try {
+      final bookings = await _bookingService.myBookings();
+      if (mounted) setState(() => _bookings = bookings);
+    } catch (_) {
+      // A booking list is supplementary; discovery remains usable offline.
     }
   }
 
   void _startTimer() {
     _timer?.cancel();
-    if (_checkInTime == null) return;
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+    final start = _session?.checkInAt;
+    if (start == null) return;
+    void update() {
+      if (mounted) setState(() => _elapsed = DateTime.now().difference(start));
+    }
+
+    update();
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) => update());
+  }
+
+  void _showSnack(String message, {bool isError = false}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: isError ? Colors.redAccent : Colors.green,
+        ),
+      );
+  }
+
+  void _openFacilities() {
+    setState(() {
+      _view = _AccessView.facilities;
+      _facilityPageNumber = 1;
+      _selectedDay = DateTime.now();
+      _facilityPage = null;
+    });
+    _loadFacilities();
+  }
+
+  void _openInstant() {
+    setState(() {
+      _view = _AccessView.instantFacilities;
+      _facilityPageNumber = 1;
+      _facilityPage = null;
+    });
+    _loadFacilities();
+  }
+
+  Future<void> _changeDay(DateTime day) async {
+    setState(() {
+      _selectedDay = day;
+      _facilityPageNumber = 1;
+      _facilityPage = null;
+    });
+    await _loadFacilities();
+  }
+
+  Future<bool> _ensureWorkoutDataConsent({required String action}) async {
+    try {
+      if ((await _bookingService.fetchWorkoutDataConsent()).active) return true;
+      if (!mounted) return false;
+      final approved = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('Facility workout-data sharing'),
+          content: Text(
+            'To $action, please approve sharing your member-approved body-composition reports, saved comparisons, and facility workout results with qualifying managers. Raw OCR text, medical records, diagnoses, clinical notes, unrelated vitals, and workouts from other facilities are never shared.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Reject'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: const Text('Approve'),
+            ),
+          ],
+        ),
+      );
+      if (approved != true) {
+        _showSnack(
+          'Booking and check-in cannot continue because the facility workflow requires workout-data access.',
+          isError: true,
+        );
+        return false;
+      }
+      await _bookingService.setWorkoutDataConsent(granted: true);
+      return true;
+    } on FacilityBookingException catch (error) {
+      _showSnack(error.message, isError: true);
+      return false;
+    } catch (_) {
+      _showSnack(
+        'Could not update the facility privacy setting.',
+        isError: true,
+      );
+      return false;
+    }
+  }
+
+  Future<void> _bookSlot(EligibleFacility facility, FacilitySlot slot) async {
+    if (slot.remaining <= 0 || slot.isStarted) return;
+    if (!await _ensureWorkoutDataConsent(action: 'book this slot')) return;
+    setState(() => _actionInProgress = true);
+    try {
+      final booking = await _bookingService.bookSlot(slot.id);
+      await _loadBookings();
+      if (!mounted) return;
+      _showSnack('Slot booked at ${booking.facilityName}.');
+      await _showBookingConfirmation(booking);
+      await _loadFacilities();
+    } on FacilityBookingException catch (error) {
+      if (mounted) _showSnack(error.message, isError: true);
+    } finally {
+      if (mounted) setState(() => _actionInProgress = false);
+    }
+  }
+
+  Future<void> _showBookingConfirmation(MemberBooking booking) async {
+    if (!mounted) return;
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Slot booked'),
+        content: Text(
+          '${booking.facilityName}\n${_formatSlot(booking.slot)}\n\nScan the facility QR at the door during this hour to start your workout.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Done'),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.pop(dialogContext);
+              _startBookedCheckin(booking);
+            },
+            child: const Text('Check in now'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _startBookedCheckin(MemberBooking booking) {
+    _bookingId = booking.id;
+    _instantRequestId = null;
+    _expectedFacilityCode = booking.facilityCode;
+    _openScanner();
+  }
+
+  Future<void> _showSlotPicker(EligibleFacility facility) async {
+    final selected = await showModalBottomSheet<FacilitySlot>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                facility.name,
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              Text(_formatDate(_selectedDay)),
+              const SizedBox(height: 12),
+              Flexible(
+                child: ListView(
+                  shrinkWrap: true,
+                  children: facility.slots
+                      .map(
+                        (slot) => ListTile(
+                          leading: Icon(
+                            slot.remaining > 0 ? Icons.schedule : Icons.block,
+                            color: slot.remaining > 0
+                                ? Colors.green
+                                : Colors.grey,
+                          ),
+                          title: Text(_formatSlot(slot)),
+                          subtitle: Text(
+                            slot.remaining > 0
+                                ? '${slot.remaining} places left'
+                                : 'Full',
+                          ),
+                          enabled: slot.remaining > 0 && !slot.isStarted,
+                          onTap: () => Navigator.pop(sheetContext, slot),
+                        ),
+                      )
+                      .toList(),
+                ),
+              ),
+              if (facility.slots.isEmpty ||
+                  facility.slots.every((slot) => slot.remaining == 0))
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    icon: const Icon(Icons.add_alert_outlined),
+                    label: const Text('Request a place'),
+                    onPressed: () {
+                      Navigator.pop(sheetContext);
+                      _requestCapacity(facility);
+                    },
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (selected != null) await _bookSlot(facility, selected);
+  }
+
+  Future<void> _requestCapacity(EligibleFacility facility) async {
+    if (!await _ensureWorkoutDataConsent(
+      action: 'request a capacity override',
+    )) {
+      return;
+    }
+    setState(() => _actionInProgress = true);
+    try {
+      final request = await _bookingService.requestCapacity(
+        facility.id,
+        requestedFor: _selectedDay,
+        reason: 'All displayed slots are full',
+      );
       if (!mounted) return;
       setState(() {
-        _elapsed = DateTime.now().difference(_checkInTime!);
+        _accessRequest = request;
+        _instantFacility = facility;
+        _instantRequestId = request.id;
+        _view = _AccessView.instantStatus;
       });
+      _startRequestPolling();
+    } on FacilityBookingException catch (error) {
+      if (mounted) _showSnack(error.message, isError: true);
+    } finally {
+      if (mounted) setState(() => _actionInProgress = false);
+    }
+  }
+
+  Future<void> _requestInstant(EligibleFacility facility) async {
+    if (!await _ensureWorkoutDataConsent(action: 'request instant check-in')) {
+      return;
+    }
+    setState(() {
+      _actionInProgress = true;
+      _instantFacility = facility;
+    });
+    try {
+      final request = await _bookingService.requestInstant(
+        facility.id,
+        reason: _reasonController.text.trim().isEmpty
+            ? null
+            : _reasonController.text.trim(),
+      );
+      if (!mounted) return;
+      setState(() {
+        _accessRequest = request;
+        _instantRequestId = request.id;
+        _view = _AccessView.instantStatus;
+      });
+      _startRequestPolling();
+    } on FacilityBookingException catch (error) {
+      if (mounted) _showSnack(error.message, isError: true);
+    } finally {
+      if (mounted) setState(() => _actionInProgress = false);
+    }
+  }
+
+  void _startRequestPolling() {
+    _requestPollTimer?.cancel();
+    _requestPollTimer = Timer.periodic(const Duration(seconds: 5), (_) async {
+      final requestId = _instantRequestId;
+      if (requestId == null) return;
+      try {
+        final request = await _bookingService.requestStatus(requestId);
+        if (!mounted) return;
+        setState(() => _accessRequest = request);
+        if (request.approved) {
+          _requestPollTimer?.cancel();
+          if (request.requestType == 'instant_checkin') {
+            _expectedFacilityCode = _instantFacility?.code;
+            _openScanner();
+          } else if (request.requestType == 'capacity_override') {
+            _showSnack(
+              'The facility manager granted an extra place. Open the scanner when you arrive.',
+            );
+          }
+        } else if (request.rejected || request.expired) {
+          _requestPollTimer?.cancel();
+        }
+      } on FacilityBookingException catch (error) {
+        if (error.statusCode == 410) {
+          _requestPollTimer?.cancel();
+          if (mounted) {
+            _showSnack('This facility request has expired.', isError: true);
+          }
+        }
+      } catch (_) {
+        // Keep polling; transient connectivity should not lose a pending ID.
+      }
     });
   }
 
-  void _submitManualCode() {
-    final code = _manualCodeController.text.trim();
-    if (code.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Enter a facility code first"),
-          backgroundColor: Colors.orange,
-        ),
+  Future<void> _raiseIssue() async {
+    final requestId = _instantRequestId;
+    if (requestId == null) return;
+    setState(() => _actionInProgress = true);
+    try {
+      final issue = await _bookingService.raiseIssue(
+        requestId,
+        reason: _reasonController.text.trim().isEmpty
+            ? 'I need help booking a facility slot.'
+            : _reasonController.text.trim(),
+      );
+      if (mounted) {
+        _showSnack(
+          issue.resolvedByName == null
+              ? 'Issue raised to the facility manager.'
+              : 'Issue assigned to ${issue.resolvedByName}.',
+        );
+        setState(() => _view = _AccessView.home);
+      }
+    } on FacilityBookingException catch (error) {
+      if (mounted) _showSnack(error.message, isError: true);
+    } finally {
+      if (mounted) setState(() => _actionInProgress = false);
+    }
+  }
+
+  Future<void> _acceptSuggestion() async {
+    final requestId = _instantRequestId;
+    if (requestId == null || _accessRequest?.suggestedSlotId == null) return;
+    if (!await _ensureWorkoutDataConsent(
+      action: 'accept this suggested slot',
+    )) {
+      return;
+    }
+    setState(() => _actionInProgress = true);
+    try {
+      final booking = await _bookingService.acceptSuggestion(requestId);
+      await _loadBookings();
+      if (mounted) {
+        _showSnack('Suggested slot booked at ${booking.facilityName}.');
+        _startBookedCheckin(booking);
+      }
+    } on FacilityBookingException catch (error) {
+      if (mounted) _showSnack(error.message, isError: true);
+    } finally {
+      if (mounted) setState(() => _actionInProgress = false);
+    }
+  }
+
+  Future<void> _startApprovedCapacityCheckin() async {
+    final request = _accessRequest;
+    if (request == null || request.requestType != 'capacity_override') return;
+    await _loadBookings();
+    if (!mounted) return;
+    final booking = _bookings.where((candidate) {
+      if (candidate.facilityId != request.facilityId) return false;
+      if (request.slotId != null && candidate.slot.id != request.slotId) {
+        return false;
+      }
+      return candidate.status == 'booked';
+    }).firstOrNull;
+    if (booking == null) {
+      _showSnack(
+        'The granted place is not ready yet. Please refresh your bookings.',
+        isError: true,
       );
       return;
     }
-    // A manually-typed code is never JSON, so _handleCheckin's fallback
-    // path treats it as the raw facility code directly (uppercased) — no
-    // separate code path needed.
-    _handleCheckin(code);
+    _startBookedCheckin(booking);
   }
 
-  Future<void> _handleCheckin(String qrString) async {
-    // Stop the scanner from delivering duplicate frames while the member is
-    // completing the required second factor for this facility session.
-    setState(() => _isLoading = true);
-
-    try {
-      // wellness-server identifies the facility by its short code (e.g.
-      // "BLR1", see Facility.code in wellness-server), not a freeform
-      // name/place pair. Until the physical/demo QR codes are regenerated
-      // to encode that code directly (tracked in medifit-kb/MEDIFIT_KB.md
-      // §7), this treats the QR's "name" field (or the raw scanned string)
-      // as a best-effort facility code candidate — the backend replies 404
-      // "Unknown facility code" if it doesn't match a real one.
-      String gymName = 'Gym';
-      String gymPlace = 'Gym Place';
-      String facilityCode = qrString.trim();
-      try {
-        final Map<String, dynamic> qrData = jsonDecode(qrString);
-        gymName = qrData['name'] as String? ?? 'Gym';
-        gymPlace = qrData['place'] as String? ?? 'Gym Place';
-        facilityCode = gymName;
-      } catch (_) {
-        // Fallback: If not JSON, use the raw QR string itself as gym name
-        gymName = qrString;
-        if (gymName.startsWith('http://') || gymName.startsWith('https://')) {
-          try {
-            final uri = Uri.parse(gymName);
-            gymName = uri.host;
-          } catch (_) {}
-        }
+  Future<void> _openMaps(EligibleFacility facility) async {
+    final url = facility.mapsUrl;
+    if (url == null ||
+        !await launchUrl(
+          Uri.parse(url),
+          mode: LaunchMode.externalApplication,
+        )) {
+      if (mounted) {
+        _showSnack('Google Maps could not be opened.', isError: true);
       }
-      facilityCode = facilityCode.trim().toUpperCase();
+    }
+  }
 
-      final memberPin = await _promptForMemberPin(gymName);
-      if (memberPin == null) return;
-
-      final data = await WorkoutSessionService.instance.checkIn(
-        facilityCode: facilityCode,
-        memberPin: memberPin,
+  Future<void> _openScanner() async {
+    final permission = await Permission.camera.request();
+    if (!mounted) return;
+    if (!permission.isGranted) {
+      _showSnack(
+        'Camera access is required to scan the facility QR.',
+        isError: true,
       );
+      return;
+    }
+    _scannerController?.dispose();
+    setState(() {
+      _cameraPermissionGranted = true;
+      _scannerController = MobileScannerController();
+      _view = _AccessView.scanner;
+    });
+  }
 
+  Future<void> _handleQr(String rawValue) async {
+    if (_actionInProgress) return;
+    String code = rawValue.trim();
+    try {
+      final parsed = jsonDecode(rawValue);
+      if (parsed is Map) {
+        code =
+            (parsed['code'] ??
+                    parsed['facility_code'] ??
+                    parsed['name'] ??
+                    code)
+                .toString();
+      }
+    } catch (_) {
+      // Raw facility codes are supported for regenerated demo stickers.
+    }
+    if (_expectedFacilityCode != null &&
+        code.toUpperCase() != _expectedFacilityCode!.toUpperCase()) {
+      _showSnack('This QR belongs to another facility.', isError: true);
+      return;
+    }
+    if (!await _ensureWorkoutDataConsent(action: 'check in')) return;
+    _scannerController?.stop();
+    if (!mounted) return;
+    final pin = await showDialog<String>(
+      context: context,
+      builder: (_) => _MemberPinDialog(
+        facilityName: _instantFacility?.name ?? 'your facility',
+      ),
+    );
+    if (pin == null || !mounted) {
+      if (mounted) _scannerController?.start();
+      return;
+    }
+    setState(() => _actionInProgress = true);
+    try {
+      final session = await WorkoutSessionService.instance.checkIn(
+        facilityCode: _expectedFacilityCode ?? code,
+        memberPin: pin,
+        bookingId: _bookingId,
+        instantRequestId: _instantRequestId,
+      );
       await WorkoutSessionService.instance.saveCheckIn(
-        session: data,
-        fallbackFacilityName: gymName,
-        fallbackFacilityPlace: gymPlace,
+        session: session,
+        fallbackFacilityName: _instantFacility?.name ?? 'Facility',
+        fallbackFacilityPlace: _instantFacility?.address ?? '',
       );
-      // This asks for location only after an actual workout starts. A denied
-      // request is optional and simply leaves the hourly confirmation active.
+      // Start slot/hourly prompts and contextual location handling as soon as
+      // the server confirms check-in; waiting for a future app resume leaves
+      // a newly started workout without its reminder schedule.
       await WorkoutSessionService.instance.startMonitoring(
         requestLocationPermission: true,
       );
-
-      _scannerController?.dispose();
-      _scannerController = null;
-      final checkinTimeStr =
-          data['check_in_at'] as String? ?? DateTime.now().toIso8601String();
-      final checkInTime = DateTime.tryParse(checkinTimeStr) ?? DateTime.now();
-      final confirmedGymName = data['facility_name'] as String? ?? gymName;
-
+      final active = await WorkoutSessionService.instance.loadActiveSession();
+      if (!mounted) return;
       setState(() {
-        _isCheckedIn = true;
-        _gymName = confirmedGymName;
-        _gymPlace = gymPlace;
-        _checkInTime = checkInTime;
+        _session = active;
+        _view = _AccessView.home;
+        _bookingId = null;
+        _instantRequestId = null;
+        _accessRequest = null;
       });
-
       _startTimer();
       widget.onStatusChanged?.call();
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("🎉 Workout session started at $confirmedGymName!"),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
-    } on WorkoutSessionException catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.message), backgroundColor: Colors.redAccent),
-        );
-      }
-    } catch (e) {
-      debugPrint("Error in gym check-in: $e");
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("Unable to start workout session: $e"),
-            backgroundColor: Colors.redAccent,
-          ),
-        );
-      }
+      _showSnack('Workout started. Your timer is running.');
+    } on WorkoutSessionException catch (error) {
+      if (mounted) _showSnack(error.message, isError: true);
+      _scannerController?.start();
+    } catch (_) {
+      if (mounted) _showSnack('Could not start the workout.', isError: true);
+      _scannerController?.start();
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) setState(() => _actionInProgress = false);
     }
   }
 
-  Future<String?> _promptForMemberPin(String facilityName) async {
-    return showDialog<String>(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => _MemberPinDialog(facilityName: facilityName),
-    );
+  Future<void> _submitManualCode() async {
+    final code = _manualFacilityController.text.trim();
+    if (code.isEmpty) {
+      _showSnack('Enter the facility code first.', isError: true);
+      return;
+    }
+    _expectedFacilityCode = code;
+    await _openScanner();
   }
 
-  /// Returns `true` when checkout succeeded.
-  ///
-  /// [useGlobalLoading] — full-screen overlay on the gym page.
-  /// [popScreenOnSuccess] — pop the gym screen after a successful checkout.
-  Future<bool> _handleCheckout({
-    bool useGlobalLoading = true,
-    bool popScreenOnSuccess = true,
-  }) async {
-    if (useGlobalLoading) {
-      setState(() {
-        _isLoading = true;
-      });
-    }
-
+  Future<void> _checkout() async {
+    if (_session == null || _actionInProgress) return;
+    setState(() => _actionInProgress = true);
     try {
-      await WorkoutSessionService.instance.checkout();
-
-      _timer?.cancel();
+      final result = await WorkoutSessionService.instance.checkout(
+        completedItemIds: _completedItems.toList(),
+      );
+      if (!mounted) return;
       setState(() {
-        _isCheckedIn = false;
-        _gymName = null;
-        _gymPlace = null;
-        _checkInTime = null;
+        _session = null;
+        _view = _AccessView.home;
         _elapsed = Duration.zero;
-        _loggedExercises.clear();
+        _completedItems.clear();
       });
-
+      _timer?.cancel();
       widget.onStatusChanged?.call();
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("💪 Workout session completed!"),
-            backgroundColor: Colors.green,
-          ),
-        );
-        if (popScreenOnSuccess) Navigator.pop(context);
-      }
-      return true;
-    } on WorkoutSessionException catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.message), backgroundColor: Colors.redAccent),
-        );
-      }
-      return false;
-    } catch (e) {
-      debugPrint("Error in gym checkout: $e");
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("Checkout error: $e"),
-            backgroundColor: Colors.redAccent,
-          ),
-        );
-      }
-      return false;
+      _showSnack('Checked out at ${_formatTime(result.checkOutAt)}.');
+      await _loadFacilities();
+      await _loadBookings();
+    } on WorkoutSessionException catch (error) {
+      if (mounted) _showSnack(error.message, isError: true);
+    } catch (_) {
+      if (mounted) _showSnack('Could not complete checkout.', isError: true);
     } finally {
-      if (useGlobalLoading && mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+      if (mounted) setState(() => _actionInProgress = false);
     }
   }
 
-  /// [onChanged] is invoked after an exercise is added so a parent sheet
-  /// (e.g. checkout confirmation) can rebuild without being closed.
-  void _showAddExerciseSheet({VoidCallback? onChanged}) {
-    String? selectedName;
-    int sets = 3;
-    final customNameController = TextEditingController();
-
-    showModalBottomSheet(
+  Future<void> _showCheckoutDialog() async {
+    if (!mounted) return;
+    final confirmed = await showDialog<bool>(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (sheetContext) {
-        return StatefulBuilder(
-          builder: (context, setSheetState) {
-            final theme = Theme.of(context);
-            final isDark = theme.brightness == Brightness.dark;
-
-            return Container(
-              padding: EdgeInsets.only(
-                top: 24,
-                left: 20,
-                right: 20,
-                bottom: MediaQuery.of(context).viewInsets.bottom + 24,
-              ),
-              decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1E1E24) : Colors.white,
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(24),
-                ),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    "Add Exercise Done 🏋️‍♂️",
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: isDark ? Colors.white : Colors.black87,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    "Choose from popular exercises:",
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: isDark ? Colors.grey[400] : Colors.grey[600],
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  SizedBox(
-                    height: 38,
-                    child: ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: _popularExercises.length,
-                      itemBuilder: (context, index) {
-                        final name = _popularExercises[index];
-                        final isSelected = selectedName == name;
-                        return GestureDetector(
-                          onTap: () {
-                            setSheetState(() {
-                              selectedName = name;
-                              customNameController.text = "";
-                            });
-                          },
-                          child: Container(
-                            margin: const EdgeInsets.only(right: 8),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 8,
-                            ),
-                            decoration: BoxDecoration(
-                              color: isSelected
-                                  ? Colors.blueAccent.withValues(alpha: 0.15)
-                                  : (isDark
-                                        ? Colors.white10
-                                        : Colors.black.withValues(alpha: 0.05)),
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                color: isSelected
-                                    ? Colors.blueAccent
-                                    : Colors.transparent,
-                              ),
-                            ),
-                            child: Center(
-                              child: Text(
-                                name,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: isSelected
-                                      ? FontWeight.bold
-                                      : FontWeight.normal,
-                                  color: isSelected
-                                      ? Colors.blueAccent
-                                      : (isDark
-                                            ? Colors.white70
-                                            : Colors.black87),
-                                ),
-                              ),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    "Or type custom exercise name:",
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: isDark ? Colors.grey[400] : Colors.grey[600],
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: customNameController,
-                    onChanged: (val) {
-                      if (val.isNotEmpty) {
-                        setSheetState(() {
-                          selectedName = null;
-                        });
-                      }
-                    },
-                    decoration: InputDecoration(
-                      hintText: "E.g., Pull-ups, Calf Raises",
-                      hintStyle: const TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey,
-                      ),
-                      filled: true,
-                      fillColor: isDark
-                          ? Colors.white10
-                          : Colors.black.withValues(alpha: 0.04),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        "Number of Sets:",
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: isDark ? Colors.white : Colors.black87,
-                        ),
-                      ),
-                      Row(
-                        children: [
-                          IconButton(
-                            onPressed: sets > 1
-                                ? () => setSheetState(() => sets--)
-                                : null,
-                            icon: const Icon(Icons.remove_circle_outline),
-                            color: Colors.blueAccent,
-                          ),
-                          Text(
-                            "$sets",
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: isDark ? Colors.white : Colors.black87,
-                            ),
-                          ),
-                          IconButton(
-                            onPressed: () => setSheetState(() => sets++),
-                            icon: const Icon(Icons.add_circle_outline),
-                            color: Colors.blueAccent,
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blueAccent,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    onPressed: () {
-                      final name = customNameController.text.trim().isNotEmpty
-                          ? customNameController.text.trim()
-                          : selectedName;
-                      if (name != null && name.isNotEmpty) {
-                        setState(() {
-                          _loggedExercises.add({"name": name, "sets": sets});
-                        });
-                        _saveLoggedExercises();
-                        // Notify parent sheet (checkout) so its list refreshes.
-                        onChanged?.call();
-                        // Only close this add-exercise sheet — leave checkout sheet open.
-                        Navigator.pop(sheetContext);
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                              "Please specify or choose an exercise name!",
-                            ),
-                            backgroundColor: Colors.orange,
-                          ),
-                        );
-                      }
-                    },
-                    child: const Text(
-                      "Add to Workout",
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Finish workout?'),
+        content: Text(
+          _completedItems.isEmpty
+              ? 'No exercises are selected. You can still check out.'
+              : '${_completedItems.length} exercise(s) selected. You can still check out if the checklist is incomplete.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Keep working'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Check out'),
+          ),
+        ],
+      ),
     );
-  }
-
-  void _showCheckoutConfirmationSheet() {
-    bool isCheckingOut = false;
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      // Keep sheet under user control; PopScope blocks dismiss while API runs.
-      isDismissible: true,
-      enableDrag: true,
-      backgroundColor: Colors.transparent,
-      builder: (sheetContext) {
-        return StatefulBuilder(
-          builder: (context, setCheckoutState) {
-            final theme = Theme.of(context);
-            final isDark = theme.brightness == Brightness.dark;
-
-            return PopScope(
-              canPop: !isCheckingOut,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 24,
-                ),
-                decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF1E1E24) : Colors.white,
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(24),
-                  ),
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            "Log Gym Workout & Checkout",
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: isDark ? Colors.white : Colors.black87,
-                            ),
-                          ),
-                        ),
-                        TextButton.icon(
-                          // Keep checkout sheet open; stack add sheet on top.
-                          onPressed: isCheckingOut
-                              ? null
-                              : () {
-                                  _showAddExerciseSheet(
-                                    onChanged: () {
-                                      setCheckoutState(() {});
-                                    },
-                                  );
-                                },
-                          icon: const Icon(Icons.add, size: 16),
-                          label: const Text(
-                            "Add",
-                            style: TextStyle(fontSize: 12),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    if (_loggedExercises.isEmpty)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 24),
-                        child: Center(
-                          child: Text(
-                            "No exercises added. Tap 'Add' to log a workout!",
-                            style: TextStyle(
-                              color: Colors.grey[500],
-                              fontSize: 13,
-                            ),
-                          ),
-                        ),
-                      )
-                    else
-                      ConstrainedBox(
-                        constraints: const BoxConstraints(maxHeight: 250),
-                        child: ListView.builder(
-                          shrinkWrap: true,
-                          itemCount: _loggedExercises.length,
-                          itemBuilder: (context, index) {
-                            final item = _loggedExercises[index];
-                            return Card(
-                              color: isDark
-                                  ? Colors.white.withValues(alpha: 0.04)
-                                  : Colors.black.withValues(alpha: 0.02),
-                              elevation: 0,
-                              margin: const EdgeInsets.symmetric(vertical: 4),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Material(
-                                color: Colors.transparent,
-                                child: ListTile(
-                                  title: Text(
-                                    item['name'],
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 13,
-                                      color: isDark
-                                          ? Colors.white
-                                          : Colors.black87,
-                                    ),
-                                  ),
-                                  subtitle: Text(
-                                    "${item['sets']} sets",
-                                    style: const TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.grey,
-                                    ),
-                                  ),
-                                  trailing: IconButton(
-                                    icon: const Icon(
-                                      Icons.delete_outline,
-                                      color: Colors.redAccent,
-                                      size: 18,
-                                    ),
-                                    onPressed: isCheckingOut
-                                        ? null
-                                        : () {
-                                            setCheckoutState(() {
-                                              _loggedExercises.removeAt(index);
-                                            });
-                                            setState(() {});
-                                            _saveLoggedExercises();
-                                          },
-                                  ),
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    const SizedBox(height: 24),
-                    if (isCheckingOut) ...[
-                      const Center(
-                        child: Padding(
-                          padding: EdgeInsets.only(bottom: 16),
-                          child: Column(
-                            children: [
-                              SizedBox(
-                                width: 28,
-                                height: 28,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2.5,
-                                  color: Colors.blueAccent,
-                                ),
-                              ),
-                              SizedBox(height: 10),
-                              Text(
-                                "Checking out… please wait",
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: Colors.grey,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                    Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton(
-                            style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            onPressed: isCheckingOut
-                                ? null
-                                : () => Navigator.pop(sheetContext),
-                            child: const Text("Go Back"),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.blueAccent,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            // Keep sheet open until checkout API finishes.
-                            onPressed: isCheckingOut
-                                ? null
-                                : () async {
-                                    setCheckoutState(() {
-                                      isCheckingOut = true;
-                                    });
-
-                                    final sheetNav = Navigator.of(sheetContext);
-                                    final pageNav = Navigator.of(this.context);
-
-                                    final success = await _handleCheckout(
-                                      useGlobalLoading: false,
-                                      popScreenOnSuccess: false,
-                                    );
-
-                                    if (!mounted) return;
-
-                                    if (success) {
-                                      // Close checkout sheet, then leave gym screen.
-                                      if (sheetNav.canPop()) {
-                                        sheetNav.pop();
-                                      }
-                                      if (pageNav.canPop()) {
-                                        pageNav.pop();
-                                      }
-                                    } else {
-                                      // Stay on sheet so user can retry.
-                                      setCheckoutState(() {
-                                        isCheckingOut = false;
-                                      });
-                                    }
-                                  },
-                            child: Text(
-                              isCheckingOut
-                                  ? "Checking out…"
-                                  : "Checkout & Log",
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
-  String _formatDuration(Duration d) {
-    String twoDigits(int n) => n.toString().padLeft(2, '0');
-    final hours = twoDigits(d.inHours);
-    final minutes = twoDigits(d.inMinutes.remainder(60));
-    final seconds = twoDigits(d.inSeconds.remainder(60));
-    return "$hours:$minutes:$seconds";
+    if (confirmed != true) return;
+    await _checkout();
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final backgroundColor = isDark
-        ? const Color(0xFF0F0F12)
-        : const Color(0xFFF6F8FC);
-    final textColor = isDark ? Colors.white : Colors.black87;
-
     return Scaffold(
-      backgroundColor: backgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back_ios_new_rounded,
-            color: textColor,
-            size: 20,
-          ),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Text(
-          "Gym Check-In 🏋️‍♂️",
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 18,
-            color: textColor,
-          ),
-        ),
+        title: Text(_session == null ? 'Gym access' : 'Active workout'),
+        leading: _view == _AccessView.home
+            ? null
+            : IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () {
+                  _requestPollTimer?.cancel();
+                  setState(() => _view = _AccessView.home);
+                },
+              ),
       ),
-      body: Stack(
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : Stack(
+              children: [
+                SafeArea(
+                  child: _session != null
+                      ? _buildActiveWorkout(isDark)
+                      : _buildAccessView(isDark),
+                ),
+                if (_actionInProgress)
+                  const Positioned.fill(
+                    child: ColoredBox(
+                      color: Color(0x55000000),
+                      child: Center(child: CircularProgressIndicator()),
+                    ),
+                  ),
+              ],
+            ),
+    );
+  }
+
+  Widget _buildAccessView(bool isDark) {
+    switch (_view) {
+      case _AccessView.facilities:
+        return _buildFacilityList(isDark, instant: false);
+      case _AccessView.instantFacilities:
+        return _buildFacilityList(isDark, instant: true);
+      case _AccessView.instantStatus:
+        return _buildInstantStatus(isDark);
+      case _AccessView.scanner:
+        return _buildScanner(isDark);
+      case _AccessView.home:
+        return _buildAccessHome(isDark);
+    }
+  }
+
+  Widget _buildAccessHome(bool isDark) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Background Blobs
-          Positioned(
-            top: -100,
-            right: -80,
-            width: 300,
-            height: 300,
-            child: Container(
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [
-                    Colors.blue.withValues(alpha: isDark ? 0.15 : 0.1),
-                    Colors.blue.withValues(alpha: 0.0),
-                  ],
-                ),
-              ),
-            ),
+          Text(
+            'Start a facility workout',
+            style: Theme.of(
+              context,
+            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
           ),
-
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    if (!_isCheckedIn) ...[
-                      // Header Instruction
-                      Text(
-                        "Find QR code in your partner gym to check in & start tracking workout duration.",
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: isDark ? Colors.grey[400] : Colors.grey[600],
-                          fontSize: 13,
-                          height: 1.4,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      if (!_cameraPermissionGranted) ...[
-                        // Camera permission request state
-                        Container(
-                          height: 280,
-                          decoration: BoxDecoration(
-                            color: isDark
-                                ? Colors.white10
-                                : Colors.black.withValues(alpha: 0.04),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: isDark ? Colors.white24 : Colors.black12,
-                            ),
-                          ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(
-                                Icons.camera_alt_rounded,
-                                size: 60,
-                                color: Colors.blueAccent,
-                              ),
-                              const SizedBox(height: 16),
-                              const Padding(
-                                padding: EdgeInsets.symmetric(horizontal: 24),
-                                child: Text(
-                                  "Camera Access Required",
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 24,
-                                ),
-                                child: Text(
-                                  "Arcare needs camera permission to scan QR code at the gym.",
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: isDark
-                                        ? Colors.white54
-                                        : Colors.black54,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 20),
-                              ElevatedButton(
-                                onPressed: _requestCameraPermission,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.blueAccent,
-                                  foregroundColor: Colors.white,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 20,
-                                    vertical: 12,
-                                  ),
-                                ),
-                                child: const Text(
-                                  "Grant Permission",
-                                  style: TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                      ] else ...[
-                        // Real Camera Barcode/QR Scanner Feed
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(20),
-                          child: Container(
-                            height: 280,
-                            color: Colors.black,
-                            child: Stack(
-                              children: [
-                                if (_cameraPermissionGranted &&
-                                    _scannerController != null)
-                                  MobileScanner(
-                                    controller: _scannerController!,
-                                    onDetect: (barcodeCapture) {
-                                      if (_isLoading) {
-                                        return; // Prevent double scanning while loading
-                                      }
-                                      final List<Barcode> barcodes =
-                                          barcodeCapture.barcodes;
-                                      debugPrint(
-                                        "Scanned QR Code barcodes found: ${barcodes.length}",
-                                      );
-                                      for (final barcode in barcodes) {
-                                        final rawValue = barcode.rawValue;
-                                        debugPrint(
-                                          "Scanned QR Code raw value: $rawValue",
-                                        );
-                                        if (rawValue != null) {
-                                          _handleCheckin(rawValue);
-                                          break;
-                                        }
-                                      }
-                                    },
-                                  ),
-                                // Real QR focus overlay visual
-                                Center(
-                                  child: Container(
-                                    width: 180,
-                                    height: 180,
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(16),
-                                      border: Border.all(
-                                        color: Colors.blueAccent,
-                                        width: 2.5,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                // Pulsing scan animation line overlay
-                                AnimatedBuilder(
-                                  animation: _scannerLinePosition,
-                                  builder: (context, child) {
-                                    final topPos =
-                                        50.0 +
-                                        _scannerLinePosition.value * 180.0;
-                                    return Positioned(
-                                      top: topPos,
-                                      left:
-                                          (MediaQuery.of(context).size.width -
-                                              240) /
-                                          2,
-                                      width: 180,
-                                      child: Container(
-                                        height: 3,
-                                        decoration: BoxDecoration(
-                                          color: Colors.redAccent,
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color: Colors.redAccent
-                                                  .withValues(alpha: 0.8),
-                                              blurRadius: 8,
-                                              spreadRadius: 2,
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                ),
-                                const Positioned(
-                                  bottom: 16,
-                                  left: 0,
-                                  right: 0,
-                                  child: Center(
-                                    child: Text(
-                                      "Point camera at the Gym QR Code",
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.bold,
-                                        shadows: [
-                                          Shadow(
-                                            color: Colors.black,
-                                            blurRadius: 4,
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                      const SizedBox(height: 16),
-                      Center(
-                        child: TextButton.icon(
-                          onPressed: () {
-                            setState(
-                              () => _showManualEntry = !_showManualEntry,
-                            );
-                          },
-                          icon: Icon(
-                            _showManualEntry
-                                ? Icons.expand_less_rounded
-                                : Icons.keyboard_rounded,
-                            size: 18,
-                          ),
-                          label: Text(
-                            _showManualEntry
-                                ? "Hide manual entry"
-                                : "Can't scan? Enter code",
-                          ),
-                        ),
-                      ),
-                      if (_showManualEntry)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 4),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(
-                                child: TextField(
-                                  controller: _manualCodeController,
-                                  textCapitalization:
-                                      TextCapitalization.characters,
-                                  decoration: InputDecoration(
-                                    hintText: "Facility code, e.g. BLR1",
-                                    filled: true,
-                                    fillColor: isDark
-                                        ? Colors.white10
-                                        : Colors.black.withValues(alpha: 0.04),
-                                    contentPadding: const EdgeInsets.symmetric(
-                                      horizontal: 16,
-                                      vertical: 14,
-                                    ),
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                      borderSide: BorderSide.none,
-                                    ),
-                                  ),
-                                  onSubmitted: (_) => _submitManualCode(),
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.blueAccent,
-                                  foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 18,
-                                    vertical: 16,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                ),
-                                onPressed: _isLoading
-                                    ? null
-                                    : _submitManualCode,
-                                child: const Text("Check In"),
-                              ),
-                            ],
-                          ),
-                        ),
-                    ] else ...[
-                      // Checked In UI
-                      GlassCard(
-                        padding: const EdgeInsets.all(24),
-                        child: Column(
-                          children: [
-                            const CircleAvatar(
-                              radius: 36,
-                              backgroundColor: Colors.greenAccent,
-                              child: Icon(
-                                Icons.check_circle_rounded,
-                                size: 48,
-                                color: Colors.green,
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              "ACTIVE GYM WORKOUT SESSION",
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 1.0,
-                                fontSize: 11,
-                                color: isDark
-                                    ? Colors.grey[400]
-                                    : Colors.grey[600],
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              _gymName ?? "Gym",
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.w900,
-                                color: textColor,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Icon(
-                                  Icons.location_on_outlined,
-                                  size: 14,
-                                  color: Colors.grey,
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  _gymPlace ?? "",
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 24),
-                            const Divider(color: Colors.white10),
-                            const SizedBox(height: 16),
-                            Text(
-                              "Workout Duration",
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: isDark
-                                    ? Colors.grey[400]
-                                    : Colors.grey[600],
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              _formatDuration(_elapsed),
-                              style: TextStyle(
-                                fontSize: 36,
-                                fontWeight: FontWeight.w900,
-                                fontFamily: 'monospace',
-                                color: Colors.blueAccent,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              "Started at ${_checkInTime?.toLocal().toString().substring(11, 16) ?? ''}",
-                              style: const TextStyle(
-                                fontSize: 11,
-                                color: Colors.grey,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-
-                      // Checkout Action
-                      ElevatedButton.icon(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.redAccent,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        onPressed: _showCheckoutConfirmationSheet,
-                        icon: const Icon(Icons.exit_to_app_rounded),
-                        label: const Text(
-                          "Checkout & Log Workout",
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 15,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ),
+          const SizedBox(height: 8),
+          Text(
+            'Reserve a one-hour slot in advance, or ask the facility manager for an instant check-in.',
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: Colors.grey),
           ),
-          if (_isLoading)
-            Positioned.fill(
-              child: Container(
-                color: Colors.black.withValues(alpha: 0.5),
-                child: const Center(
-                  child: CircularProgressIndicator(color: Colors.blueAccent),
-                ),
-              ),
+          const SizedBox(height: 20),
+          _accessChoice(
+            icon: Icons.event_available_outlined,
+            title: 'Book a Slot',
+            subtitle: 'Choose a facility and hourly availability',
+            onTap: _openFacilities,
+            color: Colors.indigoAccent,
+          ),
+          _accessChoice(
+            icon: Icons.flash_on_outlined,
+            title: 'Instant Check-in',
+            subtitle: 'Request approval from the facility manager',
+            onTap: _openInstant,
+            color: Colors.orangeAccent,
+          ),
+          if (_bookings.isNotEmpty) ...[
+            const SizedBox(height: 18),
+            Text(
+              'My upcoming bookings',
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
             ),
+            const SizedBox(height: 4),
+            ..._bookings
+                .where((booking) => booking.status == 'booked')
+                .take(5)
+                .map(_bookingCard),
+          ],
         ],
       ),
     );
   }
+
+  Widget _accessChoice({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+    required Color color,
+  }) {
+    return GlassCard(
+      margin: const EdgeInsets.symmetric(vertical: 7),
+      child: ListTile(
+        contentPadding: EdgeInsets.zero,
+        leading: CircleAvatar(
+          backgroundColor: color.withValues(alpha: 0.16),
+          foregroundColor: color,
+          child: Icon(icon),
+        ),
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
+        subtitle: Text(subtitle),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: onTap,
+      ),
+    );
+  }
+
+  Widget _buildFacilityList(bool isDark, {required bool instant}) {
+    final page = _facilityPage;
+    final multi = page?.items.any((item) => item.multiFacility) == true;
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                instant ? 'Choose a facility' : 'Choose a facility and slot',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+              ),
+              if (!instant) ...[
+                const SizedBox(height: 10),
+                SizedBox(
+                  height: 42,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: 7,
+                    separatorBuilder: (_, _) => const SizedBox(width: 8),
+                    itemBuilder: (context, index) {
+                      final day = DateTime.now().add(Duration(days: index));
+                      final selected = _sameDay(day, _selectedDay);
+                      return ChoiceChip(
+                        selected: selected,
+                        label: Text(index == 0 ? 'Today' : _shortDate(day)),
+                        onSelected: (_) => _changeDay(day),
+                      );
+                    },
+                  ),
+                ),
+              ],
+              if (instant) ...[
+                const SizedBox(height: 10),
+                TextField(
+                  controller: _reasonController,
+                  maxLength: 500,
+                  decoration: const InputDecoration(
+                    labelText: 'Reason (optional)',
+                    hintText: 'I forgot to book a slot',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ],
+              if (multi && !instant)
+                const Padding(
+                  padding: EdgeInsets.only(top: 8),
+                  child: Text(
+                    'Facilities are ordered by your preference, recommendations, and visits.',
+                  ),
+                ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: page == null
+              ? const Center(child: CircularProgressIndicator())
+              : page.items.isEmpty
+              ? const Center(
+                  child: Text('No facilities are linked to your organisation.'),
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
+                  itemCount: page.items.length,
+                  itemBuilder: (context, index) => _facilityCard(
+                    page.items[index],
+                    instant: instant,
+                    isDark: isDark,
+                  ),
+                ),
+        ),
+        if (page != null && (page.hasNext || page.page > 1))
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Page ${page.page} of ${(page.total / 10).ceil().clamp(1, 999)}',
+                ),
+                Row(
+                  children: [
+                    IconButton(
+                      tooltip: 'Previous page',
+                      onPressed: page.page > 1
+                          ? () {
+                              setState(() {
+                                _facilityPageNumber--;
+                                _facilityPage = null;
+                              });
+                              _loadFacilities();
+                            }
+                          : null,
+                      icon: const Icon(Icons.chevron_left),
+                    ),
+                    IconButton(
+                      tooltip: 'Next page',
+                      onPressed: page.hasNext
+                          ? () {
+                              setState(() {
+                                _facilityPageNumber++;
+                                _facilityPage = null;
+                              });
+                              _loadFacilities();
+                            }
+                          : null,
+                      icon: const Icon(Icons.chevron_right),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _facilityCard(
+    EligibleFacility facility, {
+    required bool instant,
+    required bool isDark,
+  }) {
+    final badges = <Widget>[];
+    if (facility.multiFacility && facility.previouslyVisited) {
+      badges.add(const Chip(label: Text('Previously visited')));
+    }
+    if (facility.multiFacility && facility.recommended) {
+      badges.add(const Chip(label: Text('Recommended')));
+    }
+    return GlassCard(
+      margin: const EdgeInsets.symmetric(vertical: 7),
+      padding: const EdgeInsets.all(18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      facility.name,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      facility.address ?? '${facility.city} · ${facility.code}',
+                      style: const TextStyle(color: Colors.grey),
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(
+                tooltip: 'Route in Google Maps',
+                onPressed: () => _openMaps(facility),
+                icon: const Icon(Icons.directions_outlined),
+              ),
+            ],
+          ),
+          if (badges.isNotEmpty) ...[
+            const SizedBox(height: 5),
+            Wrap(spacing: 6, runSpacing: 2, children: badges),
+          ],
+          const SizedBox(height: 10),
+          Text(
+            instant
+                ? 'Ask the manager for a one-time approval.'
+                : '${facility.availableSlots} places left across ${facility.slots.length} hourly slots',
+            style: TextStyle(color: isDark ? Colors.white70 : Colors.black54),
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: instant
+                  ? () => _requestInstant(facility)
+                  : () => _showSlotPicker(facility),
+              icon: Icon(instant ? Icons.flash_on : Icons.event_available),
+              label: Text(
+                instant ? 'Request instant check-in' : 'View hourly slots',
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _bookingCard(MemberBooking booking) {
+    return Card(
+      child: ListTile(
+        title: Text(
+          booking.facilityName,
+          style: const TextStyle(fontWeight: FontWeight.w700),
+        ),
+        subtitle: Text('${_formatSlot(booking.slot)} · ${booking.status}'),
+        trailing: booking.status == 'booked'
+            ? IconButton(
+                tooltip: 'Check in',
+                icon: const Icon(Icons.qr_code_scanner),
+                onPressed: () => _startBookedCheckin(booking),
+              )
+            : null,
+      ),
+    );
+  }
+
+  Widget _buildInstantStatus(bool isDark) {
+    final request = _accessRequest;
+    if (request == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    final pending = request.status == 'pending';
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 100),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Icon(
+            pending
+                ? Icons.hourglass_top
+                : request.approved
+                ? Icons.check_circle
+                : Icons.info_outline,
+            size: 64,
+            color: pending
+                ? Colors.orange
+                : request.approved
+                ? Colors.green
+                : Colors.redAccent,
+          ),
+          const SizedBox(height: 14),
+          Text(
+            pending
+                ? 'Waiting for ${request.facilityName}'
+                : request.approved
+                ? 'Request approved'
+                : request.status == 'expired'
+                ? 'Request expired'
+                : 'Request denied',
+            textAlign: TextAlign.center,
+            style: Theme.of(
+              context,
+            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            pending
+                ? 'The facility manager has up to 15 minutes to approve this request.'
+                : request.approved
+                ? 'Scan the facility QR and enter your member code to begin.'
+                : request.resolutionNote ??
+                      'Choose an available slot or ask the manager for help.',
+            textAlign: TextAlign.center,
+          ),
+          if (request.approved) ...[
+            const SizedBox(height: 20),
+            FilledButton.icon(
+              onPressed: request.requestType == 'capacity_override'
+                  ? _startApprovedCapacityCheckin
+                  : _openScanner,
+              icon: const Icon(Icons.qr_code_scanner),
+              label: Text(
+                request.requestType == 'capacity_override'
+                    ? 'Scan granted slot at the facility'
+                    : 'Scan facility QR',
+              ),
+            ),
+          ],
+          if (!pending && !request.approved) ...[
+            const SizedBox(height: 20),
+            if (request.suggestedSlotId != null)
+              FilledButton.icon(
+                onPressed: _acceptSuggestion,
+                icon: const Icon(Icons.event_available),
+                label: const Text('Book suggested slot'),
+              ),
+            OutlinedButton.icon(
+              onPressed: _raiseIssue,
+              icon: const Icon(Icons.support_agent),
+              label: const Text('Raise booking issue'),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildScanner(bool isDark) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(20, 10, 20, 100),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            'Scan facility QR',
+            style: Theme.of(
+              context,
+            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Use the QR displayed at the facility entrance. The member code is required next.',
+          ),
+          const SizedBox(height: 18),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: SizedBox(
+              height: 310,
+              child: _cameraPermissionGranted && _scannerController != null
+                  ? Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        MobileScanner(
+                          controller: _scannerController!,
+                          onDetect: (capture) {
+                            for (final barcode in capture.barcodes) {
+                              final value = barcode.rawValue;
+                              if (value != null && value.isNotEmpty) {
+                                _handleQr(value);
+                                break;
+                              }
+                            }
+                          },
+                        ),
+                        Center(
+                          child: Container(
+                            width: 220,
+                            height: 220,
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.white, width: 2),
+                              borderRadius: BorderRadius.circular(18),
+                            ),
+                          ),
+                        ),
+                      ],
+                    )
+                  : const ColoredBox(
+                      color: Colors.black,
+                      child: Center(
+                        child: Text(
+                          'Camera permission required',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    ),
+            ),
+          ),
+          const SizedBox(height: 14),
+          const Center(
+            child: Text('Can’t scan the sticker? Enter the facility code.'),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _manualFacilityController,
+                  textCapitalization: TextCapitalization.characters,
+                  decoration: const InputDecoration(
+                    labelText: 'Facility code',
+                    hintText: 'BLR1',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              FilledButton(
+                onPressed: _submitManualCode,
+                child: const Text('Use code'),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActiveWorkout(bool isDark) {
+    final session = _session!;
+    final plan = session.planSnapshot;
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 110),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          GlassCard(
+            padding: const EdgeInsets.all(22),
+            child: Column(
+              children: [
+                Text(
+                  session.facilityName,
+                  style: const TextStyle(
+                    fontSize: 21,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                if (session.facilityPlace.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    session.facilityPlace,
+                    style: const TextStyle(color: Colors.grey),
+                  ),
+                ],
+                const SizedBox(height: 10),
+                Chip(
+                  label: Text(
+                    session.instantRequestId != null
+                        ? 'Instant check-in'
+                        : 'Booked slot',
+                  ),
+                  avatar: Icon(
+                    session.instantRequestId != null
+                        ? Icons.flash_on
+                        : Icons.event_available,
+                    size: 18,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'WORKOUT DURATION',
+                  style: TextStyle(
+                    letterSpacing: 1.1,
+                    fontSize: 11,
+                    color: Colors.grey,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  _formatDuration(_elapsed),
+                  style: const TextStyle(
+                    fontSize: 42,
+                    fontWeight: FontWeight.w900,
+                    fontFamily: 'monospace',
+                  ),
+                ),
+                Text(
+                  'Started ${_formatTime(session.checkInAt)}',
+                  style: const TextStyle(color: Colors.grey),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            "Today's workout plan",
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: 8),
+          if (plan.isEmpty)
+            const Card(
+              child: Padding(
+                padding: EdgeInsets.all(18),
+                child: Text(
+                  'No workout assigned today. You can still check out when you finish.',
+                ),
+              ),
+            )
+          else
+            ...plan.map(_planItem),
+          const SizedBox(height: 16),
+          FilledButton.icon(
+            style: FilledButton.styleFrom(backgroundColor: Colors.redAccent),
+            onPressed: _showCheckoutDialog,
+            icon: const Icon(Icons.logout),
+            label: const Text('Checkout'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _planItem(Map<String, dynamic> item) {
+    final id = item['id']?.toString() ?? item['name']?.toString() ?? 'exercise';
+    final name = item['name']?.toString() ?? 'Exercise';
+    final details = <String>[];
+    if (item['sets'] != null) details.add('${item['sets']} sets');
+    if (item['reps'] != null) details.add('${item['reps']} reps');
+    if (item['duration_min'] != null) {
+      details.add('${item['duration_min']} min');
+    }
+    return Card(
+      child: CheckboxListTile(
+        value: _completedItems.contains(id),
+        onChanged: (selected) {
+          setState(() {
+            if (selected == true) {
+              _completedItems.add(id);
+            } else {
+              _completedItems.remove(id);
+            }
+          });
+        },
+        title: Text(name, style: const TextStyle(fontWeight: FontWeight.w700)),
+        subtitle: details.isEmpty ? null : Text(details.join(' · ')),
+      ),
+    );
+  }
+
+  String _formatDuration(Duration duration) {
+    final h = duration.inHours.toString().padLeft(2, '0');
+    final m = (duration.inMinutes % 60).toString().padLeft(2, '0');
+    final s = (duration.inSeconds % 60).toString().padLeft(2, '0');
+    return '$h:$m:$s';
+  }
+
+  String _formatDate(DateTime day) => '${day.day}/${day.month}/${day.year}';
+
+  String _shortDate(DateTime day) =>
+      '${_weekday(day.weekday)} ${day.day}/${day.month}';
+
+  String _weekday(int day) =>
+      const ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][day - 1];
+
+  String _formatSlot(FacilitySlot slot) =>
+      '${_formatTime(slot.startsAt)} – ${_formatTime(slot.endsAt)}';
+
+  String _formatTime(DateTime value) {
+    final local = value.toLocal();
+    final hour = local.hour % 12 == 0 ? 12 : local.hour % 12;
+    final minute = local.minute.toString().padLeft(2, '0');
+    return '$hour:$minute ${local.hour >= 12 ? 'PM' : 'AM'}';
+  }
+
+  bool _sameDay(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month && a.day == b.day;
 }
 
 class _MemberPinDialog extends StatefulWidget {
@@ -1337,7 +1370,7 @@ class _MemberPinDialog extends StatefulWidget {
 
 class _MemberPinDialogState extends State<_MemberPinDialog> {
   final _controller = TextEditingController();
-  String? _validationError;
+  String? _error;
 
   @override
   void dispose() {
@@ -1349,39 +1382,34 @@ class _MemberPinDialogState extends State<_MemberPinDialog> {
     final value = _controller.text.trim();
     if (RegExp(r'^\d{4}$').hasMatch(value)) {
       Navigator.pop(context, value);
-      return;
+    } else {
+      setState(() => _error = 'Enter all 4 digits');
     }
-    setState(() => _validationError = 'Enter all 4 digits');
   }
 
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Enter your 4-digit check-in code'),
+      title: const Text('Enter member code'),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Enter the code issued when you became a ${AppBrand.name} member to start your workout at ${widget.facilityName}.',
+            'Enter the four-digit code issued for your ${AppBrand.name} membership at ${widget.facilityName}.',
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
           TextField(
             controller: _controller,
             autofocus: true,
             maxLength: 4,
-            keyboardType: TextInputType.number,
             obscureText: true,
+            keyboardType: TextInputType.number,
             decoration: InputDecoration(
               labelText: '4-digit code',
-              errorText: _validationError,
+              errorText: _error,
               border: const OutlineInputBorder(),
             ),
-            onChanged: (_) {
-              if (_validationError != null) {
-                setState(() => _validationError = null);
-              }
-            },
             onSubmitted: (_) => _submit(),
           ),
         ],
@@ -1395,24 +1423,4 @@ class _MemberPinDialogState extends State<_MemberPinDialog> {
       ],
     );
   }
-}
-
-class ScannerGridPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.blueAccent.withValues(alpha: 0.1)
-      ..strokeWidth = 1.0;
-
-    final double step = 20.0;
-    for (double i = 0; i < size.width; i += step) {
-      canvas.drawLine(Offset(i, 0), Offset(i, size.height), paint);
-    }
-    for (double i = 0; i < size.height; i += step) {
-      canvas.drawLine(Offset(0, i), Offset(size.width, i), paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

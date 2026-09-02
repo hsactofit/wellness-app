@@ -104,7 +104,11 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     });
     try {
       final corpJson = await AuthService.instance.listEnrolmentCorporates();
-      final facJson = await AuthService.instance.listEnrolmentFacilities();
+      final prefs = await SharedPreferences.getInstance();
+      final ssoCorporateId = prefs.getString('sso_corporate_id');
+      final facJson = await AuthService.instance.listEnrolmentFacilities(
+        corporateId: ssoCorporateId,
+      );
       if (!mounted) return;
       setState(() {
         _corporates = corpJson
@@ -125,10 +129,11 @@ class _OnboardingScreenState extends State<OnboardingScreen>
               ),
             )
             .toList();
+        if (ssoCorporateId != null && _facilities.length == 1) {
+          _selectedFacilityId = _facilities.single.id;
+        }
         _loadingCompanyData = false;
       });
-      final prefs = await SharedPreferences.getInstance();
-      final ssoCorporateId = prefs.getString('sso_corporate_id');
       if (ssoCorporateId != null &&
           _corporates.any((c) => c.id == ssoCorporateId) &&
           mounted) {
@@ -140,6 +145,44 @@ class _OnboardingScreenState extends State<OnboardingScreen>
         _loadingCompanyData = false;
         _companyLoadError =
             "Couldn't load companies/facilities: ${e.toString().replaceAll('Exception: ', '')}";
+      });
+    }
+  }
+
+  Future<void> _selectCorporate(String corporateId) async {
+    setState(() {
+      _selectedCorporateId = corporateId;
+      _selectedFacilityId = null;
+      _loadingCompanyData = true;
+      _companyLoadError = null;
+    });
+    try {
+      final facJson = await AuthService.instance.listEnrolmentFacilities(
+        corporateId: corporateId,
+      );
+      if (!mounted) return;
+      setState(() {
+        _facilities = facJson
+            .map(
+              (f) => CompanyOption(
+                id: f['id'] as String,
+                name: f['name'] as String,
+                subtitle: "${f['type']} · ${f['city']}",
+              ),
+            )
+            .toList();
+        _selectedFacilityId = _facilities.length == 1
+            ? _facilities.single.id
+            : null;
+        _loadingCompanyData = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _facilities = [];
+        _loadingCompanyData = false;
+        _companyLoadError =
+            "Couldn't load facilities for this company: ${e.toString().replaceAll('Exception: ', '')}";
       });
     }
   }
@@ -588,9 +631,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                         facilities: _facilities,
                         selectedCorporateId: _selectedCorporateId,
                         selectedFacilityId: _selectedFacilityId,
-                        onCorporateSelected: (id) {
-                          setState(() => _selectedCorporateId = id);
-                        },
+                        onCorporateSelected: _selectCorporate,
                         onFacilitySelected: (id) {
                           setState(() => _selectedFacilityId = id);
                         },
@@ -619,6 +660,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                       // Step 5: Consent & Signature
                       ConsentStep(
                         grants: _consentGrants,
+                        medicalShareRequired:
+                            _selectedConditions.isNotEmpty && !_noConditions,
                         onToggleGrant: (key) {
                           setState(
                             () => _consentGrants[key] =

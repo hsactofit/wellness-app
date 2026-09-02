@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../app_brand.dart';
 import '../services/auth_service.dart';
 import '../services/api_service.dart';
+import '../services/facility_booking_service.dart';
 import '../widgets/glass_card.dart';
 import '../main.dart';
 import 'welcome_screen.dart';
@@ -871,6 +872,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ),
                             onTap: _showThemeSelectionDialog,
                           ),
+                          _divider(isDark),
+                          _settingTile(
+                            isDark: isDark,
+                            textColor: textColor,
+                            secondary: secondary,
+                            icon: Icons.fitness_center_outlined,
+                            color: _mint,
+                            title: 'Facility workout-data sharing',
+                            subtitle:
+                                'Manage AI workout-report sharing',
+                            trailing: Icon(
+                              Icons.chevron_right_rounded,
+                              color: secondary,
+                              size: 22,
+                            ),
+                            onTap: _showFacilityWorkoutConsent,
+                          ),
                         ],
                       ),
                     ),
@@ -920,6 +938,56 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (enabled.isEmpty) return 'All alerts off';
     if (enabled.length <= 2) return enabled.join(' · ');
     return '${enabled.length} alerts on';
+  }
+
+  Future<void> _showFacilityWorkoutConsent() async {
+    try {
+      final current = await FacilityBookingService.instance
+          .fetchWorkoutDataConsent();
+      if (!mounted) return;
+      final action = await showDialog<String>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('Facility workout-data sharing'),
+          content: Text(
+            current.active
+                ? 'Sharing is active. Qualifying facility managers can access your member-approved body-composition reports, saved comparisons, and workout results for their own facility only. Raw OCR transcripts, medical records, diagnoses, clinical notes, unrelated vitals, and workouts from other facilities are excluded.'
+                : 'Sharing is not active. Booking and check-in cannot continue until you approve the facility workflow disclosure again.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Close'),
+            ),
+            if (current.active)
+              FilledButton(
+                onPressed: () => Navigator.pop(dialogContext, 'withdraw'),
+                child: const Text('Withdraw access'),
+              ),
+          ],
+        ),
+      );
+      if (action == 'withdraw') {
+        await FacilityBookingService.instance.setWorkoutDataConsent(
+          granted: false,
+        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content: Text(
+                  'Facility workout-data sharing withdrawn. Manager access ends now, and new bookings and check-ins are blocked until you approve again.',
+                ),
+            ),
+          );
+        }
+      }
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not load privacy settings: $error')),
+        );
+      }
+    }
   }
 
   Widget _buildIdentityHero(

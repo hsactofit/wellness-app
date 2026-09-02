@@ -5,10 +5,12 @@ import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:uuid/uuid.dart';
 
 import 'auth_service.dart';
+import 'background_workout_service.dart';
 
-enum WorkoutSessionPromptReason { hourly, leftFacility }
+enum WorkoutSessionPromptReason { hourly, slotEnd, leftFacility }
 
 class ActiveWorkoutSession {
   const ActiveWorkoutSession({
@@ -19,6 +21,10 @@ class ActiveWorkoutSession {
     required this.geofenceRadiusMeters,
     this.latitude,
     this.longitude,
+    this.bookingId,
+    this.instantRequestId,
+    this.slotEndAt,
+    this.planSnapshot = const [],
   });
 
   final String id;
@@ -28,6 +34,10 @@ class ActiveWorkoutSession {
   final double? latitude;
   final double? longitude;
   final int geofenceRadiusMeters;
+  final String? bookingId;
+  final String? instantRequestId;
+  final DateTime? slotEndAt;
+  final List<Map<String, dynamic>> planSnapshot;
 
   bool get hasGeofence => latitude != null && longitude != null;
 }
@@ -53,10 +63,10 @@ typedef WorkoutSessionPrompt =
       WorkoutSessionPromptReason reason,
     );
 
-/// Owns local workout-session persistence, the authenticated attendance calls,
-/// and foreground safety checks. Location is deliberately foreground-only: the
-/// OS may suspend this app, but the hourly check is re-evaluated as soon as it
-/// resumes so a missed background timer never becomes a stale open session.
+/// Owns local workout-session persistence, authenticated attendance calls,
+/// and background-safe reminders. Android's foreground service keeps the
+/// notification timer alive; iOS resumes the local reminder/location monitor
+/// when the app returns to the foreground. The server remains authoritative.
 class WorkoutSessionService {
   WorkoutSessionService._();
 
@@ -67,14 +77,21 @@ class WorkoutSessionService {
   static const _placeKey = 'gym_place';
   static const _checkInKey = 'gym_check_in_time';
   static const _sessionIdKey = 'gym_session_id';
+  static const _checkoutRefKey = 'gym_checkout_client_ref';
   static const _latitudeKey = 'gym_facility_latitude';
   static const _longitudeKey = 'gym_facility_longitude';
   static const _radiusKey = 'gym_geofence_radius_m';
+  static const _bookingIdKey = 'gym_booking_id';
+  static const _instantRequestIdKey = 'gym_instant_request_id';
+  static const _slotEndKey = 'gym_slot_end_at';
+  static const _planSnapshotKey = 'gym_plan_snapshot';
+  static const _nativeGeofenceKey = 'gym_native_geofence_registered';
   // Keep this separate from the server's attendance time. The server can
   // return an already-open record, but the first reminder must wait one hour
   // from the member's successful local check-in.
   static const _hourlyPromptAnchorKey = 'gym_hourly_prompt_anchor_at';
   static const _lastHourlyPromptKey = 'gym_last_hourly_prompt_at';
+  static const _slotEndPromptedKey = 'gym_slot_end_prompted';
 
   Timer? _hourlyTimer;
   StreamSubscription<Position>? _positionSubscription;
@@ -99,6 +116,8 @@ class WorkoutSessionService {
     final id = prefs.getString(_sessionIdKey);
     if (checkInAt == null || id == null || id.isEmpty) return null;
 
+    final planJson = prefs.getString(_planSnapshotKey);
+    final planSnapshot = _decodePlanSnapshot(planJson);
     return ActiveWorkoutSession(
       id: id,
       facilityName: prefs.getString(_nameKey) ?? 'Facility',
@@ -106,13 +125,62 @@ class WorkoutSessionService {
       checkInAt: checkInAt,
       latitude: prefs.getDouble(_latitudeKey),
       longitude: prefs.getDouble(_longitudeKey),
-      geofenceRadiusMeters: prefs.getInt(_radiusKey) ?? 150,
+      geofenceRadiusMeters: prefs.getInt(_radiusKey) ?? 2000,
+      bookingId: prefs.getString(_bookingIdKey),
+      instantRequestId: prefs.getString(_instantRequestIdKey),
+      slotEndAt: DateTime.tryParse(prefs.getString(_slotEndKey) ?? ''),
+      planSnapshot: planSnapshot,
     );
+  }
+
+  /// Reconcile the recovery cache with the server-owned open session. A
+  /// process restart or OS eviction can remove the local cache while the
+  /// server session is still active; a missing session is the only expected
+  /// 404 and is treated as a normal signed-out state.
+  Future<ActiveWorkoutSession?> recoverActiveSession() async {
+    final cached = await loadActiveSession();
+    try {
+      var token = await AuthService.instance.getAccessToken();
+      var response = await http.get(
+        AuthService.apiUrl('/api/attendance/me/active'),
+        headers: {if (token != null) 'Authorization': 'Bearer $token'},
+      );
+      if (response.statusCode == 401) {
+        await AuthService.instance.refreshSessionToken();
+        token = await AuthService.instance.getAccessToken();
+        response = await http.get(
+          AuthService.apiUrl('/api/attendance/me/active'),
+          headers: {if (token != null) 'Authorization': 'Bearer $token'},
+        );
+      }
+      if (response.statusCode == 404) {
+        if (cached != null) await clearLocalSession();
+        return null;
+      }
+      final body = _decodeBody(response.body);
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw WorkoutSessionException(_errorMessage(body, response.statusCode));
+      }
+      final session = Map<String, dynamic>.from(body as Map);
+      await saveCheckIn(
+        session: session,
+        fallbackFacilityName:
+            session['facility_name']?.toString() ?? 'Facility',
+        fallbackFacilityPlace: cached?.facilityPlace ?? '',
+      );
+      return loadActiveSession();
+    } catch (_) {
+      // Offline recovery still uses the last known cache. It is not treated
+      // as authoritative once the server can be reached again.
+      return cached;
+    }
   }
 
   Future<Map<String, dynamic>> checkIn({
     required String facilityCode,
     required String memberPin,
+    String? bookingId,
+    String? instantRequestId,
   }) async {
     final token = await AuthService.instance.getAccessToken();
     final response = await http.post(
@@ -121,11 +189,14 @@ class WorkoutSessionService {
         'Content-Type': 'application/json',
         if (token != null) 'Authorization': 'Bearer $token',
       },
-      body: jsonEncode({
+      body: jsonEncode(<String, dynamic>{
         'facility_code': facilityCode,
         'member_pin': memberPin,
         'method': 'QR scan',
         'activity': 'Workout',
+        'client_ref': Uuid().v4(),
+        if (bookingId != null) 'booking_id': bookingId,
+        if (instantRequestId != null) 'instant_request_id': instantRequestId,
       }),
     );
 
@@ -148,18 +219,31 @@ class WorkoutSessionService {
     final name = session['facility_name'] as String? ?? fallbackFacilityName;
     final latitude = (session['facility_latitude'] as num?)?.toDouble();
     final longitude = (session['facility_longitude'] as num?)?.toDouble();
-    final radius = (session['geofence_radius_m'] as num?)?.toInt() ?? 150;
+    final radius = (session['geofence_radius_m'] as num?)?.toInt() ?? 2000;
+    final planSnapshot = (session['plan_snapshot'] as List? ?? [])
+        .whereType<Map>()
+        .map((item) => Map<String, dynamic>.from(item))
+        .toList();
 
     await prefs.setBool(_checkedInKey, true);
     await prefs.setString(_nameKey, name);
     await prefs.setString(_placeKey, fallbackFacilityPlace);
     await prefs.setString(_checkInKey, checkInAt);
     await prefs.setString(_sessionIdKey, session['id']?.toString() ?? '');
+    await _setOptionalString(prefs, _bookingIdKey, session['booking_id']);
+    await _setOptionalString(
+      prefs,
+      _instantRequestIdKey,
+      session['instant_request_id'],
+    );
+    await _setOptionalString(prefs, _slotEndKey, session['slot_end_at']);
+    await prefs.setString(_planSnapshotKey, jsonEncode(planSnapshot));
     await prefs.setString(
       _hourlyPromptAnchorKey,
       localCheckInAt.toIso8601String(),
     );
     await prefs.remove(_lastHourlyPromptKey);
+    await prefs.remove(_slotEndPromptedKey);
 
     if (latitude != null && longitude != null) {
       await prefs.setDouble(_latitudeKey, latitude);
@@ -170,9 +254,26 @@ class WorkoutSessionService {
       await prefs.remove(_longitudeKey);
       await prefs.remove(_radiusKey);
     }
+    final nativeGeofenceRegistered =
+        await BackgroundWorkoutService.instance.start(
+      sessionId: session['id']?.toString() ?? '',
+      facilityName: name,
+      checkInAt: DateTime.tryParse(checkInAt),
+      slotEndAt: DateTime.tryParse(session['slot_end_at']?.toString() ?? ''),
+      bookingId: session['booking_id']?.toString(),
+      latitude: latitude,
+      longitude: longitude,
+      geofenceRadiusMeters: radius,
+    );
+    await prefs.setBool(_nativeGeofenceKey, nativeGeofenceRegistered);
   }
 
-  Future<WorkoutCheckoutResult> checkout() async {
+  Future<WorkoutCheckoutResult> checkout({
+    List<String> completedItemIds = const [],
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final checkoutRef = prefs.getString(_checkoutRefKey) ?? Uuid().v4();
+    await prefs.setString(_checkoutRefKey, checkoutRef);
     final token = await AuthService.instance.getAccessToken();
     final response = await http.post(
       AuthService.apiUrl('/api/attendance/checkout'),
@@ -180,7 +281,10 @@ class WorkoutSessionService {
         'Content-Type': 'application/json',
         if (token != null) 'Authorization': 'Bearer $token',
       },
-      body: jsonEncode(<String, dynamic>{}),
+      body: jsonEncode(<String, dynamic>{
+        'client_ref': checkoutRef,
+        'completed_item_ids': completedItemIds,
+      }),
     );
 
     final body = _decodeBody(response.body);
@@ -193,8 +297,23 @@ class WorkoutSessionService {
         DateTime.tryParse(responseData['check_out_at'] as String? ?? '') ??
         DateTime.now();
     await clearLocalSession(checkOutAt: checkOutAt);
-    await stopMonitoring();
     return WorkoutCheckoutResult(checkOutAt: checkOutAt);
+  }
+
+  Future<void> continueWorkout({String? reason}) async {
+    final token = await AuthService.instance.getAccessToken();
+    final response = await http.post(
+      AuthService.apiUrl('/api/attendance/continue'),
+      headers: {
+        'Content-Type': 'application/json',
+        if (token != null) 'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode(<String, dynamic>{if (reason != null) 'reason': reason}),
+    );
+    final body = _decodeBody(response.body);
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw WorkoutSessionException(_errorMessage(body, response.statusCode));
+    }
   }
 
   Future<void> clearLocalSession({DateTime? checkOutAt}) async {
@@ -204,9 +323,15 @@ class WorkoutSessionService {
     await prefs.remove(_placeKey);
     await prefs.remove(_checkInKey);
     await prefs.remove(_sessionIdKey);
+    await prefs.remove(_checkoutRefKey);
     await prefs.remove(_latitudeKey);
     await prefs.remove(_longitudeKey);
     await prefs.remove(_radiusKey);
+    await prefs.remove(_bookingIdKey);
+    await prefs.remove(_instantRequestIdKey);
+    await prefs.remove(_slotEndKey);
+    await prefs.remove(_planSnapshotKey);
+    await prefs.remove(_nativeGeofenceKey);
     await prefs.remove(_hourlyPromptAnchorKey);
     await prefs.remove(_lastHourlyPromptKey);
     await prefs.remove('gym_logged_exercises');
@@ -218,6 +343,8 @@ class WorkoutSessionService {
       'gym_done_today_date',
       DateTime.now().toIso8601String().substring(0, 10),
     );
+    await BackgroundWorkoutService.instance.stop();
+    await stopMonitoring();
     sessionRefreshSignal.value++;
   }
 
@@ -246,6 +373,18 @@ class WorkoutSessionService {
   Future<void> _scheduleHourlyPrompt(ActiveWorkoutSession session) async {
     _hourlyTimer?.cancel();
     final prefs = await SharedPreferences.getInstance();
+    final slotEndPrompted = prefs.getBool(_slotEndPromptedKey) ?? false;
+    final slotEnd = session.slotEndAt;
+    if (session.bookingId != null && !slotEndPrompted && slotEnd != null) {
+      var slotDelay = slotEnd.difference(DateTime.now());
+      if (slotDelay.isNegative) slotDelay = Duration.zero;
+      _hourlyTimer = Timer(slotDelay, () async {
+        await _triggerPrompt(session, WorkoutSessionPromptReason.slotEnd);
+        final current = await loadActiveSession();
+        if (current != null) await _scheduleHourlyPrompt(current);
+      });
+      return;
+    }
     final lastPrompt = DateTime.tryParse(
       prefs.getString(_lastHourlyPromptKey) ?? '',
     );
@@ -271,6 +410,15 @@ class WorkoutSessionService {
     _positionSubscription = null;
     if (!session.hasGeofence || kIsWeb) return;
 
+    final prefs = await SharedPreferences.getInstance();
+    // Core Location region monitoring wakes an iPhone even when Flutter is
+    // suspended. Do not keep a parallel continuous stream alive on iOS when
+    // the native region registration was accepted at check-in.
+    if (defaultTargetPlatform == TargetPlatform.iOS &&
+        (prefs.getBool(_nativeGeofenceKey) ?? false)) {
+      return;
+    }
+
     if (!await Geolocator.isLocationServiceEnabled()) return;
     var permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied && requestLocationPermission) {
@@ -281,10 +429,25 @@ class WorkoutSessionService {
       return;
     }
 
-    final locationSettings = const LocationSettings(
-      accuracy: LocationAccuracy.medium,
-      distanceFilter: 50,
-    );
+    final LocationSettings locationSettings =
+        defaultTargetPlatform == TargetPlatform.android
+        ? AndroidSettings(
+            accuracy: LocationAccuracy.medium,
+            distanceFilter: 50,
+            foregroundNotificationConfig: ForegroundNotificationConfig(
+              notificationTitle: 'Workout in progress',
+              notificationText: 'Medifit is monitoring your active workout.',
+              enableWakeLock: true,
+              enableWifiLock: true,
+            ),
+          )
+        : AppleSettings(
+            accuracy: LocationAccuracy.medium,
+            distanceFilter: 50,
+            activityType: ActivityType.fitness,
+            pauseLocationUpdatesAutomatically: false,
+            showBackgroundLocationIndicator: true,
+          );
     _positionSubscription =
         Geolocator.getPositionStream(locationSettings: locationSettings).listen(
           (position) => _handleLocation(session, position),
@@ -331,12 +494,16 @@ class WorkoutSessionService {
 
     _promptInProgress = true;
     try {
-      if (reason == WorkoutSessionPromptReason.hourly) {
+      if (reason == WorkoutSessionPromptReason.hourly ||
+          reason == WorkoutSessionPromptReason.slotEnd) {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString(
           _lastHourlyPromptKey,
           DateTime.now().toIso8601String(),
         );
+        if (reason == WorkoutSessionPromptReason.slotEnd) {
+          await prefs.setBool(_slotEndPromptedKey, true);
+        }
       }
       await _promptHandler!(session, reason);
     } finally {
@@ -355,5 +522,31 @@ class WorkoutSessionService {
   String _errorMessage(dynamic body, int statusCode) {
     if (body is Map && body['detail'] != null) return body['detail'].toString();
     return 'Attendance request failed ($statusCode)';
+  }
+
+  List<Map<String, dynamic>> _decodePlanSnapshot(String? raw) {
+    if (raw == null || raw.isEmpty) return const [];
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is! List) return const [];
+      return decoded
+          .whereType<Map>()
+          .map((item) => Map<String, dynamic>.from(item))
+          .toList();
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  Future<void> _setOptionalString(
+    SharedPreferences prefs,
+    String key,
+    Object? value,
+  ) async {
+    if (value == null || value.toString().isEmpty) {
+      await prefs.remove(key);
+    } else {
+      await prefs.setString(key, value.toString());
+    }
   }
 }

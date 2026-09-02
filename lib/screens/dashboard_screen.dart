@@ -26,9 +26,8 @@ import 'sos_screen.dart';
 import 'mood_checkin_screen.dart';
 import 'plan_screen.dart';
 import 'notifications_screen.dart';
-import 'body_composition_report_review_screen.dart';
 import 'body_composition_reports_screen.dart';
-import 'update_health_camera_screen.dart';
+import 'update_health_hub_screen.dart';
 import '../models/plan_models.dart';
 import '../models/body_composition_report.dart';
 import '../widgets/water/wave_painter.dart';
@@ -4482,15 +4481,9 @@ class DashboardScreenState extends State<DashboardScreen>
   }
 
   Future<void> _openUpdateYourHealth() async {
-    final draft = await Navigator.of(context).push(
-      MaterialPageRoute<BodyCompositionDraft>(
-        builder: (_) => const UpdateHealthCameraScreen(),
-      ),
-    );
-    if (draft == null || !mounted) return;
-    final report = await Navigator.of(context).push(
+    final report = await Navigator.of(context).push<BodyCompositionReport>(
       MaterialPageRoute<BodyCompositionReport>(
-        builder: (_) => BodyCompositionReportReviewScreen(draft: draft),
+        builder: (_) => const UpdateHealthHubScreen(),
       ),
     );
     if (report == null || !mounted) return;
@@ -4590,19 +4583,13 @@ class DashboardScreenState extends State<DashboardScreen>
                     style: TextStyle(fontSize: 11, color: secondaryTextColor),
                   ),
                   const SizedBox(height: 10),
-                  Wrap(
-                    spacing: 8,
-                    children: [
-                      FilledButton.icon(
-                        onPressed: _openUpdateYourHealth,
-                        icon: const Icon(Icons.camera_alt_outlined, size: 16),
-                        label: const Text('Scan Report'),
-                      ),
-                      TextButton(
-                        onPressed: _openHealthReports,
-                        child: const Text('View Reports'),
-                      ),
-                    ],
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.icon(
+                      onPressed: _openUpdateYourHealth,
+                      icon: const Icon(Icons.add_chart_outlined, size: 18),
+                      label: const Text('Update Your Health'),
+                    ),
                   ),
                 ],
               ),

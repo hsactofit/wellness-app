@@ -32,6 +32,14 @@
 				<string>com.googleusercontent.apps.133235672969-3cvj022rjtsdorajcjtilmt8v4hsutb1</string>
 			</array>
 		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>medifit</string>
+			</array>
+		</dict>
 	</array>
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
@@ -39,6 +47,8 @@
 	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>Allow camera access to scan gym BMI and body-composition reports so you can update your health data.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Allow photo access to choose a screenshot of your gym body-composition report.</string>
 	<key>NSHealthShareUsageDescription</key>
 	<string>Allow access to health data to sync step counts, vitals, sleep, calories, weight, and blood pressure with your dashboard.</string>
 	<key>NSHealthUpdateUsageDescription</key>
@@ -47,6 +57,14 @@
 	<string>Allow local network access so this debug build can reach the Medifit API running on your computer.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Allow location access to help confirm when you have left a Medifit facility and remind you to complete your workout session. Location is also used if you trigger SOS.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Allow location access during an active workout so Medifit can remind you when you leave the facility area. Coordinates are not uploaded or retained.</string>
+	<key>NSSupportsLiveActivities</key>
+	<true/>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>location</string>
+	</array>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsLocalNetworking</key>

@@ -591,6 +591,7 @@ class ApiService {
         'ocr_transcript': draft.ocrTranscript,
         'measurements': draft.measurements.toJson(),
         'member_corrected': memberCorrected,
+        'input_method': BodyCompositionInputMethod.normalize(draft.inputMethod),
       },
     );
     if (response.statusCode == 200 || response.statusCode == 201) {
@@ -617,6 +618,63 @@ class ApiService {
     }
     throw Exception(
       'Failed to load health reports: ${response.statusCode} ${response.body}',
+    );
+  }
+
+  Future<BodyCompositionComparison> createBodyCompositionComparison({
+    required String olderReportId,
+    required String newerReportId,
+    required String clientSubmissionId,
+  }) async {
+    final response = await _post(
+      '/api/health/body-composition-comparisons',
+      body: {
+        'older_report_id': olderReportId,
+        'newer_report_id': newerReportId,
+        'client_submission_id': clientSubmissionId,
+      },
+    );
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return BodyCompositionComparison.fromJson(
+        Map<String, dynamic>.from(jsonDecode(response.body) as Map),
+      );
+    }
+    throw Exception(
+      'Failed to compare reports: ${response.statusCode} ${response.body}',
+    );
+  }
+
+  Future<List<BodyCompositionComparison>>
+  fetchBodyCompositionComparisons() async {
+    final response = await _get('/api/health/body-composition-comparisons');
+    if (response.statusCode == 200) {
+      final payload = jsonDecode(response.body) as List<dynamic>;
+      return payload
+          .map(
+            (item) => BodyCompositionComparison.fromJson(
+              Map<String, dynamic>.from(item as Map),
+            ),
+          )
+          .toList();
+    }
+    throw Exception(
+      'Failed to load comparisons: ${response.statusCode} ${response.body}',
+    );
+  }
+
+  Future<BodyCompositionComparison> fetchBodyCompositionComparison(
+    String comparisonId,
+  ) async {
+    final response = await _get(
+      '/api/health/body-composition-comparisons/$comparisonId',
+    );
+    if (response.statusCode == 200) {
+      return BodyCompositionComparison.fromJson(
+        Map<String, dynamic>.from(jsonDecode(response.body) as Map),
+      );
+    }
+    throw Exception(
+      'Failed to load comparison: ${response.statusCode} ${response.body}',
     );
   }
 

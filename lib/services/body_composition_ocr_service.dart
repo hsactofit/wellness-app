@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
@@ -20,41 +21,59 @@ class BodyCompositionOcrService {
   /// photo bytes nor the image itself are ever persisted by the app.
   Future<void> trackTemporaryCapture(String imagePath) async {
     final preferences = await SharedPreferences.getInstance();
-    await preferences.setString(_temporaryCapturePathKey, imagePath);
+    final paths = _trackedPaths(preferences);
+    if (!paths.contains(imagePath)) paths.add(imagePath);
+    await preferences.setString(_temporaryCapturePathKey, jsonEncode(paths));
   }
 
   Future<void> clearAbandonedTemporaryCapture() async {
     final preferences = await SharedPreferences.getInstance();
-    final imagePath = preferences.getString(_temporaryCapturePathKey);
-    if (imagePath != null && imagePath.isNotEmpty) {
+    for (final imagePath in _trackedPaths(preferences)) {
       try {
         final image = File(imagePath);
         if (await image.exists()) await image.delete();
       } catch (_) {
-        // The OS can clear camera cache files before the next launch.
+        // The OS can clear camera/raster cache files before the next launch.
       }
     }
     await preferences.remove(_temporaryCapturePathKey);
   }
 
-  Future<BodyCompositionDraft?> readReport(String imagePath) async {
+  Future<BodyCompositionDraft?> readReport(
+    String imagePath, {
+    String inputMethod = BodyCompositionInputMethod.cameraScan,
+  }) async {
     final recognizer = TextRecognizer(script: TextRecognitionScript.latin);
     try {
       final recognized = await recognizer.processImage(
         InputImage.fromFilePath(imagePath),
       );
-      final transcript = recognized.text.trim();
-      if (transcript.isEmpty) return null;
-
-      return BodyCompositionDraft(
-        clientSubmissionId: _uuid.v4(),
-        measuredAt: _extractDate(transcript) ?? DateTime.now(),
-        ocrTranscript: transcript,
-        measurements: extractMeasurements(transcript),
-      );
+      return readReportFromText(recognized.text, inputMethod: inputMethod);
     } finally {
       await recognizer.close();
     }
+  }
+
+  /// Converts an OCR transcript into the same reviewable draft used by every
+  /// import path. No transcript leaves the device until the member approves.
+  BodyCompositionDraft? readReportFromText(
+    String rawTranscript, {
+    String inputMethod = BodyCompositionInputMethod.cameraScan,
+  }) {
+    final transcript = rawTranscript.trim();
+    if (transcript.isEmpty) return null;
+    if (transcript.length > 20000) {
+      throw const BodyCompositionOcrException(
+        'This report is too long to process. Use a shorter PDF or a clear screenshot of the report.',
+      );
+    }
+    return BodyCompositionDraft(
+      clientSubmissionId: _uuid.v4(),
+      measuredAt: _extractDate(transcript) ?? DateTime.now(),
+      ocrTranscript: transcript,
+      measurements: extractMeasurements(transcript),
+      inputMethod: BodyCompositionInputMethod.normalize(inputMethod),
+    );
   }
 
   /// Deterministic parsing keeps sensitive health text on-device and makes
@@ -194,12 +213,45 @@ class BodyCompositionOcrService {
     } finally {
       try {
         final preferences = await SharedPreferences.getInstance();
-        if (preferences.getString(_temporaryCapturePathKey) == imagePath) {
+        final paths = _trackedPaths(preferences)
+          ..removeWhere((path) => path == imagePath);
+        if (paths.isEmpty) {
           await preferences.remove(_temporaryCapturePathKey);
+        } else {
+          await preferences.setString(
+            _temporaryCapturePathKey,
+            jsonEncode(paths),
+          );
         }
       } catch (_) {
         // Cleanup remains best-effort if local preferences are unavailable.
       }
     }
   }
+
+  List<String> _trackedPaths(SharedPreferences preferences) {
+    final raw = preferences.getString(_temporaryCapturePathKey);
+    if (raw == null || raw.isEmpty) return <String>[];
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is List) {
+        return decoded
+            .whereType<String>()
+            .where((path) => path.isNotEmpty)
+            .toList();
+      }
+    } catch (_) {
+      // Migrate the original single-path format below.
+    }
+    return [raw];
+  }
+}
+
+class BodyCompositionOcrException implements Exception {
+  const BodyCompositionOcrException(this.message);
+
+  final String message;
+
+  @override
+  String toString() => message;
 }

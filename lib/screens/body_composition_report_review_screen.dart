@@ -183,6 +183,7 @@ class _BodyCompositionReportReviewScreenState
           measuredAt: _measuredAt,
           ocrTranscript: widget.draft.ocrTranscript,
           measurements: measurements,
+          inputMethod: widget.draft.inputMethod,
         ),
         memberCorrected: _wasEdited,
       );
@@ -224,7 +225,7 @@ class _BodyCompositionReportReviewScreenState
                         SizedBox(width: 12),
                         Expanded(
                           child: Text(
-                            'The photo has been deleted. Review the extracted values before uploading this report.',
+                            'The source is not uploaded or retained. Review the extracted values before approving and saving this report.',
                           ),
                         ),
                       ],
@@ -308,7 +309,7 @@ class _BodyCompositionReportReviewScreenState
                                 ),
                               )
                             : const Icon(Icons.cloud_upload_outlined),
-                        label: const Text('Upload Report'),
+                        label: const Text('Approve & Save'),
                       ),
                     ),
                   ],

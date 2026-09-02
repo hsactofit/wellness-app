@@ -5,6 +5,7 @@ import 'fade_slide_transition.dart';
 class ConsentStep extends StatelessWidget {
   final Map<String, bool>
   grants; // keys: terms, healthData, medicalShare, employerAggregate
+  final bool medicalShareRequired;
   final ValueChanged<String> onToggleGrant;
   final TextEditingController signatureController;
   final VoidCallback onBack;
@@ -13,6 +14,7 @@ class ConsentStep extends StatelessWidget {
   const ConsentStep({
     super.key,
     required this.grants,
+    required this.medicalShareRequired,
     required this.onToggleGrant,
     required this.signatureController,
     required this.onBack,
@@ -46,8 +48,20 @@ class ConsentStep extends StatelessWidget {
     },
   ];
 
-  bool get _allRequiredGranted =>
-      _clauses.every((c) => grants[c['key']] == true);
+  bool _isRequired(String key) => key != 'medicalShare' || medicalShareRequired;
+
+  String _requirementLabel(String key) {
+    if (key == 'medicalShare') {
+      return medicalShareRequired
+          ? 'Required for doctor clearance'
+          : 'Optional';
+    }
+    return 'Required';
+  }
+
+  bool get _allRequiredGranted => _clauses
+      .where((clause) => _isRequired(clause['key']!))
+      .every((clause) => grants[clause['key']] == true);
 
   @override
   Widget build(BuildContext context) {
@@ -55,6 +69,9 @@ class ConsentStep extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
     final canContinue =
         _allRequiredGranted && signatureController.text.trim().isNotEmpty;
+    final consentInstruction = medicalShareRequired
+        ? 'All four consents below are required because a doctor must review your declared condition before clearance.'
+        : 'Three consents below are required to activate your ${AppBrand.name} membership. Medical Data Sharing is optional.';
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -87,7 +104,7 @@ class ConsentStep extends StatelessWidget {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'All four consents below are required to activate your ${AppBrand.name} membership.',
+                          consentInstruction,
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             color: isDark ? Colors.grey[400] : Colors.grey[600],
@@ -151,6 +168,21 @@ class ConsentStep extends StatelessWidget {
                                         color: isDark
                                             ? Colors.white
                                             : const Color(0xFF0F172A),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      _requirementLabel(key),
+                                      style: TextStyle(
+                                        color:
+                                            key == 'medicalShare' &&
+                                                !medicalShareRequired
+                                            ? const Color(0xFF006D5B)
+                                            : (isDark
+                                                  ? Colors.grey[400]
+                                                  : Colors.grey[600]),
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w700,
                                       ),
                                     ),
                                     const SizedBox(height: 4),
@@ -265,9 +297,9 @@ class ConsentStep extends StatelessWidget {
                         ? onNext
                         : () {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  "Please agree to all consents and sign your name",
+                              SnackBar(
+                                content: const Text(
+                                  'Please agree to the required consents and sign your name',
                                 ),
                                 backgroundColor: Colors.orange,
                               ),

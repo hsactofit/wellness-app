@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'dashboard_screen.dart';
@@ -5,6 +6,8 @@ import 'challenges_screen.dart';
 import 'ai_screen.dart';
 import 'progress_screen.dart';
 import 'profile_screen.dart';
+import 'gym_checkin_screen.dart';
+import '../services/background_workout_service.dart';
 import '../services/push_service.dart';
 import '../services/workout_session_service.dart';
 
@@ -30,14 +33,65 @@ class MainShellState extends State<MainShell> with WidgetsBindingObserver {
     WorkoutSessionService.instance.configurePromptHandler(
       _showWorkoutCompletionPrompt,
     );
+    BackgroundWorkoutService.instance.checkoutRequestedSignal.addListener(
+      _openCheckoutFromNotification,
+    );
+    BackgroundWorkoutService.instance.geofenceExitedSignal.addListener(
+      _showNativeGeofencePrompt,
+    );
+    BackgroundWorkoutService.instance.continueRequestedSignal.addListener(
+      _continueFromNotification,
+    );
     WorkoutSessionService.instance.startMonitoring();
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    BackgroundWorkoutService.instance.checkoutRequestedSignal.removeListener(
+      _openCheckoutFromNotification,
+    );
+    BackgroundWorkoutService.instance.geofenceExitedSignal.removeListener(
+      _showNativeGeofencePrompt,
+    );
+    BackgroundWorkoutService.instance.continueRequestedSignal.removeListener(
+      _continueFromNotification,
+    );
     WorkoutSessionService.instance.configurePromptHandler(null);
     super.dispose();
+  }
+
+  Future<void> _openCheckoutFromNotification() async {
+    if (!mounted) return;
+    final session = await WorkoutSessionService.instance.loadActiveSession();
+    if (session == null || !mounted) return;
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const GymCheckinScreen(),
+      ),
+    );
+  }
+
+  Future<void> _showNativeGeofencePrompt() async {
+    if (!mounted) return;
+    final session = await WorkoutSessionService.instance.loadActiveSession();
+    if (session == null || !mounted) return;
+    await _showWorkoutCompletionPrompt(
+      session,
+      WorkoutSessionPromptReason.leftFacility,
+    );
+  }
+
+  Future<void> _continueFromNotification() async {
+    try {
+      await WorkoutSessionService.instance.continueWorkout(
+        reason: 'Member chose to keep working from the workout notification.',
+      );
+    } catch (_) {
+      // The session remains open and the next prompt will give the member
+      // another safe opportunity to confirm checkout.
+    }
   }
 
   @override
@@ -56,6 +110,15 @@ class MainShellState extends State<MainShell> with WidgetsBindingObserver {
   ) async {
     if (!mounted) return;
     final leftFacility = reason == WorkoutSessionPromptReason.leftFacility;
+    final slotEnded = reason == WorkoutSessionPromptReason.slotEnd;
+    // Do not leave the member behind an unanswered modal.  After ten minutes
+    // the server is told that the workout continues, which also schedules the
+    // next hourly prompt and alerts the facility manager.
+    var dialogOpen = true;
+    final timeoutTimer = Timer(const Duration(minutes: 10), () {
+      if (!dialogOpen || !mounted) return;
+      Navigator.of(context, rootNavigator: true).pop(false);
+    });
     final complete = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
@@ -67,11 +130,15 @@ class MainShellState extends State<MainShell> with WidgetsBindingObserver {
         title: Text(
           leftFacility
               ? 'Have you left ${session.facilityName}?'
+              : slotEnded
+              ? 'Your booked slot has ended'
               : 'Is your workout complete?',
         ),
         content: Text(
           leftFacility
               ? 'Your phone appears to be outside the facility range. End the workout session if you have finished.'
+              : slotEnded
+              ? 'Check out now, or keep working. Keeping the session open will notify the facility manager.'
               : 'You started at ${session.facilityName} over an hour ago. End the workout session when you are done.',
         ),
         actions: [
@@ -81,15 +148,35 @@ class MainShellState extends State<MainShell> with WidgetsBindingObserver {
           ),
           FilledButton(
             onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('Complete session'),
+            child: const Text('Open checkout'),
           ),
         ],
       ),
     );
-    if (complete != true || !mounted) return;
+    dialogOpen = false;
+    timeoutTimer.cancel();
+    if (!mounted) return;
+
+    if (complete != true) {
+      try {
+        await WorkoutSessionService.instance.continueWorkout(
+          reason: leftFacility
+              ? 'Member chose to keep working after leaving the geofence.'
+              : slotEnded
+              ? 'Member chose to keep working after the booked slot ended.'
+              : 'Member chose to keep working after the hourly prompt.',
+        );
+      } catch (_) {
+        // The next local prompt will retry if the network was unavailable.
+      }
+      return;
+    }
 
     try {
-      await WorkoutSessionService.instance.checkout();
+      await Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const GymCheckinScreen()),
+      );
       if (!mounted) return;
       _dashboardKey.currentState?.refreshData();
       ScaffoldMessenger.of(context).showSnackBar(

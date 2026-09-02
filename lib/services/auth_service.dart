@@ -163,16 +163,17 @@ class AuthService {
   // --dart-define=API_BASE_URL=https://...
   static String get apiBaseUrl => ApiConfig.baseUrl;
 
-  /// API route namespace. The development server uses `/api`; the deployed
-  /// Wellness360 API is versioned under `/api/v1`.
+  /// API route namespace. New member operations use the canonical
+  /// versioned `/api/v1` surface; the server keeps `/api` as a compatibility
+  /// alias while older client call sites are migrated.
   static const String apiPathPrefix = String.fromEnvironment(
     'API_PATH_PREFIX',
-    defaultValue: '/api',
+    defaultValue: '/api/v1',
   );
 
   /// Builds an API URL while allowing the server route namespace to vary by
   /// build. Existing callers may continue to pass their legacy `/api/...`
-  /// paths, so the default Medifit behavior stays unchanged.
+  /// paths, so older screens remain compatible with the versioned server.
   static Uri apiUrl(String path) {
     final base = apiBaseUrl.endsWith('/')
         ? apiBaseUrl.substring(0, apiBaseUrl.length - 1)
@@ -574,8 +575,11 @@ class AuthService {
     return result['body'] as List<dynamic>;
   }
 
-  Future<List<dynamic>> listEnrolmentFacilities() async {
-    final result = await _authedGet('/api/enrolments/facilities');
+  Future<List<dynamic>> listEnrolmentFacilities({String? corporateId}) async {
+    final path = corporateId == null
+        ? '/api/enrolments/facilities'
+        : '/api/enrolments/facilities?corporate_id=${Uri.encodeComponent(corporateId)}';
+    final result = await _authedGet(path);
     return result['body'] as List<dynamic>;
   }
 
