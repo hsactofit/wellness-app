@@ -9,6 +9,7 @@ import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
 import 'health_service.dart';
+import '../models/gender.dart';
 
 class AuthService {
   AuthService._privateConstructor();
@@ -596,7 +597,7 @@ class AuthService {
       'goals': goals,
       'activity_level': activityLevel,
       'dob': dob,
-      'gender': gender,
+      'gender': genderApiValue(gender),
       'height_cm': heightCm,
       'weight_kg': weightKg,
     });
