@@ -65,6 +65,8 @@ class WorkoutForegroundService : Service() {
             .setWhen(checkInAt)
             .setUsesChronometer(true)
             .setOngoing(true)
+            .setAutoCancel(false)
+            .setOnlyAlertOnce(true)
             .setCategory(Notification.CATEGORY_WORKOUT)
             .setContentIntent(checkoutPendingIntent)
             .addAction(
@@ -76,7 +78,9 @@ class WorkoutForegroundService : Service() {
             )
 
         startForeground(NOTIFICATION_ID, builder.build())
-        return START_STICKY
+        // Preserve the original check-in timestamp if Android recreates this
+        // process. A generic sticky restart would restart the chronometer.
+        return START_REDELIVER_INTENT
     }
 
     override fun onBind(intent: Intent?): IBinder? = null

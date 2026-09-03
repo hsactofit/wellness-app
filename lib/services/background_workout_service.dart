@@ -60,6 +60,7 @@ class BackgroundWorkoutService {
     double? latitude,
     double? longitude,
     int? geofenceRadiusMeters,
+    bool showPersistentTimer = true,
   }) async {
     if (kIsWeb) return false;
     try {
@@ -73,6 +74,7 @@ class BackgroundWorkoutService {
         if (longitude != null) 'longitude': longitude,
         if (geofenceRadiusMeters != null)
           'geofenceRadiusMeters': geofenceRadiusMeters,
+        'showPersistentTimer': showPersistentTimer,
       });
       return nativeGeofence == true;
     } on PlatformException catch (error) {
@@ -81,6 +83,42 @@ class BackgroundWorkoutService {
       debugPrint('Workout background service unavailable: $error');
     }
     return false;
+  }
+
+  /// Makes the operating-system timer visible after the member leaves the
+  /// in-app active-workout view. Native code owns the actual clock so it
+  /// continues while Dart is paused or the phone is locked.
+  Future<void> showPersistentTimer({
+    required String sessionId,
+    required String facilityName,
+    required DateTime checkInAt,
+  }) async {
+    if (kIsWeb) return;
+    try {
+      await _channel.invokeMethod<void>('showTimer', {
+        'sessionId': sessionId,
+        'facilityName': facilityName,
+        'checkInAt': checkInAt.millisecondsSinceEpoch,
+      });
+    } on PlatformException catch (error) {
+      debugPrint('Workout timer surface unavailable: $error');
+    } on MissingPluginException catch (error) {
+      debugPrint('Workout timer surface unavailable: $error');
+    }
+  }
+
+  /// Removes only the duplicate operating-system timer while the member is
+  /// looking at the in-app timer. It deliberately leaves native geofencing
+  /// and workout-completion reminders running.
+  Future<void> hidePersistentTimer() async {
+    if (kIsWeb) return;
+    try {
+      await _channel.invokeMethod<void>('hideTimer');
+    } on PlatformException catch (error) {
+      debugPrint('Workout timer surface hide failed: $error');
+    } on MissingPluginException catch (error) {
+      debugPrint('Workout timer surface hide unavailable: $error');
+    }
   }
 
   Future<void> stop() async {

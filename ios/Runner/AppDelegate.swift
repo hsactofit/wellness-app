@@ -18,6 +18,7 @@ import UserNotifications
   private var pendingRegion: CLCircularRegion?
   private var activeSessionId: String?
   private var activeFacilityName = "your facility"
+  private var activeCheckInAt: Date?
 
   override func application(
     _ application: UIApplication,
@@ -99,6 +100,12 @@ import UserNotifications
       let latitude = values["latitude"] as? Double
       let longitude = values["longitude"] as? Double
       result(latitude != nil && longitude != nil)
+    case "showTimer":
+      showWorkoutTimer(call.arguments as? [String: Any] ?? [:])
+      result(nil)
+    case "hideTimer":
+      hideWorkoutTimer()
+      result(nil)
     case "stop":
       stopWorkoutSurface()
       result(nil)
@@ -114,12 +121,15 @@ import UserNotifications
     activeFacilityName = values["facilityName"] as? String ?? "your facility"
     let checkInMilliseconds = values["checkInAt"] as? NSNumber
     let checkInAt = Date(timeIntervalSince1970: (checkInMilliseconds?.doubleValue ?? Date().timeIntervalSince1970 * 1000) / 1000)
+    activeCheckInAt = checkInAt
     let slotEndMilliseconds = values["slotEndAt"] as? NSNumber
     let slotEndAt = slotEndMilliseconds.map { Date(timeIntervalSince1970: $0.doubleValue / 1000) }
 
     requestNotificationPermission()
     scheduleHourlyPrompt(after: slotEndAt ?? checkInAt.addingTimeInterval(60 * 60))
-    startLiveActivity(sessionId: sessionId, facilityName: activeFacilityName, checkInAt: checkInAt)
+    if values["showPersistentTimer"] as? Bool ?? true {
+      showWorkoutTimer(values)
+    }
 
     guard let latitude = values["latitude"] as? Double,
           let longitude = values["longitude"] as? Double else { return }
@@ -162,6 +172,32 @@ import UserNotifications
       endLiveActivity(sessionId: sessionId)
     }
     activeSessionId = nil
+    activeCheckInAt = nil
+  }
+
+  /// Ends only the visual Live Activity. Region monitoring and scheduled
+  /// workout reminders must survive while the member reads the in-app timer.
+  private func hideWorkoutTimer() {
+    if let sessionId = activeSessionId {
+      endLiveActivity(sessionId: sessionId)
+    }
+  }
+
+  private func showWorkoutTimer(_ values: [String: Any]) {
+    let sessionId = values["sessionId"] as? String ?? activeSessionId ?? ""
+    guard !sessionId.isEmpty else { return }
+    activeSessionId = sessionId
+    activeFacilityName = values["facilityName"] as? String ?? activeFacilityName
+    let checkInMilliseconds = values["checkInAt"] as? NSNumber
+    let checkInAt = checkInMilliseconds.map {
+      Date(timeIntervalSince1970: $0.doubleValue / 1000)
+    } ?? activeCheckInAt ?? Date()
+    activeCheckInAt = checkInAt
+    startLiveActivity(
+      sessionId: sessionId,
+      facilityName: activeFacilityName,
+      checkInAt: checkInAt
+    )
   }
 
   private var promptNotificationId: String {
@@ -237,6 +273,13 @@ import UserNotifications
 
   private func startLiveActivity(sessionId: String, facilityName: String, checkInAt: Date) {
     guard #available(iOS 16.1, *) else { return }
+    // Resuming from the timer page can request the same surface more than
+    // once. Keep a single Live Activity per workout session.
+    if Activity<WorkoutLiveActivityAttributes>.activities.contains(where: {
+      $0.attributes.sessionId == sessionId
+    }) {
+      return
+    }
     let attributes = WorkoutLiveActivityAttributes(sessionId: sessionId)
     let state = WorkoutLiveActivityAttributes.ContentState(
       facilityName: facilityName,

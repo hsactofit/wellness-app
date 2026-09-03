@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:wellnessconnect/services/background_workout_service.dart';
 import 'package:wellnessconnect/services/workout_session_service.dart';
 
 void main() {
@@ -38,20 +39,51 @@ void main() {
   );
 
   testWidgets(
+    'the native timer can stay hidden while the in-app workout timer is open',
+    (tester) async {
+      const channel = MethodChannel('com.medifit/workout_background');
+      final calls = <MethodCall>[];
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(channel, (
+        call,
+      ) async {
+        calls.add(call);
+        return null;
+      });
+
+      try {
+        await BackgroundWorkoutService.instance.showPersistentTimer(
+          sessionId: 'session-timer',
+          facilityName: 'Medifit Gym',
+          checkInAt: DateTime.utc(2026, 9, 4, 9),
+        );
+        await BackgroundWorkoutService.instance.hidePersistentTimer();
+
+        expect(calls.map((call) => call.method), ['showTimer', 'hideTimer']);
+        expect(calls.first.arguments['sessionId'], 'session-timer');
+        expect(calls.first.arguments['checkInAt'], isA<int>());
+      } finally {
+        tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          channel,
+          null,
+        );
+      }
+    },
+  );
+
+  testWidgets(
     'passes the active-session geofence to the native iOS bridge and records its ownership',
     (tester) async {
       const channel = MethodChannel('com.medifit/workout_background');
       Map<dynamic, dynamic>? startArguments;
-      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
-        channel,
-        (call) async {
-            if (call.method == 'start') {
-              startArguments = Map<dynamic, dynamic>.from(call.arguments as Map);
-              return true;
-            }
-            return null;
-        },
-      );
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(channel, (
+        call,
+      ) async {
+        if (call.method == 'start') {
+          startArguments = Map<dynamic, dynamic>.from(call.arguments as Map);
+          return true;
+        }
+        return null;
+      });
       SharedPreferences.setMockInitialValues({});
 
       try {
@@ -77,6 +109,7 @@ void main() {
         expect(startArguments?['longitude'], 77.5946);
         expect(startArguments?['geofenceRadiusMeters'], 2000);
         expect(startArguments?['slotEndAt'], isA<int>());
+        expect(startArguments?['showPersistentTimer'], isTrue);
         expect(prefs.getBool('gym_native_geofence_registered'), isTrue);
 
         await WorkoutSessionService.instance.clearLocalSession();

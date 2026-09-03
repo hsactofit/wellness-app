@@ -5,6 +5,7 @@ import android.os.Build
 import androidx.annotation.NonNull
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.embedding.android.FlutterFragmentActivity
+import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterFragmentActivity() {
@@ -17,21 +18,26 @@ class MainActivity : FlutterFragmentActivity() {
         backgroundChannel?.setMethodCallHandler { call, result ->
             when (call.method) {
                 "start" -> {
-                    val intent = Intent(this, WorkoutForegroundService::class.java).apply {
-                        action = WorkoutForegroundService.ACTION_START
-                        putExtra("sessionId", call.argument<String>("sessionId"))
-                        putExtra("facilityName", call.argument<String>("facilityName"))
-                        putExtra("checkInAt", call.argument<Long>("checkInAt") ?: System.currentTimeMillis())
-                    }
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                        startForegroundService(intent)
+                    if (call.argument<Boolean>("showPersistentTimer") != false) {
+                        startWorkoutTimer(call)
                     } else {
-                        startService(intent)
+                        stopWorkoutTimer()
                     }
                     result.success(null)
                 }
+                "showTimer" -> {
+                    startWorkoutTimer(call)
+                    result.success(null)
+                }
+                "hideTimer" -> {
+                    // This hides only the foreground-service notification.
+                    // The server session remains open until authenticated
+                    // checkout succeeds in Flutter.
+                    stopWorkoutTimer()
+                    result.success(null)
+                }
                 "stop" -> {
-                    stopService(Intent(this, WorkoutForegroundService::class.java))
+                    stopWorkoutTimer()
                     result.success(null)
                 }
                 // iOS queues native events until Flutter has registered its
@@ -47,6 +53,24 @@ class MainActivity : FlutterFragmentActivity() {
         if (intent?.action == WorkoutForegroundService.ACTION_CHECKOUT) {
             backgroundChannel?.invokeMethod("checkoutRequested", null)
         }
+    }
+
+    private fun startWorkoutTimer(call: MethodCall) {
+        val intent = Intent(this, WorkoutForegroundService::class.java).apply {
+            action = WorkoutForegroundService.ACTION_START
+            putExtra("sessionId", call.argument<String>("sessionId"))
+            putExtra("facilityName", call.argument<String>("facilityName"))
+            putExtra("checkInAt", call.argument<Long>("checkInAt") ?: System.currentTimeMillis())
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(intent)
+        } else {
+            startService(intent)
+        }
+    }
+
+    private fun stopWorkoutTimer() {
+        stopService(Intent(this, WorkoutForegroundService::class.java))
     }
 
     override fun onNewIntent(intent: Intent) {

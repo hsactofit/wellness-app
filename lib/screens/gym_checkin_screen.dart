@@ -7,6 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../app_brand.dart';
 import '../services/camera_permission_gate.dart';
+import '../services/background_workout_service.dart';
 import '../services/facility_access_helpers.dart';
 import '../services/facility_booking_service.dart';
 import '../services/facility_directions_launcher.dart';
@@ -32,7 +33,8 @@ class GymCheckinScreen extends StatefulWidget {
 
 enum _AccessView { home, facilities, instantFacilities, instantStatus, scanner }
 
-class _GymCheckinScreenState extends State<GymCheckinScreen> {
+class _GymCheckinScreenState extends State<GymCheckinScreen>
+    with WidgetsBindingObserver {
   final _bookingService = FacilityBookingService.instance;
   final _ratingService = FacilityRatingService.instance;
   final _manualFacilityController = TextEditingController();
@@ -65,6 +67,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     WorkoutSessionService.instance.sessionRefreshSignal.addListener(
       _reloadSession,
     );
@@ -73,6 +76,13 @@ class _GymCheckinScreenState extends State<GymCheckinScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    final activeSession = _session;
+    if (activeSession != null) {
+      // Returning to Home (or any other app) must restore the native timer.
+      // The checkout path clears _session first, so it never recreates one.
+      unawaited(_showPersistentTimer(activeSession));
+    }
     WorkoutSessionService.instance.sessionRefreshSignal.removeListener(
       _reloadSession,
     );
@@ -87,7 +97,9 @@ class _GymCheckinScreenState extends State<GymCheckinScreen> {
   Future<void> _load() async {
     ActiveWorkoutSession? session;
     try {
-      session = await WorkoutSessionService.instance.recoverActiveSession();
+      session = await WorkoutSessionService.instance.recoverActiveSession(
+        showPersistentTimer: false,
+      );
     } catch (_) {
       // A transient API failure should not hide the local recovery cache or
       // prevent normal facility discovery.
@@ -100,6 +112,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen> {
     });
     if (session != null) {
       _completedItems.clear();
+      await _hidePersistentTimer();
       _startTimer();
       await WorkoutSessionService.instance.startMonitoring(
         requestLocationPermission: true,
@@ -124,7 +137,41 @@ class _GymCheckinScreenState extends State<GymCheckinScreen> {
     }
     if (session != null && _session == null) {
       setState(() => _session = session);
+      await _hidePersistentTimer();
       _startTimer();
+    }
+  }
+
+  /// The full-screen timer is the member's primary workout surface. Avoid
+  /// duplicating it in the notification shade while that page is visible.
+  Future<void> _hidePersistentTimer() async {
+    if (_session == null) return;
+    await BackgroundWorkoutService.instance.hidePersistentTimer();
+  }
+
+  Future<void> _showPersistentTimer(ActiveWorkoutSession session) {
+    return BackgroundWorkoutService.instance.showPersistentTimer(
+      sessionId: session.id,
+      facilityName: session.facilityName,
+      checkInAt: session.checkInAt,
+    );
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    final session = _session;
+    if (session == null) return;
+    switch (state) {
+      case AppLifecycleState.resumed:
+        unawaited(_hidePersistentTimer());
+      case AppLifecycleState.inactive:
+        // A system dialog can briefly make the app inactive without the
+        // member leaving the timer, so do not flash a duplicate timer yet.
+        break;
+      case AppLifecycleState.paused:
+      case AppLifecycleState.detached:
+      case AppLifecycleState.hidden:
+        unawaited(_showPersistentTimer(session));
     }
   }
 
@@ -745,6 +792,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen> {
         session: session,
         fallbackFacilityName: _instantFacility?.name ?? 'Facility',
         fallbackFacilityPlace: _instantFacility?.address ?? '',
+        showPersistentTimer: false,
       );
       // Start slot/hourly prompts and contextual location handling as soon as
       // the server confirms check-in; waiting for a future app resume leaves
@@ -761,6 +809,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen> {
         _instantRequestId = null;
         _accessRequest = null;
       });
+      await _hidePersistentTimer();
       _startTimer();
       widget.onStatusChanged?.call();
       _showSnack('Workout started. Your timer is running.');
@@ -1508,12 +1557,21 @@ class _GymCheckinScreenState extends State<GymCheckinScreen> {
 
   Future<void> _openExerciseVideo(String name, String videoId) async {
     if (!mounted) return;
-    await Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) =>
-            ExerciseVideoScreen(exerciseName: name, videoId: videoId),
-      ),
-    );
+    final session = _session;
+    if (session != null) {
+      await _showPersistentTimer(session);
+      if (!mounted) return;
+    }
+    try {
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) =>
+              ExerciseVideoScreen(exerciseName: name, videoId: videoId),
+        ),
+      );
+    } finally {
+      if (mounted) await _hidePersistentTimer();
+    }
   }
 
   String _formatDuration(Duration duration) {

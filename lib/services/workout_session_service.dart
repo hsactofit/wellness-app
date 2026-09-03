@@ -139,7 +139,9 @@ class WorkoutSessionService {
   /// process restart or OS eviction can remove the local cache while the
   /// server session is still active; a missing session is the only expected
   /// 404 and is treated as a normal signed-out state.
-  Future<ActiveWorkoutSession?> recoverActiveSession() async {
+  Future<ActiveWorkoutSession?> recoverActiveSession({
+    bool showPersistentTimer = true,
+  }) async {
     final cached = await loadActiveSession();
     try {
       var token = await AuthService.instance.getAccessToken();
@@ -169,6 +171,7 @@ class WorkoutSessionService {
         fallbackFacilityName:
             session['facility_name']?.toString() ?? 'Facility',
         fallbackFacilityPlace: cached?.facilityPlace ?? '',
+        showPersistentTimer: showPersistentTimer,
       );
       return loadActiveSession();
     } catch (_) {
@@ -213,6 +216,7 @@ class WorkoutSessionService {
     required Map<String, dynamic> session,
     required String fallbackFacilityName,
     required String fallbackFacilityPlace,
+    bool showPersistentTimer = true,
   }) async {
     final prefs = await SharedPreferences.getInstance();
     final localCheckInAt = DateTime.now();
@@ -268,6 +272,7 @@ class WorkoutSessionService {
           latitude: latitude,
           longitude: longitude,
           geofenceRadiusMeters: radius,
+          showPersistentTimer: showPersistentTimer,
         );
     await prefs.setBool(_nativeGeofenceKey, nativeGeofenceRegistered);
   }
