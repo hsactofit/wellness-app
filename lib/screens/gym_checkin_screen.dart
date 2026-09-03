@@ -8,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../app_brand.dart';
 import '../services/facility_booking_service.dart';
+import '../services/facility_directions_launcher.dart';
 import '../services/facility_rating_service.dart';
 import '../services/workout_session_service.dart';
 import '../widgets/exercise_video_tile.dart';
@@ -568,15 +569,11 @@ class _GymCheckinScreenState extends State<GymCheckinScreen> {
   }
 
   Future<void> _openMaps(EligibleFacility facility) async {
-    final url = facility.mapsUrl;
-    if (url == null ||
-        !await launchUrl(
-          Uri.parse(url),
-          mode: LaunchMode.externalApplication,
-        )) {
-      if (mounted) {
-        _showSnack('Google Maps could not be opened.', isError: true);
-      }
+    final result = await FacilityDirectionsLauncher(
+      launch: (uri, {required mode}) => launchUrl(uri, mode: mode),
+    ).open(facility.mapsUrl);
+    if (result == DirectionsLaunchResult.unavailable && mounted) {
+      _showSnack('Directions could not be opened.', isError: true);
     }
   }
 
