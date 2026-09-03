@@ -46,7 +46,7 @@
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>
-	<string>Allow camera access to scan gym BMI and body-composition reports so you can update your health data.</string>
+	<string>Allow camera access to scan Medifit facility QR codes and gym body-composition reports.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Allow photo access to choose a screenshot of your gym body-composition report.</string>
 	<key>NSHealthShareUsageDescription</key>

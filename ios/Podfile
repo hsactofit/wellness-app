@@ -43,6 +43,16 @@ end
 post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
+
+    # permission_handler excludes iOS permission strategies unless their
+    # compile-time capability is enabled. Without this, Permission.camera
+    # immediately reports denied and iOS never presents its camera prompt.
+    if target.name == 'permission_handler_apple'
+      target.build_configurations.each do |config|
+        config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] ||= ['$(inherited)']
+        config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] << 'PERMISSION_CAMERA=1'
+      end
+    end
   end
   mlkit_apple_silicon_simulator_patch(installer)
 end

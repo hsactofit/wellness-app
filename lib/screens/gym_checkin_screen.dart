@@ -3,10 +3,10 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../app_brand.dart';
+import '../services/camera_permission_gate.dart';
 import '../services/facility_booking_service.dart';
 import '../services/facility_directions_launcher.dart';
 import '../services/facility_rating_service.dart';
@@ -578,9 +578,10 @@ class _GymCheckinScreenState extends State<GymCheckinScreen> {
   }
 
   Future<void> _openScanner() async {
-    final permission = await Permission.camera.request();
+    final cameraAccessGranted = await CameraPermissionGate()
+        .requestForQrScanner();
     if (!mounted) return;
-    if (!permission.isGranted) {
+    if (!cameraAccessGranted) {
       _showSnack(
         'Camera access is required to scan the facility QR.',
         isError: true,
