@@ -10,7 +10,9 @@ import '../app_brand.dart';
 import '../services/facility_booking_service.dart';
 import '../services/facility_rating_service.dart';
 import '../services/workout_session_service.dart';
+import '../widgets/exercise_video_tile.dart';
 import '../widgets/glass_card.dart';
+import 'exercise_video_screen.dart';
 
 /// Member-facing facility access surface.
 ///
@@ -1344,6 +1346,17 @@ class _GymCheckinScreenState extends State<GymCheckinScreen> {
             )
           else
             ...plan.map(_planItem),
+          if (plan.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            Text(
+              'Exercise videos',
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 8),
+            ...plan.map(_videoItem),
+          ],
           const SizedBox(height: 16),
           FilledButton.icon(
             style: FilledButton.styleFrom(backgroundColor: Colors.redAccent),
@@ -1359,12 +1372,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen> {
   Widget _planItem(Map<String, dynamic> item) {
     final id = item['id']?.toString() ?? item['name']?.toString() ?? 'exercise';
     final name = item['name']?.toString() ?? 'Exercise';
-    final details = <String>[];
-    if (item['sets'] != null) details.add('${item['sets']} sets');
-    if (item['reps'] != null) details.add('${item['reps']} reps');
-    if (item['duration_min'] != null) {
-      details.add('${item['duration_min']} min');
-    }
+    final details = exerciseDetails(item);
     return Card(
       child: CheckboxListTile(
         value: _completedItems.contains(id),
@@ -1378,7 +1386,32 @@ class _GymCheckinScreenState extends State<GymCheckinScreen> {
           });
         },
         title: Text(name, style: const TextStyle(fontWeight: FontWeight.w700)),
-        subtitle: details.isEmpty ? null : Text(details.join(' · ')),
+        subtitle: details.isEmpty ? null : Text(details),
+      ),
+    );
+  }
+
+  Widget _videoItem(Map<String, dynamic> item) {
+    final name = item['name']?.toString() ?? 'Exercise';
+    final videoId = exerciseVideoId(item);
+    return ExerciseVideoTile(
+      name: name,
+      details: exerciseDetails(item),
+      hasVideo: videoId != null,
+      onOpen: () => _openExerciseVideo(name, videoId),
+    );
+  }
+
+  Future<void> _openExerciseVideo(String name, String? videoId) async {
+    if (videoId == null) {
+      _showSnack('No demonstration video for this exercise.');
+      return;
+    }
+    if (!mounted) return;
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) =>
+            ExerciseVideoScreen(exerciseName: name, videoId: videoId),
       ),
     );
   }
