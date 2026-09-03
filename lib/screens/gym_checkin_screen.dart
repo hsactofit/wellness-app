@@ -456,13 +456,6 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
             onPressed: () => Navigator.pop(dialogContext),
             child: const Text('Done'),
           ),
-          FilledButton(
-            onPressed: () {
-              Navigator.pop(dialogContext);
-              _startBookedCheckin(booking);
-            },
-            child: const Text('Check in now'),
-          ),
         ],
       ),
     );
@@ -1289,7 +1282,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
                 : request.approved
                 ? 'Scan the facility QR and enter your member code to begin.'
                 : request.resolutionNote ??
-                      'Choose an available slot or ask the manager for help.',
+                      'The facility manager declined this walk-in. Book the suggested empty slot or choose another nearby facility.',
             textAlign: TextAlign.center,
           ),
           if (request.approved) ...[
@@ -1314,6 +1307,11 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
                 icon: const Icon(Icons.event_available),
                 label: const Text('Book suggested slot'),
               ),
+            OutlinedButton.icon(
+              onPressed: _openFacilities,
+              icon: const Icon(Icons.location_on_outlined),
+              label: const Text('View other facilities'),
+            ),
             OutlinedButton.icon(
               onPressed: _raiseIssue,
               icon: const Icon(Icons.support_agent),
