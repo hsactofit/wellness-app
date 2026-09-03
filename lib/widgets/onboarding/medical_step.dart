@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'fade_slide_transition.dart';
+import '../../theme/app_theme.dart';
 
 class MedicalStep extends StatefulWidget {
   final List<String> selectedConditions;
@@ -97,8 +98,11 @@ class _MedicalStepState extends State<MedicalStep> {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(
-                  color: Color(0xFF006D5B),
+                borderSide: BorderSide(
+                  color: AppTheme.actionOf(
+                    context,
+                    dark: const Color(0xFF006D5B),
+                  ),
                   width: 2,
                 ),
               ),
@@ -111,7 +115,10 @@ class _MedicalStepState extends State<MedicalStep> {
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF006D5B),
+                backgroundColor: AppTheme.actionOf(
+                  context,
+                  dark: const Color(0xFF006D5B),
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -240,8 +247,9 @@ class _MedicalStepState extends State<MedicalStep> {
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
                               color: isSelected
-                                  ? const Color(
-                                      0xFF006D5B,
+                                  ? AppTheme.actionOf(
+                                      context,
+                                      dark: const Color(0xFF006D5B),
                                     ).withValues(alpha: 0.06)
                                   : (isDark
                                         ? Colors.white.withValues(alpha: 0.04)
@@ -249,7 +257,10 @@ class _MedicalStepState extends State<MedicalStep> {
                               borderRadius: BorderRadius.circular(16),
                               border: Border.all(
                                 color: isSelected
-                                    ? const Color(0xFF006D5B)
+                                    ? AppTheme.actionOf(
+                                        context,
+                                        dark: const Color(0xFF006D5B),
+                                      )
                                     : (isDark
                                           ? Colors.white.withValues(alpha: 0.12)
                                           : Colors.grey.withValues(
@@ -273,8 +284,9 @@ class _MedicalStepState extends State<MedicalStep> {
                                   height: 44,
                                   decoration: BoxDecoration(
                                     color: isSelected
-                                        ? const Color(
-                                            0xFF006D5B,
+                                        ? AppTheme.actionOf(
+                                            context,
+                                            dark: const Color(0xFF006D5B),
                                           ).withValues(alpha: 0.12)
                                         : (isDark
                                               ? Colors.white.withValues(
@@ -285,7 +297,10 @@ class _MedicalStepState extends State<MedicalStep> {
                                   ),
                                   child: Icon(
                                     _getIconData(iconName),
-                                    color: const Color(0xFF006D5B),
+                                    color: AppTheme.actionOf(
+                                      context,
+                                      dark: const Color(0xFF006D5B),
+                                    ),
                                     size: 22,
                                   ),
                                 ),
@@ -319,9 +334,12 @@ class _MedicalStepState extends State<MedicalStep> {
                                   ),
                                 ),
                                 if (isSelected)
-                                  const Icon(
+                                  Icon(
                                     Icons.check_circle_rounded,
-                                    color: Color(0xFF006D5B),
+                                    color: AppTheme.actionOf(
+                                      context,
+                                      dark: const Color(0xFF006D5B),
+                                    ),
                                     size: 22,
                                   ),
                               ],
@@ -349,8 +367,9 @@ class _MedicalStepState extends State<MedicalStep> {
                             border: Border.all(
                               color: widget.noConditions
                                   ? Colors.grey.withValues(alpha: 0.2)
-                                  : const Color(
-                                      0xFF006D5B,
+                                  : AppTheme.actionOf(
+                                      context,
+                                      dark: const Color(0xFF006D5B),
                                     ).withValues(alpha: 0.5),
                               width: 1.5,
                               style: BorderStyle
@@ -366,7 +385,10 @@ class _MedicalStepState extends State<MedicalStep> {
                                   Icons.add,
                                   color: widget.noConditions
                                       ? Colors.grey
-                                      : const Color(0xFF006D5B),
+                                      : AppTheme.actionOf(
+                                          context,
+                                          dark: const Color(0xFF006D5B),
+                                        ),
                                   size: 20,
                                 ),
                                 const SizedBox(width: 8),
@@ -376,7 +398,10 @@ class _MedicalStepState extends State<MedicalStep> {
                                     fontWeight: FontWeight.bold,
                                     color: widget.noConditions
                                         ? Colors.grey
-                                        : const Color(0xFF006D5B),
+                                        : AppTheme.actionOf(
+                                            context,
+                                            dark: const Color(0xFF006D5B),
+                                          ),
                                     fontSize: 14,
                                     letterSpacing: 0.5,
                                   ),
@@ -413,7 +438,10 @@ class _MedicalStepState extends State<MedicalStep> {
                                 height: 24,
                                 child: Checkbox(
                                   value: widget.noConditions,
-                                  activeColor: const Color(0xFF006D5B),
+                                  activeColor: AppTheme.actionOf(
+                                    context,
+                                    dark: const Color(0xFF006D5B),
+                                  ),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(6),
                                   ),
@@ -500,7 +528,7 @@ class _MedicalStepState extends State<MedicalStep> {
                 Expanded(
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFE3EDF7),
+                      backgroundColor: const Color(0xFFEEF1F6),
                       elevation: 0,
                       padding: const EdgeInsets.symmetric(vertical: 18),
                       shape: RoundedRectangleBorder(
@@ -511,7 +539,7 @@ class _MedicalStepState extends State<MedicalStep> {
                     child: const Text(
                       "PREVIOUS",
                       style: TextStyle(
-                        color: Color(0xFF1E3A8A),
+                        color: AppTheme.brandInk,
                         fontWeight: FontWeight.w800,
                         fontSize: 14,
                         letterSpacing: 0.5,
@@ -523,13 +551,17 @@ class _MedicalStepState extends State<MedicalStep> {
                 Expanded(
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF006D5B),
+                      backgroundColor: AppTheme.actionOf(
+                        context,
+                        dark: const Color(0xFF006D5B),
+                      ),
                       padding: const EdgeInsets.symmetric(vertical: 18),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(24),
                       ),
-                      shadowColor: const Color(
-                        0xFF006D5B,
+                      shadowColor: AppTheme.actionOf(
+                        context,
+                        dark: const Color(0xFF006D5B),
                       ).withValues(alpha: 0.3),
                       elevation: 4,
                     ),

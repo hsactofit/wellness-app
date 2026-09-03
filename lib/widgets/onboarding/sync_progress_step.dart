@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../glass_card.dart';
 import 'fade_slide_transition.dart';
+import '../../theme/app_theme.dart';
 
 class SyncProgressStep extends StatefulWidget {
   final double progress;
@@ -72,8 +73,9 @@ class _SyncProgressStepState extends State<SyncProgressStep>
                             shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(
-                                  0xFF006D5B,
+                                color: AppTheme.actionOf(
+                                  context,
+                                  dark: const Color(0xFF006D5B),
                                 ).withValues(alpha: isDark ? 0.18 : 0.12),
                                 blurRadius: 24,
                                 spreadRadius: 4,
@@ -88,7 +90,10 @@ class _SyncProgressStepState extends State<SyncProgressStep>
                             value: widget.progress,
                             strokeWidth: 6,
                             strokeCap: StrokeCap.round,
-                            color: const Color(0xFF006D5B),
+                            color: AppTheme.actionOf(
+                              context,
+                              dark: const Color(0xFF006D5B),
+                            ),
                             backgroundColor: isDark
                                 ? Colors.white.withValues(alpha: 0.08)
                                 : Colors.black.withValues(alpha: 0.05),

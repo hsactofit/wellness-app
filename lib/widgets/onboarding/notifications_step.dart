@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../glass_card.dart';
 import 'fade_slide_transition.dart';
+import '../../theme/app_theme.dart';
 
 class NotificationsStep extends StatefulWidget {
   final bool notifDaily;
@@ -234,13 +235,15 @@ class _NotificationsStepState extends State<NotificationsStep>
                 Expanded(
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blueAccent,
+                      backgroundColor: AppTheme.actionOf(context),
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                       ),
-                      shadowColor: Colors.blueAccent.withValues(alpha: 0.3),
+                      shadowColor: AppTheme.actionOf(
+                        context,
+                      ).withValues(alpha: 0.3),
                       elevation: 4,
                     ),
                     onPressed: widget.onNext,
@@ -296,8 +299,8 @@ class _NotificationsStepState extends State<NotificationsStep>
           ),
           value: value,
           onChanged: onChanged,
-          activeThumbColor: Colors.blueAccent,
-          activeTrackColor: Colors.blueAccent.withValues(alpha: 0.3),
+          activeThumbColor: AppTheme.actionOf(context),
+          activeTrackColor: AppTheme.actionOf(context).withValues(alpha: 0.3),
           contentPadding: const EdgeInsets.symmetric(horizontal: 8),
         ),
       ),

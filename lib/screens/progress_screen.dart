@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
+import '../theme/app_theme.dart';
 import '../widgets/glass_card.dart';
 
 class ProgressScreen extends StatefulWidget {
@@ -236,9 +237,9 @@ class _ProgressScreenState extends State<ProgressScreen>
                     future: _trendsFuture,
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Center(
+                        return Center(
                           child: CircularProgressIndicator(
-                            color: Colors.blueAccent,
+                            color: AppTheme.actionOf(context),
                           ),
                         );
                       }
@@ -280,7 +281,7 @@ class _ProgressScreenState extends State<ProgressScreen>
                                   });
                                 },
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.blueAccent,
+                                  backgroundColor: AppTheme.actionOf(context),
                                   foregroundColor: Colors.white,
                                 ),
                                 child: const Text("Retry"),
@@ -660,19 +661,23 @@ class _ProgressScreenState extends State<ProgressScreen>
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.blueAccent.withValues(alpha: 0.15),
+                    color: AppTheme.actionOf(context).withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: const Row(
+                  child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.close, size: 14, color: Colors.blueAccent),
-                      SizedBox(width: 4),
+                      Icon(
+                        Icons.close,
+                        size: 14,
+                        color: AppTheme.actionOf(context),
+                      ),
+                      const SizedBox(width: 4),
                       Text(
                         "Close",
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.blueAccent,
+                          color: AppTheme.actionOf(context),
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -775,7 +780,7 @@ class _ProgressScreenState extends State<ProgressScreen>
                 "Tap to expand ${dailyData.length} entries",
                 style: TextStyle(
                   fontSize: 12,
-                  color: Colors.blueAccent.withValues(alpha: 0.8),
+                  color: AppTheme.actionOf(context).withValues(alpha: 0.8),
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -913,13 +918,13 @@ class _ProgressScreenState extends State<ProgressScreen>
       selected: isSelected,
       elevation: 0,
       pressElevation: 0,
-      selectedColor: Colors.blueAccent,
+      selectedColor: AppTheme.actionOf(context),
       backgroundColor: isDark
           ? Colors.white.withValues(alpha: 0.04)
           : Colors.black.withValues(alpha: 0.03),
       side: BorderSide(
         color: isSelected
-            ? Colors.blueAccent
+            ? AppTheme.actionOf(context)
             : (isDark ? Colors.white10 : Colors.black12),
       ),
       label: Text(

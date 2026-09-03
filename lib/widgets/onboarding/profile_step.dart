@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'fade_slide_transition.dart';
+import '../../theme/app_theme.dart';
 
 class ProfileStep extends StatelessWidget {
   final GlobalKey<FormState> formKey;
@@ -70,7 +71,12 @@ class ProfileStep extends StatelessWidget {
                           : g == "Male"
                           ? Icons.male_rounded
                           : Icons.transgender_rounded,
-                      color: isSelected ? const Color(0xFF006D5B) : Colors.grey,
+                      color: isSelected
+                          ? AppTheme.actionOf(
+                              context,
+                              dark: const Color(0xFF006D5B),
+                            )
+                          : Colors.grey,
                     ),
                     title: Text(
                       g,
@@ -79,14 +85,20 @@ class ProfileStep extends StatelessWidget {
                             ? FontWeight.bold
                             : FontWeight.normal,
                         color: isSelected
-                            ? const Color(0xFF006D5B)
+                            ? AppTheme.actionOf(
+                                context,
+                                dark: const Color(0xFF006D5B),
+                              )
                             : (isDark ? Colors.white70 : Colors.black87),
                       ),
                     ),
                     trailing: isSelected
-                        ? const Icon(
+                        ? Icon(
                             Icons.check_circle_rounded,
-                            color: Color(0xFF006D5B),
+                            color: AppTheme.actionOf(
+                              context,
+                              dark: const Color(0xFF006D5B),
+                            ),
                           )
                         : null,
                     onTap: () {
@@ -104,6 +116,7 @@ class ProfileStep extends StatelessWidget {
   }
 
   Widget _buildUnitToggle(
+    BuildContext context,
     String currentUnit,
     List<String> options,
     ValueChanged<String> onChanged,
@@ -128,7 +141,7 @@ class ProfileStep extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
                 color: isSelected
-                    ? const Color(0xFF006D5B)
+                    ? AppTheme.actionOf(context, dark: const Color(0xFF006D5B))
                     : Colors.transparent,
                 borderRadius: BorderRadius.circular(10),
               ),
@@ -148,6 +161,7 @@ class ProfileStep extends StatelessWidget {
   }
 
   InputDecoration _inputDecoration({
+    required BuildContext context,
     required String hintText,
     required IconData prefixIcon,
     Widget? suffixIcon,
@@ -185,7 +199,10 @@ class ProfileStep extends StatelessWidget {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: const BorderSide(color: Color(0xFF006D5B), width: 2.0),
+        borderSide: BorderSide(
+          color: AppTheme.actionOf(context, dark: const Color(0xFF006D5B)),
+          width: 2.0,
+        ),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
@@ -285,6 +302,7 @@ class ProfileStep extends StatelessWidget {
                       onFieldSubmitted: (_) =>
                           FocusScope.of(context).nextFocus(),
                       decoration: _inputDecoration(
+                        context: context,
                         hintText: "John Doe",
                         prefixIcon: Icons.person_outline_rounded,
                         isDark: isDark,
@@ -313,6 +331,7 @@ class ProfileStep extends StatelessWidget {
                         fontSize: 15,
                       ),
                       decoration: _inputDecoration(
+                        context: context,
                         hintText: "dd-mm-yyyy",
                         prefixIcon: Icons.calendar_today_outlined,
                         suffixIcon: const Icon(
@@ -336,7 +355,7 @@ class ProfileStep extends StatelessWidget {
                             return Theme(
                               data: Theme.of(context).copyWith(
                                 colorScheme: const ColorScheme.light(
-                                  primary: Color(0xFF006D5B),
+                                  primary: AppTheme.brandPrimary,
                                   onPrimary: Colors.white,
                                   onSurface: Color(0xFF0F172A),
                                 ),
@@ -384,6 +403,7 @@ class ProfileStep extends StatelessWidget {
                             fontSize: 15,
                           ),
                           decoration: _inputDecoration(
+                            context: context,
                             hintText: gender.isEmpty ? "Select Gender" : gender,
                             prefixIcon: Icons.people_outline_rounded,
                             suffixIcon: const Icon(
@@ -412,7 +432,7 @@ class ProfileStep extends StatelessWidget {
                   children: [
                     _buildFieldLabel(
                       "Height",
-                      trailing: _buildUnitToggle(heightUnit, [
+                      trailing: _buildUnitToggle(context, heightUnit, [
                         "CM",
                         "IN",
                       ], onHeightUnitChanged),
@@ -434,6 +454,7 @@ class ProfileStep extends StatelessWidget {
                         fontSize: 15,
                       ),
                       decoration: _inputDecoration(
+                        context: context,
                         hintText: heightUnit.toLowerCase() == "cm"
                             ? "180"
                             : "71",
@@ -462,7 +483,7 @@ class ProfileStep extends StatelessWidget {
                   children: [
                     _buildFieldLabel(
                       "Weight",
-                      trailing: _buildUnitToggle(weightUnit, [
+                      trailing: _buildUnitToggle(context, weightUnit, [
                         "KG",
                         "LBS",
                       ], onWeightUnitChanged),
@@ -484,6 +505,7 @@ class ProfileStep extends StatelessWidget {
                         fontSize: 15,
                       ),
                       decoration: _inputDecoration(
+                        context: context,
                         hintText: weightUnit.toLowerCase() == "kg"
                             ? "75"
                             : "165",
@@ -511,14 +533,20 @@ class ProfileStep extends StatelessWidget {
                 delay: const Duration(milliseconds: 350),
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF006D5B),
+                    backgroundColor: AppTheme.actionOf(
+                      context,
+                      dark: const Color(0xFF006D5B),
+                    ),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 18),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(28),
                     ),
                     elevation: 3,
-                    shadowColor: const Color(0xFF006D5B).withValues(alpha: 0.3),
+                    shadowColor: AppTheme.actionOf(
+                      context,
+                      dark: const Color(0xFF006D5B),
+                    ).withValues(alpha: 0.3),
                   ),
                   onPressed: () {
                     FocusManager.instance.primaryFocus?.unfocus();

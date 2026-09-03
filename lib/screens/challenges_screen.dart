@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import '../widgets/glass_card.dart';
 import '../widgets/concentric_rings_chart.dart';
 import '../services/auth_service.dart';
+import '../theme/app_theme.dart';
 
 class Challenge {
   final String id;
@@ -315,7 +316,7 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
                   const SizedBox(height: 24),
                   ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blueAccent,
+                      backgroundColor: AppTheme.actionOf(context),
                       foregroundColor: Colors.white,
                     ),
                     onPressed: _loadData,
@@ -334,8 +335,8 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
       return Scaffold(
         body: Container(
           color: isDark ? const Color(0xFF0F0F12) : const Color(0xFFF6F8FC),
-          child: const Center(
-            child: CircularProgressIndicator(color: Colors.blueAccent),
+          child: Center(
+            child: CircularProgressIndicator(color: AppTheme.actionOf(context)),
           ),
         ),
       );
@@ -369,7 +370,7 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
 
           SafeArea(
             child: RefreshIndicator(
-              color: Colors.blueAccent,
+              color: AppTheme.actionOf(context),
               onRefresh: () async {
                 await _loadData(showLoadingIndicator: false);
               },
@@ -603,10 +604,10 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
                   vertical: 4,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.blueAccent.withValues(alpha: 0.15),
+                  color: AppTheme.actionOf(context).withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: Colors.blueAccent.withValues(alpha: 0.3),
+                    color: AppTheme.actionOf(context).withValues(alpha: 0.3),
                     width: 1,
                   ),
                 ),
@@ -616,18 +617,18 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
                     Container(
                       width: 6,
                       height: 6,
-                      decoration: const BoxDecoration(
-                        color: Colors.blueAccent,
+                      decoration: BoxDecoration(
+                        color: AppTheme.actionOf(context),
                         shape: BoxShape.circle,
                       ),
                     ),
                     const SizedBox(width: 6),
                     Text(
                       "${activeChallenges.length} ACTIVE",
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 9,
                         fontWeight: FontWeight.w900,
-                        color: Colors.blueAccent,
+                        color: AppTheme.actionOf(context),
                         letterSpacing: 0.5,
                       ),
                     ),
@@ -876,7 +877,7 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
               margin: const EdgeInsets.only(bottom: 10),
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: Colors.blueAccent.withValues(alpha: 0.10),
+                color: AppTheme.actionOf(context).withValues(alpha: 0.10),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: const Text(

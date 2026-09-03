@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../services/auth_service.dart';
 import '../widgets/glass_card.dart';
+import '../theme/app_theme.dart';
 
 class SsoAuthScreen extends StatefulWidget {
   final bool isLogin;
@@ -87,7 +88,10 @@ class _SsoAuthScreenState extends State<SsoAuthScreen> {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(color: Color(0xFF0F52BA), width: 1.4),
+        borderSide: BorderSide(
+          color: AppTheme.actionOf(context, dark: const Color(0xFF0F52BA)),
+          width: 1.4,
+        ),
       ),
     );
   }
@@ -291,7 +295,10 @@ class _SsoAuthScreenState extends State<SsoAuthScreen> {
                   const SizedBox(height: 24),
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF0F52BA),
+                      backgroundColor: AppTheme.actionOf(
+                        context,
+                        dark: const Color(0xFF0F52BA),
+                      ),
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
@@ -368,7 +375,10 @@ class _SsoOtpDialogState extends State<_SsoOtpDialog> {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(color: Color(0xFF0F52BA), width: 1.4),
+        borderSide: BorderSide(
+          color: AppTheme.actionOf(context, dark: const Color(0xFF0F52BA)),
+          width: 1.4,
+        ),
       ),
     );
   }

@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import '../services/auth_service.dart';
 import '../widgets/glass_card.dart';
+import '../theme/app_theme.dart';
 
 class GoalsConfigurationScreen extends StatefulWidget {
   const GoalsConfigurationScreen({super.key});
@@ -178,9 +179,9 @@ class _GoalsConfigurationScreenState extends State<GoalsConfigurationScreen>
     final textColor = isDark ? Colors.white : Colors.black87;
 
     if (_isLoading) {
-      return const Scaffold(
+      return Scaffold(
         body: Center(
-          child: CircularProgressIndicator(color: Colors.blueAccent),
+          child: CircularProgressIndicator(color: AppTheme.actionOf(context)),
         ),
       );
     }
@@ -391,7 +392,7 @@ class _GoalsConfigurationScreenState extends State<GoalsConfigurationScreen>
                         // Save Button
                         ElevatedButton(
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blueAccent,
+                            backgroundColor: AppTheme.actionOf(context),
                             foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16),

@@ -67,9 +67,7 @@ class MainShellState extends State<MainShell> with WidgetsBindingObserver {
     if (session == null || !mounted) return;
     await Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (_) => const GymCheckinScreen(),
-      ),
+      MaterialPageRoute(builder: (_) => const GymCheckinScreen()),
     );
   }
 
@@ -256,12 +254,12 @@ class MainShellState extends State<MainShell> with WidgetsBindingObserver {
                   decoration: BoxDecoration(
                     color: isDark
                         ? const Color(0xFF16161C).withValues(alpha: 0.75)
-                        : const Color(0xFFFFFFFF).withValues(alpha: 0.75),
+                        : const Color(0xFFFFFFFF).withValues(alpha: 0.92),
                     borderRadius: BorderRadius.circular(24),
                     border: Border.all(
                       color: isDark
                           ? Colors.white.withValues(alpha: 0.08)
-                          : Colors.black.withValues(alpha: 0.05),
+                          : const Color(0xFF122033).withValues(alpha: 0.08),
                       width: 1.5,
                     ),
                     boxShadow: [

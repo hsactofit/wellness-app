@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/auth_service.dart';
+import '../theme/app_theme.dart';
 import '../widgets/app_brand_logo.dart';
 import 'auth_screen.dart';
 import 'main_shell.dart';
@@ -163,9 +164,9 @@ class _SplashScreenState extends State<SplashScreen>
                           const Color(0xFF141926),
                         ]
                       : [
-                          const Color(0xFFE0F2F1),
-                          const Color(0xFFE0F7FA),
-                          const Color(0xFFE3F2FD),
+                          const Color(0xFFF7F5F2),
+                          const Color(0xFFFBF8F6),
+                          const Color(0xFFF4ECE9),
                         ],
                 ),
               ),
@@ -183,8 +184,10 @@ class _SplashScreenState extends State<SplashScreen>
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    Colors.blueAccent.withValues(alpha: isDark ? 0.15 : 0.25),
-                    Colors.blueAccent.withValues(alpha: 0.0),
+                    isDark
+                        ? Colors.blueAccent.withValues(alpha: 0.15)
+                        : AppTheme.brandPrimary.withValues(alpha: 0.16),
+                    Colors.transparent,
                   ],
                 ),
               ),
@@ -202,8 +205,10 @@ class _SplashScreenState extends State<SplashScreen>
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    Colors.tealAccent.withValues(alpha: isDark ? 0.12 : 0.22),
-                    Colors.tealAccent.withValues(alpha: 0.0),
+                    isDark
+                        ? Colors.tealAccent.withValues(alpha: 0.12)
+                        : AppTheme.brandInk.withValues(alpha: 0.06),
+                    Colors.transparent,
                   ],
                 ),
               ),
@@ -250,7 +255,7 @@ class _SplashScreenState extends State<SplashScreen>
                     child: CircularProgressIndicator(
                       strokeWidth: 2.2,
                       valueColor: AlwaysStoppedAnimation<Color>(
-                        isDark ? Colors.blueAccent : const Color(0xFF0F52BA),
+                        AppTheme.actionOf(context),
                       ),
                       backgroundColor: Colors.transparent,
                     ),

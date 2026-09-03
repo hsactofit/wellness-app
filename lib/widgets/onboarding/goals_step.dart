@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'fade_slide_transition.dart';
+import '../../theme/app_theme.dart';
 
 class GoalsStep extends StatelessWidget {
   final List<String> selectedGoals;
@@ -101,10 +102,13 @@ class GoalsStep extends StatelessWidget {
                   FadeSlideTransition(
                     delay: const Duration(milliseconds: 100),
                     child: Row(
-                      children: const [
+                      children: [
                         Icon(
                           Icons.directions_run_rounded,
-                          color: Color(0xFF006D5B),
+                          color: AppTheme.actionOf(
+                            context,
+                            dark: const Color(0xFF006D5B),
+                          ),
                           size: 20,
                         ),
                         SizedBox(width: 8),
@@ -139,8 +143,9 @@ class GoalsStep extends StatelessWidget {
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
                               color: isSelected
-                                  ? const Color(
-                                      0xFF006D5B,
+                                  ? AppTheme.actionOf(
+                                      context,
+                                      dark: const Color(0xFF006D5B),
                                     ).withValues(alpha: 0.06)
                                   : (isDark
                                         ? Colors.white.withValues(alpha: 0.04)
@@ -148,7 +153,10 @@ class GoalsStep extends StatelessWidget {
                               borderRadius: BorderRadius.circular(16),
                               border: Border.all(
                                 color: isSelected
-                                    ? const Color(0xFF006D5B)
+                                    ? AppTheme.actionOf(
+                                        context,
+                                        dark: const Color(0xFF006D5B),
+                                      )
                                     : (isDark
                                           ? Colors.white.withValues(alpha: 0.12)
                                           : Colors.grey.withValues(
@@ -195,10 +203,13 @@ class GoalsStep extends StatelessWidget {
                   FadeSlideTransition(
                     delay: const Duration(milliseconds: 300),
                     child: Row(
-                      children: const [
+                      children: [
                         Icon(
                           Icons.flag_outlined,
-                          color: Color(0xFF006D5B),
+                          color: AppTheme.actionOf(
+                            context,
+                            dark: const Color(0xFF006D5B),
+                          ),
                           size: 20,
                         ),
                         SizedBox(width: 8),
@@ -248,8 +259,9 @@ class GoalsStep extends StatelessWidget {
                                 height: double.infinity,
                                 decoration: BoxDecoration(
                                   color: isSelected
-                                      ? const Color(
-                                          0xFF006D5B,
+                                      ? AppTheme.actionOf(
+                                          context,
+                                          dark: const Color(0xFF006D5B),
                                         ).withValues(alpha: 0.06)
                                       : (isDark
                                             ? Colors.white.withValues(
@@ -259,7 +271,10 @@ class GoalsStep extends StatelessWidget {
                                   borderRadius: BorderRadius.circular(16),
                                   border: Border.all(
                                     color: isSelected
-                                        ? const Color(0xFF006D5B)
+                                        ? AppTheme.actionOf(
+                                            context,
+                                            dark: const Color(0xFF006D5B),
+                                          )
                                         : (isDark
                                               ? Colors.white.withValues(
                                                   alpha: 0.12,
@@ -279,7 +294,10 @@ class GoalsStep extends StatelessWidget {
                                   children: [
                                     Icon(
                                       icon,
-                                      color: const Color(0xFF006D5B),
+                                      color: AppTheme.actionOf(
+                                        context,
+                                        dark: const Color(0xFF006D5B),
+                                      ),
                                       size: 26,
                                     ),
                                     const SizedBox(height: 10),
@@ -307,9 +325,12 @@ class GoalsStep extends StatelessWidget {
                                       shape: BoxShape.circle,
                                     ),
                                     padding: const EdgeInsets.all(1),
-                                    child: const Icon(
+                                    child: Icon(
                                       Icons.check_circle_rounded,
-                                      color: Color(0xFF006D5B),
+                                      color: AppTheme.actionOf(
+                                        context,
+                                        dark: const Color(0xFF006D5B),
+                                      ),
                                       size: 16,
                                     ),
                                   ),
@@ -337,12 +358,18 @@ class GoalsStep extends StatelessWidget {
               children: [
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF006D5B),
+                    backgroundColor: AppTheme.actionOf(
+                      context,
+                      dark: const Color(0xFF006D5B),
+                    ),
                     padding: const EdgeInsets.symmetric(vertical: 18),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(28),
                     ),
-                    shadowColor: const Color(0xFF006D5B).withValues(alpha: 0.3),
+                    shadowColor: AppTheme.actionOf(
+                      context,
+                      dark: const Color(0xFF006D5B),
+                    ).withValues(alpha: 0.3),
                     elevation: 3,
                   ),
                   onPressed: selectedGoals.isEmpty ? null : onNext,

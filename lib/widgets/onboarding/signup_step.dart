@@ -4,6 +4,7 @@ import '../../services/auth_service.dart';
 import '../app_brand_logo.dart';
 import '../glass_card.dart';
 import 'fade_slide_transition.dart';
+import '../../theme/app_theme.dart';
 
 class SignupStep extends StatefulWidget {
   final GlobalKey<FormState> formKey;
@@ -264,10 +265,10 @@ class _SignupStepState extends State<SignupStep> {
                                 ? GestureDetector(
                                     onTap: () =>
                                         _showForgotPasswordDialog(context),
-                                    child: const Text(
+                                    child: Text(
                                       "Forgot Password?",
                                       style: TextStyle(
-                                        color: Colors.blueAccent,
+                                        color: AppTheme.actionOf(context),
                                         fontWeight: FontWeight.w600,
                                         fontSize: 12,
                                       ),
@@ -350,7 +351,7 @@ class _SignupStepState extends State<SignupStep> {
                               width: 24,
                               child: Checkbox(
                                 value: _agreedToTerms,
-                                activeColor: Colors.blueAccent,
+                                activeColor: AppTheme.actionOf(context),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(4),
                                 ),
@@ -377,24 +378,24 @@ class _SignupStepState extends State<SignupStep> {
                                         : Colors.grey[700],
                                     height: 1.3,
                                   ),
-                                  children: const [
-                                    TextSpan(text: "I agree to the "),
+                                  children: [
+                                    const TextSpan(text: "I agree to the "),
                                     TextSpan(
                                       text: "Terms of Service",
                                       style: TextStyle(
-                                        color: Colors.blueAccent,
+                                        color: AppTheme.actionOf(context),
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
-                                    TextSpan(text: " and "),
+                                    const TextSpan(text: " and "),
                                     TextSpan(
                                       text: "Privacy Policy",
                                       style: TextStyle(
-                                        color: Colors.blueAccent,
+                                        color: AppTheme.actionOf(context),
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
-                                    TextSpan(text: "."),
+                                    const TextSpan(text: "."),
                                   ],
                                 ),
                               ),
@@ -410,15 +411,19 @@ class _SignupStepState extends State<SignupStep> {
                       delay: const Duration(milliseconds: 500),
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF0F52BA),
+                          backgroundColor: AppTheme.actionOf(
+                            context,
+                            dark: const Color(0xFF0F52BA),
+                          ),
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(14),
                           ),
                           elevation: 2,
-                          shadowColor: const Color(
-                            0xFF0F52BA,
+                          shadowColor: AppTheme.actionOf(
+                            context,
+                            dark: const Color(0xFF0F52BA),
                           ).withValues(alpha: 0.3),
                         ),
                         onPressed: () {
@@ -663,8 +668,8 @@ class _SignupStepState extends State<SignupStep> {
                               ),
                               TextSpan(
                                 text: _isLogin ? "Sign Up" : "Log In",
-                                style: const TextStyle(
-                                  color: Colors.blueAccent,
+                                style: TextStyle(
+                                  color: AppTheme.actionOf(context),
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -843,7 +848,10 @@ class _SignupStepState extends State<SignupStep> {
                         const SizedBox(height: 24),
                         ElevatedButton(
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF0F52BA),
+                            backgroundColor: AppTheme.actionOf(
+                              context,
+                              dark: const Color(0xFF0F52BA),
+                            ),
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             shape: RoundedRectangleBorder(
@@ -961,7 +969,10 @@ class _SignupStepState extends State<SignupStep> {
                             Expanded(
                               child: ElevatedButton(
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF0F52BA),
+                                  backgroundColor: AppTheme.actionOf(
+                                    context,
+                                    dark: const Color(0xFF0F52BA),
+                                  ),
                                   foregroundColor: Colors.white,
                                   padding: const EdgeInsets.symmetric(
                                     vertical: 14,
@@ -1051,7 +1062,10 @@ class _SignupStepState extends State<SignupStep> {
                         const SizedBox(height: 24),
                         ElevatedButton(
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF0F52BA),
+                            backgroundColor: AppTheme.actionOf(
+                              context,
+                              dark: const Color(0xFF0F52BA),
+                            ),
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             shape: RoundedRectangleBorder(
@@ -1258,7 +1272,10 @@ class _SignupStepState extends State<SignupStep> {
                         const SizedBox(height: 24),
                         ElevatedButton(
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF0F52BA),
+                            backgroundColor: AppTheme.actionOf(
+                              context,
+                              dark: const Color(0xFF0F52BA),
+                            ),
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             shape: RoundedRectangleBorder(
@@ -1375,7 +1392,10 @@ class _SignupStepState extends State<SignupStep> {
                             Expanded(
                               child: ElevatedButton(
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF0F52BA),
+                                  backgroundColor: AppTheme.actionOf(
+                                    context,
+                                    dark: const Color(0xFF0F52BA),
+                                  ),
                                   foregroundColor: Colors.white,
                                   padding: const EdgeInsets.symmetric(
                                     vertical: 14,
@@ -1491,7 +1511,7 @@ class _SignupStepState extends State<SignupStep> {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(color: Colors.blueAccent, width: 2.0),
+        borderSide: BorderSide(color: AppTheme.actionOf(context), width: 2.0),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),

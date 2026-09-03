@@ -31,6 +31,7 @@ import 'update_health_hub_screen.dart';
 import '../models/plan_models.dart';
 import '../models/body_composition_report.dart';
 import '../widgets/water/wave_painter.dart';
+import '../theme/app_theme.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key, this.onOpenChallenges});
@@ -1384,11 +1385,14 @@ class DashboardScreenState extends State<DashboardScreen>
             title: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Row(
+                Row(
                   children: [
-                    Icon(Icons.badge_outlined, color: Colors.blueAccent),
-                    SizedBox(width: 8),
-                    Text(
+                    Icon(
+                      Icons.badge_outlined,
+                      color: AppTheme.actionOf(context),
+                    ),
+                    const SizedBox(width: 8),
+                    const Text(
                       "Onboarding Data",
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
@@ -1410,11 +1414,11 @@ class DashboardScreenState extends State<DashboardScreen>
                       Tab(text: "Preview"),
                       Tab(text: "Raw JSON"),
                     ],
-                    labelColor: Colors.blueAccent,
+                    labelColor: AppTheme.actionOf(context),
                     unselectedLabelColor: isDark
                         ? Colors.white60
                         : Colors.black54,
-                    indicatorColor: Colors.blueAccent,
+                    indicatorColor: AppTheme.actionOf(context),
                   ),
                   const SizedBox(height: 16),
                   Expanded(
@@ -1585,7 +1589,7 @@ class DashboardScreenState extends State<DashboardScreen>
               ),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blueAccent,
+                  backgroundColor: AppTheme.actionOf(context),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -1618,10 +1622,10 @@ class DashboardScreenState extends State<DashboardScreen>
         children: [
           Text(
             title,
-            style: const TextStyle(
+            style: TextStyle(
               fontWeight: FontWeight.bold,
               fontSize: 12,
-              color: Colors.blueAccent,
+              color: AppTheme.actionOf(context),
             ),
           ),
           const SizedBox(height: 8),
@@ -1855,7 +1859,7 @@ class DashboardScreenState extends State<DashboardScreen>
             const SizedBox(width: 12),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blueAccent,
+                backgroundColor: AppTheme.actionOf(context),
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -1916,7 +1920,7 @@ class DashboardScreenState extends State<DashboardScreen>
             const SizedBox(width: 12),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blueAccent,
+                backgroundColor: AppTheme.actionOf(context),
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -1982,13 +1986,15 @@ class DashboardScreenState extends State<DashboardScreen>
                         width: 38,
                         height: 38,
                         decoration: BoxDecoration(
-                          color: Colors.blueAccent.withValues(alpha: 0.1),
+                          color: AppTheme.actionOf(
+                            context,
+                          ).withValues(alpha: 0.1),
                           shape: BoxShape.circle,
                         ),
-                        child: const Center(
+                        child: Center(
                           child: Icon(
                             Icons.sync_rounded,
-                            color: Colors.blueAccent,
+                            color: AppTheme.actionOf(context),
                             size: 20,
                           ),
                         ),
@@ -2107,8 +2113,8 @@ class DashboardScreenState extends State<DashboardScreen>
         children: [
           Container(
             padding: const EdgeInsets.all(5),
-            decoration: const BoxDecoration(
-              color: Colors.blueAccent,
+            decoration: BoxDecoration(
+              color: AppTheme.actionOf(context),
               shape: BoxShape.circle,
             ),
             child: Text(
@@ -2196,9 +2202,9 @@ class DashboardScreenState extends State<DashboardScreen>
               children: [
                 Row(
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.info_outline,
-                      color: Colors.blueAccent,
+                      color: AppTheme.actionOf(context),
                       size: 32,
                     ),
                     const SizedBox(width: 12),
@@ -2229,10 +2235,10 @@ class DashboardScreenState extends State<DashboardScreen>
                     onPressed: () {
                       _setSetupCompleted(false);
                     },
-                    child: const Text(
+                    child: Text(
                       "View Sync Guide",
                       style: TextStyle(
-                        color: Colors.blueAccent,
+                        color: AppTheme.actionOf(context),
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -2539,13 +2545,13 @@ class DashboardScreenState extends State<DashboardScreen>
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.blueAccent.withValues(alpha: 0.12),
+                    color: AppTheme.actionOf(context).withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Text(
+                  child: Text(
                     "3 days left",
                     style: TextStyle(
-                      color: Colors.blueAccent,
+                      color: AppTheme.actionOf(context),
                       fontSize: 11,
                       fontWeight: FontWeight.bold,
                     ),
@@ -2573,7 +2579,7 @@ class DashboardScreenState extends State<DashboardScreen>
                 Text(
                   "Progress: 5/7 days completed",
                   style: TextStyle(
-                    color: Colors.blueAccent,
+                    color: AppTheme.actionOf(context),
                     fontWeight: FontWeight.bold,
                     fontSize: 12,
                   ),
@@ -2591,11 +2597,11 @@ class DashboardScreenState extends State<DashboardScreen>
             const SizedBox(height: 8),
             ClipRRect(
               borderRadius: BorderRadius.circular(6),
-              child: const LinearProgressIndicator(
+              child: LinearProgressIndicator(
                 value: 5 / 7,
                 minHeight: 6,
                 backgroundColor: Colors.white12,
-                color: Colors.blueAccent,
+                color: AppTheme.actionOf(context),
               ),
             ),
           ],
@@ -4161,8 +4167,8 @@ class DashboardScreenState extends State<DashboardScreen>
               right: 0,
               child: LinearProgressIndicator(
                 backgroundColor: Colors.transparent,
-                valueColor: const AlwaysStoppedAnimation<Color>(
-                  Colors.blueAccent,
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  AppTheme.actionOf(context),
                 ),
               ),
             ),
@@ -5750,12 +5756,12 @@ class GoogleFitSetupGuideScreen extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
+                        Text(
                           "Connection Progress",
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 14,
-                            color: Colors.blueAccent,
+                            color: AppTheme.actionOf(context),
                           ),
                         ),
                         const SizedBox(height: 12),
@@ -5787,9 +5793,9 @@ class GoogleFitSetupGuideScreen extends StatelessWidget {
                       children: [
                         Row(
                           children: [
-                            const Icon(
+                            Icon(
                               Icons.help_outline,
-                              color: Colors.blueAccent,
+                              color: AppTheme.actionOf(context),
                             ),
                             const SizedBox(width: 8),
                             Text(
@@ -5839,7 +5845,7 @@ class GoogleFitSetupGuideScreen extends StatelessWidget {
                   const SizedBox(height: 24),
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blueAccent,
+                      backgroundColor: AppTheme.actionOf(context),
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14),
@@ -5904,6 +5910,7 @@ class GoogleFitSetupGuideScreen extends StatelessWidget {
   }
 
   Widget _buildGuideStep(String step, String text, bool isDark) {
+    final action = AppTheme.action(isDark);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Row(
@@ -5913,16 +5920,16 @@ class GoogleFitSetupGuideScreen extends StatelessWidget {
             width: 20,
             height: 20,
             decoration: BoxDecoration(
-              color: Colors.blueAccent.withValues(alpha: 0.12),
+              color: action.withValues(alpha: 0.12),
               shape: BoxShape.circle,
             ),
             child: Center(
               child: Text(
                 step,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.bold,
-                  color: Colors.blueAccent,
+                  color: action,
                 ),
               ),
             ),

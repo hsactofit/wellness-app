@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../app_brand.dart';
 import '../glass_card.dart';
 import 'fade_slide_transition.dart';
+import '../../theme/app_theme.dart';
 
 class WelcomeStep extends StatefulWidget {
   final String? emoji;
@@ -94,9 +95,9 @@ class _WelcomeStepState extends State<WelcomeStep>
                                     BoxShadow(
                                       color: isDark
                                           ? Colors.black.withValues(alpha: 0.4)
-                                          : Colors.blueAccent.withValues(
-                                              alpha: 0.08,
-                                            ),
+                                          : AppTheme.actionOf(
+                                              context,
+                                            ).withValues(alpha: 0.08),
                                       blurRadius: 20,
                                       offset: const Offset(0, 8),
                                     ),
@@ -150,13 +151,15 @@ class _WelcomeStepState extends State<WelcomeStep>
                 delay: const Duration(milliseconds: 450),
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blueAccent,
+                    backgroundColor: AppTheme.actionOf(context),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
-                    shadowColor: Colors.blueAccent.withValues(alpha: 0.3),
+                    shadowColor: AppTheme.actionOf(
+                      context,
+                    ).withValues(alpha: 0.3),
                     elevation: 4,
                   ),
                   onPressed: widget.onAction,

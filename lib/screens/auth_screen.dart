@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/auth_service.dart';
+import '../theme/app_theme.dart';
 import '../widgets/onboarding/signup_step.dart';
 import 'main_shell.dart';
 import 'onboarding_screen.dart';
@@ -272,7 +273,7 @@ class _AuthScreenState extends State<AuthScreen>
           // 1. Dynamic Mesh Background
           Positioned.fill(
             child: Container(
-              color: isDark ? const Color(0xFF0C0D11) : const Color(0xFFF4F7FB),
+              color: isDark ? const Color(0xFF0C0D11) : AppTheme.lightBg,
             ),
           ),
           // Animated Glow Blobs
@@ -296,7 +297,9 @@ class _AuthScreenState extends State<AuthScreen>
                             colors: [
                               isDark
                                   ? Colors.blue.withValues(alpha: 0.22)
-                                  : Colors.cyan.withValues(alpha: 0.35),
+                                  : AppTheme.brandPrimary.withValues(
+                                      alpha: 0.16,
+                                    ),
                               Colors.blue.withValues(alpha: 0.0),
                             ],
                           ),
@@ -316,7 +319,7 @@ class _AuthScreenState extends State<AuthScreen>
                             colors: [
                               isDark
                                   ? Colors.purple.withValues(alpha: 0.18)
-                                  : Colors.pink.withValues(alpha: 0.24),
+                                  : AppTheme.brandInk.withValues(alpha: 0.06),
                               Colors.purple.withValues(alpha: 0.0),
                             ],
                           ),
@@ -359,9 +362,10 @@ class _AuthScreenState extends State<AuthScreen>
                         children: [
                           CircularProgressIndicator(
                             valueColor: AlwaysStoppedAnimation<Color>(
-                              isDark
-                                  ? Colors.blueAccent
-                                  : const Color(0xFF0F52BA),
+                              AppTheme.actionOf(
+                                context,
+                                dark: Colors.blueAccent,
+                              ),
                             ),
                           ),
                           const SizedBox(height: 24),

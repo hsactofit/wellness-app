@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../app_brand.dart';
 import '../services/auth_service.dart';
+import '../theme/app_theme.dart';
 import '../widgets/onboarding/profile_step.dart';
 import '../widgets/onboarding/goals_step.dart';
 import '../widgets/onboarding/company_step.dart';
@@ -456,7 +457,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
           // Dynamic Mesh Background
           Positioned.fill(
             child: Container(
-              color: isDark ? const Color(0xFF0C0D11) : const Color(0xFFF4F7FB),
+              color: isDark ? const Color(0xFF0C0D11) : AppTheme.lightBg,
             ),
           ),
           // Glowing Background Blobs
@@ -480,7 +481,9 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                             colors: [
                               isDark
                                   ? Colors.blue.withValues(alpha: 0.15)
-                                  : Colors.cyan.withValues(alpha: 0.25),
+                                  : AppTheme.brandPrimary.withValues(
+                                      alpha: 0.14,
+                                    ),
                               Colors.blue.withValues(alpha: 0.0),
                             ],
                           ),
@@ -500,7 +503,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                             colors: [
                               isDark
                                   ? Colors.purple.withValues(alpha: 0.12)
-                                  : Colors.pink.withValues(alpha: 0.20),
+                                  : AppTheme.brandInk.withValues(alpha: 0.06),
                               Colors.purple.withValues(alpha: 0.0),
                             ],
                           ),
@@ -562,7 +565,10 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                               width: isActive ? 24 : 12,
                               decoration: BoxDecoration(
                                 color: isActive
-                                    ? const Color(0xFF006D5B)
+                                    ? AppTheme.actionOf(
+                                        context,
+                                        dark: const Color(0xFF006D5B),
+                                      )
                                     : (isDark
                                           ? Colors.white24
                                           : const Color(0xFFE2E8F0)),

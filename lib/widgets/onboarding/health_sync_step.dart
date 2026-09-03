@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../glass_card.dart';
 import 'fade_slide_transition.dart';
+import '../../theme/app_theme.dart';
 
 class HealthSyncStep extends StatefulWidget {
   final bool isSyncing;
@@ -156,13 +157,15 @@ class _HealthSyncStepState extends State<HealthSyncStep>
                 delay: const Duration(milliseconds: 950),
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blueAccent,
+                    backgroundColor: AppTheme.actionOf(context),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
-                    shadowColor: Colors.blueAccent.withValues(alpha: 0.3),
+                    shadowColor: AppTheme.actionOf(
+                      context,
+                    ).withValues(alpha: 0.3),
                     elevation: 4,
                   ),
                   onPressed: widget.isSyncing ? null : widget.onConnect,
@@ -209,10 +212,10 @@ class _HealthSyncStepState extends State<HealthSyncStep>
                           padding: const EdgeInsets.symmetric(vertical: 16),
                         ),
                         onPressed: widget.onSkip,
-                        child: const Text(
+                        child: Text(
                           "Skip for now",
                           style: TextStyle(
-                            color: Colors.blueAccent,
+                            color: AppTheme.actionOf(context),
                             fontWeight: FontWeight.bold,
                           ),
                         ),

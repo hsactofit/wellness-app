@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../app_brand.dart';
+import '../theme/app_theme.dart';
 
 /// Renders the logo selected for the current build.
 class AppBrandLogo extends StatelessWidget {
@@ -51,48 +52,54 @@ class AppBrandLogo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isMednovations = AppBrand.isMednovations;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final plateHeight = height;
     final plateWidth = (plateHeight * AppBrand.logoAspectRatio).clamp(
       plateHeight,
       maxWidth ?? double.infinity,
     );
 
+    final useLightPlate = isMednovations || !isDark;
+    final Color plateBorder;
+    if (isMednovations) {
+      plateBorder = const Color(0xFF167FB7).withValues(alpha: 0.18);
+    } else if (isDark) {
+      plateBorder = elevated
+          ? Colors.white.withValues(alpha: 0.10)
+          : Colors.white.withValues(alpha: 0.06);
+    } else {
+      plateBorder = AppTheme.brandInk.withValues(alpha: elevated ? 0.10 : 0.08);
+    }
+
+    final glowColor = isMednovations
+        ? const Color(0xFF1B9D4D)
+        : (isDark ? const Color(0xFFE53935) : AppTheme.brandPrimary);
+
     return Container(
       width: plateWidth,
       height: plateHeight,
       padding: padding,
       decoration: BoxDecoration(
-        color: isMednovations ? Colors.white : const Color(0xFF0B0B10),
+        color: useLightPlate ? Colors.white : const Color(0xFF0B0B10),
         borderRadius: BorderRadius.circular(borderRadius),
-        border: Border.all(
-          color: isMednovations
-              ? const Color(0xFF167FB7).withValues(alpha: 0.18)
-              : (elevated
-                    ? Colors.white.withValues(alpha: 0.10)
-                    : Colors.white.withValues(alpha: 0.06)),
-          width: 1,
-        ),
+        border: Border.all(color: plateBorder, width: 1),
         boxShadow: elevated
             ? [
                 BoxShadow(
-                  color:
-                      (isMednovations
-                              ? const Color(0xFF1B9D4D)
-                              : const Color(0xFFE53935))
-                          .withValues(alpha: 0.18),
+                  color: glowColor.withValues(alpha: isDark ? 0.18 : 0.14),
                   blurRadius: 22,
                   spreadRadius: 0,
                   offset: const Offset(0, 8),
                 ),
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.25),
+                  color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.08),
                   blurRadius: 16,
                   offset: const Offset(0, 6),
                 ),
               ]
             : [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.12),
+                  color: Colors.black.withValues(alpha: isDark ? 0.12 : 0.06),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -103,15 +110,21 @@ class AppBrandLogo extends StatelessWidget {
                 end: Alignment.bottomRight,
                 colors: [Color(0xFFFFFFFF), Color(0xFFF2FBFD)],
               )
-            : const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFF16161C),
-                  Color(0xFF0B0B10),
-                  Color(0xFF121218),
-                ],
-              ),
+            : (isDark
+                  ? const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Color(0xFF16161C),
+                        Color(0xFF0B0B10),
+                        Color(0xFF121218),
+                      ],
+                    )
+                  : const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [Color(0xFFFFFFFF), Color(0xFFF7F5F2)],
+                    )),
       ),
       child: Image.asset(
         selectedAssetPath,
@@ -122,7 +135,9 @@ class AppBrandLogo extends StatelessWidget {
           child: Text(
             AppBrand.name,
             style: TextStyle(
-              color: isMednovations ? const Color(0xFF167FB7) : Colors.white,
+              color: isMednovations
+                  ? const Color(0xFF167FB7)
+                  : (isDark ? Colors.white : AppTheme.brandInk),
               fontWeight: FontWeight.w900,
               fontSize: 16,
               letterSpacing: -0.5,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../theme/app_theme.dart';
 import '../widgets/onboarding/welcome_step.dart';
 import 'auth_screen.dart';
 
@@ -82,7 +83,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
           // 1. Dynamic background mesh
           Positioned.fill(
             child: Container(
-              color: isDark ? const Color(0xFF0C0D11) : const Color(0xFFF4F7FB),
+              color: isDark ? const Color(0xFF0C0D11) : AppTheme.lightBg,
             ),
           ),
 
@@ -106,7 +107,9 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                             colors: [
                               isDark
                                   ? Colors.blue.withValues(alpha: 0.22)
-                                  : Colors.cyan.withValues(alpha: 0.35),
+                                  : AppTheme.brandPrimary.withValues(
+                                      alpha: 0.16,
+                                    ),
                               Colors.blue.withValues(alpha: 0.0),
                             ],
                           ),
@@ -125,7 +128,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                             colors: [
                               isDark
                                   ? Colors.purple.withValues(alpha: 0.18)
-                                  : Colors.pink.withValues(alpha: 0.24),
+                                  : AppTheme.brandInk.withValues(alpha: 0.06),
                               Colors.purple.withValues(alpha: 0.0),
                             ],
                           ),
@@ -161,7 +164,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(2),
                             color: isActive
-                                ? const Color(0xFF0F52BA)
+                                ? AppTheme.actionOf(context)
                                 : (isDark ? Colors.white24 : Colors.grey[300]),
                           ),
                         ),

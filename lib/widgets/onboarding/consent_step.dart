@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../app_brand.dart';
 import 'fade_slide_transition.dart';
+import '../../theme/app_theme.dart';
 
 class ConsentStep extends StatelessWidget {
   final Map<String, bool>
@@ -128,8 +129,9 @@ class ConsentStep extends StatelessWidget {
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
                             color: granted
-                                ? const Color(
-                                    0xFF006D5B,
+                                ? AppTheme.actionOf(
+                                    context,
+                                    dark: const Color(0xFF006D5B),
                                   ).withValues(alpha: 0.06)
                                 : (isDark
                                       ? Colors.white.withValues(alpha: 0.04)
@@ -137,7 +139,10 @@ class ConsentStep extends StatelessWidget {
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
                               color: granted
-                                  ? const Color(0xFF006D5B)
+                                  ? AppTheme.actionOf(
+                                      context,
+                                      dark: const Color(0xFF006D5B),
+                                    )
                                   : (isDark
                                         ? Colors.white.withValues(alpha: 0.12)
                                         : Colors.grey.withValues(alpha: 0.18)),
@@ -149,7 +154,10 @@ class ConsentStep extends StatelessWidget {
                             children: [
                               Checkbox(
                                 value: granted,
-                                activeColor: const Color(0xFF006D5B),
+                                activeColor: AppTheme.actionOf(
+                                  context,
+                                  dark: const Color(0xFF006D5B),
+                                ),
                                 onChanged: (_) => onToggleGrant(key),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(6),
@@ -177,7 +185,10 @@ class ConsentStep extends StatelessWidget {
                                         color:
                                             key == 'medicalShare' &&
                                                 !medicalShareRequired
-                                            ? const Color(0xFF006D5B)
+                                            ? AppTheme.actionOf(
+                                                context,
+                                                dark: const Color(0xFF006D5B),
+                                              )
                                             : (isDark
                                                   ? Colors.grey[400]
                                                   : Colors.grey[600]),
@@ -238,8 +249,11 @@ class ConsentStep extends StatelessWidget {
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(
-                          color: Color(0xFF006D5B),
+                        borderSide: BorderSide(
+                          color: AppTheme.actionOf(
+                            context,
+                            dark: const Color(0xFF006D5B),
+                          ),
                           width: 2,
                         ),
                       ),
@@ -260,7 +274,7 @@ class ConsentStep extends StatelessWidget {
                 Expanded(
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFE3EDF7),
+                      backgroundColor: const Color(0xFFEEF1F6),
                       elevation: 0,
                       padding: const EdgeInsets.symmetric(vertical: 18),
                       shape: RoundedRectangleBorder(
@@ -271,7 +285,7 @@ class ConsentStep extends StatelessWidget {
                     child: const Text(
                       "PREVIOUS",
                       style: TextStyle(
-                        color: Color(0xFF1E3A8A),
+                        color: AppTheme.brandInk,
                         fontWeight: FontWeight.w800,
                         fontSize: 14,
                         letterSpacing: 0.5,
@@ -283,13 +297,17 @@ class ConsentStep extends StatelessWidget {
                 Expanded(
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF006D5B),
+                      backgroundColor: AppTheme.actionOf(
+                        context,
+                        dark: const Color(0xFF006D5B),
+                      ),
                       padding: const EdgeInsets.symmetric(vertical: 18),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(24),
                       ),
-                      shadowColor: const Color(
-                        0xFF006D5B,
+                      shadowColor: AppTheme.actionOf(
+                        context,
+                        dark: const Color(0xFF006D5B),
                       ).withValues(alpha: 0.3),
                       elevation: 4,
                     ),

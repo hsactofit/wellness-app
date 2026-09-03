@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'fade_slide_transition.dart';
+import '../../theme/app_theme.dart';
 
 class CompanyOption {
   final String id;
@@ -92,11 +93,14 @@ class CompanyStep extends StatelessWidget {
                   ),
                   const SizedBox(height: 24),
                   if (isLoading)
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 60),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 60),
                       child: Center(
                         child: CircularProgressIndicator(
-                          color: Color(0xFF006D5B),
+                          color: AppTheme.actionOf(
+                            context,
+                            dark: const Color(0xFF006D5B),
+                          ),
                         ),
                       ),
                     )
@@ -128,7 +132,7 @@ class CompanyStep extends StatelessWidget {
                       ),
                     )
                   else ...[
-                    _sectionLabel("Company", Icons.apartment_rounded),
+                    _sectionLabel(context, "Company", Icons.apartment_rounded),
                     const SizedBox(height: 10),
                     ...corporates.map(
                       (c) => _optionTile(
@@ -141,6 +145,7 @@ class CompanyStep extends StatelessWidget {
                     ),
                     const SizedBox(height: 24),
                     _sectionLabel(
+                      context,
                       "Home Facility",
                       Icons.fitness_center_rounded,
                     ),
@@ -170,7 +175,7 @@ class CompanyStep extends StatelessWidget {
                 Expanded(
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFE3EDF7),
+                      backgroundColor: const Color(0xFFEEF1F6),
                       elevation: 0,
                       padding: const EdgeInsets.symmetric(vertical: 18),
                       shape: RoundedRectangleBorder(
@@ -181,7 +186,7 @@ class CompanyStep extends StatelessWidget {
                     child: const Text(
                       "PREVIOUS",
                       style: TextStyle(
-                        color: Color(0xFF1E3A8A),
+                        color: AppTheme.brandInk,
                         fontWeight: FontWeight.w800,
                         fontSize: 14,
                         letterSpacing: 0.5,
@@ -193,13 +198,17 @@ class CompanyStep extends StatelessWidget {
                 Expanded(
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF006D5B),
+                      backgroundColor: AppTheme.actionOf(
+                        context,
+                        dark: const Color(0xFF006D5B),
+                      ),
                       padding: const EdgeInsets.symmetric(vertical: 18),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(24),
                       ),
-                      shadowColor: const Color(
-                        0xFF006D5B,
+                      shadowColor: AppTheme.actionOf(
+                        context,
+                        dark: const Color(0xFF006D5B),
                       ).withValues(alpha: 0.3),
                       elevation: 4,
                     ),
@@ -245,10 +254,14 @@ class CompanyStep extends StatelessWidget {
     );
   }
 
-  Widget _sectionLabel(String text, IconData icon) {
+  Widget _sectionLabel(BuildContext context, String text, IconData icon) {
     return Row(
       children: [
-        Icon(icon, color: const Color(0xFF006D5B), size: 20),
+        Icon(
+          icon,
+          color: AppTheme.actionOf(context, dark: const Color(0xFF006D5B)),
+          size: 20,
+        ),
         const SizedBox(width: 8),
         Text(
           text,
@@ -281,14 +294,17 @@ class CompanyStep extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: isSelected
-                ? const Color(0xFF006D5B).withValues(alpha: 0.06)
+                ? AppTheme.actionOf(
+                    context,
+                    dark: const Color(0xFF006D5B),
+                  ).withValues(alpha: 0.06)
                 : (isDark
                       ? Colors.white.withValues(alpha: 0.04)
                       : Colors.white),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: isSelected
-                  ? const Color(0xFF006D5B)
+                  ? AppTheme.actionOf(context, dark: const Color(0xFF006D5B))
                   : (isDark
                         ? Colors.white.withValues(alpha: 0.12)
                         : Colors.grey.withValues(alpha: 0.18)),
@@ -321,9 +337,12 @@ class CompanyStep extends StatelessWidget {
                 ),
               ),
               if (isSelected)
-                const Icon(
+                Icon(
                   Icons.check_circle_rounded,
-                  color: Color(0xFF006D5B),
+                  color: AppTheme.actionOf(
+                    context,
+                    dark: const Color(0xFF006D5B),
+                  ),
                   size: 22,
                 ),
             ],
