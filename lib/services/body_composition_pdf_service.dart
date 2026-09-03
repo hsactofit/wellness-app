@@ -5,6 +5,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 
 import '../models/body_composition_report.dart';
+import 'body_composition_comparison_presentation.dart';
 
 class BodyCompositionPdfService {
   const BodyCompositionPdfService._();
@@ -72,18 +73,64 @@ class BodyCompositionPdfService {
         margin: const pw.EdgeInsets.all(32),
         header: (_) => _header('Report comparison'),
         build: (_) => [
-          pw.Text('Older report: ${_date(comparison.olderReport.measuredAt)}'),
           pw.Text(
-            'Newer report: ${_date(comparison.newerReport.measuredAt)} · ${comparison.elapsedDays} days elapsed',
+            'Earlier ${_date(comparison.olderReport.measuredAt)} to latest ${_date(comparison.newerReport.measuredAt)}',
+            style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
           ),
-          pw.SizedBox(height: 6),
+          pw.SizedBox(height: 4),
           pw.Text(
-            'Reported BMI: ${_number(comparison.olderReport.measurements.reportedBmi)} → ${_number(comparison.newerReport.measurements.reportedBmi)}',
+            '${comparison.elapsedDays} ${comparison.elapsedDays == 1 ? 'day' : 'days'} between measurements',
           ),
+          pw.SizedBox(height: 14),
+          _comparisonSummary(comparison),
+          pw.SizedBox(height: 16),
           pw.Text(
-            'App BMI: ${_number(comparison.olderReport.calculatedBmi)} (${comparison.olderReport.bmiBand ?? '—'}) → ${_number(comparison.newerReport.calculatedBmi)} (${comparison.newerReport.bmiBand ?? '—'})',
+            'BMI context',
+            style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold),
+          ),
+          pw.SizedBox(height: 4),
+          pw.Text(
+            'Reported and app-calculated BMI use different sources and are kept separate.',
+            style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey700),
+          ),
+          pw.SizedBox(height: 8),
+          pw.TableHelper.fromTextArray(
+            headerStyle: pw.TextStyle(
+              fontWeight: pw.FontWeight.bold,
+              color: PdfColors.white,
+            ),
+            headerDecoration: const pw.BoxDecoration(
+              color: PdfColors.blueGrey700,
+            ),
+            cellStyle: const pw.TextStyle(fontSize: 8),
+            headers: const ['BMI type', 'Earlier', 'Latest'],
+            data: [
+              [
+                'Reported BMI',
+                _comparisonPdfText(
+                  _number(comparison.olderReport.measurements.reportedBmi),
+                ),
+                _comparisonPdfText(
+                  _number(comparison.newerReport.measurements.reportedBmi),
+                ),
+              ],
+              [
+                'App-calculated BMI',
+                _comparisonPdfText(
+                  '${_number(comparison.olderReport.calculatedBmi)}${comparison.olderReport.bmiBand == null ? '' : ' · ${comparison.olderReport.bmiBand}'}',
+                ),
+                _comparisonPdfText(
+                  '${_number(comparison.newerReport.calculatedBmi)}${comparison.newerReport.bmiBand == null ? '' : ' · ${comparison.newerReport.bmiBand}'}',
+                ),
+              ],
+            ],
           ),
           pw.SizedBox(height: 16),
+          pw.Text(
+            'Measurements',
+            style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold),
+          ),
+          pw.SizedBox(height: 6),
           pw.TableHelper.fromTextArray(
             headerStyle: pw.TextStyle(
               fontWeight: pw.FontWeight.bold,
@@ -94,27 +141,46 @@ class BodyCompositionPdfService {
             ),
             cellStyle: const pw.TextStyle(fontSize: 8),
             headers: const [
-              'Metric',
-              'Unit',
-              'Older',
-              'Newer',
-              'Change',
-              '% change',
+              'Measurement',
+              'Earlier',
+              'Latest',
+              'Change from earlier',
             ],
+            columnWidths: const {
+              0: pw.FlexColumnWidth(1.7),
+              1: pw.FlexColumnWidth(1),
+              2: pw.FlexColumnWidth(1),
+              3: pw.FlexColumnWidth(1.8),
+            },
             data: comparison.metrics
                 .map(
                   (metric) => [
-                    metric.label,
-                    metric.unit,
-                    _number(metric.olderValue),
-                    _number(metric.newerValue),
-                    _number(metric.absoluteChange),
-                    metric.percentageChange == null
-                        ? '—'
-                        : '${_number(metric.percentageChange)}%',
+                    '${metric.label}${metric.unit.trim().isEmpty ? '' : ' (${metric.unit})'}',
+                    _comparisonPdfText(
+                      BodyCompositionComparisonPresentation.formatValue(
+                        metric.olderValue,
+                        metric.unit,
+                      ),
+                    ),
+                    _comparisonPdfText(
+                      BodyCompositionComparisonPresentation.formatValue(
+                        metric.newerValue,
+                        metric.unit,
+                      ),
+                    ),
+                    _comparisonPdfText(
+                      BodyCompositionComparisonPresentation.changeForTable(
+                        metric,
+                      ),
+                    ),
                   ],
                 )
                 .toList(),
+          ),
+          pw.SizedBox(height: 10),
+          pw.Text(
+            'This comparison describes recorded changes only. It does not assess what is healthy or unhealthy for the member.',
+            style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey700),
           ),
         ],
       ),
@@ -145,6 +211,41 @@ class BodyCompositionPdfService {
       ],
     ),
   );
+
+  static pw.Widget _comparisonSummary(BodyCompositionComparison comparison) {
+    final comparable = BodyCompositionComparisonPresentation.comparableCount(
+      comparison,
+    );
+    final changed = BodyCompositionComparisonPresentation.changedCount(
+      comparison,
+    );
+    final unchanged = BodyCompositionComparisonPresentation.unchangedCount(
+      comparison,
+    );
+    final recordedOnce =
+        BodyCompositionComparisonPresentation.recordedOnceCount(comparison);
+    return pw.Container(
+      width: double.infinity,
+      padding: const pw.EdgeInsets.all(10),
+      decoration: pw.BoxDecoration(
+        color: PdfColors.blueGrey50,
+        borderRadius: pw.BorderRadius.circular(6),
+      ),
+      child: pw.Text(
+        '$comparable measurements compared · $changed changed · $unchanged unchanged${recordedOnce == 0 ? '' : ' · $recordedOnce recorded in one report only'}',
+        style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9),
+      ),
+    );
+  }
+
+  /// The built-in PDF font has a limited character set. The app view can use
+  /// typographic arrows and dashes, while the exported report keeps an ASCII
+  /// equivalent so every value stays visible in the generated file.
+  static String _comparisonPdfText(String value) => value
+      .replaceAll('—', '-')
+      .replaceAll('→', 'to')
+      .replaceAll('·', '/')
+      .replaceAll('–', '-');
 
   static pw.Widget _metricTable(BodyCompositionReport report) {
     final m = report.measurements;

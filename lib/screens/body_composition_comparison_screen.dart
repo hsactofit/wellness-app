@@ -3,6 +3,7 @@ import 'package:uuid/uuid.dart';
 
 import '../models/body_composition_report.dart';
 import '../services/api_service.dart';
+import '../services/body_composition_comparison_presentation.dart';
 import '../services/body_composition_pdf_service.dart';
 
 class BodyCompositionComparisonScreen extends StatefulWidget {
@@ -167,6 +168,18 @@ class BodyCompositionComparisonDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final comparedMetrics = comparison.metrics
+        .where(BodyCompositionComparisonPresentation.isComparable)
+        .toList(growable: false);
+    final recordedOnceMetrics = comparison.metrics
+        .where(
+          (metric) =>
+              !BodyCompositionComparisonPresentation.isComparable(metric),
+        )
+        .toList(growable: false);
+    final olderDate = _date(comparison.olderReport.measuredAt);
+    final newerDate = _date(comparison.newerReport.measuredAt);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Report Comparison'),
@@ -191,103 +204,432 @@ class BodyCompositionComparisonDetailScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Text(
-            '${_date(comparison.olderReport.measuredAt)} → ${_date(comparison.newerReport.measuredAt)}',
-            style: Theme.of(
-              context,
-            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+          _periodCard(context, olderDate, newerDate),
+          const SizedBox(height: 12),
+          _atAGlanceCard(context),
+          const SizedBox(height: 12),
+          _bmiContextCard(context, olderDate, newerDate),
+          const SizedBox(height: 24),
+          _sectionHeading(
+            context,
+            'Measurements compared',
+            comparedMetrics.isEmpty
+                ? 'There are no measurements with values in both reports.'
+                : 'Each card shows the earlier value, latest value, and exact change.',
           ),
-          Text('${comparison.elapsedDays} days elapsed'),
           const SizedBox(height: 10),
-          Text(
-            'Reported BMI: ${_number(comparison.olderReport.measurements.reportedBmi)} → ${_number(comparison.newerReport.measurements.reportedBmi)}',
-            style: const TextStyle(fontWeight: FontWeight.w700),
-          ),
-          Text(
-            'App BMI: ${_number(comparison.olderReport.calculatedBmi)} (${comparison.olderReport.bmiBand ?? '—'}) → ${_number(comparison.newerReport.calculatedBmi)} (${comparison.newerReport.bmiBand ?? '—'})',
-            style: const TextStyle(fontWeight: FontWeight.w700),
-          ),
-          const SizedBox(height: 16),
-          Table(
-            border: TableBorder.all(color: Theme.of(context).dividerColor),
-            columnWidths: const {
-              0: FlexColumnWidth(2.3),
-              1: FlexColumnWidth(1),
-              2: FlexColumnWidth(1.2),
-              3: FlexColumnWidth(1.2),
-              4: FlexColumnWidth(1.2),
-              5: FlexColumnWidth(1.2),
-            },
-            children: [
-              _row([
-                'Metric',
-                'Unit',
-                'Older',
-                'Newer',
-                'Change',
-                '% change',
-              ], header: true),
-              ...comparison.metrics.map(
-                (metric) => _row([
-                  metric.label,
-                  metric.unit,
-                  _number(metric.olderValue),
-                  _number(metric.newerValue),
-                  _change(metric.absoluteChange),
-                  metric.percentageChange == null
-                      ? '—'
-                      : '${_number(metric.percentageChange)}%',
-                ]),
+          ...comparedMetrics.map(
+            (metric) => Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: _metricCard(
+                context,
+                metric: metric,
+                olderDate: olderDate,
+                newerDate: newerDate,
               ),
-            ],
+            ),
           ),
-          const SizedBox(height: 14),
-          const Text(
-            'Changes are shown as up, down, or unchanged only and are not medical judgments.',
-            style: TextStyle(fontSize: 12),
+          if (recordedOnceMetrics.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            _sectionHeading(
+              context,
+              'Recorded in one report only',
+              'A change cannot be calculated until this measurement appears in both reports.',
+            ),
+            const SizedBox(height: 10),
+            ...recordedOnceMetrics.map(
+              (metric) => Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: _metricCard(
+                  context,
+                  metric: metric,
+                  olderDate: olderDate,
+                  newerDate: newerDate,
+                ),
+              ),
+            ),
+          ],
+          const SizedBox(height: 8),
+          Text(
+            'This comparison describes recorded changes only. It does not assess what is healthy or unhealthy for you.',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              height: 1.35,
+            ),
           ),
+          const SizedBox(height: 18),
         ],
       ),
     );
   }
 
-  TableRow _row(List<String> values, {bool header = false}) => TableRow(
-    decoration: header
-        ? const BoxDecoration(color: Color(0xFFE9EEF5))
-        : values.first.toLowerCase().contains('bmi')
-        ? const BoxDecoration(color: Color(0xFFFFF3CD))
-        : null,
-    children: values
-        .map(
-          (value) => Padding(
-            padding: const EdgeInsets.all(8),
-            child: Text(
-              value,
-              style: TextStyle(
-                fontWeight: header ? FontWeight.w800 : FontWeight.normal,
-              ),
+  Widget _periodCard(BuildContext context, String olderDate, String newerDate) {
+    final scheme = Theme.of(context).colorScheme;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Comparison period',
+              style: Theme.of(
+                context,
+              ).textTheme.labelLarge?.copyWith(color: scheme.primary),
             ),
-          ),
-        )
-        .toList(),
-  );
-
-  String _number(double? value) => value == null
-      ? '—'
-      : (value == value.roundToDouble()
-            ? value.toStringAsFixed(0)
-            : value.toStringAsFixed(1));
-
-  String _change(double? value) {
-    if (value == null) return '—';
-    final direction = value > 0
-        ? 'up'
-        : value < 0
-        ? 'down'
-        : 'unchanged';
-    return '${_number(value.abs())} ($direction)';
+            const SizedBox(height: 6),
+            Text(
+              '$olderDate → $newerDate',
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '${comparison.elapsedDays} ${comparison.elapsedDays == 1 ? 'day' : 'days'} between measurements',
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
-  String _date(DateTime value) =>
-      '${value.day.toString().padLeft(2, '0')}/${value.month.toString().padLeft(2, '0')}/${value.year}';
+  Widget _atAGlanceCard(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'At a glance',
+              style: Theme.of(
+                context,
+              ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                _summaryChip(
+                  context,
+                  '${BodyCompositionComparisonPresentation.comparableCount(comparison)} compared',
+                ),
+                _summaryChip(
+                  context,
+                  '${BodyCompositionComparisonPresentation.changedCount(comparison)} changed',
+                ),
+                if (BodyCompositionComparisonPresentation.unchangedCount(
+                      comparison,
+                    ) >
+                    0)
+                  _summaryChip(
+                    context,
+                    '${BodyCompositionComparisonPresentation.unchangedCount(comparison)} unchanged',
+                  ),
+                if (BodyCompositionComparisonPresentation.recordedOnceCount(
+                      comparison,
+                    ) >
+                    0)
+                  _summaryChip(
+                    context,
+                    '${BodyCompositionComparisonPresentation.recordedOnceCount(comparison)} recorded once',
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _summaryChip(BuildContext context, String label) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: scheme.secondaryContainer,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        label,
+        style: Theme.of(
+          context,
+        ).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w700),
+      ),
+    );
+  }
+
+  Widget _bmiContextCard(
+    BuildContext context,
+    String olderDate,
+    String newerDate,
+  ) {
+    final scheme = Theme.of(context).colorScheme;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'BMI context',
+              style: Theme.of(
+                context,
+              ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Reported and app-calculated BMI are shown separately so their sources stay clear.',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: scheme.onSurfaceVariant,
+                height: 1.35,
+              ),
+            ),
+            const SizedBox(height: 14),
+            _bmiRow(
+              context,
+              label: 'Reported BMI',
+              earlier: BodyCompositionComparisonPresentation.formatNumber(
+                comparison.olderReport.measurements.reportedBmi,
+              ),
+              latest: BodyCompositionComparisonPresentation.formatNumber(
+                comparison.newerReport.measurements.reportedBmi,
+              ),
+              olderDate: olderDate,
+              newerDate: newerDate,
+            ),
+            const Divider(height: 24),
+            _bmiRow(
+              context,
+              label: 'App-calculated BMI',
+              earlier:
+                  '${BodyCompositionComparisonPresentation.formatNumber(comparison.olderReport.calculatedBmi)}${comparison.olderReport.bmiBand == null ? '' : ' · ${comparison.olderReport.bmiBand}'}',
+              latest:
+                  '${BodyCompositionComparisonPresentation.formatNumber(comparison.newerReport.calculatedBmi)}${comparison.newerReport.bmiBand == null ? '' : ' · ${comparison.newerReport.bmiBand}'}',
+              olderDate: olderDate,
+              newerDate: newerDate,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _bmiRow(
+    BuildContext context, {
+    required String label,
+    required String earlier,
+    required String latest,
+    required String olderDate,
+    required String newerDate,
+  }) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        label,
+        style: Theme.of(
+          context,
+        ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w800),
+      ),
+      const SizedBox(height: 8),
+      Row(
+        children: [
+          Expanded(
+            child: _valueBlock(context, 'Earlier · $olderDate', earlier),
+          ),
+          const Icon(Icons.arrow_forward, size: 18),
+          Expanded(child: _valueBlock(context, 'Latest · $newerDate', latest)),
+        ],
+      ),
+    ],
+  );
+
+  Widget _sectionHeading(BuildContext context, String title, String detail) =>
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: 3),
+          Text(
+            detail,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              height: 1.35,
+            ),
+          ),
+        ],
+      );
+
+  Widget _metricCard(
+    BuildContext context, {
+    required BodyCompositionComparisonMetric metric,
+    required String olderDate,
+    required String newerDate,
+  }) {
+    final comparable = BodyCompositionComparisonPresentation.isComparable(
+      metric,
+    );
+    final scheme = Theme.of(context).colorScheme;
+    final relative =
+        BodyCompositionComparisonPresentation.relativeChangeDescription(metric);
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  comparable
+                      ? Icons.compare_arrows_outlined
+                      : Icons.info_outline,
+                  size: 19,
+                  color: scheme.primary,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    metric.label,
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+                if (metric.unit.trim().isNotEmpty)
+                  Text(
+                    metric.unit,
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      color: scheme.onSurfaceVariant,
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: _valueBlock(
+                    context,
+                    'Earlier · $olderDate',
+                    BodyCompositionComparisonPresentation.formatValue(
+                      metric.olderValue,
+                      metric.unit,
+                    ),
+                  ),
+                ),
+                Container(
+                  width: 1,
+                  height: 44,
+                  margin: const EdgeInsets.symmetric(horizontal: 12),
+                  color: Theme.of(context).dividerColor,
+                ),
+                Expanded(
+                  child: _valueBlock(
+                    context,
+                    'Latest · $newerDate',
+                    BodyCompositionComparisonPresentation.formatValue(
+                      metric.newerValue,
+                      metric.unit,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: scheme.secondaryContainer.withValues(alpha: 0.7),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    comparable ? 'Change from earlier' : 'Comparison status',
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      color: scheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    BodyCompositionComparisonPresentation.changeDescription(
+                      metric,
+                    ),
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  if (relative != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      relative,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: scheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _valueBlock(BuildContext context, String label, String value) =>
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 3),
+          Text(
+            value,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(
+              context,
+            ).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w800),
+          ),
+        ],
+      );
+
+  String _date(DateTime value) {
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    return '${value.day} ${months[value.month - 1]} ${value.year}';
+  }
 }
