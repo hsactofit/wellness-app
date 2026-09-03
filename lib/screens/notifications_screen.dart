@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/plan_models.dart';
+import '../screens/challenges_screen.dart';
 import '../screens/plan_screen.dart';
 import '../services/api_service.dart';
 
@@ -92,6 +93,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   void _openAction(String? actionTo) {
+    if (actionTo?.startsWith('/challenges') == true) {
+      Navigator.of(
+        context,
+      ).push(MaterialPageRoute(builder: (_) => const ChallengesScreen()));
+      return;
+    }
     final kind = switch (actionTo) {
       '/plans/nutrition' => PlanKind.nutrition,
       '/plans/workout' => PlanKind.workout,
@@ -165,7 +172,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                         final actionTo = item['action_to']?.toString();
                         final actionLabel = item['action_label']?.toString();
                         return GestureDetector(
-                          onTap: actionTo?.startsWith('/plans/') == true
+                          onTap:
+                              (actionTo?.startsWith('/plans/') == true ||
+                                  actionTo?.startsWith('/challenges') == true)
                               ? () => _openAction(actionTo)
                               : null,
                           child: Container(
@@ -238,10 +247,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                             ),
                                           ),
                                           if (actionTo?.startsWith('/plans/') ==
-                                              true) ...[
+                                                  true ||
+                                              actionTo?.startsWith(
+                                                    '/challenges',
+                                                  ) ==
+                                                  true) ...[
                                             const Spacer(),
                                             Text(
-                                              actionLabel ?? 'View plan',
+                                              actionLabel ?? 'View details',
                                               style: TextStyle(
                                                 fontSize: 11,
                                                 fontWeight: FontWeight.w800,

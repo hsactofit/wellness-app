@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../widgets/glass_card.dart';
 import '../widgets/concentric_rings_chart.dart';
-import '../services/health_service.dart';
 import '../services/auth_service.dart';
 
 class Challenge {
@@ -19,6 +18,11 @@ class Challenge {
   double? progressPct;
   final String? metricType;
   final double? targetValue;
+  final String resultStatus;
+  final double? score;
+  final int? rank;
+  final bool isCurrentLeader;
+  final bool isWinner;
 
   Challenge({
     required this.id,
@@ -33,6 +37,11 @@ class Challenge {
     required this.progressPct,
     required this.metricType,
     required this.targetValue,
+    required this.resultStatus,
+    required this.score,
+    required this.rank,
+    required this.isCurrentLeader,
+    required this.isWinner,
   });
 
   bool get hasAutoTracking =>
@@ -54,6 +63,8 @@ class Challenge {
   }
 
   String get timeLeft {
+    if (resultStatus == 'finalized') return 'Finalized';
+    if (resultStatus == 'calculating') return 'Results calculating';
     if (status == 'Ended') return "Ended";
     if (status == 'Scheduled') {
       if (startsAt == null) return "Upcoming";
@@ -72,7 +83,7 @@ class Challenge {
       case 'water':
         return "$target ml/day";
       case 'steps':
-        return "$target steps/day";
+        return "$target total steps";
       case 'sleep':
         return "$target hrs/day";
       case 'calories':
@@ -80,6 +91,13 @@ class Challenge {
       default:
         return "$target";
     }
+  }
+
+  String get verifiedScoreLabel {
+    if (score == null) return '';
+    if (metricType == 'steps') return '${score!.round()} verified steps';
+    if (metricType == 'water') return '${score!.round()} qualifying days';
+    return score!.toStringAsFixed(0);
   }
 
   factory Challenge.fromJson(Map<String, dynamic> json) {
@@ -96,6 +114,11 @@ class Challenge {
       progressPct: (json['progress_pct'] as num?)?.toDouble(),
       metricType: json['metric_type'] as String?,
       targetValue: (json['target_value'] as num?)?.toDouble(),
+      resultStatus: json['result_status'] as String? ?? 'pending',
+      score: (json['score'] as num?)?.toDouble(),
+      rank: json['rank'] as int?,
+      isCurrentLeader: json['is_current_leader'] as bool? ?? false,
+      isWinner: json['is_winner'] as bool? ?? false,
     );
   }
 }
@@ -111,7 +134,6 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
   int _userPoints = 0;
   bool _isLoading = true;
   String? _errorMessage;
-  HealthData _healthData = HealthData();
   List<Challenge> _challenges = [];
 
   @override
@@ -120,35 +142,11 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
     _loadData();
   }
 
-  Future<void> _waitForHomeSync() async {
-    if (HealthService.instance.homeSyncFuture != null) {
-      await HealthService.instance.homeSyncFuture;
-    }
-  }
-
-  Future<void> _loadData({
-    bool showLoadingIndicator = true,
-    bool forceRefresh = false,
-  }) async {
-    HealthData healthData = HealthData();
-    try {
-      healthData = await HealthService.instance.fetchHealthData(
-        forceRefresh: forceRefresh,
-      );
-    } catch (e) {
-      debugPrint("Error fetching health data: $e");
-    }
-
-    if (mounted) {
-      setState(() {
-        _healthData = healthData;
-      });
-      await _fetchPointsBalance();
-      await _fetchChallenges(
-        showLoadingIndicator: showLoadingIndicator,
-        forceRefresh: forceRefresh,
-      );
-    }
+  Future<void> _loadData({bool showLoadingIndicator = true}) async {
+    await Future.wait([
+      _fetchPointsBalance(),
+      _fetchChallenges(showLoadingIndicator: showLoadingIndicator),
+    ]);
   }
 
   Future<void> _fetchPointsBalance() async {
@@ -171,12 +169,7 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
     }
   }
 
-  Future<void> _fetchChallenges({
-    bool preventSync = false,
-    bool showLoadingIndicator = true,
-    bool forceRefresh = false,
-  }) async {
-    await _waitForHomeSync();
+  Future<void> _fetchChallenges({bool showLoadingIndicator = true}) async {
     if (showLoadingIndicator) {
       setState(() {
         _isLoading = true;
@@ -208,9 +201,6 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
         setState(() {
           _challenges = fetched;
         });
-        if (!preventSync) {
-          await _syncAutoProgress();
-        }
       } else {
         setState(() {
           _errorMessage =
@@ -231,69 +221,7 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
     }
   }
 
-  double? _todayValueFor(String metricType) {
-    switch (metricType) {
-      case 'water':
-        return _healthData.waterIntake;
-      case 'steps':
-        return _healthData.steps;
-      case 'sleep':
-        return _healthData.sleepDuration;
-      case 'calories':
-        return _healthData.activeCalories;
-      default:
-        return null;
-    }
-  }
-
-  Future<void> _syncAutoProgress() async {
-    bool didSyncAny = false;
-
-    for (var challenge in _challenges) {
-      if (!challenge.joined || !challenge.hasAutoTracking) continue;
-      final todayValue = _todayValueFor(challenge.metricType!);
-      if (todayValue == null) continue;
-
-      final computedPct = (todayValue / challenge.targetValue! * 100).clamp(
-        0.0,
-        100.0,
-      );
-      if (challenge.progressPct != null &&
-          (challenge.progressPct! - computedPct).abs() < 1.0) {
-        continue;
-      }
-
-      try {
-        final token = await AuthService.instance.getAccessToken();
-        final syncUrl = AuthService.apiUrl(
-          '/api/challenges/${challenge.id}/progress',
-        );
-
-        final response = await http.post(
-          syncUrl,
-          headers: {
-            'Content-Type': 'application/json',
-            if (token != null) 'Authorization': 'Bearer $token',
-          },
-          body: jsonEncode({'progress_pct': computedPct}),
-        );
-
-        if (response.statusCode == 200) {
-          didSyncAny = true;
-        }
-      } catch (e) {
-        debugPrint("Failed to sync progress for ${challenge.name}: $e");
-      }
-    }
-
-    if (didSyncAny) {
-      await _fetchChallenges(preventSync: true, showLoadingIndicator: false);
-      await _fetchPointsBalance();
-    }
-  }
-
   Future<void> _joinChallenge(Challenge challenge) async {
-    await _waitForHomeSync();
     setState(() {
       _isLoading = true;
     });
@@ -319,7 +247,8 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
         setState(() {
           challenge.joined = true;
         });
-        await _syncAutoProgress();
+        await _fetchChallenges(showLoadingIndicator: false);
+        await _fetchPointsBalance();
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -442,10 +371,7 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
             child: RefreshIndicator(
               color: Colors.blueAccent,
               onRefresh: () async {
-                await _loadData(
-                  showLoadingIndicator: false,
-                  forceRefresh: true,
-                );
+                await _loadData(showLoadingIndicator: false);
               },
               child: SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(
@@ -472,7 +398,7 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
                               ),
                             ),
                             Text(
-                              "Push your limits & earn rewards",
+                              "Join company challenges and follow verified scores",
                               style: TextStyle(
                                 color: secondaryTextColor,
                                 fontSize: 12,
@@ -867,6 +793,20 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
               height: 1.4,
             ),
           ),
+          if (challenge.score != null || challenge.rank != null) ...[
+            const SizedBox(height: 7),
+            Text(
+              [
+                if (challenge.score != null) challenge.verifiedScoreLabel,
+                if (challenge.rank != null) 'Rank #${challenge.rank}',
+              ].join(' · '),
+              style: TextStyle(
+                color: color,
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ],
           const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -901,6 +841,49 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
             ],
           ),
           const SizedBox(height: 8),
+          if (challenge.isWinner)
+            Container(
+              margin: const EdgeInsets.only(bottom: 10),
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: 0.14),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Text(
+                '🏆 You are the final winner. Your organization will contact you about the prize.',
+                style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700),
+              ),
+            )
+          else if (challenge.isCurrentLeader &&
+              challenge.resultStatus == 'pending')
+            Container(
+              margin: const EdgeInsets.only(bottom: 10),
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.10),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Text(
+                'You are currently leading. The winner is decided after the timeline and sync grace period.',
+                style: const TextStyle(
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            )
+          else if (challenge.resultStatus == 'calculating')
+            Container(
+              margin: const EdgeInsets.only(bottom: 10),
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.blueAccent.withValues(alpha: 0.10),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Text(
+                'Challenge ended — calculating verified results during the sync grace period.',
+                style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700),
+              ),
+            ),
           if (progressPct != null || challenge.hasAutoTracking) ...[
             ClipRRect(
               borderRadius: BorderRadius.circular(6),
@@ -918,7 +901,7 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  isCompleted ? "Completed! 🎉" : "In progress",
+                  isCompleted ? "Verified target reached" : "Verified progress",
                   style: TextStyle(color: secondaryTextColor, fontSize: 11),
                 ),
                 Text(
@@ -933,7 +916,7 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
             ),
           ] else
             Text(
-              "Manual challenge — progress is set by your wellness team.",
+              "Verified progress will appear after your activity syncs.",
               style: TextStyle(color: secondaryTextColor, fontSize: 11.5),
             ),
         ],
@@ -945,7 +928,9 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
     final textColor = isDark ? Colors.white : Colors.black87;
     final secondaryTextColor = isDark ? Colors.grey[400] : Colors.grey[600];
     final color = challenge.color;
-    final canJoin = challenge.status == 'Live';
+    final canJoin =
+        (challenge.status == 'Live' || challenge.status == 'Scheduled') &&
+        challenge.resultStatus == 'pending';
 
     return GlassCard(
       padding: const EdgeInsets.all(20),
@@ -986,6 +971,13 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
               height: 1.4,
             ),
           ),
+          if (challenge.resultStatus == 'calculating') ...[
+            const SizedBox(height: 8),
+            const Text(
+              'Challenge ended — results are calculating.',
+              style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700),
+            ),
+          ],
           const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
