@@ -1263,6 +1263,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen> {
   Widget _buildActiveWorkout(bool isDark) {
     final session = _session!;
     final plan = session.planSnapshot;
+    final videoPlan = exercisesWithDemonstrationVideos(plan);
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 110),
       child: Column(
@@ -1344,7 +1345,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen> {
             )
           else
             ...plan.map(_planItem),
-          if (plan.isNotEmpty) ...[
+          if (videoPlan.isNotEmpty) ...[
             const SizedBox(height: 16),
             Text(
               'Exercise videos',
@@ -1353,7 +1354,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen> {
               ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 8),
-            ...plan.map(_videoItem),
+            ...videoPlan.map(_videoItem),
           ],
           const SizedBox(height: 16),
           FilledButton.icon(
@@ -1391,20 +1392,15 @@ class _GymCheckinScreenState extends State<GymCheckinScreen> {
 
   Widget _videoItem(Map<String, dynamic> item) {
     final name = item['name']?.toString() ?? 'Exercise';
-    final videoId = exerciseVideoId(item);
+    final videoId = exerciseVideoId(item)!;
     return ExerciseVideoTile(
       name: name,
       details: exerciseDetails(item),
-      hasVideo: videoId != null,
       onOpen: () => _openExerciseVideo(name, videoId),
     );
   }
 
-  Future<void> _openExerciseVideo(String name, String? videoId) async {
-    if (videoId == null) {
-      _showSnack('No demonstration video for this exercise.');
-      return;
-    }
+  Future<void> _openExerciseVideo(String name, String videoId) async {
     if (!mounted) return;
     await Navigator.of(context).push(
       MaterialPageRoute(

@@ -5,14 +5,12 @@ class ExerciseVideoTile extends StatelessWidget {
     super.key,
     required this.name,
     required this.details,
-    required this.hasVideo,
     required this.onOpen,
   });
 
   final String name;
   final String details;
-  final bool hasVideo;
-  final VoidCallback? onOpen;
+  final VoidCallback onOpen;
 
   @override
   Widget build(BuildContext context) {
@@ -21,9 +19,7 @@ class ExerciseVideoTile extends StatelessWidget {
         onTap: onOpen,
         title: Text(name, style: const TextStyle(fontWeight: FontWeight.w700)),
         subtitle: details.isEmpty ? null : Text(details),
-        trailing: Icon(
-          hasVideo ? Icons.play_circle_outline : Icons.videocam_off_outlined,
-        ),
+        trailing: const Icon(Icons.play_circle_outline),
       ),
     );
   }
@@ -33,6 +29,16 @@ String? exerciseVideoId(Map<String, dynamic> item) {
   final value = item['video_id']?.toString();
   if (value == null || value.isEmpty) return null;
   return value;
+}
+
+/// Keeps the active-workout video list actionable: every rendered row has a
+/// trainer-approved catalog clip that the member can open.
+List<Map<String, dynamic>> exercisesWithDemonstrationVideos(
+  Iterable<Map<String, dynamic>> exercises,
+) {
+  return exercises
+      .where((exercise) => exerciseVideoId(exercise) != null)
+      .toList(growable: false);
 }
 
 String exerciseDetails(Map<String, dynamic> item) {
