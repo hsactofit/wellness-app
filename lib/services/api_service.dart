@@ -932,4 +932,14 @@ class ApiService {
     }
     throw Exception(_aiErrorDetail(response));
   }
+
+  /// DELETE /api/v1/ai/chat/conversations/{id}
+  Future<void> deleteAiChatConversation(String conversationId) async {
+    final response = await _delete(
+      '/api/v1/ai/chat/conversations/$conversationId',
+    );
+    if (response.statusCode != 204) {
+      throw Exception(_aiErrorDetail(response));
+    }
+  }
 }

@@ -11,7 +11,17 @@ import '../widgets/glass_card.dart';
 /// final reply). Server rate-limits messages per day; a 429 surfaces the
 /// real limit message as a bot reply rather than a generic error.
 class AIScreen extends StatefulWidget {
-  const AIScreen({super.key});
+  const AIScreen({
+    super.key,
+    this.listConversations,
+    this.getConversationMessages,
+    this.deleteConversation,
+  });
+
+  final Future<List<dynamic>> Function()? listConversations;
+  final Future<List<dynamic>> Function(String conversationId)?
+  getConversationMessages;
+  final Future<void> Function(String conversationId)? deleteConversation;
 
   @override
   State<AIScreen> createState() => _AIScreenState();
@@ -33,6 +43,18 @@ class _AIScreenState extends State<AIScreen> {
     "Tips for staying hydrated",
   ];
 
+  Future<List<dynamic>> _listConversations() =>
+      widget.listConversations?.call() ??
+      ApiService.instance.listAiChatConversations();
+
+  Future<List<dynamic>> _getConversationMessages(String conversationId) =>
+      widget.getConversationMessages?.call(conversationId) ??
+      ApiService.instance.getAiChatConversationMessages(conversationId);
+
+  Future<void> _deleteConversation(String conversationId) =>
+      widget.deleteConversation?.call(conversationId) ??
+      ApiService.instance.deleteAiChatConversation(conversationId);
+
   @override
   void initState() {
     super.initState();
@@ -42,14 +64,12 @@ class _AIScreenState extends State<AIScreen> {
   Future<void> _bootstrapChat() async {
     setState(() => _isLoadingHistory = true);
     try {
-      final conversations = await ApiService.instance.listAiChatConversations();
+      final conversations = await _listConversations();
       if (conversations.isNotEmpty) {
         final latest = Map<String, dynamic>.from(conversations.first as Map);
         final id = latest['id']?.toString();
         if (id != null) {
-          final items = await ApiService.instance.getAiChatConversationMessages(
-            id,
-          );
+          final items = await _getConversationMessages(id);
           if (items.isNotEmpty && mounted) {
             setState(() {
               _conversationId = id;
@@ -68,7 +88,7 @@ class _AIScreenState extends State<AIScreen> {
       if (mounted) setState(() => _isLoadingHistory = false);
     }
 
-    _loadInitialGreeting();
+    _resetToNewConversation();
   }
 
   List<Map<String, dynamic>> _messagesFromHistory(List<dynamic> items) {
@@ -87,9 +107,10 @@ class _AIScreenState extends State<AIScreen> {
     }).toList();
   }
 
-  void _loadInitialGreeting() {
+  void _resetToNewConversation() {
     if (!mounted) return;
     setState(() {
+      _conversationId = null;
       _messages
         ..clear()
         ..add({
@@ -180,17 +201,15 @@ class _AIScreenState extends State<AIScreen> {
 
   Future<void> _startNewConversation() async {
     if (_isSending) return;
-    setState(() {
-      _conversationId = null;
-      _messages.clear();
-    });
-    _loadInitialGreeting();
+    _resetToNewConversation();
   }
 
   Future<void> _openConversationHistory() async {
     if (_isSending || _isLoadingHistory) return;
 
-    final conversationsFuture = ApiService.instance.listAiChatConversations();
+    final conversationsFuture = _listConversations();
+    final removedConversationIds = <String>{};
+    final deletingConversationIds = <String>{};
     final selectedConversationId = await showModalBottomSheet<String>(
       context: context,
       backgroundColor: Colors.transparent,
@@ -199,162 +218,311 @@ class _AIScreenState extends State<AIScreen> {
         final sheetTheme = Theme.of(sheetContext);
         final sheetIsDark = sheetTheme.brightness == Brightness.dark;
         final sheetTextColor = sheetIsDark ? Colors.white : Colors.black87;
-        return FractionallySizedBox(
-          heightFactor: 0.68,
-          child: Container(
-            decoration: BoxDecoration(
-              color: sheetIsDark ? const Color(0xFF151B1B) : Colors.white,
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(26),
+        return StatefulBuilder(
+          builder: (context, setSheetState) => FractionallySizedBox(
+            heightFactor: 0.68,
+            child: Container(
+              decoration: BoxDecoration(
+                color: sheetIsDark ? const Color(0xFF151B1B) : Colors.white,
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(26),
+                ),
               ),
-            ),
-            child: SafeArea(
-              top: false,
-              child: FutureBuilder<List<dynamic>>(
-                future: conversationsFuture,
-                builder: (context, snapshot) {
-                  Widget content;
-                  if (snapshot.connectionState != ConnectionState.done) {
-                    content = const Center(
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    );
-                  } else if (snapshot.hasError) {
-                    content = Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(24),
-                        child: Text(
-                          'Could not load your chat history. Please try again.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: sheetIsDark
-                                ? Colors.white70
-                                : Colors.black54,
+              child: SafeArea(
+                top: false,
+                child: FutureBuilder<List<dynamic>>(
+                  future: conversationsFuture,
+                  builder: (context, snapshot) {
+                    Widget content;
+                    if (snapshot.connectionState != ConnectionState.done) {
+                      content = const Center(
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      );
+                    } else if (snapshot.hasError) {
+                      content = Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Text(
+                            'Could not load your chat history. Please try again.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: sheetIsDark
+                                  ? Colors.white70
+                                  : Colors.black54,
+                            ),
                           ),
                         ),
-                      ),
-                    );
-                  } else {
-                    final conversations = snapshot.data ?? const <dynamic>[];
-                    content = conversations.isEmpty
-                        ? Center(
-                            child: Text(
-                              'Your previous chats will appear here.',
-                              style: TextStyle(
-                                color: sheetIsDark
-                                    ? Colors.white70
-                                    : Colors.black54,
-                              ),
-                            ),
-                          )
-                        : ListView.separated(
-                            padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
-                            itemCount: conversations.length,
-                            separatorBuilder: (_, _) => Divider(
-                              height: 1,
-                              color: sheetIsDark
-                                  ? Colors.white10
-                                  : Colors.black12,
-                            ),
-                            itemBuilder: (context, index) {
-                              final raw = conversations[index];
-                              if (raw is! Map) return const SizedBox.shrink();
-                              final conversation = Map<String, dynamic>.from(
-                                raw,
-                              );
-                              final id = conversation['id']?.toString();
-                              if (id == null) return const SizedBox.shrink();
-                              final title =
-                                  (conversation['title'] as String? ?? '')
-                                      .trim();
-                              final preview =
-                                  (conversation['last_message_preview']
-                                              as String? ??
-                                          '')
-                                      .trim();
-                              return ListTile(
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 4,
-                                  vertical: 4,
-                                ),
-                                leading: Icon(
-                                  Icons.forum_outlined,
-                                  color: id == _conversationId
-                                      ? const Color(0xFFFF7A53)
-                                      : (sheetIsDark
-                                            ? Colors.white60
-                                            : Colors.black54),
-                                ),
-                                title: Text(
-                                  title.isEmpty ? 'New conversation' : title,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    color: sheetTextColor,
-                                    fontWeight: id == _conversationId
-                                        ? FontWeight.w700
-                                        : FontWeight.w600,
-                                  ),
-                                ),
-                                subtitle: Text(
-                                  preview.isEmpty
-                                      ? _formatConversationDate(
-                                          conversation['started_at'] as String?,
-                                        )
-                                      : preview,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    color: sheetIsDark
-                                        ? Colors.white60
-                                        : Colors.black54,
-                                  ),
-                                ),
-                                trailing: id == _conversationId
-                                    ? const Icon(
-                                        Icons.check_circle_rounded,
-                                        color: Color(0xFFFF7A53),
-                                        size: 20,
-                                      )
-                                    : null,
-                                onTap: () => Navigator.of(sheetContext).pop(id),
-                              );
-                            },
-                          );
-                  }
-
-                  return Column(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 16, 12, 8),
-                        child: Row(
-                          children: [
-                            Expanded(
+                      );
+                    } else {
+                      final conversations = (snapshot.data ?? const <dynamic>[])
+                          .where((raw) {
+                            if (raw is! Map) return true;
+                            final id = raw['id']?.toString();
+                            return id == null ||
+                                !removedConversationIds.contains(id);
+                          })
+                          .toList();
+                      content = conversations.isEmpty
+                          ? Center(
                               child: Text(
-                                'Chat history',
-                                style: sheetTheme.textTheme.titleLarge
-                                    ?.copyWith(
-                                      color: sheetTextColor,
-                                      fontWeight: FontWeight.w800,
-                                    ),
+                                'Your previous chats will appear here.',
+                                style: TextStyle(
+                                  color: sheetIsDark
+                                      ? Colors.white70
+                                      : Colors.black54,
+                                ),
                               ),
-                            ),
-                            IconButton(
-                              tooltip: 'Close',
-                              onPressed: () => Navigator.of(sheetContext).pop(),
-                              icon: Icon(
-                                Icons.close_rounded,
+                            )
+                          : ListView.separated(
+                              padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
+                              itemCount: conversations.length,
+                              separatorBuilder: (_, _) => Divider(
+                                height: 1,
                                 color: sheetIsDark
-                                    ? Colors.white70
-                                    : Colors.black54,
+                                    ? Colors.white10
+                                    : Colors.black12,
                               ),
-                            ),
-                          ],
+                              itemBuilder: (context, index) {
+                                final raw = conversations[index];
+                                if (raw is! Map) return const SizedBox.shrink();
+                                final conversation = Map<String, dynamic>.from(
+                                  raw,
+                                );
+                                final id = conversation['id']?.toString();
+                                if (id == null) return const SizedBox.shrink();
+                                final title =
+                                    (conversation['title'] as String? ?? '')
+                                        .trim();
+                                final displayTitle = title.isEmpty
+                                    ? 'New conversation'
+                                    : title;
+                                final preview =
+                                    (conversation['last_message_preview']
+                                                as String? ??
+                                            '')
+                                        .trim();
+                                final isActive = id == _conversationId;
+                                final isDeleting = deletingConversationIds
+                                    .contains(id);
+                                return Material(
+                                  color: Colors.transparent,
+                                  child: ListTile(
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 4,
+                                      vertical: 4,
+                                    ),
+                                    leading: Icon(
+                                      Icons.forum_outlined,
+                                      color: isActive
+                                          ? const Color(0xFFFF7A53)
+                                          : (sheetIsDark
+                                                ? Colors.white60
+                                                : Colors.black54),
+                                    ),
+                                    title: Text(
+                                      displayTitle,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        color: sheetTextColor,
+                                        fontWeight: isActive
+                                            ? FontWeight.w700
+                                            : FontWeight.w600,
+                                      ),
+                                    ),
+                                    subtitle: Text(
+                                      preview.isEmpty
+                                          ? _formatConversationDate(
+                                              conversation['started_at']
+                                                  as String?,
+                                            )
+                                          : preview,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        color: sheetIsDark
+                                            ? Colors.white60
+                                            : Colors.black54,
+                                      ),
+                                    ),
+                                    trailing: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        if (isActive)
+                                          const Icon(
+                                            Icons.check_circle_rounded,
+                                            color: Color(0xFFFF7A53),
+                                            size: 20,
+                                          ),
+                                        if (isActive) const SizedBox(width: 4),
+                                        if (isDeleting)
+                                          const SizedBox(
+                                            width: 40,
+                                            height: 40,
+                                            child: Padding(
+                                              padding: EdgeInsets.all(10),
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                              ),
+                                            ),
+                                          )
+                                        else
+                                          IconButton(
+                                            tooltip: 'Delete chat',
+                                            icon: Icon(
+                                              Icons.delete_outline_rounded,
+                                              color: sheetIsDark
+                                                  ? Colors.redAccent.shade100
+                                                  : Colors.red.shade700,
+                                            ),
+                                            onPressed: () async {
+                                              final confirmed = await showDialog<bool>(
+                                                context: sheetContext,
+                                                builder: (dialogContext) =>
+                                                    AlertDialog(
+                                                      title: const Text(
+                                                        'Delete chat?',
+                                                      ),
+                                                      content: Text(
+                                                        'Delete “$displayTitle” and all of its messages? This cannot be undone.',
+                                                      ),
+                                                      actions: [
+                                                        TextButton(
+                                                          onPressed: () =>
+                                                              Navigator.of(
+                                                                dialogContext,
+                                                              ).pop(false),
+                                                          child: const Text(
+                                                            'Cancel',
+                                                          ),
+                                                        ),
+                                                        TextButton(
+                                                          onPressed: () =>
+                                                              Navigator.of(
+                                                                dialogContext,
+                                                              ).pop(true),
+                                                          style:
+                                                              TextButton.styleFrom(
+                                                                foregroundColor:
+                                                                    Colors.red,
+                                                              ),
+                                                          child: const Text(
+                                                            'Delete',
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                              );
+                                              if (confirmed != true ||
+                                                  !sheetContext.mounted) {
+                                                return;
+                                              }
+                                              setSheetState(
+                                                () => deletingConversationIds
+                                                    .add(id),
+                                              );
+                                              try {
+                                                await _deleteConversation(id);
+                                                if (id == _conversationId &&
+                                                    mounted) {
+                                                  _resetToNewConversation();
+                                                }
+                                                if (!sheetContext.mounted) {
+                                                  return;
+                                                }
+                                                setSheetState(() {
+                                                  deletingConversationIds
+                                                      .remove(id);
+                                                  removedConversationIds.add(
+                                                    id,
+                                                  );
+                                                });
+                                                ScaffoldMessenger.of(
+                                                    sheetContext,
+                                                  )
+                                                  ..hideCurrentSnackBar()
+                                                  ..showSnackBar(
+                                                    const SnackBar(
+                                                      content: Text(
+                                                        'Chat deleted.',
+                                                      ),
+                                                    ),
+                                                  );
+                                              } catch (error) {
+                                                if (!sheetContext.mounted) {
+                                                  return;
+                                                }
+                                                setSheetState(
+                                                  () => deletingConversationIds
+                                                      .remove(id),
+                                                );
+                                                ScaffoldMessenger.of(
+                                                    sheetContext,
+                                                  )
+                                                  ..hideCurrentSnackBar()
+                                                  ..showSnackBar(
+                                                    SnackBar(
+                                                      content: Text(
+                                                        error
+                                                            .toString()
+                                                            .replaceFirst(
+                                                              'Exception: ',
+                                                              '',
+                                                            ),
+                                                      ),
+                                                    ),
+                                                  );
+                                              }
+                                            },
+                                          ),
+                                      ],
+                                    ),
+                                    onTap: isDeleting
+                                        ? null
+                                        : () => Navigator.of(
+                                            sheetContext,
+                                          ).pop(id),
+                                  ),
+                                );
+                              },
+                            );
+                    }
+
+                    return Column(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(20, 16, 12, 8),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  'Chat history',
+                                  style: sheetTheme.textTheme.titleLarge
+                                      ?.copyWith(
+                                        color: sheetTextColor,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                ),
+                              ),
+                              IconButton(
+                                tooltip: 'Close',
+                                onPressed: () =>
+                                    Navigator.of(sheetContext).pop(),
+                                icon: Icon(
+                                  Icons.close_rounded,
+                                  color: sheetIsDark
+                                      ? Colors.white70
+                                      : Colors.black54,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                      Expanded(child: content),
-                    ],
-                  );
-                },
+                        Expanded(child: content),
+                      ],
+                    );
+                  },
+                ),
               ),
             ),
           ),
@@ -371,9 +539,7 @@ class _AIScreenState extends State<AIScreen> {
     if (_isSending || _isLoadingHistory) return;
     setState(() => _isLoadingHistory = true);
     try {
-      final items = await ApiService.instance.getAiChatConversationMessages(
-        conversationId,
-      );
+      final items = await _getConversationMessages(conversationId);
       if (!mounted) return;
       setState(() {
         _conversationId = conversationId;
