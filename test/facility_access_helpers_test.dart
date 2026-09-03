@@ -41,7 +41,16 @@ void main() {
       ),
     ];
 
-    expect(upcomingBookings(bookings).map((item) => item.id), ['1']);
+    expect(upcomingBookings(bookings, now: day).map((item) => item.id), ['1']);
+  });
+
+  test('upcoming bookings hide an expired booked slot', () {
+    final booking = _booking(id: '1', status: 'booked', day: day);
+
+    expect(
+      upcomingBookings([booking], now: day.add(const Duration(hours: 12))),
+      isEmpty,
+    );
   });
 
   test('same-day booking is detected before another API round-trip', () {
@@ -56,5 +65,24 @@ void main() {
       isTrue,
     );
     expect(isAlreadyBookedMessage('This slot is full'), isFalse);
+  });
+
+  test('facility page reads the server-provided same-day cutoff', () {
+    final facility = EligibleFacility.fromJson({
+      'id': 'fac-1',
+      'code': 'BLR1',
+      'name': 'Medifit Indiranagar',
+      'city': 'Bengaluru',
+      'timezone': 'Asia/Kolkata',
+      'previously_visited': false,
+      'recommended': false,
+      'available_slots': 0,
+      'total_slots': 0,
+      'booking_closed': true,
+      'multi_facility': false,
+      'slots': [],
+    });
+
+    expect(facility.bookingClosed, isTrue);
   });
 }

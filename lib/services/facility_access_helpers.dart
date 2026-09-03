@@ -1,16 +1,23 @@
 import 'facility_booking_service.dart';
 
-bool isUpcomingBooking(MemberBooking booking) => booking.status == 'booked';
+bool isUpcomingBooking(MemberBooking booking, {DateTime? now}) =>
+    booking.status == 'booked' &&
+    booking.slot.endsAt.isAfter(now ?? DateTime.now());
 
-List<MemberBooking> upcomingBookings(List<MemberBooking> bookings) =>
-    bookings.where(isUpcomingBooking).toList();
+List<MemberBooking> upcomingBookings(
+  List<MemberBooking> bookings, {
+  DateTime? now,
+}) =>
+    bookings.where((booking) => isUpcomingBooking(booking, now: now)).toList();
 
 bool isSameCalendarDay(DateTime a, DateTime b) =>
     a.year == b.year && a.month == b.month && a.day == b.day;
 
 /// Facility booking dates are calendar dates from the API, not instants.
 MemberBooking? bookingOnDay(List<MemberBooking> bookings, DateTime day) {
-  for (final booking in upcomingBookings(bookings)) {
+  for (final booking in bookings.where(
+    (booking) => booking.status == 'booked',
+  )) {
     if (isSameCalendarDay(booking.bookingDate, day)) return booking;
   }
   return null;

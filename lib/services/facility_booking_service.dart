@@ -321,6 +321,7 @@ class EligibleFacility {
     required this.recommended,
     required this.availableSlots,
     required this.totalSlots,
+    required this.bookingClosed,
     required this.multiFacility,
     required this.mapsUrl,
     required this.slots,
@@ -336,6 +337,7 @@ class EligibleFacility {
   final bool recommended;
   final int availableSlots;
   final int totalSlots;
+  final bool bookingClosed;
   final bool multiFacility;
   final String? mapsUrl;
   final List<FacilitySlot> slots;
@@ -351,6 +353,7 @@ class EligibleFacility {
     recommended: body['recommended'] == true,
     availableSlots: (body['available_slots'] as num?)?.toInt() ?? 0,
     totalSlots: (body['total_slots'] as num?)?.toInt() ?? 0,
+    bookingClosed: body['booking_closed'] == true,
     multiFacility: body['multi_facility'] == true,
     mapsUrl: body['maps_url']?.toString(),
     slots: (body['slots'] as List? ?? [])

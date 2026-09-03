@@ -1140,6 +1140,8 @@ class _GymCheckinScreenState extends State<GymCheckinScreen> {
           Text(
             instant
                 ? 'Ask the manager for a one-time approval.'
+                : facility.bookingClosed
+                ? 'Bookings for today have closed at 10:00 PM. Choose tomorrow to reserve a slot.'
                 : '${facility.availableSlots} places left across ${facility.slots.length} hourly slots',
             style: TextStyle(color: isDark ? Colors.white70 : Colors.black54),
           ),
@@ -1149,10 +1151,23 @@ class _GymCheckinScreenState extends State<GymCheckinScreen> {
             child: FilledButton.icon(
               onPressed: instant
                   ? () => _requestInstant(facility)
+                  : facility.bookingClosed
+                  ? () =>
+                        _changeDay(DateTime.now().add(const Duration(days: 1)))
                   : () => _showSlotPicker(facility),
-              icon: Icon(instant ? Icons.flash_on : Icons.event_available),
+              icon: Icon(
+                instant
+                    ? Icons.flash_on
+                    : facility.bookingClosed
+                    ? Icons.calendar_today_outlined
+                    : Icons.event_available,
+              ),
               label: Text(
-                instant ? 'Request instant check-in' : 'View hourly slots',
+                instant
+                    ? 'Request instant check-in'
+                    : facility.bookingClosed
+                    ? "View tomorrow's slots"
+                    : 'View hourly slots',
               ),
             ),
           ),
