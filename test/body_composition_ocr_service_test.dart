@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:wellnessconnect/models/body_composition_report.dart';
 import 'package:wellnessconnect/services/body_composition_ocr_service.dart';
 
 void main() {
@@ -54,6 +55,43 @@ void main() {
     expect(values.bodyFatPct, isNull);
     expect(values.additionalMetrics, isEmpty);
   });
+
+  test(
+    'reads table-style OCR labels, values, and a named measurement date',
+    () {
+      const transcript = '''
+      BODY COMPOSITION REPORT
+      Measurement Date: 25 Aug 2026
+      Weight
+      72.4 kg
+      BMI
+      24.1
+      Body Fat
+      21.5 %
+      Scale Score
+      87 pts
+    ''';
+
+      final draft = BodyCompositionOcrService.instance.readReportFromText(
+        transcript,
+      );
+
+      expect(draft, isNotNull);
+      expect(draft!.measuredAt, DateTime(2026, 8, 25));
+      expect(draft.measurements.weightKg, 72.4);
+      expect(draft.measurements.reportedBmi, 24.1);
+      expect(draft.measurements.bodyFatPct, 21.5);
+      expect(
+        draft.measurements.additionalMetrics,
+        contains(
+          isA<AdditionalMeasurement>()
+              .having((metric) => metric.label, 'label', 'Scale Score')
+              .having((metric) => metric.value, 'value', 87)
+              .having((metric) => metric.unit, 'unit', 'pts'),
+        ),
+      );
+    },
+  );
 
   test('flags OCR without a report measurement for retake', () {
     final values = BodyCompositionOcrService.instance.extractMeasurements(

@@ -90,17 +90,23 @@ class BodyCompositionOcrService {
       for (var index = 0; index < lines.length; index++) {
         final lower = lines[index].toLowerCase();
         if (!aliases.any(lower.contains)) continue;
-        final value = _numberFromLine(lines[index]);
-        if (value == null) continue;
-        usedLines.add(index);
-        if (weight &&
-            RegExp(
-              r'\b(lb|lbs|pounds?)\b',
-              caseSensitive: false,
-            ).hasMatch(lines[index])) {
-          return value * 0.45359237;
+        // OCR often reads a table label and its value on separate adjacent
+        // lines, so accept both inline and next-line values.
+        for (final valueIndex in [index, index + 1]) {
+          if (valueIndex >= lines.length) continue;
+          final value = _numberFromLine(lines[valueIndex]);
+          if (value == null) continue;
+          usedLines.add(index);
+          usedLines.add(valueIndex);
+          if (weight &&
+              RegExp(
+                r'\b(lb|lbs|pounds?)\b',
+                caseSensitive: false,
+              ).hasMatch(lines[valueIndex])) {
+            return value * 0.45359237;
+          }
+          return value;
         }
-        return value;
       }
       return null;
     }
@@ -130,7 +136,12 @@ class BodyCompositionOcrService {
       final value = double.tryParse(
         (match.group(2) ?? '').replaceAll(',', '.'),
       );
-      if (label.isEmpty || value == null || label.length > 80) continue;
+      if (label.isEmpty ||
+          value == null ||
+          label.length > 80 ||
+          !RegExp(r'[A-Za-z]').hasMatch(label)) {
+        continue;
+      }
       additional.add(
         AdditionalMeasurement(
           label: label,
@@ -138,6 +149,30 @@ class BodyCompositionOcrService {
           unit: match.group(3)?.trim() ?? '',
         ),
       );
+      usedLines.add(index);
+    }
+
+    // Preserve extra table rows such as "Scale Score" followed by "87 pts".
+    for (var index = 0; index + 1 < lines.length; index++) {
+      if (usedLines.contains(index) || usedLines.contains(index + 1)) continue;
+      final label = lines[index].trim();
+      final valueMatch = RegExp(
+        r'^\s*(-?\d+(?:[.,]\d+)?)\s*([A-Za-z%/]+)?\s*$',
+      ).firstMatch(lines[index + 1]);
+      if (label.isEmpty || label.length > 80 || valueMatch == null) continue;
+      final value = double.tryParse(
+        (valueMatch.group(1) ?? '').replaceAll(',', '.'),
+      );
+      if (value == null) continue;
+      additional.add(
+        AdditionalMeasurement(
+          label: label,
+          value: value,
+          unit: valueMatch.group(2)?.trim() ?? '',
+        ),
+      );
+      usedLines.add(index);
+      usedLines.add(index + 1);
     }
 
     return BodyCompositionMeasurements(
@@ -199,6 +234,32 @@ class BodyCompositionOcrService {
       return DateTime.tryParse(
         '${dayFirst.group(3)}-${dayFirst.group(2)!.padLeft(2, '0')}-${dayFirst.group(1)!.padLeft(2, '0')}',
       );
+    }
+    final namedMonth = RegExp(
+      r'\b(\d{1,2})\s+(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s*,?\s*(20\d{2})\b',
+      caseSensitive: false,
+    ).firstMatch(transcript);
+    if (namedMonth != null) {
+      const months = {
+        'jan': 1,
+        'feb': 2,
+        'mar': 3,
+        'apr': 4,
+        'may': 5,
+        'jun': 6,
+        'jul': 7,
+        'aug': 8,
+        'sep': 9,
+        'oct': 10,
+        'nov': 11,
+        'dec': 12,
+      };
+      final month = months[namedMonth.group(2)!.substring(0, 3).toLowerCase()];
+      if (month != null) {
+        return DateTime.tryParse(
+          '${namedMonth.group(3)}-${month.toString().padLeft(2, '0')}-${namedMonth.group(1)!.padLeft(2, '0')}',
+        );
+      }
     }
     return null;
   }

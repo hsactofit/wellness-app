@@ -1,7 +1,10 @@
 import 'dart:io';
+import 'dart:typed_data';
+
 import 'package:file_selector/file_selector.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:printing/printing.dart';
+import 'package:pdf/pdf.dart' show PdfRasterBase;
+import 'package:printing/printing.dart' show PdfRaster, Printing;
 import 'package:uuid/uuid.dart';
 
 import '../models/body_composition_report.dart';
@@ -82,7 +85,13 @@ class BodyCompositionImportService {
             '${Directory.systemTemp.path}/medifit_body_composition_${_uuid.v4()}_$pageCount.png';
         rasterPaths.add(path);
         await BodyCompositionOcrService.instance.trackTemporaryCapture(path);
-        await File(path).writeAsBytes(await page.toPng(), flush: true);
+        // Core Graphics rasterizes ordinary PDFs onto a transparent canvas on
+        // iOS. Most reports paint only black text (not a white page), which
+        // makes the raw result effectively black-on-transparent for ML Kit.
+        // Flatten it here before OCR; the selected PDF remains untouched.
+        await File(
+          path,
+        ).writeAsBytes(await flattenRasterForOcr(page), flush: true);
         final pageDraft = await BodyCompositionOcrService.instance.readReport(
           path,
           inputMethod: BodyCompositionInputMethod.pdfImport,
@@ -126,6 +135,29 @@ class BodyCompositionImportService {
         await BodyCompositionOcrService.instance.deleteTemporaryCapture(path);
       }
     }
+  }
+
+  /// Converts a Printing.raster page into an opaque, white-backed PNG for
+  /// ML Kit. Core Graphics otherwise keeps ordinary PDF page backgrounds
+  /// transparent, which makes their black text unreadable by OCR on iOS.
+  static Future<Uint8List> flattenRasterForOcr(PdfRaster raster) async {
+    // The iOS Printing implementation returns premultiplied RGBA data. Alpha
+    // composite every pixel over white without touching the original PDF.
+    final pixels = Uint8List.fromList(raster.pixels);
+    for (var offset = 0; offset < pixels.length; offset += 4) {
+      final whiteContribution = 255 - pixels[offset + 3];
+      pixels[offset] = (pixels[offset] + whiteContribution).clamp(0, 255);
+      pixels[offset + 1] = (pixels[offset + 1] + whiteContribution).clamp(
+        0,
+        255,
+      );
+      pixels[offset + 2] = (pixels[offset + 2] + whiteContribution).clamp(
+        0,
+        255,
+      );
+      pixels[offset + 3] = 255;
+    }
+    return PdfRasterBase(raster.width, raster.height, false, pixels).toPng();
   }
 }
 
