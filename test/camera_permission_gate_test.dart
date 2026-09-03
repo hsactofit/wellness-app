@@ -39,4 +39,35 @@ void main() {
 
     expect(await gate.requestForQrScanner(), isFalse);
   });
+
+  test('does not prompt again after a permanent denial', () async {
+    var requestCalls = 0;
+    final gate = CameraPermissionGate(
+      status: () async => PermissionStatus.permanentlyDenied,
+      request: () async {
+        requestCalls++;
+        return PermissionStatus.permanentlyDenied;
+      },
+    );
+
+    expect(await gate.ensure(), CameraPermissionResult.permanentlyDenied);
+    expect(requestCalls, 0);
+  });
+
+  test('can skip the OS prompt when only checking current status', () async {
+    var requestCalls = 0;
+    final gate = CameraPermissionGate(
+      status: () async => PermissionStatus.denied,
+      request: () async {
+        requestCalls++;
+        return PermissionStatus.granted;
+      },
+    );
+
+    expect(
+      await gate.ensure(requestIfNeeded: false),
+      CameraPermissionResult.denied,
+    );
+    expect(requestCalls, 0);
+  });
 }

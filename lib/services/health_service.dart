@@ -668,6 +668,10 @@ class HealthService {
   }
 
   /// Request permissions from the system.
+  ///
+  /// On first use this presents the Apple Health or Health Connect sheet.
+  /// After the member has answered, the operating system keeps that grant
+  /// and later calls skip the sheet.
   Future<bool> requestPermissions() async {
     try {
       await initialize();
@@ -676,6 +680,13 @@ class HealthService {
       if (Platform.isAndroid) {
         if (await Permission.activityRecognition.request().isDenied) {
           debugPrint("Activity recognition permission was denied.");
+        }
+        // The health plugin can hang if authorization is requested again
+        // after Health Connect has already granted the same types.
+        final alreadyGranted = await _health.hasPermissions(readTypes);
+        if (alreadyGranted == true) {
+          debugPrint('Health Connect permissions are already granted.');
+          return true;
         }
       }
 

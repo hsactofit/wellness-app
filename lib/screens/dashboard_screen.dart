@@ -646,6 +646,10 @@ class DashboardScreenState extends State<DashboardScreen>
     }
   }
 
+  // Retained for work-email accounts that later need Google/Apple identity.
+  // Connect no longer waits on this, so HealthKit/Health Connect can prompt
+  // on first use.
+  // ignore: unused_element
   Future<bool> _ensureSsoHealthProviderLinked() async {
     final prefs = await SharedPreferences.getInstance();
     if (prefs.getString('user_provider') != 'sso') return true;
@@ -725,13 +729,14 @@ class DashboardScreenState extends State<DashboardScreen>
   }) async {
     if (_isRequestingHealthPermissions) return;
 
-    final linked = await _ensureSsoHealthProviderLinked();
-    if (!linked) return;
-
-    if (Platform.isAndroid &&
-        _sdkStatus != HealthConnectSdkStatus.sdkAvailable) {
-      _showDownloadRationaleDialog();
-      return;
+    if (Platform.isAndroid) {
+      var status = _sdkStatus;
+      status ??= await HealthService.instance.getAndroidSdkStatus();
+      if (mounted) setState(() => _sdkStatus = status);
+      if (status != HealthConnectSdkStatus.sdkAvailable) {
+        _showDownloadRationaleDialog();
+        return;
+      }
     }
 
     setState(() {
@@ -739,9 +744,9 @@ class DashboardScreenState extends State<DashboardScreen>
       _isRequestingHealthPermissions = true;
     });
     try {
-      final success = await HealthService.instance.requestPermissions().timeout(
-        const Duration(seconds: 30),
-      );
+      // Do not time out the OS permission sheet. Apple Health and Health
+      // Connect wait for the member to choose each data type.
+      final success = await HealthService.instance.requestPermissions();
       if (!mounted) return;
       setState(() => _isConnected = success);
 
@@ -782,16 +787,6 @@ class DashboardScreenState extends State<DashboardScreen>
             content: Text(
               "Failed to grant health permissions. Please enable them to sync data.",
             ),
-            backgroundColor: Colors.orange,
-          ),
-        );
-      }
-    } on TimeoutException {
-      debugPrint('HealthKit authorization did not return within 30 seconds.');
-      if (mounted && showSnackbarOnFailure) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("HealthKit did not respond. Please try Grant again."),
             backgroundColor: Colors.orange,
           ),
         );

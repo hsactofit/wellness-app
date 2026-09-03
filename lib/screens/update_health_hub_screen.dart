@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/body_composition_report.dart';
 import '../services/body_composition_import_service.dart';
+import '../services/camera_permission_gate.dart';
 import 'body_composition_reports_screen.dart';
 import 'body_composition_report_review_screen.dart';
 import 'body_composition_comparison_screen.dart';
@@ -20,6 +21,23 @@ class _UpdateHealthHubScreenState extends State<UpdateHealthHubScreen> {
   bool _busy = false;
 
   Future<void> _scan() async {
+    final gate = CameraPermissionGate();
+    final permission = await gate.ensure();
+    if (!mounted) return;
+    if (permission != CameraPermissionResult.granted) {
+      if (permission == CameraPermissionResult.permanentlyDenied) {
+        await gate.openSettings();
+      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Camera access is required to scan a body-composition report.',
+          ),
+        ),
+      );
+      return;
+    }
     final draft = await Navigator.of(context).push<BodyCompositionDraft>(
       MaterialPageRoute(builder: (_) => const UpdateHealthCameraScreen()),
     );
@@ -64,7 +82,9 @@ class _UpdateHealthHubScreenState extends State<UpdateHealthHubScreen> {
 
   Future<void> _compare() async {
     await Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const BodyCompositionComparisonScreen()),
+      MaterialPageRoute(
+        builder: (_) => const BodyCompositionComparisonScreen(),
+      ),
     );
   }
 

@@ -7,6 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../app_brand.dart';
 import '../services/camera_permission_gate.dart';
+import '../services/facility_access_helpers.dart';
 import '../services/facility_booking_service.dart';
 import '../services/facility_directions_launcher.dart';
 import '../services/facility_rating_service.dart';
@@ -41,7 +42,9 @@ class _GymCheckinScreenState extends State<GymCheckinScreen> {
   _AccessView _view = _AccessView.home;
   DateTime _selectedDay = DateTime.now();
   FacilityPage? _facilityPage;
+  final Map<String, FacilityPage> _facilityCache = {};
   List<MemberBooking> _bookings = const [];
+  bool? _workoutDataConsentActive;
   FacilityAccessRequest? _accessRequest;
   EligibleFacility? _instantFacility;
   ActiveWorkoutSession? _session;
@@ -102,8 +105,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen> {
         requestLocationPermission: true,
       );
     } else {
-      await _loadFacilities();
-      await _loadBookings();
+      await Future.wait([_loadFacilities(), _loadBookings()]);
       await _restorePendingRating(present: true);
     }
   }
@@ -133,7 +135,14 @@ class _GymCheckinScreenState extends State<GymCheckinScreen> {
         page: _facilityPageNumber,
       );
       if (!mounted) return;
-      setState(() => _facilityPage = page);
+      setState(() {
+        _facilityPage = page;
+        _facilityCache[facilityDayKey(
+              _selectedDay,
+              page: _facilityPageNumber,
+            )] =
+            page;
+      });
     } on FacilityBookingException catch (error) {
       if (mounted) _showSnack(error.message, isError: true);
     } catch (_) {
@@ -202,47 +211,85 @@ class _GymCheckinScreenState extends State<GymCheckinScreen> {
 
   void _showSnack(String message, {bool isError = false}) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(message),
-          backgroundColor: isError ? Colors.redAccent : Colors.green,
-        ),
-      );
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.hideCurrentSnackBar();
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+        duration: Duration(seconds: isError ? 5 : 4),
+        backgroundColor: isError ? Colors.redAccent : Colors.green,
+      ),
+    );
   }
 
   void _openFacilities() {
+    final today = DateTime.now();
+    final cached = _facilityCache[facilityDayKey(today)];
     setState(() {
       _view = _AccessView.facilities;
       _facilityPageNumber = 1;
-      _selectedDay = DateTime.now();
-      _facilityPage = null;
+      _selectedDay = today;
+      _facilityPage = cached;
     });
-    _loadFacilities();
+    if (cached == null) {
+      _loadFacilities();
+    }
   }
 
   void _openInstant() {
+    final cached = _facilityCache[facilityDayKey(_selectedDay)];
     setState(() {
       _view = _AccessView.instantFacilities;
       _facilityPageNumber = 1;
-      _facilityPage = null;
+      _facilityPage = cached;
     });
-    _loadFacilities();
+    if (cached == null) {
+      _loadFacilities();
+    }
   }
 
   Future<void> _changeDay(DateTime day) async {
+    final cached = _facilityCache[facilityDayKey(day)];
     setState(() {
       _selectedDay = day;
       _facilityPageNumber = 1;
-      _facilityPage = null;
+      _facilityPage = cached;
     });
-    await _loadFacilities();
+    if (cached == null) {
+      await _loadFacilities();
+    }
+  }
+
+  void _changeFacilityPage(int page) {
+    final cached = _facilityCache[facilityDayKey(_selectedDay, page: page)];
+    setState(() {
+      _facilityPageNumber = page;
+      _facilityPage = cached;
+    });
+    if (cached == null) {
+      _loadFacilities();
+    }
+  }
+
+  void _goBackFromSubView() {
+    _requestPollTimer?.cancel();
+    _scannerController?.dispose();
+    _scannerController = null;
+    setState(() {
+      _view = _AccessView.home;
+      _cameraPermissionGranted = false;
+    });
+    unawaited(_loadBookings());
   }
 
   Future<bool> _ensureWorkoutDataConsent({required String action}) async {
     try {
-      if ((await _bookingService.fetchWorkoutDataConsent()).active) return true;
+      if (_workoutDataConsentActive == true) return true;
+      if ((await _bookingService.fetchWorkoutDataConsent()).active) {
+        _workoutDataConsentActive = true;
+        return true;
+      }
       if (!mounted) return false;
       final approved = await showDialog<bool>(
         context: context,
@@ -271,6 +318,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen> {
         return false;
       }
       await _bookingService.setWorkoutDataConsent(granted: true);
+      _workoutDataConsentActive = true;
       return true;
     } on FacilityBookingException catch (error) {
       _showSnack(error.message, isError: true);
@@ -286,21 +334,65 @@ class _GymCheckinScreenState extends State<GymCheckinScreen> {
 
   Future<void> _bookSlot(EligibleFacility facility, FacilitySlot slot) async {
     if (slot.remaining <= 0 || slot.isStarted) return;
+    final existing = bookingOnDay(_bookings, _selectedDay);
+    if (existing != null) {
+      await _showAlreadyBookedDialog(existing);
+      return;
+    }
     if (!await _ensureRatingComplete()) return;
     if (!await _ensureWorkoutDataConsent(action: 'book this slot')) return;
     setState(() => _actionInProgress = true);
     try {
       final booking = await _bookingService.bookSlot(slot.id);
-      await _loadBookings();
       if (!mounted) return;
+      _facilityCache.remove(
+        facilityDayKey(_selectedDay, page: _facilityPageNumber),
+      );
+      setState(() {
+        _actionInProgress = false;
+        _bookings = [
+          booking,
+          ..._bookings.where((item) => item.id != booking.id),
+        ];
+      });
       _showSnack('Slot booked at ${booking.facilityName}.');
       await _showBookingConfirmation(booking);
-      await _loadFacilities();
+      unawaited(_loadFacilities());
+      unawaited(_loadBookings());
     } on FacilityBookingException catch (error) {
-      if (mounted) _showSnack(error.message, isError: true);
-    } finally {
-      if (mounted) setState(() => _actionInProgress = false);
+      if (!mounted) return;
+      setState(() => _actionInProgress = false);
+      if (isAlreadyBookedMessage(error.message)) {
+        await _showAlreadyBookedDialog(bookingOnDay(_bookings, _selectedDay));
+      } else {
+        _showSnack(error.message, isError: true);
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _actionInProgress = false);
+        _showSnack('Could not book this slot.', isError: true);
+      }
     }
+  }
+
+  Future<void> _showAlreadyBookedDialog(MemberBooking? booking) async {
+    if (!mounted) return;
+    final details = booking == null
+        ? 'You already have a facility booking on this day. Only one slot can be reserved per day.'
+        : 'You already booked ${booking.facilityName} at ${_formatSlot(booking.slot)}. Cancel that booking first if you want a different slot.';
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('You already have a booking on this day'),
+        content: Text(details),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _showBookingConfirmation(MemberBooking booking) async {
@@ -534,11 +626,16 @@ class _GymCheckinScreenState extends State<GymCheckinScreen> {
     setState(() => _actionInProgress = true);
     try {
       final booking = await _bookingService.acceptSuggestion(requestId);
-      await _loadBookings();
-      if (mounted) {
-        _showSnack('Suggested slot booked at ${booking.facilityName}.');
-        _startBookedCheckin(booking);
-      }
+      if (!mounted) return;
+      setState(() {
+        _bookings = [
+          booking,
+          ..._bookings.where((item) => item.id != booking.id),
+        ];
+      });
+      _showSnack('Suggested slot booked at ${booking.facilityName}.');
+      _startBookedCheckin(booking);
+      unawaited(_loadBookings());
     } on FacilityBookingException catch (error) {
       if (mounted) _showSnack(error.message, isError: true);
     } finally {
@@ -578,14 +675,19 @@ class _GymCheckinScreenState extends State<GymCheckinScreen> {
   }
 
   Future<void> _openScanner() async {
-    final cameraAccessGranted = await CameraPermissionGate()
-        .requestForQrScanner();
+    final gate = CameraPermissionGate();
+    final result = await gate.ensure();
     if (!mounted) return;
-    if (!cameraAccessGranted) {
+    if (result != CameraPermissionResult.granted) {
       _showSnack(
-        'Camera access is required to scan the facility QR.',
+        result == CameraPermissionResult.permanentlyDenied
+            ? 'Camera access is required to scan the facility QR. Enable it in Settings.'
+            : 'Camera access is required to scan the facility QR.',
         isError: true,
       );
+      if (result == CameraPermissionResult.permanentlyDenied) {
+        await gate.openSettings();
+      }
       return;
     }
     _scannerController?.dispose();
@@ -747,37 +849,41 @@ class _GymCheckinScreenState extends State<GymCheckinScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(_session == null ? 'Gym access' : 'Active workout'),
-        leading: _view == _AccessView.home
-            ? null
-            : IconButton(
-                icon: const Icon(Icons.arrow_back),
-                onPressed: () {
-                  _requestPollTimer?.cancel();
-                  setState(() => _view = _AccessView.home);
-                },
+    return PopScope(
+      canPop: _view == _AccessView.home,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        _goBackFromSubView();
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(_session == null ? 'Gym access' : 'Active workout'),
+          leading: _view == _AccessView.home
+              ? null
+              : IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  onPressed: _goBackFromSubView,
+                ),
+        ),
+        body: _loading
+            ? const Center(child: CircularProgressIndicator())
+            : Stack(
+                children: [
+                  SafeArea(
+                    child: _session != null
+                        ? _buildActiveWorkout(isDark)
+                        : _buildAccessView(isDark),
+                  ),
+                  if (_actionInProgress)
+                    const Positioned.fill(
+                      child: ColoredBox(
+                        color: Color(0x55000000),
+                        child: Center(child: CircularProgressIndicator()),
+                      ),
+                    ),
+                ],
               ),
       ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : Stack(
-              children: [
-                SafeArea(
-                  child: _session != null
-                      ? _buildActiveWorkout(isDark)
-                      : _buildAccessView(isDark),
-                ),
-                if (_actionInProgress)
-                  const Positioned.fill(
-                    child: ColoredBox(
-                      color: Color(0x55000000),
-                      child: Center(child: CircularProgressIndicator()),
-                    ),
-                  ),
-              ],
-            ),
     );
   }
 
@@ -830,7 +936,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen> {
             onTap: _openInstant,
             color: Colors.orangeAccent,
           ),
-          if (_bookings.isNotEmpty) ...[
+          if (upcomingBookings(_bookings).isNotEmpty) ...[
             const SizedBox(height: 18),
             Text(
               'My upcoming bookings',
@@ -839,10 +945,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen> {
               ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 4),
-            ..._bookings
-                .where((booking) => booking.status == 'booked')
-                .take(5)
-                .map(_bookingCard),
+            ...upcomingBookings(_bookings).take(5).map(_bookingCard),
           ],
         ],
       ),
@@ -962,26 +1065,14 @@ class _GymCheckinScreenState extends State<GymCheckinScreen> {
                     IconButton(
                       tooltip: 'Previous page',
                       onPressed: page.page > 1
-                          ? () {
-                              setState(() {
-                                _facilityPageNumber--;
-                                _facilityPage = null;
-                              });
-                              _loadFacilities();
-                            }
+                          ? () => _changeFacilityPage(page.page - 1)
                           : null,
                       icon: const Icon(Icons.chevron_left),
                     ),
                     IconButton(
                       tooltip: 'Next page',
                       onPressed: page.hasNext
-                          ? () {
-                              setState(() {
-                                _facilityPageNumber++;
-                                _facilityPage = null;
-                              });
-                              _loadFacilities();
-                            }
+                          ? () => _changeFacilityPage(page.page + 1)
                           : null,
                       icon: const Icon(Icons.chevron_right),
                     ),

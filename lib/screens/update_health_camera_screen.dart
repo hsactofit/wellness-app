@@ -3,10 +3,10 @@ import 'dart:io';
 
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
-import 'package:permission_handler/permission_handler.dart';
 
 import '../models/body_composition_report.dart';
 import '../services/body_composition_ocr_service.dart';
+import '../services/camera_permission_gate.dart';
 
 enum _CaptureState {
   preparing,
@@ -59,11 +59,10 @@ class _UpdateHealthCameraScreenState extends State<UpdateHealthCameraScreen>
       _errorMessage = null;
     });
 
-    var permission = await Permission.camera.status;
-    if (!permission.isGranted && requestPermission) {
-      permission = await Permission.camera.request();
-    }
-    if (!permission.isGranted) {
+    final permission = await CameraPermissionGate().ensure(
+      requestIfNeeded: requestPermission,
+    );
+    if (permission != CameraPermissionResult.granted) {
       if (!mounted) {
         return;
       }
@@ -303,8 +302,10 @@ class _UpdateHealthCameraScreenState extends State<UpdateHealthCameraScreen>
               'Use your camera to scan a gym BMI or body-composition report. The photo is read on this device and deleted before upload.',
           primaryLabel: 'Allow Camera',
           onPrimary: () async {
-            if (await Permission.camera.isPermanentlyDenied) {
-              await openAppSettings();
+            final gate = CameraPermissionGate();
+            final result = await gate.ensure(requestIfNeeded: false);
+            if (result == CameraPermissionResult.permanentlyDenied) {
+              await gate.openSettings();
             } else {
               await _prepareCamera();
             }
