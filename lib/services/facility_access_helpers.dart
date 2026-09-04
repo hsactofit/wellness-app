@@ -24,13 +24,14 @@ List<MemberBooking> upcomingBookings(
 }) =>
     bookings.where((booking) => isUpcomingBooking(booking, now: now)).toList();
 
-/// A booking is history once its reserved hour has finished.  The lifecycle
-/// worker eventually turns an unattended booking into `no_show`, but this
-/// local boundary means the member never loses sight of the visit while that
-/// asynchronous update is still pending.
+/// A checked-in booking moves to history immediately, even while its reserved
+/// hour is still in progress. An unattended booking moves there once the hour
+/// has finished; the lifecycle worker eventually turns it into `no_show`.
 bool isPreviousBooking(MemberBooking booking, {DateTime? now}) =>
     booking.status != 'cancelled' &&
-    !booking.slot.endsAt.isAfter(now ?? DateTime.now());
+    (booking.status == 'checked_in' ||
+        booking.status == 'completed' ||
+        !booking.slot.endsAt.isAfter(now ?? DateTime.now()));
 
 List<MemberBooking> previousBookings(
   List<MemberBooking> bookings, {

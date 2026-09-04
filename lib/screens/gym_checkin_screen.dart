@@ -783,6 +783,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
           bookingId: _bookingId,
           instantRequestId: _instantRequestId,
         );
+        final checkedInBookingId = session['booking_id']?.toString();
         await WorkoutSessionService.instance.saveCheckIn(
           session: session,
           fallbackFacilityName: _instantFacility?.name ?? 'Facility',
@@ -799,11 +800,21 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
         if (!mounted) return;
         setState(() {
           _session = active;
+          if (checkedInBookingId != null) {
+            _bookings = _bookings
+                .map(
+                  (booking) => booking.id == checkedInBookingId
+                      ? booking.copyWith(status: 'checked_in')
+                      : booking,
+                )
+                .toList();
+          }
           _view = _AccessView.home;
           _bookingId = null;
           _instantRequestId = null;
           _accessRequest = null;
         });
+        unawaited(_loadBookings());
         await _hidePersistentTimer();
         _startTimer();
         widget.onStatusChanged?.call();

@@ -62,6 +62,15 @@ void main() {
     );
   });
 
+  test('a checked-in booking moves to history before its hour ends', () {
+    final booking = _booking(id: '1', status: 'checked_in', day: day);
+    final duringSlot = day.add(const Duration(hours: 10, minutes: 30));
+
+    expect(upcomingBookings([booking], now: duringSlot), isEmpty);
+    expect(previousBookings([booking], now: duringSlot).single.id, '1');
+    expect(bookingHistoryStatus(booking, now: duringSlot)?.label, 'Attended');
+  });
+
   test(
     'previous bookings retain completed, attended, and absent slot states',
     () {

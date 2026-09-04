@@ -415,6 +415,17 @@ class MemberBooking {
   final String status;
   final bool capacityOverride;
 
+  MemberBooking copyWith({String? status}) => MemberBooking(
+    id: id,
+    facilityId: facilityId,
+    facilityName: facilityName,
+    facilityCode: facilityCode,
+    slot: slot,
+    bookingDate: bookingDate,
+    status: status ?? this.status,
+    capacityOverride: capacityOverride,
+  );
+
   factory MemberBooking.fromJson(Map body) => MemberBooking(
     id: body['id'].toString(),
     facilityId: body['facility_id'].toString(),
