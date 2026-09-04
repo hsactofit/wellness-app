@@ -1,5 +1,19 @@
 import 'facility_booking_service.dart';
 
+/// Prevents repeated camera frames from opening more than one member-code
+/// dialog while the first QR check-in is still being resolved.
+class QrCheckinGate {
+  bool _active = false;
+
+  bool tryBegin() {
+    if (_active) return false;
+    _active = true;
+    return true;
+  }
+
+  void end() => _active = false;
+}
+
 bool isUpcomingBooking(MemberBooking booking, {DateTime? now}) =>
     booking.status == 'booked' &&
     booking.slot.endsAt.isAfter(now ?? DateTime.now());

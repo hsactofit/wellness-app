@@ -40,6 +40,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
   final _manualFacilityController = TextEditingController();
   final _reasonController = TextEditingController();
   final _completedItems = <String>{};
+  final _qrCheckinGate = QrCheckinGate();
 
   _AccessView _view = _AccessView.home;
   DateTime _selectedDay = DateTime.now();
@@ -739,81 +740,85 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
   }
 
   Future<void> _handleQr(String rawValue) async {
-    if (_actionInProgress) return;
-    String code = rawValue.trim();
+    if (_actionInProgress || !_qrCheckinGate.tryBegin()) return;
     try {
-      final parsed = jsonDecode(rawValue);
-      if (parsed is Map) {
-        code =
-            (parsed['code'] ??
-                    parsed['facility_code'] ??
-                    parsed['name'] ??
-                    code)
-                .toString();
+      String code = rawValue.trim();
+      try {
+        final parsed = jsonDecode(rawValue);
+        if (parsed is Map) {
+          code =
+              (parsed['code'] ??
+                      parsed['facility_code'] ??
+                      parsed['name'] ??
+                      code)
+                  .toString();
+        }
+      } catch (_) {
+        // Raw facility codes are supported for regenerated demo stickers.
       }
-    } catch (_) {
-      // Raw facility codes are supported for regenerated demo stickers.
-    }
-    if (_expectedFacilityCode != null &&
-        code.toUpperCase() != _expectedFacilityCode!.toUpperCase()) {
-      _showSnack('This QR belongs to another facility.', isError: true);
-      return;
-    }
-    if (!await _ensureRatingComplete()) return;
-    if (!await _ensureWorkoutDataConsent(action: 'check in')) return;
-    _scannerController?.stop();
-    if (!mounted) return;
-    final pin = await showDialog<String>(
-      context: context,
-      builder: (_) => _MemberPinDialog(
-        facilityName: _instantFacility?.name ?? 'your facility',
-      ),
-    );
-    if (pin == null || !mounted) {
-      if (mounted) _scannerController?.start();
-      return;
-    }
-    setState(() => _actionInProgress = true);
-    try {
-      final session = await WorkoutSessionService.instance.checkIn(
-        facilityCode: _expectedFacilityCode ?? code,
-        memberPin: pin,
-        bookingId: _bookingId,
-        instantRequestId: _instantRequestId,
-      );
-      await WorkoutSessionService.instance.saveCheckIn(
-        session: session,
-        fallbackFacilityName: _instantFacility?.name ?? 'Facility',
-        fallbackFacilityPlace: _instantFacility?.address ?? '',
-        showPersistentTimer: false,
-      );
-      // Start slot/hourly prompts and contextual location handling as soon as
-      // the server confirms check-in; waiting for a future app resume leaves
-      // a newly started workout without its reminder schedule.
-      await WorkoutSessionService.instance.startMonitoring(
-        requestLocationPermission: true,
-      );
-      final active = await WorkoutSessionService.instance.loadActiveSession();
+      if (_expectedFacilityCode != null &&
+          code.toUpperCase() != _expectedFacilityCode!.toUpperCase()) {
+        _showSnack('This QR belongs to another facility.', isError: true);
+        return;
+      }
+      if (!await _ensureRatingComplete()) return;
+      if (!await _ensureWorkoutDataConsent(action: 'check in')) return;
+      _scannerController?.stop();
       if (!mounted) return;
-      setState(() {
-        _session = active;
-        _view = _AccessView.home;
-        _bookingId = null;
-        _instantRequestId = null;
-        _accessRequest = null;
-      });
-      await _hidePersistentTimer();
-      _startTimer();
-      widget.onStatusChanged?.call();
-      _showSnack('Workout started. Your timer is running.');
-    } on WorkoutSessionException catch (error) {
-      if (mounted) _showSnack(error.message, isError: true);
-      _scannerController?.start();
-    } catch (_) {
-      if (mounted) _showSnack('Could not start the workout.', isError: true);
-      _scannerController?.start();
+      final pin = await showDialog<String>(
+        context: context,
+        builder: (_) => MemberPinDialog(
+          facilityName: _instantFacility?.name ?? 'your facility',
+        ),
+      );
+      if (pin == null || !mounted) {
+        if (mounted) _scannerController?.start();
+        return;
+      }
+      setState(() => _actionInProgress = true);
+      try {
+        final session = await WorkoutSessionService.instance.checkIn(
+          facilityCode: _expectedFacilityCode ?? code,
+          memberPin: pin,
+          bookingId: _bookingId,
+          instantRequestId: _instantRequestId,
+        );
+        await WorkoutSessionService.instance.saveCheckIn(
+          session: session,
+          fallbackFacilityName: _instantFacility?.name ?? 'Facility',
+          fallbackFacilityPlace: _instantFacility?.address ?? '',
+          showPersistentTimer: false,
+        );
+        // Start slot/hourly prompts and contextual location handling as soon as
+        // the server confirms check-in; waiting for a future app resume leaves
+        // a newly started workout without its reminder schedule.
+        await WorkoutSessionService.instance.startMonitoring(
+          requestLocationPermission: true,
+        );
+        final active = await WorkoutSessionService.instance.loadActiveSession();
+        if (!mounted) return;
+        setState(() {
+          _session = active;
+          _view = _AccessView.home;
+          _bookingId = null;
+          _instantRequestId = null;
+          _accessRequest = null;
+        });
+        await _hidePersistentTimer();
+        _startTimer();
+        widget.onStatusChanged?.call();
+        _showSnack('Workout started. Your timer is running.');
+      } on WorkoutSessionException catch (error) {
+        if (mounted) _showSnack(error.message, isError: true);
+        _scannerController?.start();
+      } catch (_) {
+        if (mounted) _showSnack('Could not start the workout.', isError: true);
+        _scannerController?.start();
+      } finally {
+        if (mounted) setState(() => _actionInProgress = false);
+      }
     } finally {
-      if (mounted) setState(() => _actionInProgress = false);
+      _qrCheckinGate.end();
     }
   }
 
@@ -1634,13 +1639,13 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
       a.year == b.year && a.month == b.month && a.day == b.day;
 }
 
-class _MemberPinDialog extends StatefulWidget {
-  const _MemberPinDialog({required this.facilityName});
+class MemberPinDialog extends StatefulWidget {
+  const MemberPinDialog({super.key, required this.facilityName});
 
   final String facilityName;
 
   @override
-  State<_MemberPinDialog> createState() => _MemberPinDialogState();
+  State<MemberPinDialog> createState() => _MemberPinDialogState();
 }
 
 class _FacilityRatingDialog extends StatefulWidget {
@@ -1819,9 +1824,10 @@ class _FacilityRatingDialogState extends State<_FacilityRatingDialog> {
   }
 }
 
-class _MemberPinDialogState extends State<_MemberPinDialog> {
+class _MemberPinDialogState extends State<MemberPinDialog> {
   final _controller = TextEditingController();
   String? _error;
+  bool _submitting = false;
 
   @override
   void dispose() {
@@ -1830,8 +1836,11 @@ class _MemberPinDialogState extends State<_MemberPinDialog> {
   }
 
   void _submit() {
+    if (_submitting) return;
     final value = _controller.text.trim();
     if (RegExp(r'^\d{4}$').hasMatch(value)) {
+      setState(() => _submitting = true);
+      FocusScope.of(context).unfocus();
       Navigator.pop(context, value);
     } else {
       setState(() => _error = 'Enter all 4 digits');
@@ -1861,16 +1870,23 @@ class _MemberPinDialogState extends State<_MemberPinDialog> {
               errorText: _error,
               border: const OutlineInputBorder(),
             ),
+            onChanged: (value) {
+              if (_error != null) setState(() => _error = null);
+              if (RegExp(r'^\d{4}$').hasMatch(value)) _submit();
+            },
             onSubmitted: (_) => _submit(),
           ),
         ],
       ),
       actions: [
         TextButton(
-          onPressed: () => Navigator.pop(context),
+          onPressed: _submitting ? null : () => Navigator.pop(context),
           child: const Text('Cancel'),
         ),
-        FilledButton(onPressed: _submit, child: const Text('Start workout')),
+        FilledButton(
+          onPressed: _submitting ? null : _submit,
+          child: const Text('Start workout'),
+        ),
       ],
     );
   }

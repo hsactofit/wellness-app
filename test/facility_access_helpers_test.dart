@@ -30,6 +30,15 @@ MemberBooking _booking({
 void main() {
   final day = DateTime(2026, 9, 3);
 
+  test('QR check-in gate allows only one member-code dialog at a time', () {
+    final gate = QrCheckinGate();
+
+    expect(gate.tryBegin(), isTrue);
+    expect(gate.tryBegin(), isFalse);
+    gate.end();
+    expect(gate.tryBegin(), isTrue);
+  });
+
   test('upcoming bookings hide cancelled and completed visits', () {
     final bookings = [
       _booking(id: '1', status: 'booked', day: day),
