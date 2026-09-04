@@ -6,8 +6,8 @@ import 'glass_card.dart';
 /// An interactive, neutral anatomy guide for the muscles in an active workout.
 ///
 /// It does not imply a member's body shape or left/right asymmetry. The named
-/// target controls are the primary explanation; the paired body views make it
-/// immediately clear where each target is located.
+/// target controls are the primary explanation; the detailed front/back view
+/// makes it immediately clear where each target is located.
 class WorkoutMuscleMapCard extends StatefulWidget {
   const WorkoutMuscleMapCard({super.key, required this.targetMuscles});
 
@@ -20,9 +20,8 @@ class WorkoutMuscleMapCard extends StatefulWidget {
 class _WorkoutMuscleMapCardState extends State<WorkoutMuscleMapCard> {
   String? _selectedMuscle;
 
-  List<String> get _muscles => normalizeWorkoutTargetMuscles(
-    widget.targetMuscles,
-  );
+  List<String> get _muscles =>
+      normalizeWorkoutTargetMuscles(widget.targetMuscles);
 
   @override
   void didUpdateWidget(covariant WorkoutMuscleMapCard oldWidget) {
@@ -74,9 +73,9 @@ class _WorkoutMuscleMapCardState extends State<WorkoutMuscleMapCard> {
             else ...[
               Text(
                 'Tap a target to locate it on the body map.',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: scheme.onSurfaceVariant,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
               ),
               const SizedBox(height: 10),
               Wrap(
@@ -149,18 +148,18 @@ class _MapHeader extends StatelessWidget {
             children: [
               Text(
                 'Today\'s muscle focus',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w800,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
               ),
               const SizedBox(height: 1),
               Text(
                 isFullBody
                     ? 'A balanced full-body session'
                     : '$targetCount targeted ${targetCount == 1 ? 'area' : 'areas'}',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: scheme.onSurfaceVariant,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
               ),
             ],
           ),
@@ -295,51 +294,180 @@ class _FocusCaption extends StatelessWidget {
 }
 
 class _BodyMapPanel extends StatelessWidget {
-  const _BodyMapPanel({required this.targetMuscles, required this.selectedMuscle});
+  const _BodyMapPanel({
+    required this.targetMuscles,
+    required this.selectedMuscle,
+  });
 
   final List<String> targetMuscles;
   final String? selectedMuscle;
 
   @override
   Widget build(BuildContext context) {
+    return _DetailedAnatomyBodyMap(
+      targetMuscles: targetMuscles,
+      selectedMuscle: selectedMuscle,
+    );
+  }
+}
+
+enum _AnatomyMapView { front, back }
+
+class _DetailedAnatomyBodyMap extends StatefulWidget {
+  const _DetailedAnatomyBodyMap({
+    required this.targetMuscles,
+    required this.selectedMuscle,
+  });
+
+  final List<String> targetMuscles;
+  final String? selectedMuscle;
+
+  @override
+  State<_DetailedAnatomyBodyMap> createState() =>
+      _DetailedAnatomyBodyMapState();
+}
+
+class _DetailedAnatomyBodyMapState extends State<_DetailedAnatomyBodyMap> {
+  _AnatomyMapView _view = _AnatomyMapView.front;
+
+  @override
+  void didUpdateWidget(covariant _DetailedAnatomyBodyMap oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final selected = widget.selectedMuscle;
+    if (selected != null && selected != oldWidget.selectedMuscle) {
+      _view = _preferredAnatomyView(selected);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final selectedLabel = widget.selectedMuscle == null
+        ? null
+        : workoutTargetMuscleLabel(widget.selectedMuscle!);
+    final figureWidth = MediaQuery.sizeOf(context).height >= 720 ? 150.0 : 84.0;
+
     return Semantics(
-      label: selectedMuscle == null
-          ? 'Front and back body map. All listed targets are highlighted.'
-          : 'Front and back body map. ${workoutTargetMuscleLabel(selectedMuscle!)} is highlighted.',
+      label: selectedLabel == null
+          ? 'Detailed front and back anatomy map. All listed targets are highlighted in red.'
+          : 'Detailed ${_view.name} anatomy map. $selectedLabel is focused in red.',
       child: Container(
-        padding: const EdgeInsets.fromLTRB(10, 10, 10, 6),
+        padding: const EdgeInsets.fromLTRB(10, 10, 10, 8),
         decoration: BoxDecoration(
-          color: scheme.onSurface.withValues(
-            alpha: Theme.of(context).brightness == Brightness.dark ? 0.035 : 0.025,
+          color: const Color(0xFF151113),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: scheme.outlineVariant.withValues(alpha: 0.78),
           ),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.65)),
         ),
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 360),
+        child: Column(
+          children: [
+            _AnatomyViewSwitch(
+              value: _view,
+              onChanged: (view) => setState(() => _view = view),
+            ),
+            const SizedBox(height: 7),
+            _DetailedAnatomyFigure(
+              width: figureWidth,
+              view: _view,
+              targetMuscles: widget.targetMuscles.toSet(),
+              selectedMuscle: widget.selectedMuscle,
+              colorScheme: scheme,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AnatomyViewSwitch extends StatelessWidget {
+  const _AnatomyViewSwitch({required this.value, required this.onChanged});
+
+  final _AnatomyMapView value;
+  final ValueChanged<_AnatomyMapView> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.24),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: scheme.outlineVariant.withValues(alpha: 0.55),
+        ),
+      ),
+      child: Row(
+        children: [
+          _AnatomyViewOption(
+            label: 'Front',
+            icon: Icons.accessibility_new_rounded,
+            selected: value == _AnatomyMapView.front,
+            onTap: () => onChanged(_AnatomyMapView.front),
+          ),
+          _AnatomyViewOption(
+            label: 'Back',
+            icon: Icons.accessibility_new_rounded,
+            selected: value == _AnatomyMapView.back,
+            onTap: () => onChanged(_AnatomyMapView.back),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AnatomyViewOption extends StatelessWidget {
+  const _AnatomyViewOption({
+    required this.label,
+    required this.icon,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final IconData icon;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Expanded(
+      child: Semantics(
+        button: true,
+        selected: selected,
+        label: '$label view',
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(10),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 160),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 7),
+            decoration: BoxDecoration(
+              color: selected ? scheme.primary.withValues(alpha: 0.20) : null,
+              borderRadius: BorderRadius.circular(10),
+            ),
             child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Expanded(
-                  child: _BodyView(
-                    label: 'Front',
-                    isFront: true,
-                    targetMuscles: targetMuscles,
-                    selectedMuscle: selectedMuscle,
-                  ),
+                Icon(
+                  icon,
+                  size: 16,
+                  color: selected ? scheme.primary : const Color(0xFFC9BBB5),
                 ),
-                Container(
-                  width: 1,
-                  height: 196,
-                  color: scheme.outlineVariant.withValues(alpha: 0.75),
-                ),
-                Expanded(
-                  child: _BodyView(
-                    label: 'Back',
-                    isFront: false,
-                    targetMuscles: targetMuscles,
-                    selectedMuscle: selectedMuscle,
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Text(
+                    label,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      color: selected
+                          ? scheme.onSurface
+                          : const Color(0xFFC9BBB5),
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                 ),
               ],
@@ -351,6 +479,277 @@ class _BodyMapPanel extends StatelessWidget {
   }
 }
 
+class _DetailedAnatomyFigure extends StatelessWidget {
+  const _DetailedAnatomyFigure({
+    required this.width,
+    required this.view,
+    required this.targetMuscles,
+    required this.selectedMuscle,
+    required this.colorScheme,
+  });
+
+  static const _assetPath = 'assets/workouts/anatomy_body_map_neutral_v2.png';
+
+  final double width;
+  final _AnatomyMapView view;
+  final Set<String> targetMuscles;
+  final String? selectedMuscle;
+  final ColorScheme colorScheme;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: width,
+      child: AspectRatio(
+        aspectRatio: 1 / 3,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              Image(
+                image: const AssetImage(_assetPath),
+                fit: BoxFit.cover,
+                alignment: view == _AnatomyMapView.front
+                    ? Alignment.centerLeft
+                    : Alignment.centerRight,
+                filterQuality: FilterQuality.high,
+              ),
+              CustomPaint(
+                painter: _DetailedAnatomyHighlightPainter(
+                  isFront: view == _AnatomyMapView.front,
+                  targetMuscles: targetMuscles,
+                  selectedMuscle: selectedMuscle,
+                  colorScheme: colorScheme,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DetailedAnatomyHighlightPainter extends CustomPainter {
+  const _DetailedAnatomyHighlightPainter({
+    required this.isFront,
+    required this.targetMuscles,
+    required this.selectedMuscle,
+    required this.colorScheme,
+  });
+
+  final bool isFront;
+  final Set<String> targetMuscles;
+  final String? selectedMuscle;
+  final ColorScheme colorScheme;
+
+  bool get _isFullBody => targetMuscles.contains(fullBodyTargetMuscle);
+
+  bool _isTarget(String muscle) =>
+      _isFullBody || targetMuscles.contains(muscle);
+
+  bool _isFocused(String muscle) =>
+      selectedMuscle == null || selectedMuscle == muscle;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    canvas.save();
+    canvas.scale(size.width / 512, size.height / 1536);
+
+    void draw(String muscle, List<Path> paths) {
+      if (!_isTarget(muscle)) return;
+      final isFocused = _isFocused(muscle);
+      final fill = Paint()
+        ..color = colorScheme.primary.withValues(
+          alpha: isFocused ? 0.78 : 0.28,
+        );
+      for (final path in paths) {
+        canvas.drawPath(path, fill);
+        if (selectedMuscle == muscle) {
+          canvas.drawPath(
+            path,
+            Paint()
+              ..style = PaintingStyle.stroke
+              ..strokeWidth = 4.5
+              ..color = const Color(0xFFFFD3CC).withValues(alpha: 0.9),
+          );
+        }
+      }
+    }
+
+    if (isFront) {
+      _drawFrontRegions(draw);
+    } else {
+      _drawBackRegions(draw);
+    }
+    canvas.restore();
+  }
+
+  void _drawFrontRegions(void Function(String, List<Path>) draw) {
+    Path lobe(double left, double top, double right, double bottom) => Path()
+      ..moveTo((left + right) / 2, top)
+      ..cubicTo(left, top + 14, left, bottom - 20, (left + right) / 2, bottom)
+      ..cubicTo(right, bottom - 20, right, top + 14, (left + right) / 2, top)
+      ..close();
+
+    draw('shoulders', [
+      Path()
+        ..moveTo(82, 298)
+        ..cubicTo(55, 318, 50, 365, 82, 399)
+        ..cubicTo(117, 407, 160, 374, 169, 332)
+        ..cubicTo(145, 301, 112, 288, 82, 298)
+        ..close(),
+      Path()
+        ..moveTo(430, 298)
+        ..cubicTo(457, 318, 462, 365, 430, 399)
+        ..cubicTo(395, 407, 352, 374, 343, 332)
+        ..cubicTo(367, 301, 400, 288, 430, 298)
+        ..close(),
+    ]);
+    draw('chest', [
+      Path()
+        ..moveTo(166, 355)
+        ..cubicTo(199, 333, 238, 342, 251, 371)
+        ..lineTo(251, 452)
+        ..cubicTo(204, 467, 163, 443, 153, 402)
+        ..close(),
+      Path()
+        ..moveTo(346, 355)
+        ..cubicTo(313, 333, 274, 342, 261, 371)
+        ..lineTo(261, 452)
+        ..cubicTo(308, 467, 349, 443, 359, 402)
+        ..close(),
+    ]);
+    draw('biceps', [lobe(54, 415, 137, 560), lobe(375, 415, 458, 560)]);
+    draw('forearms', [lobe(19, 554, 126, 744), lobe(386, 554, 493, 744)]);
+    draw('core', [
+      Path()
+        ..moveTo(200, 447)
+        ..cubicTo(170, 490, 169, 584, 198, 653)
+        ..lineTo(314, 653)
+        ..cubicTo(343, 584, 342, 490, 312, 447)
+        ..close(),
+      ...[
+        const Rect.fromLTWH(207, 462, 42, 53),
+        const Rect.fromLTWH(263, 462, 42, 53),
+        const Rect.fromLTWH(207, 524, 42, 55),
+        const Rect.fromLTWH(263, 524, 42, 55),
+        const Rect.fromLTWH(208, 590, 41, 52),
+        const Rect.fromLTWH(263, 590, 41, 52),
+      ].map(
+        (rect) => Path()
+          ..addRRect(RRect.fromRectAndRadius(rect, const Radius.circular(12))),
+      ),
+    ]);
+    draw('quadriceps', [lobe(113, 699, 238, 970), lobe(274, 699, 399, 970)]);
+    draw('inner_thighs', [lobe(205, 699, 258, 963), lobe(254, 699, 307, 963)]);
+    draw('calves', [lobe(126, 1033, 232, 1289), lobe(280, 1033, 386, 1289)]);
+  }
+
+  void _drawBackRegions(void Function(String, List<Path>) draw) {
+    Path lobe(double left, double top, double right, double bottom) => Path()
+      ..moveTo((left + right) / 2, top)
+      ..cubicTo(left, top + 14, left, bottom - 20, (left + right) / 2, bottom)
+      ..cubicTo(right, bottom - 20, right, top + 14, (left + right) / 2, top)
+      ..close();
+
+    draw('shoulders', [
+      Path()
+        ..moveTo(80, 302)
+        ..cubicTo(52, 322, 52, 371, 86, 399)
+        ..cubicTo(119, 405, 159, 374, 170, 332)
+        ..cubicTo(147, 303, 111, 290, 80, 302)
+        ..close(),
+      Path()
+        ..moveTo(432, 302)
+        ..cubicTo(460, 322, 460, 371, 426, 399)
+        ..cubicTo(393, 405, 353, 374, 342, 332)
+        ..cubicTo(365, 303, 401, 290, 432, 302)
+        ..close(),
+    ]);
+    draw('upper_back', [
+      Path()
+        ..moveTo(190, 282)
+        ..cubicTo(215, 249, 244, 242, 256, 242)
+        ..cubicTo(268, 242, 297, 249, 322, 282)
+        ..lineTo(345, 446)
+        ..cubicTo(294, 474, 218, 474, 167, 446)
+        ..close(),
+    ]);
+    draw('lats', [
+      Path()
+        ..moveTo(163, 422)
+        ..cubicTo(190, 443, 217, 451, 246, 445)
+        ..lineTo(246, 640)
+        ..cubicTo(199, 662, 157, 623, 148, 536)
+        ..close(),
+      Path()
+        ..moveTo(349, 422)
+        ..cubicTo(322, 443, 295, 451, 266, 445)
+        ..lineTo(266, 640)
+        ..cubicTo(313, 662, 355, 623, 364, 536)
+        ..close(),
+    ]);
+    draw('lower_back', [
+      Path()
+        ..moveTo(209, 603)
+        ..cubicTo(226, 583, 244, 581, 256, 595)
+        ..lineTo(256, 707)
+        ..cubicTo(230, 702, 211, 677, 209, 637)
+        ..close(),
+      Path()
+        ..moveTo(303, 603)
+        ..cubicTo(286, 583, 268, 581, 256, 595)
+        ..lineTo(256, 707)
+        ..cubicTo(282, 702, 301, 677, 303, 637)
+        ..close(),
+    ]);
+    draw('triceps', [lobe(54, 420, 139, 565), lobe(373, 420, 458, 565)]);
+    draw('forearms', [lobe(18, 554, 126, 744), lobe(386, 554, 494, 744)]);
+    draw('glutes', [
+      Path()
+        ..moveTo(150, 693)
+        ..cubicTo(118, 729, 131, 802, 186, 823)
+        ..cubicTo(228, 837, 252, 795, 248, 729)
+        ..cubicTo(219, 690, 181, 676, 150, 693)
+        ..close(),
+      Path()
+        ..moveTo(362, 693)
+        ..cubicTo(394, 729, 381, 802, 326, 823)
+        ..cubicTo(284, 837, 260, 795, 264, 729)
+        ..cubicTo(293, 690, 331, 676, 362, 693)
+        ..close(),
+    ]);
+    draw('hamstrings', [lobe(112, 813, 240, 1030), lobe(272, 813, 400, 1030)]);
+    draw('calves', [lobe(124, 1040, 232, 1290), lobe(280, 1040, 388, 1290)]);
+  }
+
+  @override
+  bool shouldRepaint(covariant _DetailedAnatomyHighlightPainter oldDelegate) =>
+      oldDelegate.isFront != isFront ||
+      oldDelegate.colorScheme != colorScheme ||
+      oldDelegate.selectedMuscle != selectedMuscle ||
+      oldDelegate.targetMuscles.length != targetMuscles.length ||
+      !oldDelegate.targetMuscles.containsAll(targetMuscles);
+}
+
+_AnatomyMapView _preferredAnatomyView(String muscle) {
+  switch (muscle) {
+    case 'triceps':
+    case 'upper_back':
+    case 'lats':
+    case 'lower_back':
+    case 'glutes':
+    case 'hamstrings':
+      return _AnatomyMapView.back;
+    default:
+      return _AnatomyMapView.front;
+  }
+}
+
+// Retained only for legacy golden comparison while the detailed asset settles.
+// ignore: unused_element
 class _BodyView extends StatelessWidget {
   const _BodyView({
     required this.label,
@@ -408,14 +807,17 @@ class _MapKey extends StatelessWidget {
         Container(
           width: 9,
           height: 9,
-          decoration: BoxDecoration(color: scheme.primary, shape: BoxShape.circle),
+          decoration: BoxDecoration(
+            color: scheme.primary,
+            shape: BoxShape.circle,
+          ),
         ),
         const SizedBox(width: 6),
         Text(
           isFullBody ? 'All major muscle groups' : 'Selected training areas',
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-            color: scheme.onSurfaceVariant,
-          ),
+          style: Theme.of(
+            context,
+          ).textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant),
         ),
       ],
     );
@@ -437,9 +839,11 @@ class _AnatomyBodyPainter extends CustomPainter {
 
   bool get _isFullBody => targetMuscles.contains(fullBodyTargetMuscle);
 
-  bool _isTarget(String muscle) => _isFullBody || targetMuscles.contains(muscle);
+  bool _isTarget(String muscle) =>
+      _isFullBody || targetMuscles.contains(muscle);
 
-  bool _isFocused(String muscle) => selectedMuscle == null || selectedMuscle == muscle;
+  bool _isFocused(String muscle) =>
+      selectedMuscle == null || selectedMuscle == muscle;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -498,13 +902,12 @@ class _AnatomyBodyPainter extends CustomPainter {
     final head = Path()..addOval(const Rect.fromLTWH(40.5, 3, 19, 22));
     draw(head);
     draw(
-      Path()
-        ..addRRect(
-          RRect.fromRectAndRadius(
-            const Rect.fromLTWH(45, 23, 10, 14),
-            const Radius.circular(4.5),
-          ),
+      Path()..addRRect(
+        RRect.fromRectAndRadius(
+          const Rect.fromLTWH(45, 23, 10, 14),
+          const Radius.circular(4.5),
         ),
+      ),
     );
 
     draw(
@@ -614,9 +1017,7 @@ class _AnatomyBodyPainter extends CustomPainter {
     ]) {
       draw(
         Path()
-          ..addRRect(
-            RRect.fromRectAndRadius(rect, const Radius.circular(2.8)),
-          ),
+          ..addRRect(RRect.fromRectAndRadius(rect, const Radius.circular(2.8))),
         'core',
       );
     }

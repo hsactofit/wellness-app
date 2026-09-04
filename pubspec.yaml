@@ -87,6 +87,7 @@ flutter:
     - assets/
     - assets/branding/mednovations_logo.png
     - assets/branding/mednovations_launcher.png
+    - assets/workouts/anatomy_body_map_neutral_v2.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
