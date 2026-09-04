@@ -4760,9 +4760,11 @@ class DashboardScreenState extends State<DashboardScreen>
               crossAxisCount: 3,
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              mainAxisSpacing: 16,
+              mainAxisSpacing: 12,
               crossAxisSpacing: 8,
-              childAspectRatio: 0.95,
+              // Keep the three-row grid dense: a near-square cell left a
+              // conspicuous amount of empty space beneath each shortcut.
+              childAspectRatio: 1.25,
               children: [
                 _buildQuickAccessItem(
                   "📄",
@@ -4887,8 +4889,8 @@ class DashboardScreenState extends State<DashboardScreen>
       child: Column(
         children: [
           Container(
-            width: 46,
-            height: 46,
+            width: 54,
+            height: 54,
             decoration: BoxDecoration(
               color: color.withValues(alpha: 0.1),
               shape: BoxShape.circle,
@@ -4898,7 +4900,7 @@ class DashboardScreenState extends State<DashboardScreen>
               ),
             ),
             child: Center(
-              child: Text(emoji, style: const TextStyle(fontSize: 18)),
+              child: Text(emoji, style: const TextStyle(fontSize: 22)),
             ),
           ),
           const SizedBox(height: 6),
