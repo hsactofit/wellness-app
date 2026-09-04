@@ -105,4 +105,32 @@ void main() {
       expect(await cache.cachedFile('keep'), isNotNull);
     },
   );
+
+  test(
+    'opening a cached video keeps it ahead of older cache entries',
+    () async {
+      final directory = await Directory.systemTemp.createTemp(
+        'medifit_video_lru_cache',
+      );
+      addTearDown(() async {
+        if (await directory.exists()) await directory.delete(recursive: true);
+      });
+      final cache = ExerciseVideoCache(directory: directory, maxBytes: 16);
+      await cache.store('opened', List<int>.filled(8, 1));
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      await cache.store('older', List<int>.filled(8, 2));
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      final opened = await cache.cachedFile('opened');
+      expect(opened, isNotNull);
+      await opened!.setLastModified(
+        DateTime.now().add(const Duration(seconds: 2)),
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      await cache.store('latest', List<int>.filled(8, 3));
+
+      expect(await cache.cachedFile('opened'), isNotNull);
+      expect(await cache.cachedFile('older'), isNull);
+      expect(await cache.cachedFile('latest'), isNotNull);
+    },
+  );
 }

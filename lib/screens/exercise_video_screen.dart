@@ -10,10 +10,12 @@ class ExerciseVideoScreen extends StatefulWidget {
     super.key,
     required this.exerciseName,
     required this.videoId,
+    this.playbackContext = ExerciseVideoPlaybackContext.activeWorkout,
   });
 
   final String exerciseName;
   final String videoId;
+  final ExerciseVideoPlaybackContext playbackContext;
 
   @override
   State<ExerciseVideoScreen> createState() => _ExerciseVideoScreenState();
@@ -50,6 +52,7 @@ class _ExerciseVideoScreenState extends State<ExerciseVideoScreen> {
       }
       final playback = await ExerciseVideoService.instance.fetchPlayback(
         widget.videoId,
+        context: widget.playbackContext,
       );
       if (!mounted) return;
       setState(() => _title = playback.title.isEmpty ? _title : playback.title);
@@ -64,7 +67,7 @@ class _ExerciseVideoScreenState extends State<ExerciseVideoScreen> {
     } catch (_) {
       if (!mounted) return;
       setState(() {
-        _error = 'Could not play this demonstration video.';
+        _error = 'Could not play this exercise video.';
         _loading = false;
       });
     }
@@ -104,6 +107,28 @@ class _ExerciseVideoScreenState extends State<ExerciseVideoScreen> {
     if (mounted) setState(() {});
   }
 
+  Future<void> _togglePlayback() async {
+    final controller = _controller;
+    if (controller == null) return;
+    final value = controller.value;
+    final isComplete =
+        value.duration > Duration.zero && value.position >= value.duration;
+    if (isComplete) await controller.seekTo(Duration.zero);
+    if (value.isPlaying) {
+      await controller.pause();
+    } else {
+      await controller.play();
+    }
+  }
+
+  String _formatDuration(Duration duration) {
+    String twoDigits(int value) => value.toString().padLeft(2, '0');
+    final minutes = twoDigits(duration.inMinutes.remainder(60));
+    final seconds = twoDigits(duration.inSeconds.remainder(60));
+    if (duration.inHours == 0) return '$minutes:$seconds';
+    return '${twoDigits(duration.inHours)}:$minutes:$seconds';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -140,7 +165,7 @@ class _ExerciseVideoScreenState extends State<ExerciseVideoScreen> {
             const SizedBox(height: 16),
             FilledButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Back to workout'),
+              child: const Text('Go back'),
             ),
           ],
         ),
@@ -150,14 +175,15 @@ class _ExerciseVideoScreenState extends State<ExerciseVideoScreen> {
     if (controller == null || !controller.value.isInitialized) {
       return const Center(child: Text('Video is not available.'));
     }
+    final value = controller.value;
+    final isComplete =
+        value.duration > Duration.zero && value.position >= value.duration;
     return Column(
       children: [
         Expanded(
           child: Center(
             child: AspectRatio(
-              aspectRatio: controller.value.aspectRatio == 0
-                  ? 16 / 9
-                  : controller.value.aspectRatio,
+              aspectRatio: value.aspectRatio == 0 ? 16 / 9 : value.aspectRatio,
               child: Stack(
                 alignment: Alignment.center,
                 children: [
@@ -165,17 +191,16 @@ class _ExerciseVideoScreenState extends State<ExerciseVideoScreen> {
                   IconButton(
                     iconSize: 56,
                     color: Colors.white,
-                    onPressed: () {
-                      setState(() {
-                        if (controller.value.isPlaying) {
-                          controller.pause();
-                        } else {
-                          controller.play();
-                        }
-                      });
-                    },
+                    tooltip: isComplete
+                        ? 'Replay'
+                        : value.isPlaying
+                        ? 'Pause'
+                        : 'Play',
+                    onPressed: _togglePlayback,
                     icon: Icon(
-                      controller.value.isPlaying
+                      isComplete
+                          ? Icons.replay
+                          : value.isPlaying
                           ? Icons.pause_circle
                           : Icons.play_circle,
                     ),
@@ -187,6 +212,14 @@ class _ExerciseVideoScreenState extends State<ExerciseVideoScreen> {
         ),
         const SizedBox(height: 12),
         VideoProgressIndicator(controller, allowScrubbing: true),
+        const SizedBox(height: 6),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(_formatDuration(value.position)),
+            Text(_formatDuration(value.duration)),
+          ],
+        ),
       ],
     );
   }

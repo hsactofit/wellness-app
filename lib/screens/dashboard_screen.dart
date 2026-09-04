@@ -27,6 +27,7 @@ import 'mood_checkin_screen.dart';
 import 'plan_screen.dart';
 import 'notifications_screen.dart';
 import 'body_composition_reports_screen.dart';
+import 'exercise_library_screen.dart';
 import 'update_health_hub_screen.dart';
 import '../models/plan_models.dart';
 import '../models/body_composition_report.dart';
@@ -111,6 +112,13 @@ class DashboardScreenState extends State<DashboardScreen>
     Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => const ChallengesScreen()),
+    );
+  }
+
+  void _openExerciseLibrary() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const ExerciseLibraryScreen()),
     );
   }
 
@@ -4748,115 +4756,115 @@ class DashboardScreenState extends State<DashboardScreen>
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
           child: GlassCard(
             padding: const EdgeInsets.all(16),
-            child: Column(
+            child: GridView.count(
+              crossAxisCount: 3,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              mainAxisSpacing: 16,
+              crossAxisSpacing: 8,
+              childAspectRatio: 0.95,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    _buildQuickAccessItem(
-                      "📄",
-                      "Health Reports",
-                      const Color(0xFF2ECAE5),
-                      onTap: _openHealthReports,
-                    ),
-                    _buildQuickAccessItem(
-                      "🍲",
-                      "Log Meal",
-                      const Color(0xFFFFB03A),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => NutritionLoggingScreen(
-                              onFoodLogged: () =>
-                                  _fetchRealData(forceSync: true),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                    _buildQuickAccessItem(
-                      "🥗",
-                      "Meal Plan",
-                      const Color(0xFFFF9F43),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => PlanScreen(
-                              kind: PlanKind.nutrition,
-                              onPlanChanged: () {
-                                ApiService.instance.getUserEmail().then(
-                                  (email) => _fetchTodayPlans(email),
-                                );
-                              },
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                    _buildQuickAccessItem(
-                      "💪",
-                      "Workout",
-                      const Color(0xFF5B8CFF),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => PlanScreen(
-                              kind: PlanKind.workout,
-                              onPlanChanged: () {
-                                ApiService.instance.getUserEmail().then(
-                                  (email) => _fetchTodayPlans(email),
-                                );
-                              },
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ],
+                _buildQuickAccessItem(
+                  "📄",
+                  "Health Reports",
+                  const Color(0xFF2ECAE5),
+                  onTap: _openHealthReports,
                 ),
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    _buildQuickAccessItem(
-                      "🪪",
-                      "Health Card",
-                      const Color(0xFF2ECAE5),
-                    ),
-                    _buildQuickAccessItem(
-                      "🛡️",
-                      "SOS",
-                      const Color(0xFFFF3B30),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => const SosScreen()),
-                        );
-                      },
-                    ),
-                    _buildQuickAccessItem(
-                      "🏆",
-                      "Compete",
-                      const Color(0xFFFFD60A),
-                      onTap: _openChallenges,
-                    ),
-                    _buildQuickAccessItem(
-                      "🧠",
-                      "Mood",
-                      const Color(0xFF8F6BFF),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const MoodCheckinScreen(),
-                          ),
-                        );
-                      },
-                    ),
-                  ],
+                _buildQuickAccessItem(
+                  "🍲",
+                  "Log Meal",
+                  const Color(0xFFFFB03A),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => NutritionLoggingScreen(
+                          onFoodLogged: () => _fetchRealData(forceSync: true),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                _buildQuickAccessItem(
+                  "🥗",
+                  "Meal Plan",
+                  const Color(0xFFFF9F43),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => PlanScreen(
+                          kind: PlanKind.nutrition,
+                          onPlanChanged: () {
+                            ApiService.instance.getUserEmail().then(
+                              (email) => _fetchTodayPlans(email),
+                            );
+                          },
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                _buildQuickAccessItem(
+                  "💪",
+                  "Workout",
+                  const Color(0xFF5B8CFF),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => PlanScreen(
+                          kind: PlanKind.workout,
+                          onPlanChanged: () {
+                            ApiService.instance.getUserEmail().then(
+                              (email) => _fetchTodayPlans(email),
+                            );
+                          },
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                _buildQuickAccessItem(
+                  "🎥",
+                  "Exercise Library",
+                  const Color(0xFF3D8BFF),
+                  onTap: _openExerciseLibrary,
+                ),
+                _buildQuickAccessItem(
+                  "🪪",
+                  "Health Card",
+                  const Color(0xFF2ECAE5),
+                ),
+                _buildQuickAccessItem(
+                  "🛡️",
+                  "SOS",
+                  const Color(0xFFFF3B30),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const SosScreen()),
+                    );
+                  },
+                ),
+                _buildQuickAccessItem(
+                  "🏆",
+                  "Compete",
+                  const Color(0xFFFFD60A),
+                  onTap: _openChallenges,
+                ),
+                _buildQuickAccessItem(
+                  "🧠",
+                  "Mood",
+                  const Color(0xFF8F6BFF),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const MoodCheckinScreen(),
+                      ),
+                    );
+                  },
                 ),
               ],
             ),
@@ -4873,39 +4881,37 @@ class DashboardScreenState extends State<DashboardScreen>
     VoidCallback? onTap,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        behavior: HitTestBehavior.opaque,
-        child: Column(
-          children: [
-            Container(
-              width: 46,
-              height: 46,
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: color.withValues(alpha: 0.2),
-                  width: 1.2,
-                ),
-              ),
-              child: Center(
-                child: Text(emoji, style: const TextStyle(fontSize: 18)),
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Column(
+        children: [
+          Container(
+            width: 46,
+            height: 46,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: color.withValues(alpha: 0.2),
+                width: 1.2,
               ),
             ),
-            const SizedBox(height: 6),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w700,
-                color: isDark ? Colors.white70 : Colors.black87,
-              ),
+            child: Center(
+              child: Text(emoji, style: const TextStyle(fontSize: 18)),
             ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              color: isDark ? Colors.white70 : Colors.black87,
+            ),
+          ),
+        ],
       ),
     );
   }
