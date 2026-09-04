@@ -38,12 +38,13 @@ class MainShellState extends State<MainShell> with WidgetsBindingObserver {
     BackgroundWorkoutService.instance.checkoutRequestedSignal.addListener(
       _openCheckoutFromNotification,
     );
-    BackgroundWorkoutService.instance.geofenceExitedSignal.addListener(
-      _showNativeGeofencePrompt,
-    );
+    BackgroundWorkoutService.instance.departureCheckoutRequiredSignal
+        .addListener(_showNativeDeparturePrompt);
     BackgroundWorkoutService.instance.continueRequestedSignal.addListener(
       _continueFromNotification,
     );
+    BackgroundWorkoutService.instance.slotEndContinueRequestedSignal
+        .addListener(_continueSlotEndFromNotification);
     // Native checkout actions may arrive during a cold launch. Flush them only
     // after these listeners are installed so the request cannot be lost.
     unawaited(BackgroundWorkoutService.instance.markUiReady());
@@ -57,12 +58,13 @@ class MainShellState extends State<MainShell> with WidgetsBindingObserver {
     BackgroundWorkoutService.instance.checkoutRequestedSignal.removeListener(
       _openCheckoutFromNotification,
     );
-    BackgroundWorkoutService.instance.geofenceExitedSignal.removeListener(
-      _showNativeGeofencePrompt,
-    );
+    BackgroundWorkoutService.instance.departureCheckoutRequiredSignal
+        .removeListener(_showNativeDeparturePrompt);
     BackgroundWorkoutService.instance.continueRequestedSignal.removeListener(
       _continueFromNotification,
     );
+    BackgroundWorkoutService.instance.slotEndContinueRequestedSignal
+        .removeListener(_continueSlotEndFromNotification);
     WorkoutSessionService.instance.configurePromptHandler(null);
     super.dispose();
   }
@@ -90,7 +92,7 @@ class MainShellState extends State<MainShell> with WidgetsBindingObserver {
     }
   }
 
-  Future<void> _showNativeGeofencePrompt() async {
+  Future<void> _showNativeDeparturePrompt() async {
     if (!mounted) return;
     final session = await WorkoutSessionService.instance.loadActiveSession();
     if (session == null || !mounted) return;
@@ -104,10 +106,23 @@ class MainShellState extends State<MainShell> with WidgetsBindingObserver {
     try {
       await WorkoutSessionService.instance.continueWorkout(
         reason: 'Member chose to keep working from the workout notification.',
+        promptReason: WorkoutSessionPromptReason.hourly,
       );
+      await WorkoutSessionService.instance.markHourlyConfirmation();
     } catch (_) {
       // The session remains open and the next prompt will give the member
       // another safe opportunity to confirm checkout.
+    }
+  }
+
+  Future<void> _continueSlotEndFromNotification() async {
+    try {
+      await WorkoutSessionService.instance.continueWorkout(
+        reason: 'Member chose to keep working after the booked slot ended.',
+        promptReason: WorkoutSessionPromptReason.slotEnd,
+      );
+    } catch (_) {
+      // The workout stays open and the next hourly question remains available.
     }
   }
 
@@ -129,14 +144,6 @@ class MainShellState extends State<MainShell> with WidgetsBindingObserver {
     if (!mounted) return;
     final leftFacility = reason == WorkoutSessionPromptReason.leftFacility;
     final slotEnded = reason == WorkoutSessionPromptReason.slotEnd;
-    // Do not leave the member behind an unanswered modal.  After ten minutes
-    // the server is told that the workout continues, which also schedules the
-    // next hourly prompt and alerts the facility manager.
-    var dialogOpen = true;
-    final timeoutTimer = Timer(const Duration(minutes: 10), () {
-      if (!dialogOpen || !mounted) return;
-      Navigator.of(context, rootNavigator: true).pop(false);
-    });
     final complete = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
@@ -154,28 +161,30 @@ class MainShellState extends State<MainShell> with WidgetsBindingObserver {
         ),
         content: Text(
           leftFacility
-              ? 'Your phone appears to be outside the facility range. End the workout session if you have finished.'
+              ? 'Your phone is now at least 2 km from the exact place where you scanned into this workout. Open checkout to finish the active session.'
               : slotEnded
               ? 'Check out now, or keep working. Keeping the session open will notify the facility manager.'
               : 'You started at ${session.facilityName} over an hour ago. End the workout session when you are done.',
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Still working out'),
-          ),
+          if (!leftFacility)
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Still working out'),
+            ),
           FilledButton(
             onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('Open checkout'),
+            child: Text(leftFacility ? 'Yes, open checkout' : 'Open checkout'),
           ),
         ],
       ),
     );
-    dialogOpen = false;
-    timeoutTimer.cancel();
     if (!mounted) return;
 
     if (complete != true) {
+      // A departure prompt intentionally has no "still working" branch and
+      // does not manufacture a positive answer if the app is interrupted.
+      if (leftFacility) return;
       try {
         await WorkoutSessionService.instance.continueWorkout(
           reason: leftFacility
@@ -183,7 +192,13 @@ class MainShellState extends State<MainShell> with WidgetsBindingObserver {
               : slotEnded
               ? 'Member chose to keep working after the booked slot ended.'
               : 'Member chose to keep working after the hourly prompt.',
+          promptReason: slotEnded
+              ? WorkoutSessionPromptReason.slotEnd
+              : WorkoutSessionPromptReason.hourly,
         );
+        if (!slotEnded) {
+          await WorkoutSessionService.instance.markHourlyConfirmation();
+        }
       } catch (_) {
         // The next local prompt will retry if the network was unavailable.
       }

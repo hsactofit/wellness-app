@@ -53,6 +53,18 @@ void main() {
     ]);
   });
 
+  test('uses the approved workout session settings instead of defaults', () {
+    final plan = WorkoutPlan.fromReviewedJson({
+      'id': 'plan-1',
+      'session_minutes': 60,
+      'days_per_week': 6,
+      'content': const [],
+    });
+
+    expect(plan.sessionMinutes, 60);
+    expect(plan.daysPerWeek, 6);
+  });
+
   testWidgets('shows an interactive front and back anatomy guide', (
     tester,
   ) async {
@@ -98,7 +110,9 @@ void main() {
     );
   });
 
-  testWidgets('renders a polished full-body guide in dark mode', (tester) async {
+  testWidgets('renders a polished full-body guide in dark mode', (
+    tester,
+  ) async {
     const mapKey = Key('full-body-muscle-map');
     await tester.pumpWidget(
       MaterialApp(

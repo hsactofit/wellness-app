@@ -545,7 +545,8 @@ class ApiService {
   ///
   /// `dailyRecords` must already be shaped like wellness-server's
   /// DailyHealthRecordIn per entry: {date, steps, calories,
-  /// sleep_duration_hours, workouts_count, heart_rate_bpm}. Extra fields
+  /// sleep_duration_hours, workouts_count, resting_heart_rate_bpm and
+  /// weight_kg}. Extra fields
   /// (e.g. water_intake_ml, carried over from the old backend's per-day
   /// shape) are harmless — the server ignores unknown keys.
   Future<Map<String, dynamic>> syncDashboard(
@@ -554,7 +555,7 @@ class ApiService {
   ) async {
     final syncResponse = await _post(
       '/api/health/sync',
-      body: {'records': dailyRecords},
+      body: {'source_version': 2, 'records': dailyRecords},
     );
     if (syncResponse.statusCode != 200) {
       throw Exception(
@@ -575,6 +576,61 @@ class ApiService {
         "Failed to get dashboard: ${response.statusCode} - ${response.body}",
       );
     }
+  }
+
+  /// The correction ledger uses the canonical v1 route. These calls do not
+  /// optimistically alter the dashboard; the caller refreshes only after the
+  /// server accepts a write.
+  Future<List<Map<String, dynamic>>> weeklyTrainingCorrections() async {
+    final localDay = DateTime.now().toIso8601String().substring(0, 10);
+    final response = await _get(
+      '/api/v1/weekly-training/corrections',
+      queryParams: {'day': localDay},
+    );
+    if (response.statusCode != 200) {
+      throw Exception(
+        'Failed to load correction history: ${response.statusCode} - ${response.body}',
+      );
+    }
+    final decoded = jsonDecode(response.body);
+    if (decoded is! Map || decoded['items'] is! List) {
+      throw Exception('Unexpected correction history response');
+    }
+    return (decoded['items'] as List)
+        .whereType<Map>()
+        .map((item) => Map<String, dynamic>.from(item))
+        .toList();
+  }
+
+  Future<Map<String, dynamic>> createWeeklyTrainingCorrection(
+    Map<String, dynamic> body,
+  ) async {
+    final localDay = DateTime.now().toIso8601String().substring(0, 10);
+    final response = await _post(
+      '/api/v1/weekly-training/corrections?day=$localDay',
+      body: body,
+    );
+    if (response.statusCode != 201) {
+      throw Exception(
+        'Failed to save correction: ${response.statusCode} - ${response.body}',
+      );
+    }
+    return Map<String, dynamic>.from(jsonDecode(response.body) as Map);
+  }
+
+  Future<Map<String, dynamic>> reverseWeeklyTrainingCorrection(
+    String correctionId,
+  ) async {
+    final response = await _post(
+      '/api/v1/weekly-training/corrections/$correctionId/reverse',
+      body: {'expected_correction_id': correctionId},
+    );
+    if (response.statusCode != 200) {
+      throw Exception(
+        'Failed to undo correction: ${response.statusCode} - ${response.body}',
+      );
+    }
+    return Map<String, dynamic>.from(jsonDecode(response.body) as Map);
   }
 
   // ── Member body-composition reports ─────────────────────────────

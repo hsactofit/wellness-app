@@ -56,12 +56,14 @@ class WorkoutExercise {
 class WorkoutPlanDay {
   final String day;
   final String? focus;
+  final String? trainingType;
   final bool isRestDay;
   final List<WorkoutExercise> exercises;
 
   const WorkoutPlanDay({
     required this.day,
     this.focus,
+    this.trainingType,
     this.isRestDay = false,
     this.exercises = const [],
   });
@@ -70,6 +72,7 @@ class WorkoutPlanDay {
     return WorkoutPlanDay(
       day: json['day']?.toString() ?? '',
       focus: json['focus']?.toString(),
+      trainingType: json['training_type']?.toString(),
       isRestDay: json['is_rest_day'] as bool? ?? false,
       exercises:
           (json['exercises'] as List<dynamic>?)
@@ -92,8 +95,8 @@ class WorkoutPlan {
   final String? experience;
   final String? location;
   final List<String> equipment;
-  final int sessionMinutes;
-  final int daysPerWeek;
+  final int? sessionMinutes;
+  final int? daysPerWeek;
   final List<WorkoutPlanDay> days;
   final DateTime createdAt;
 
@@ -105,8 +108,8 @@ class WorkoutPlan {
     this.experience,
     this.location,
     this.equipment = const [],
-    required this.sessionMinutes,
-    required this.daysPerWeek,
+    this.sessionMinutes,
+    this.daysPerWeek,
     this.days = const [],
     required this.createdAt,
   });
@@ -146,8 +149,8 @@ class WorkoutPlan {
       id: json['id']?.toString() ?? '',
       title: json['title']?.toString() ?? 'Workout Plan',
       summary: json['summary']?.toString(),
-      sessionMinutes: 45,
-      daysPerWeek: 4,
+      sessionMinutes: (json['session_minutes'] as num?)?.toInt(),
+      daysPerWeek: (json['days_per_week'] as num?)?.toInt(),
       days:
           (json['content'] as List<dynamic>?)
               ?.map(

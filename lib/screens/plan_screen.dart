@@ -784,8 +784,8 @@ class _PlanScreenState extends State<PlanScreen> with WidgetsBindingObserver {
   List<Widget> _workoutBadges() {
     final p = _workoutPlan!;
     return [
-      _badge('${p.daysPerWeek} days/week'),
-      _badge('${p.sessionMinutes} min/session'),
+      if (p.daysPerWeek != null) _badge('${p.daysPerWeek} days/week'),
+      if (p.sessionMinutes != null) _badge('${p.sessionMinutes} min/session'),
       if (p.experience != null) _badge(p.experience!),
       if (p.location != null) _badge(p.location!),
     ];

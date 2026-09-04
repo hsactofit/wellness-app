@@ -10,6 +10,7 @@ import 'package:uuid/uuid.dart';
 import 'auth_service.dart';
 import 'background_workout_service.dart';
 import 'facility_rating_service.dart';
+import 'workout_feedback_service.dart';
 
 enum WorkoutSessionPromptReason { hourly, slotEnd, leftFacility }
 
@@ -53,10 +54,15 @@ class WorkoutSessionException implements Exception {
 }
 
 class WorkoutCheckoutResult {
-  const WorkoutCheckoutResult({required this.checkOutAt, this.ratingRequest});
+  const WorkoutCheckoutResult({
+    required this.checkOutAt,
+    this.ratingRequest,
+    this.feedbackRequest,
+  });
 
   final DateTime checkOutAt;
   final FacilityRatingPrompt? ratingRequest;
+  final WorkoutFeedbackPrompt? feedbackRequest;
 }
 
 typedef WorkoutSessionPrompt =
@@ -81,9 +87,15 @@ class WorkoutSessionService {
   static const _checkInKey = 'gym_check_in_time';
   static const _sessionIdKey = 'gym_session_id';
   static const _checkoutRefKey = 'gym_checkout_client_ref';
-  static const _latitudeKey = 'gym_facility_latitude';
-  static const _longitudeKey = 'gym_facility_longitude';
-  static const _radiusKey = 'gym_geofence_radius_m';
+  // QR scan origin, held only on this device for the active workout. Never
+  // derive this from facility coordinates or send it to the server.
+  static const _latitudeKey = 'gym_scan_origin_latitude';
+  static const _longitudeKey = 'gym_scan_origin_longitude';
+  static const _radiusKey = 'gym_scan_origin_radius_m';
+  static const _legacyFacilityLatitudeKey = 'gym_facility_latitude';
+  static const _legacyFacilityLongitudeKey = 'gym_facility_longitude';
+  static const _legacyFacilityRadiusKey = 'gym_geofence_radius_m';
+  static const _scannerDepartureRadiusMeters = 2000;
   static const _bookingIdKey = 'gym_booking_id';
   static const _instantRequestIdKey = 'gym_instant_request_id';
   static const _slotEndKey = 'gym_slot_end_at';
@@ -104,7 +116,6 @@ class WorkoutSessionService {
       AuthService.instance.getAccessToken();
   bool _promptInProgress = false;
   bool _outsideFacility = false;
-  bool _wasInsideFacility = false;
 
   /// Notifies open workout screens when another part of the app changes the
   /// persisted session (for example, the global hourly/geofence prompt).
@@ -142,7 +153,8 @@ class WorkoutSessionService {
       checkInAt: checkInAt,
       latitude: prefs.getDouble(_latitudeKey),
       longitude: prefs.getDouble(_longitudeKey),
-      geofenceRadiusMeters: prefs.getInt(_radiusKey) ?? 2000,
+      geofenceRadiusMeters:
+          prefs.getInt(_radiusKey) ?? _scannerDepartureRadiusMeters,
       bookingId: prefs.getString(_bookingIdKey),
       instantRequestId: prefs.getString(_instantRequestIdKey),
       slotEndAt: DateTime.tryParse(prefs.getString(_slotEndKey) ?? ''),
@@ -200,6 +212,7 @@ class WorkoutSessionService {
             session['facility_name']?.toString() ?? 'Facility',
         fallbackFacilityPlace: cached?.facilityPlace ?? '',
         showPersistentTimer: showPersistentTimer,
+        resetLocalReminderState: cached == null,
       );
       return loadActiveSession();
     } catch (_) {
@@ -245,15 +258,13 @@ class WorkoutSessionService {
     required String fallbackFacilityName,
     required String fallbackFacilityPlace,
     bool showPersistentTimer = true,
+    bool resetLocalReminderState = true,
   }) async {
     final prefs = await SharedPreferences.getInstance();
     final localCheckInAt = DateTime.now();
     final checkInAt =
         session['check_in_at'] as String? ?? localCheckInAt.toIso8601String();
     final name = session['facility_name'] as String? ?? fallbackFacilityName;
-    final latitude = (session['facility_latitude'] as num?)?.toDouble();
-    final longitude = (session['facility_longitude'] as num?)?.toDouble();
-    final radius = (session['geofence_radius_m'] as num?)?.toInt() ?? 2000;
     final planSnapshot = (session['plan_snapshot'] as List? ?? [])
         .whereType<Map>()
         .map((item) => Map<String, dynamic>.from(item))
@@ -272,21 +283,19 @@ class WorkoutSessionService {
     );
     await _setOptionalString(prefs, _slotEndKey, session['slot_end_at']);
     await prefs.setString(_planSnapshotKey, jsonEncode(planSnapshot));
-    await prefs.setString(
-      _hourlyPromptAnchorKey,
-      localCheckInAt.toIso8601String(),
-    );
-    await prefs.remove(_lastHourlyPromptKey);
-    await prefs.remove(_slotEndPromptedKey);
-
-    if (latitude != null && longitude != null) {
-      await prefs.setDouble(_latitudeKey, latitude);
-      await prefs.setDouble(_longitudeKey, longitude);
-      await prefs.setInt(_radiusKey, radius);
-    } else {
+    if (resetLocalReminderState) {
+      await prefs.setString(
+        _hourlyPromptAnchorKey,
+        localCheckInAt.toIso8601String(),
+      );
+      await prefs.remove(_lastHourlyPromptKey);
+      await prefs.remove(_slotEndPromptedKey);
       await prefs.remove(_latitudeKey);
       await prefs.remove(_longitudeKey);
       await prefs.remove(_radiusKey);
+      await prefs.remove(_legacyFacilityLatitudeKey);
+      await prefs.remove(_legacyFacilityLongitudeKey);
+      await prefs.remove(_legacyFacilityRadiusKey);
     }
     final nativeGeofenceRegistered = await BackgroundWorkoutService.instance
         .start(
@@ -297,9 +306,6 @@ class WorkoutSessionService {
             session['slot_end_at']?.toString() ?? '',
           ),
           bookingId: session['booking_id']?.toString(),
-          latitude: latitude,
-          longitude: longitude,
-          geofenceRadiusMeters: radius,
           showPersistentTimer: showPersistentTimer,
         );
     await prefs.setBool(_nativeGeofenceKey, nativeGeofenceRegistered);
@@ -335,15 +341,22 @@ class WorkoutSessionService {
         DateTime.now();
     await clearLocalSession(checkOutAt: checkOutAt);
     final rawRating = responseData['rating_request'];
+    final rawFeedback = responseData['workout_feedback_request'];
     return WorkoutCheckoutResult(
       checkOutAt: checkOutAt,
       ratingRequest: rawRating is Map
           ? FacilityRatingPrompt.fromJson(rawRating)
           : null,
+      feedbackRequest: rawFeedback is Map
+          ? WorkoutFeedbackPrompt.fromJson(rawFeedback)
+          : null,
     );
   }
 
-  Future<void> continueWorkout({String? reason}) async {
+  Future<void> continueWorkout({
+    String? reason,
+    WorkoutSessionPromptReason? promptReason,
+  }) async {
     final token = await _accessTokenProvider();
     final response = await _httpClient.post(
       AuthService.apiUrl('/api/attendance/continue'),
@@ -351,11 +364,88 @@ class WorkoutSessionService {
         'Content-Type': 'application/json',
         if (token != null) 'Authorization': 'Bearer $token',
       },
-      body: jsonEncode(<String, dynamic>{if (reason != null) 'reason': reason}),
+      body: jsonEncode(<String, dynamic>{
+        if (reason != null) 'reason': reason,
+        if (promptReason == WorkoutSessionPromptReason.hourly)
+          'prompt_kind': 'hourly',
+        if (promptReason == WorkoutSessionPromptReason.slotEnd)
+          'prompt_kind': 'slot_end',
+      }),
     );
     final body = _decodeBody(response.body);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw WorkoutSessionException(_errorMessage(body, response.statusCode));
+    }
+  }
+
+  /// The next hourly check is one hour after an affirmative answer, not one
+  /// hour after the original check-in.
+  Future<void> markHourlyConfirmation() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+      _lastHourlyPromptKey,
+      DateTime.now().toIso8601String(),
+    );
+    final session = await loadActiveSession();
+    if (session != null) await _scheduleHourlyPrompt(session);
+  }
+
+  /// Captures the exact QR-scan origin after check-in. Refusing location or a
+  /// temporary unavailable GPS reading leaves the workout active; it only
+  /// disables automatic 2 km departure reminders until the member retries.
+  Future<bool> captureAndArmScannerOrigin() async {
+    if (kIsWeb) return false;
+    final session = await loadActiveSession();
+    if (session == null) return false;
+    if (session.hasGeofence) {
+      final nativeRegistered = await BackgroundWorkoutService.instance
+          .armScannerOrigin(
+            sessionId: session.id,
+            latitude: session.latitude!,
+            longitude: session.longitude!,
+          );
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_nativeGeofenceKey, nativeRegistered);
+      await _startLocationMonitoring(session, requestLocationPermission: false);
+      return true;
+    }
+    if (!await Geolocator.isLocationServiceEnabled()) return false;
+    var permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+    if (permission == LocationPermission.denied ||
+        permission == LocationPermission.deniedForever) {
+      return false;
+    }
+    try {
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 15),
+        ),
+      );
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setDouble(_latitudeKey, position.latitude);
+      await prefs.setDouble(_longitudeKey, position.longitude);
+      await prefs.setInt(_radiusKey, _scannerDepartureRadiusMeters);
+      final nativeRegistered = await BackgroundWorkoutService.instance
+          .armScannerOrigin(
+            sessionId: session.id,
+            latitude: position.latitude,
+            longitude: position.longitude,
+          );
+      await prefs.setBool(_nativeGeofenceKey, nativeRegistered);
+      final armedSession = await loadActiveSession();
+      if (armedSession != null) {
+        await _startLocationMonitoring(
+          armedSession,
+          requestLocationPermission: false,
+        );
+      }
+      return true;
+    } catch (_) {
+      return false;
     }
   }
 
@@ -370,6 +460,9 @@ class WorkoutSessionService {
     await prefs.remove(_latitudeKey);
     await prefs.remove(_longitudeKey);
     await prefs.remove(_radiusKey);
+    await prefs.remove(_legacyFacilityLatitudeKey);
+    await prefs.remove(_legacyFacilityLongitudeKey);
+    await prefs.remove(_legacyFacilityRadiusKey);
     await prefs.remove(_bookingIdKey);
     await prefs.remove(_instantRequestIdKey);
     await prefs.remove(_slotEndKey);
@@ -410,7 +503,6 @@ class WorkoutSessionService {
     await _positionSubscription?.cancel();
     _positionSubscription = null;
     _outsideFacility = false;
-    _wasInsideFacility = false;
   }
 
   Future<void> _scheduleHourlyPrompt(ActiveWorkoutSession session) async {
@@ -418,16 +510,6 @@ class WorkoutSessionService {
     final prefs = await SharedPreferences.getInstance();
     final slotEndPrompted = prefs.getBool(_slotEndPromptedKey) ?? false;
     final slotEnd = session.slotEndAt;
-    if (session.bookingId != null && !slotEndPrompted && slotEnd != null) {
-      var slotDelay = slotEnd.difference(DateTime.now());
-      if (slotDelay.isNegative) slotDelay = Duration.zero;
-      _hourlyTimer = Timer(slotDelay, () async {
-        await _triggerPrompt(session, WorkoutSessionPromptReason.slotEnd);
-        final current = await loadActiveSession();
-        if (current != null) await _scheduleHourlyPrompt(current);
-      });
-      return;
-    }
     final lastPrompt = DateTime.tryParse(
       prefs.getString(_lastHourlyPromptKey) ?? '',
     );
@@ -435,7 +517,30 @@ class WorkoutSessionService {
       prefs.getString(_hourlyPromptAnchorKey) ?? '',
     );
     final anchor = lastPrompt ?? localCheckInAnchor ?? session.checkInAt;
-    var delay = const Duration(hours: 1) - DateTime.now().difference(anchor);
+    final nextHourlyAt = anchor.add(const Duration(hours: 1));
+    // Keep the booked-slot reminder only when it is a distinct question. A
+    // slot ending within ten minutes of the hourly check should not create two
+    // back-to-back prompts.
+    if (session.bookingId != null &&
+        !slotEndPrompted &&
+        slotEnd != null &&
+        slotEnd.isAfter(DateTime.now()) &&
+        slotEnd.isBefore(nextHourlyAt) &&
+        slotEnd.difference(nextHourlyAt).abs() > const Duration(minutes: 10)) {
+      final slotDelay = slotEnd.difference(DateTime.now());
+      _hourlyTimer = Timer(slotDelay, () async {
+        await _triggerPrompt(session, WorkoutSessionPromptReason.slotEnd);
+        final current = await loadActiveSession();
+        if (current != null) await _scheduleHourlyPrompt(current);
+      });
+      return;
+    }
+    if (slotEnd != null &&
+        !slotEndPrompted &&
+        !slotEnd.isAfter(DateTime.now())) {
+      await prefs.setBool(_slotEndPromptedKey, true);
+    }
+    var delay = nextHourlyAt.difference(DateTime.now());
     if (delay.isNegative || delay == Duration.zero) delay = Duration.zero;
 
     _hourlyTimer = Timer(delay, () async {
@@ -509,20 +614,11 @@ class WorkoutSessionService {
       session.latitude!,
       session.longitude!,
     );
-    // Only ask once the phone is confidently outside the configured range;
-    // a weak GPS reading at the edge must not end a real workout.
-    final confidentlyOutside =
-        distance - position.accuracy > session.geofenceRadiusMeters;
-    if (!confidentlyOutside) {
-      // Leaving is meaningful only after the member has actually been inside
-      // this facility during the current monitoring period. This prevents a
-      // simulator's default location (or an initial stale GPS fix) from
-      // immediately looking like the member has left right after check-in.
-      _wasInsideFacility = true;
+    if (distance < _scannerDepartureRadiusMeters) {
       _outsideFacility = false;
       return;
     }
-    if (!_wasInsideFacility || _outsideFacility) return;
+    if (_outsideFacility) return;
     _outsideFacility = true;
     await _triggerPrompt(session, WorkoutSessionPromptReason.leftFacility);
   }
@@ -537,16 +633,9 @@ class WorkoutSessionService {
 
     _promptInProgress = true;
     try {
-      if (reason == WorkoutSessionPromptReason.hourly ||
-          reason == WorkoutSessionPromptReason.slotEnd) {
+      if (reason == WorkoutSessionPromptReason.slotEnd) {
         final prefs = await SharedPreferences.getInstance();
-        await prefs.setString(
-          _lastHourlyPromptKey,
-          DateTime.now().toIso8601String(),
-        );
-        if (reason == WorkoutSessionPromptReason.slotEnd) {
-          await prefs.setBool(_slotEndPromptedKey, true);
-        }
+        await prefs.setBool(_slotEndPromptedKey, true);
       }
       await _promptHandler!(session, reason);
     } finally {

@@ -273,56 +273,57 @@ void main() {
     }
   });
 
-  testWidgets(
-    'passes the active-session geofence to the native iOS bridge and records its ownership',
-    (tester) async {
-      const channel = MethodChannel('com.medifit/workout_background');
-      Map<dynamic, dynamic>? startArguments;
-      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(channel, (
-        call,
-      ) async {
-        if (call.method == 'start') {
-          startArguments = Map<dynamic, dynamic>.from(call.arguments as Map);
-          return true;
-        }
-        return null;
-      });
-      SharedPreferences.setMockInitialValues({});
-
-      try {
-        await WorkoutSessionService.instance.saveCheckIn(
-          session: {
-            'id': 'session-native-geofence',
-            'check_in_at': '2026-09-03T10:00:00.000Z',
-            'slot_end_at': '2026-09-03T11:00:00.000Z',
-            'booking_id': 'booking-1',
-            'facility_name': 'Medifit Indiranagar',
-            'facility_latitude': 12.9716,
-            'facility_longitude': 77.5946,
-            'geofence_radius_m': 2000,
-          },
-          fallbackFacilityName: 'Medifit Indiranagar',
-          fallbackFacilityPlace: 'Indiranagar, Bengaluru',
-        );
-
-        final prefs = await SharedPreferences.getInstance();
-        expect(startArguments?['sessionId'], 'session-native-geofence');
-        expect(startArguments?['bookingId'], 'booking-1');
-        expect(startArguments?['latitude'], 12.9716);
-        expect(startArguments?['longitude'], 77.5946);
-        expect(startArguments?['geofenceRadiusMeters'], 2000);
-        expect(startArguments?['slotEndAt'], isA<int>());
-        expect(startArguments?['showPersistentTimer'], isTrue);
-        expect(prefs.getBool('gym_native_geofence_registered'), isTrue);
-
-        await WorkoutSessionService.instance.clearLocalSession();
-        expect(prefs.containsKey('gym_native_geofence_registered'), isFalse);
-      } finally {
-        tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
-          channel,
-          null,
-        );
+  testWidgets('does not derive a departure monitor from facility coordinates', (
+    tester,
+  ) async {
+    const channel = MethodChannel('com.medifit/workout_background');
+    Map<dynamic, dynamic>? startArguments;
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(channel, (
+      call,
+    ) async {
+      if (call.method == 'start') {
+        startArguments = Map<dynamic, dynamic>.from(call.arguments as Map);
+        return false;
       }
-    },
-  );
+      return null;
+    });
+    SharedPreferences.setMockInitialValues({});
+
+    try {
+      await WorkoutSessionService.instance.saveCheckIn(
+        session: {
+          'id': 'session-native-geofence',
+          'check_in_at': '2026-09-03T10:00:00.000Z',
+          'slot_end_at': '2026-09-03T11:00:00.000Z',
+          'booking_id': 'booking-1',
+          'facility_name': 'Medifit Indiranagar',
+          'facility_latitude': 12.9716,
+          'facility_longitude': 77.5946,
+          'geofence_radius_m': 2000,
+        },
+        fallbackFacilityName: 'Medifit Indiranagar',
+        fallbackFacilityPlace: 'Indiranagar, Bengaluru',
+      );
+
+      final prefs = await SharedPreferences.getInstance();
+      expect(startArguments?['sessionId'], 'session-native-geofence');
+      expect(startArguments?['bookingId'], 'booking-1');
+      expect(startArguments?.containsKey('latitude'), isFalse);
+      expect(startArguments?.containsKey('longitude'), isFalse);
+      expect(startArguments?.containsKey('geofenceRadiusMeters'), isFalse);
+      expect(startArguments?['slotEndAt'], isA<int>());
+      expect(startArguments?['showPersistentTimer'], isTrue);
+      expect(prefs.getBool('gym_native_geofence_registered'), isFalse);
+      expect(prefs.containsKey('gym_scan_origin_latitude'), isFalse);
+      expect(prefs.containsKey('gym_scan_origin_longitude'), isFalse);
+
+      await WorkoutSessionService.instance.clearLocalSession();
+      expect(prefs.containsKey('gym_native_geofence_registered'), isFalse);
+    } finally {
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        channel,
+        null,
+      );
+    }
+  });
 }

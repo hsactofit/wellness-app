@@ -282,6 +282,12 @@ class WorkoutReportDetailScreen extends StatelessWidget {
               _insight(context, 'Recovery note', report.recoveryNote!),
             ],
           ],
+          if (report.selfFeedback?.status == 'submitted') ...[
+            const SizedBox(height: 20),
+            _sectionTitle(context, 'Your post-workout feedback'),
+            const SizedBox(height: 8),
+            _selfFeedback(context),
+          ],
           const SizedBox(height: 18),
           const Text(
             'Estimated calories, intensity, summary, and recovery guidance are AI-generated estimates from this session\'s duration and workout plan. They are not medical advice.',
@@ -294,6 +300,46 @@ class WorkoutReportDetailScreen extends StatelessWidget {
             label: const Text('Download PDF'),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _selfFeedback(BuildContext context) {
+    final feedback = report.selfFeedback!;
+    final feeling = (feedback.postWorkoutFeeling ?? 'not recorded').replaceAll(
+      '_',
+      ' ',
+    );
+    final progress = (feedback.perceivedProgress ?? 'not recorded').replaceAll(
+      '_',
+      ' ',
+    );
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Workout quality: ${feedback.workoutQuality ?? '—'} / 5'),
+            const SizedBox(height: 4),
+            Text('Feeling: $feeling · Progress: $progress'),
+            if (feedback.painPresent == true) ...[
+              const SizedBox(height: 8),
+              Text(
+                'Pain: ${feedback.painSeverity ?? '—'} / 10${feedback.painBodyAreas.isEmpty ? '' : ' · ${feedback.painBodyAreas.join(', ')}'}',
+                style: const TextStyle(fontWeight: FontWeight.w700),
+              ),
+              if (_hasText(feedback.painNote)) ...[
+                const SizedBox(height: 4),
+                Text(feedback.painNote!),
+              ],
+            ],
+            if (_hasText(feedback.note)) ...[
+              const SizedBox(height: 8),
+              Text(feedback.note!),
+            ],
+          ],
+        ),
       ),
     );
   }

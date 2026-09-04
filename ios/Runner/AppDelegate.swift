@@ -7,7 +7,9 @@ import UserNotifications
 @main
 @objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate, CLLocationManagerDelegate {
   private static let channelName = "com.medifit/workout_background"
-  private static let notificationCategory = "MEDIFIT_WORKOUT_PROMPT"
+  private static let hourlyNotificationCategory = "MEDIFIT_WORKOUT_HOURLY_PROMPT"
+  private static let departureNotificationCategory = "MEDIFIT_WORKOUT_DEPARTURE_PROMPT"
+  private static let slotEndNotificationCategory = "MEDIFIT_WORKOUT_SLOT_END_PROMPT"
   private static let checkoutAction = "MEDIFIT_WORKOUT_CHECKOUT"
   private static let continueAction = "MEDIFIT_WORKOUT_CONTINUE"
 
@@ -67,7 +69,8 @@ import UserNotifications
     didReceive response: UNNotificationResponse,
     withCompletionHandler completionHandler: @escaping () -> Void
   ) {
-    guard response.notification.request.content.categoryIdentifier == Self.notificationCategory else {
+    let category = response.notification.request.content.categoryIdentifier
+    guard [Self.hourlyNotificationCategory, Self.departureNotificationCategory, Self.slotEndNotificationCategory].contains(category) else {
       super.userNotificationCenter(center, didReceive: response, withCompletionHandler: completionHandler)
       return
     }
@@ -75,8 +78,12 @@ import UserNotifications
     case Self.checkoutAction, UNNotificationDefaultActionIdentifier:
       emitToFlutter("checkoutRequested")
     case Self.continueAction:
-      emitToFlutter("continueRequested")
-      scheduleHourlyPrompt(after: Date().addingTimeInterval(60 * 60))
+      if category == Self.slotEndNotificationCategory {
+        emitToFlutter("slotEndContinueRequested")
+      } else {
+        emitToFlutter("continueRequested")
+        scheduleHourlyPrompt(after: Date().addingTimeInterval(60 * 60))
+      }
     default:
       break
     }
@@ -90,9 +97,9 @@ import UserNotifications
   }
 
   func locationManager(_ manager: CLLocationManager, didExitRegion region: CLRegion) {
-    guard region.identifier == pendingRegion?.identifier else { return }
-    emitToFlutter("geofenceExited")
-    scheduleExitPrompt()
+    guard region.identifier == "medifit.workout.\(activeSessionId ?? UserDefaults.standard.string(forKey: "medifit.workout.session") ?? "")" else { return }
+    emitToFlutter("departureCheckoutRequired")
+    scheduleDeparturePrompt()
   }
 
   private func handleWorkoutMethod(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
@@ -104,9 +111,10 @@ import UserNotifications
     case "start":
       let values = call.arguments as? [String: Any] ?? [:]
       startWorkoutSurface(values)
-      let latitude = values["latitude"] as? Double
-      let longitude = values["longitude"] as? Double
-      result(latitude != nil && longitude != nil)
+      result(false)
+    case "armScannerOrigin":
+      let values = call.arguments as? [String: Any] ?? [:]
+      result(armScannerOrigin(values))
     case "showTimer":
       result(showWorkoutTimer(call.arguments as? [String: Any] ?? [:]))
     case "hideTimer":
@@ -128,24 +136,40 @@ import UserNotifications
     let checkInMilliseconds = values["checkInAt"] as? NSNumber
     let checkInAt = Date(timeIntervalSince1970: (checkInMilliseconds?.doubleValue ?? Date().timeIntervalSince1970 * 1000) / 1000)
     activeCheckInAt = checkInAt
+    UserDefaults.standard.set(sessionId, forKey: "medifit.workout.session")
     let slotEndMilliseconds = values["slotEndAt"] as? NSNumber
     let slotEndAt = slotEndMilliseconds.map { Date(timeIntervalSince1970: $0.doubleValue / 1000) }
 
     requestNotificationPermission()
-    scheduleHourlyPrompt(after: slotEndAt ?? checkInAt.addingTimeInterval(60 * 60))
+    let firstHourly = checkInAt.addingTimeInterval(60 * 60)
+    scheduleHourlyPrompt(after: firstHourly)
+    if let slotEndAt,
+       abs(slotEndAt.timeIntervalSince(firstHourly)) > 10 * 60,
+       slotEndAt > Date() {
+      scheduleSlotEndPrompt(at: slotEndAt)
+    }
     // A Live Activity must be started while the app is foregrounded. It stays
     // active even while the in-app workout view is visible, so it is ready
     // when the member returns to the Home or Lock Screen.
     _ = showWorkoutTimer(values)
 
-    guard let latitude = values["latitude"] as? Double,
-          let longitude = values["longitude"] as? Double else { return }
-    let configuredRadius = (values["geofenceRadiusMeters"] as? NSNumber)?.doubleValue ?? 2000
-    let radius = min(configuredRadius, locationManager.maximumRegionMonitoringDistance)
-    guard radius > 0, CLLocationManager.isMonitoringAvailable(for: CLCircularRegion.self) else { return }
+  }
+
+  /// The scanner-origin coordinate arrives only after QR/PIN check-in and is
+  /// stored by Core Location, not sent to Flutter's server API. A device that
+  /// cannot monitor the full 2 km region returns false so Flutter can retain
+  /// its foreground-only fallback without silently shrinking the threshold.
+  private func armScannerOrigin(_ values: [String: Any]) -> Bool {
+    let sessionId = values["sessionId"] as? String ?? ""
+    guard !sessionId.isEmpty,
+          sessionId == activeSessionId || sessionId == UserDefaults.standard.string(forKey: "medifit.workout.session"),
+          let latitude = values["latitude"] as? Double,
+          let longitude = values["longitude"] as? Double,
+          CLLocationManager.isMonitoringAvailable(for: CLCircularRegion.self),
+          locationManager.maximumRegionMonitoringDistance >= 2000 else { return false }
     let region = CLCircularRegion(
       center: CLLocationCoordinate2D(latitude: latitude, longitude: longitude),
-      radius: radius,
+      radius: 2000,
       identifier: "medifit.workout.\(sessionId)"
     )
     region.notifyOnEntry = false
@@ -160,26 +184,29 @@ import UserNotifications
       // primitive registered; no continuous coordinates are retained.
       locationManager.requestAlwaysAuthorization()
     case .denied, .restricted:
-      break
+      return false
     @unknown default:
-      break
+      return false
     }
+    return true
   }
 
   private func stopWorkoutSurface() {
-    if let region = pendingRegion {
+    for region in locationManager.monitoredRegions where region.identifier.hasPrefix("medifit.workout.") {
       locationManager.stopMonitoring(for: region)
     }
     pendingRegion = nil
     UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [
       promptNotificationId,
-      exitNotificationId,
+      slotEndNotificationId,
+      departureNotificationId,
     ])
     if let sessionId = activeSessionId, #available(iOS 16.1, *) {
       endLiveActivity(sessionId: sessionId)
     }
     activeSessionId = nil
     activeCheckInAt = nil
+    UserDefaults.standard.removeObject(forKey: "medifit.workout.session")
   }
 
   /// iOS intentionally keeps its Live Activity active while the in-app timer
@@ -214,8 +241,12 @@ import UserNotifications
     "medifit.workout.prompt.\(activeSessionId ?? "active")"
   }
 
-  private var exitNotificationId: String {
-    "medifit.workout.exit.\(activeSessionId ?? "active")"
+  private var slotEndNotificationId: String {
+    "medifit.workout.slot-end.\(activeSessionId ?? "active")"
+  }
+
+  private var departureNotificationId: String {
+    "medifit.workout.departure.\(activeSessionId ?? "active")"
   }
 
   private func configureWorkoutNotifications() {
@@ -229,13 +260,27 @@ import UserNotifications
       title: "Still working",
       options: []
     )
-    let category = UNNotificationCategory(
-      identifier: Self.notificationCategory,
+    let hourly = UNNotificationCategory(
+      identifier: Self.hourlyNotificationCategory,
       actions: [checkout, keepWorking],
       intentIdentifiers: [],
       options: []
     )
-    UNUserNotificationCenter.current().setNotificationCategories([category])
+    let slotEnd = UNNotificationCategory(
+      identifier: Self.slotEndNotificationCategory,
+      actions: [checkout, keepWorking],
+      intentIdentifiers: [],
+      options: []
+    )
+    // iOS always displays its own dismiss affordance, but this app category
+    // deliberately exposes no "still working" action after a 2 km departure.
+    let departure = UNNotificationCategory(
+      identifier: Self.departureNotificationCategory,
+      actions: [checkout],
+      intentIdentifiers: [],
+      options: []
+    )
+    UNUserNotificationCenter.current().setNotificationCategories([hourly, slotEnd, departure])
   }
 
   private func requestNotificationPermission() {
@@ -244,24 +289,37 @@ import UserNotifications
 
   private func scheduleHourlyPrompt(after date: Date) {
     let content = UNMutableNotificationContent()
-    content.title = "Is your workout complete?"
-    content.body = "Your workout at \(activeFacilityName) is still active. Open checkout when you are done."
-    content.categoryIdentifier = Self.notificationCategory
-    let delay = max(1, date.timeIntervalSinceNow)
-    let trigger = UNTimeIntervalNotificationTrigger(timeInterval: delay, repeats: false)
+    content.title = "Are you still working out?"
+    content.body = "Confirm to keep your workout timer running, or open checkout when you are done."
+    content.categoryIdentifier = Self.hourlyNotificationCategory
+    // A repeating OS notification also covers an ignored/dismissed prompt.
+    let delay = max(60, date.timeIntervalSinceNow)
+    let trigger = UNTimeIntervalNotificationTrigger(timeInterval: delay, repeats: true)
+    UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [promptNotificationId])
     UNUserNotificationCenter.current().add(
       UNNotificationRequest(identifier: promptNotificationId, content: content, trigger: trigger)
     )
   }
 
-  private func scheduleExitPrompt() {
+  private func scheduleSlotEndPrompt(at date: Date) {
     let content = UNMutableNotificationContent()
-    content.title = "Have you left \(activeFacilityName)?"
-    content.body = "Your phone left the facility area. Checkout when your workout is complete."
-    content.categoryIdentifier = Self.notificationCategory
+    content.title = "Your booked slot has ended"
+    content.body = "Open checkout when you are done, or confirm that you are still working out."
+    content.categoryIdentifier = Self.slotEndNotificationCategory
+    let trigger = UNTimeIntervalNotificationTrigger(timeInterval: max(1, date.timeIntervalSinceNow), repeats: false)
+    UNUserNotificationCenter.current().add(
+      UNNotificationRequest(identifier: slotEndNotificationId, content: content, trigger: trigger)
+    )
+  }
+
+  private func scheduleDeparturePrompt() {
+    let content = UNMutableNotificationContent()
+    content.title = "Have you left your workout?"
+    content.body = "Your phone is 2 km from where you scanned in. Please open checkout to finish the active session."
+    content.categoryIdentifier = Self.departureNotificationCategory
     let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
     UNUserNotificationCenter.current().add(
-      UNNotificationRequest(identifier: exitNotificationId, content: content, trigger: trigger)
+      UNNotificationRequest(identifier: departureNotificationId, content: content, trigger: trigger)
     )
   }
 

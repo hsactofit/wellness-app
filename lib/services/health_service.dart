@@ -1420,6 +1420,8 @@ class HealthService {
         HealthDataType.ACTIVE_ENERGY_BURNED,
         HealthDataType.BASAL_ENERGY_BURNED,
         HealthDataType.HEART_RATE,
+        HealthDataType.RESTING_HEART_RATE,
+        HealthDataType.WEIGHT,
         HealthDataType.WATER,
         HealthDataType.WORKOUT,
       ];
@@ -1480,6 +1482,10 @@ class HealthService {
       double heartRateSum = 0.0;
       int heartRateCount = 0;
       double fallbackSteps = 0.0;
+      double? restingHeartRate;
+      DateTime? restingHeartRateAt;
+      double? weightKg;
+      DateTime? weightAt;
 
       for (var point in todayHealthData) {
         final double? val = _extractDoubleValue(point);
@@ -1498,6 +1504,18 @@ class HealthService {
           case HealthDataType.HEART_RATE:
             heartRateSum += val;
             heartRateCount++;
+            break;
+          case HealthDataType.RESTING_HEART_RATE:
+            if (restingHeartRateAt == null || point.dateFrom.isAfter(restingHeartRateAt)) {
+              restingHeartRate = val;
+              restingHeartRateAt = point.dateFrom;
+            }
+            break;
+          case HealthDataType.WEIGHT:
+            if (weightAt == null || point.dateFrom.isAfter(weightAt)) {
+              weightKg = val;
+              weightAt = point.dateFrom;
+            }
             break;
           case HealthDataType.WATER:
             waterIntake += val < 10.0 ? val * 1000.0 : val;
@@ -1537,10 +1555,14 @@ class HealthService {
         'date': todayStr,
         'steps': steps.round(),
         'calories': (activeCalories + basalCalories).round(),
-        'sleep_duration_hours': double.parse(sleepDuration.toStringAsFixed(1)),
+        'sleep_duration_hours': sleepMins > 0
+            ? double.parse(sleepDuration.toStringAsFixed(1))
+            : null,
         'water_intake_ml': waterIntake.round(),
         'workouts_count': workouts,
         'heart_rate_bpm': heartRate.round(),
+        'resting_heart_rate_bpm': restingHeartRate?.round(),
+        'weight_kg': weightKg,
       };
 
       final List<Map<String, dynamic>> dailyRecords = [];
@@ -1572,6 +1594,8 @@ class HealthService {
             'water_intake_ml': 0,
             'workouts_count': 0,
             'heart_rate_bpm': 0,
+            'resting_heart_rate_bpm': null,
+            'weight_kg': null,
           });
         }
       }
@@ -1600,6 +1624,8 @@ class HealthService {
         HealthDataType.ACTIVE_ENERGY_BURNED,
         HealthDataType.BASAL_ENERGY_BURNED,
         HealthDataType.HEART_RATE,
+        HealthDataType.RESTING_HEART_RATE,
+        HealthDataType.WEIGHT,
         HealthDataType.WATER,
         HealthDataType.WORKOUT,
       ];
@@ -1683,6 +1709,10 @@ class HealthService {
         double heartRate = 0.0;
         double sleepDuration = 0.0;
         double waterIntake = 0.0;
+        double? restingHeartRate;
+        DateTime? restingHeartRateAt;
+        double? weightKg;
+        DateTime? weightAt;
 
         try {
           try {
@@ -1728,6 +1758,18 @@ class HealthService {
                 heartRateSum += val;
                 heartRateCount++;
                 break;
+              case HealthDataType.RESTING_HEART_RATE:
+                if (restingHeartRateAt == null || point.dateFrom.isAfter(restingHeartRateAt)) {
+                  restingHeartRate = val;
+                  restingHeartRateAt = point.dateFrom;
+                }
+                break;
+              case HealthDataType.WEIGHT:
+                if (weightAt == null || point.dateFrom.isAfter(weightAt)) {
+                  weightKg = val;
+                  weightAt = point.dateFrom;
+                }
+                break;
               case HealthDataType.WATER:
                 waterIntake += val < 10.0 ? val * 1000.0 : val;
                 break;
@@ -1769,12 +1811,14 @@ class HealthService {
           'date': dateString,
           'steps': steps.round(),
           'calories': (activeCalories + basalCalories).round(),
-          'sleep_duration_hours': double.parse(
-            sleepDuration.toStringAsFixed(1),
-          ),
+          'sleep_duration_hours': sleepDuration > 0
+              ? double.parse(sleepDuration.toStringAsFixed(1))
+              : null,
           'water_intake_ml': waterIntake.round(),
           'workouts_count': workouts,
           'heart_rate_bpm': heartRate.round(),
+          'resting_heart_rate_bpm': restingHeartRate?.round(),
+          'weight_kg': weightKg,
         });
       }
 

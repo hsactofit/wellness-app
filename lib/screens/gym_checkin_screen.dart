@@ -14,6 +14,7 @@ import '../services/facility_access_helpers.dart';
 import '../services/facility_booking_service.dart';
 import '../services/facility_directions_launcher.dart';
 import '../services/facility_rating_service.dart';
+import '../services/workout_feedback_service.dart';
 import '../services/workout_session_service.dart';
 import '../widgets/exercise_video_tile.dart';
 import '../widgets/glass_card.dart';
@@ -42,6 +43,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
     with WidgetsBindingObserver {
   final _bookingService = FacilityBookingService.instance;
   final _ratingService = FacilityRatingService.instance;
+  final _workoutFeedbackService = WorkoutFeedbackService.instance;
   final _manualFacilityController = TextEditingController();
   final _reasonController = TextEditingController();
   final _completedItems = <String>{};
@@ -57,6 +59,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
   EligibleFacility? _instantFacility;
   ActiveWorkoutSession? _session;
   FacilityRatingPrompt? _pendingRating;
+  WorkoutFeedbackPrompt? _pendingWorkoutFeedback;
   MobileScannerController? _scannerController;
   Timer? _timer;
   Timer? _requestPollTimer;
@@ -69,6 +72,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
   bool _actionInProgress = false;
   bool _cameraPermissionGranted = false;
   bool _ratingDialogOpen = false;
+  bool _workoutFeedbackDialogOpen = false;
   PersistentTimerStatus? _persistentTimerStatus;
 
   bool get _usesIosLiveActivity =>
@@ -130,7 +134,10 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
       );
     } else {
       await Future.wait([_loadFacilities(), _loadBookings()]);
-      await _restorePendingRating(present: true);
+      await _restorePendingWorkoutFeedback(present: true);
+      if (_pendingWorkoutFeedback == null) {
+        await _restorePendingRating(present: true);
+      }
     }
   }
 
@@ -251,11 +258,53 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
   }
 
   Future<bool> _ensureRatingComplete() async {
+    if (!await _ensureWorkoutFeedbackComplete()) return false;
     if (_pendingRating == null) await _restorePendingRating();
     final pending = _pendingRating;
     if (pending == null) return true;
     await _presentRating(pending);
     return _pendingRating == null;
+  }
+
+  Future<void> _restorePendingWorkoutFeedback({bool present = false}) async {
+    try {
+      final pending = await _workoutFeedbackService.pending();
+      if (!mounted) return;
+      setState(() => _pendingWorkoutFeedback = pending);
+      if (present && pending != null) await _presentWorkoutFeedback(pending);
+    } on WorkoutFeedbackException catch (error) {
+      if (mounted) _showSnack(error.message, isError: true);
+    } catch (_) {
+      // The server preserves the pending item and will gate the next Gym
+      // Access mutation if connectivity prevents it being restored now.
+    }
+  }
+
+  Future<bool> _ensureWorkoutFeedbackComplete() async {
+    if (_pendingWorkoutFeedback == null) {
+      await _restorePendingWorkoutFeedback();
+    }
+    final pending = _pendingWorkoutFeedback;
+    if (pending == null) return true;
+    await _presentWorkoutFeedback(pending);
+    return _pendingWorkoutFeedback == null;
+  }
+
+  Future<void> _presentWorkoutFeedback(WorkoutFeedbackPrompt prompt) async {
+    if (!mounted || _workoutFeedbackDialogOpen) return;
+    _workoutFeedbackDialogOpen = true;
+    final submitted = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => _WorkoutSelfFeedbackDialog(prompt: prompt),
+    );
+    _workoutFeedbackDialogOpen = false;
+    if (!mounted) return;
+    if (submitted == true) {
+      setState(() => _pendingWorkoutFeedback = null);
+      _showSnack('Thanks — your workout feedback was submitted.');
+      if (_pendingRating != null) await _presentRating(_pendingRating!);
+    }
   }
 
   Future<void> _presentRating(FacilityRatingPrompt prompt) async {
@@ -363,7 +412,8 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
   Future<bool> _ensureWorkoutDataConsent({required String action}) async {
     try {
       if (_workoutDataConsentActive == true) return true;
-      if ((await _bookingService.fetchWorkoutDataConsent()).active) {
+      final consent = await _bookingService.fetchWorkoutDataConsent();
+      if (consent.active) {
         _workoutDataConsentActive = true;
         return true;
       }
@@ -373,7 +423,9 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
         builder: (dialogContext) => AlertDialog(
           title: const Text('Facility workout-data sharing'),
           content: Text(
-            'To $action, approve sharing your identity, facility attendance, facility workout report, and facility feedback with your assigned facility manager and your organisation’s corporate admin. Medical history, raw OCR, unrelated vitals, and workouts at unrelated facilities are never shared.',
+            consent.disclosureText.isNotEmpty
+                ? 'To $action, review and approve the following:\n\n${consent.disclosureText}'
+                : 'To $action, approve the required facility workout-data sharing setting.',
           ),
           actions: [
             TextButton(
@@ -828,11 +880,16 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
           fallbackFacilityPlace: _instantFacility?.address ?? '',
           showPersistentTimer: false,
         );
-        // Start slot/hourly prompts and contextual location handling as soon as
-        // the server confirms check-in; waiting for a future app resume leaves
-        // a newly started workout without its reminder schedule.
+        // The 2 km reminder origin is the exact device position after this
+        // successful QR/PIN check-in — never the facility's stored map pin.
+        // Location is optional for check-in, so a refusal only disables this
+        // automatic reminder and leaves manual checkout available.
+        final scannerOriginArmed = await WorkoutSessionService.instance
+            .captureAndArmScannerOrigin();
+        // Start slot/hourly prompts as soon as the server confirms check-in;
+        // waiting for an app resume would leave a new workout unprotected.
         await WorkoutSessionService.instance.startMonitoring(
-          requestLocationPermission: true,
+          requestLocationPermission: false,
         );
         final active = await WorkoutSessionService.instance.loadActiveSession();
         if (!mounted) return;
@@ -858,6 +915,12 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
         _startTimer();
         widget.onStatusChanged?.call();
         _showSnack('Workout started. Your timer is running.');
+        if (!scannerOriginArmed) {
+          _showSnack(
+            'Workout started. Turn on Location and allow it for Medifit to receive the automatic 2 km checkout reminder.',
+            isError: true,
+          );
+        }
       } on WorkoutSessionException catch (error) {
         if (mounted) _showSnack(error.message, isError: true);
         _scannerController?.start();
@@ -904,8 +967,15 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
       await _loadFacilities();
       await _loadBookings();
       if (!mounted) return;
+      if (result.feedbackRequest != null) {
+        setState(() => _pendingWorkoutFeedback = result.feedbackRequest);
+      }
       if (result.ratingRequest != null) {
         setState(() => _pendingRating = result.ratingRequest);
+      }
+      if (result.feedbackRequest != null) {
+        await _presentWorkoutFeedback(result.feedbackRequest!);
+      } else if (result.ratingRequest != null) {
         await _presentRating(result.ratingRequest!);
       }
     } on WorkoutSessionException catch (error) {
@@ -1985,6 +2055,309 @@ class _FacilityRatingDialogState extends State<_FacilityRatingDialog> {
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
               : const Text('Submit rating'),
+        ),
+      ],
+    );
+  }
+}
+
+class _WorkoutSelfFeedbackDialog extends StatefulWidget {
+  const _WorkoutSelfFeedbackDialog({required this.prompt});
+
+  final WorkoutFeedbackPrompt prompt;
+
+  @override
+  State<_WorkoutSelfFeedbackDialog> createState() =>
+      _WorkoutSelfFeedbackDialogState();
+}
+
+class _WorkoutSelfFeedbackDialogState
+    extends State<_WorkoutSelfFeedbackDialog> {
+  final _painNoteController = TextEditingController();
+  final _noteController = TextEditingController();
+  final _painAreas = <String>{};
+  int _quality = 0;
+  String? _feeling;
+  String? _progress;
+  bool? _hasPain;
+  double _painSeverity = 5;
+  bool _submitting = false;
+  String? _error;
+
+  static const _painAreaOptions = [
+    'Head/neck',
+    'Shoulder',
+    'Back',
+    'Hip',
+    'Knee',
+    'Ankle/foot',
+    'Other',
+  ];
+
+  @override
+  void dispose() {
+    _painNoteController.dispose();
+    _noteController.dispose();
+    super.dispose();
+  }
+
+  bool get _complete =>
+      _quality > 0 &&
+      _feeling != null &&
+      _progress != null &&
+      _hasPain != null &&
+      (_hasPain != true || _painAreas.isNotEmpty);
+
+  Future<void> _submit() async {
+    if (!_complete) {
+      setState(
+        () => _error =
+            'Answer each question and select at least one pain area if you report pain.',
+      );
+      return;
+    }
+    setState(() {
+      _submitting = true;
+      _error = null;
+    });
+    try {
+      await WorkoutFeedbackService.instance.submit(
+        widget.prompt,
+        workoutQuality: _quality,
+        postWorkoutFeeling: _feeling!,
+        painPresent: _hasPain!,
+        painSeverity: _hasPain == true ? _painSeverity.round() : null,
+        painBodyAreas: _painAreas.toList(growable: false),
+        painNote: _painNoteController.text,
+        perceivedProgress: _progress!,
+        note: _noteController.text,
+      );
+      if (mounted) Navigator.pop(context, true);
+    } on WorkoutFeedbackException catch (error) {
+      if (mounted) setState(() => _error = error.message);
+    } catch (_) {
+      if (mounted) {
+        setState(
+          () => _error = 'Could not submit workout feedback. Try again.',
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _submitting = false);
+    }
+  }
+
+  Widget _stars() => Wrap(
+    children: List.generate(
+      5,
+      (index) => IconButton(
+        tooltip: '${index + 1} of 5',
+        onPressed: _submitting
+            ? null
+            : () => setState(() {
+                _quality = index + 1;
+                _error = null;
+              }),
+        icon: Icon(
+          index < _quality ? Icons.star_rounded : Icons.star_border_rounded,
+          color: index < _quality ? Colors.amber.shade800 : Colors.grey,
+        ),
+      ),
+    ),
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('How was your workout?'),
+      content: SizedBox(
+        width: 460,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Tell us about today’s session at ${widget.prompt.facilityName}.',
+              ),
+              const SizedBox(height: 14),
+              const Text(
+                'Workout quality',
+                style: TextStyle(fontWeight: FontWeight.w700),
+              ),
+              _stars(),
+              DropdownButtonFormField<String>(
+                initialValue: _feeling,
+                decoration: const InputDecoration(
+                  labelText: 'How do you feel after today’s workout?',
+                  border: OutlineInputBorder(),
+                ),
+                items: const [
+                  DropdownMenuItem(
+                    value: 'much_worse',
+                    child: Text('Much worse'),
+                  ),
+                  DropdownMenuItem(value: 'worse', child: Text('Worse')),
+                  DropdownMenuItem(
+                    value: 'same',
+                    child: Text('About the same'),
+                  ),
+                  DropdownMenuItem(value: 'better', child: Text('Better')),
+                  DropdownMenuItem(
+                    value: 'much_better',
+                    child: Text('Much better'),
+                  ),
+                ],
+                onChanged: _submitting
+                    ? null
+                    : (value) => setState(() {
+                        _feeling = value;
+                        _error = null;
+                      }),
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                initialValue: _progress,
+                decoration: const InputDecoration(
+                  labelText: 'Do you feel any progress?',
+                  border: OutlineInputBorder(),
+                ),
+                items: const [
+                  DropdownMenuItem(value: 'less', child: Text('Less progress')),
+                  DropdownMenuItem(
+                    value: 'same',
+                    child: Text('About the same'),
+                  ),
+                  DropdownMenuItem(value: 'more', child: Text('More progress')),
+                  DropdownMenuItem(
+                    value: 'not_sure',
+                    child: Text('Not sure yet'),
+                  ),
+                ],
+                onChanged: _submitting
+                    ? null
+                    : (value) => setState(() {
+                        _progress = value;
+                        _error = null;
+                      }),
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'Do you feel any pain?',
+                style: TextStyle(fontWeight: FontWeight.w700),
+              ),
+              Row(
+                children: [
+                  ChoiceChip(
+                    label: const Text('No'),
+                    selected: _hasPain == false,
+                    onSelected: _submitting
+                        ? null
+                        : (_) => setState(() {
+                            _hasPain = false;
+                            _painAreas.clear();
+                            _error = null;
+                          }),
+                  ),
+                  const SizedBox(width: 8),
+                  ChoiceChip(
+                    label: const Text('Yes'),
+                    selected: _hasPain == true,
+                    onSelected: _submitting
+                        ? null
+                        : (_) => setState(() {
+                            _hasPain = true;
+                            _error = null;
+                          }),
+                  ),
+                ],
+              ),
+              if (_hasPain == true) ...[
+                const SizedBox(height: 8),
+                Text('Pain severity: ${_painSeverity.round()} / 10'),
+                Slider(
+                  value: _painSeverity,
+                  min: 1,
+                  max: 10,
+                  divisions: 9,
+                  label: _painSeverity.round().toString(),
+                  onChanged: _submitting
+                      ? null
+                      : (value) => setState(() => _painSeverity = value),
+                ),
+                const Text(
+                  'Where do you feel it?',
+                  style: TextStyle(fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 4),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: _painAreaOptions
+                      .map(
+                        (area) => FilterChip(
+                          label: Text(area),
+                          selected: _painAreas.contains(area),
+                          onSelected: _submitting
+                              ? null
+                              : (selected) => setState(() {
+                                  if (selected) {
+                                    _painAreas.add(area);
+                                  } else {
+                                    _painAreas.remove(area);
+                                  }
+                                  _error = null;
+                                }),
+                        ),
+                      )
+                      .toList(growable: false),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: _painNoteController,
+                  enabled: !_submitting,
+                  maxLength: 500,
+                  minLines: 1,
+                  maxLines: 3,
+                  decoration: const InputDecoration(
+                    labelText: 'Pain note (optional)',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ],
+              const SizedBox(height: 10),
+              TextField(
+                controller: _noteController,
+                enabled: !_submitting,
+                maxLength: 500,
+                minLines: 1,
+                maxLines: 3,
+                decoration: const InputDecoration(
+                  labelText: 'Anything else? (optional)',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              if (_error != null) ...[
+                const SizedBox(height: 8),
+                Text(_error!, style: const TextStyle(color: Colors.redAccent)),
+              ],
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _submitting ? null : () => Navigator.pop(context, false),
+          child: const Text('Finish later'),
+        ),
+        FilledButton(
+          onPressed: _submitting ? null : _submit,
+          child: _submitting
+              ? const SizedBox(
+                  height: 18,
+                  width: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text('Submit feedback'),
         ),
       ],
     );

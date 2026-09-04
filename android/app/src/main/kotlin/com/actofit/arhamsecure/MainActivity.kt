@@ -20,12 +20,32 @@ class MainActivity : FlutterFragmentActivity() {
         backgroundChannel?.setMethodCallHandler { call, result ->
             when (call.method) {
                 "start" -> {
-                    if (call.argument<Boolean>("showPersistentTimer") != false) {
-                        startWorkoutTimer(call)
+                    // The foreground service owns hourly/departure prompting
+                    // even while Flutter is visible. Android requires its
+                    // persistent notification while that service is running.
+                    startWorkoutTimer(call)
+                    result.success(false)
+                }
+                "armScannerOrigin" -> {
+                    val sessionId = call.argument<String>("sessionId")
+                    val latitude = call.argument<Double>("latitude")
+                    val longitude = call.argument<Double>("longitude")
+                    if (sessionId == null || latitude == null || longitude == null) {
+                        result.success(false)
                     } else {
-                        stopWorkoutTimer()
+                        val intent = Intent(this, WorkoutForegroundService::class.java).apply {
+                            action = WorkoutForegroundService.ACTION_ARM_SCANNER_ORIGIN
+                            putExtra("sessionId", sessionId)
+                            putExtra("latitude", latitude)
+                            putExtra("longitude", longitude)
+                        }
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                            startForegroundService(intent)
+                        } else {
+                            startService(intent)
+                        }
+                        result.success(true)
                     }
-                    result.success(null)
                 }
                 "showTimer" -> {
                     startWorkoutTimer(call)
@@ -67,6 +87,7 @@ class MainActivity : FlutterFragmentActivity() {
             putExtra("sessionId", call.argument<String>("sessionId"))
             putExtra("facilityName", call.argument<String>("facilityName"))
             putExtra("checkInAt", call.argument<Long>("checkInAt") ?: System.currentTimeMillis())
+            call.argument<Long>("slotEndAt")?.let { putExtra("slotEndAt", it) }
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             startForegroundService(intent)

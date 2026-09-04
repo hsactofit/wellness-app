@@ -30,18 +30,26 @@ class BackgroundWorkoutService {
   static final BackgroundWorkoutService instance = BackgroundWorkoutService._();
   static const _channel = MethodChannel('com.medifit/workout_background');
   final ValueNotifier<int> checkoutRequestedSignal = ValueNotifier<int>(0);
-  final ValueNotifier<int> geofenceExitedSignal = ValueNotifier<int>(0);
+  final ValueNotifier<int> departureCheckoutRequiredSignal = ValueNotifier<int>(
+    0,
+  );
   final ValueNotifier<int> continueRequestedSignal = ValueNotifier<int>(0);
+  final ValueNotifier<int> slotEndContinueRequestedSignal = ValueNotifier<int>(
+    0,
+  );
   bool _uiReady = false;
 
   Future<void> _handleNativeCall(MethodCall call) async {
     switch (call.method) {
       case 'checkoutRequested':
         checkoutRequestedSignal.value++;
-      case 'geofenceExited':
-        geofenceExitedSignal.value++;
+      case 'departureCheckoutRequired':
+      case 'geofenceExited': // Compatibility with an already running native app.
+        departureCheckoutRequiredSignal.value++;
       case 'continueRequested':
         continueRequestedSignal.value++;
+      case 'slotEndContinueRequested':
+        slotEndContinueRequestedSignal.value++;
     }
   }
 
@@ -62,18 +70,14 @@ class BackgroundWorkoutService {
     }
   }
 
-  /// Returns true only when iOS is handling geofence registration natively.
-  /// Flutter then avoids starting its continuous position stream, which keeps
-  /// facility-exit detection private and OS-managed in the background.
+  /// Starts the durable timer/prompt surface. Scanner-origin tracking is armed
+  /// separately after the successful QR/PIN scan has captured a local point.
   Future<bool> start({
     required String sessionId,
     required String facilityName,
     DateTime? checkInAt,
     DateTime? slotEndAt,
     String? bookingId,
-    double? latitude,
-    double? longitude,
-    int? geofenceRadiusMeters,
     bool showPersistentTimer = true,
   }) async {
     if (kIsWeb) return false;
@@ -84,10 +88,6 @@ class BackgroundWorkoutService {
         'checkInAt': (checkInAt ?? DateTime.now()).millisecondsSinceEpoch,
         if (slotEndAt != null) 'slotEndAt': slotEndAt.millisecondsSinceEpoch,
         if (bookingId != null) 'bookingId': bookingId,
-        if (latitude != null) 'latitude': latitude,
-        if (longitude != null) 'longitude': longitude,
-        if (geofenceRadiusMeters != null)
-          'geofenceRadiusMeters': geofenceRadiusMeters,
         'showPersistentTimer': showPersistentTimer,
       });
       return nativeGeofence == true;
@@ -95,6 +95,31 @@ class BackgroundWorkoutService {
       debugPrint('Workout background service unavailable: $error');
     } on MissingPluginException catch (error) {
       debugPrint('Workout background service unavailable: $error');
+    }
+    return false;
+  }
+
+  /// Register the fixed 2 km departure monitor around the device's QR-scan
+  /// location. Coordinates remain in native/local storage only for this
+  /// active workout and are removed by [stop].
+  Future<bool> armScannerOrigin({
+    required String sessionId,
+    required double latitude,
+    required double longitude,
+  }) async {
+    if (kIsWeb) return false;
+    try {
+      final registered = await _channel.invokeMethod<bool>('armScannerOrigin', {
+        'sessionId': sessionId,
+        'latitude': latitude,
+        'longitude': longitude,
+        'radiusMeters': 2000,
+      });
+      return registered == true;
+    } on PlatformException catch (error) {
+      debugPrint('Scanner-origin monitor unavailable: $error');
+    } on MissingPluginException catch (error) {
+      debugPrint('Scanner-origin monitor unavailable: $error');
     }
     return false;
   }

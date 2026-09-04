@@ -31,7 +31,9 @@ import 'exercise_library_screen.dart';
 import 'update_health_hub_screen.dart';
 import '../models/plan_models.dart';
 import '../models/body_composition_report.dart';
+import '../models/weekly_training.dart';
 import '../widgets/water/wave_painter.dart';
+import '../widgets/weekly_training_summary.dart';
 import '../theme/app_theme.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -85,6 +87,7 @@ class DashboardScreenState extends State<DashboardScreen>
   int? _sleepSubscore;
   int? _nutritionSubscore;
   int? _mindfulnessSubscore;
+  WeeklyTrainingSummary? _weeklyTraining;
   Future<List<Map<String, dynamic>>> _dailyRecordsFuture = Future.value(
     <Map<String, dynamic>>[],
   );
@@ -950,6 +953,9 @@ class DashboardScreenState extends State<DashboardScreen>
         // 2. GET dashboard — returns full DashboardResponse WITH widgets array
         final dashRes = await ApiService.instance.getDashboard(email);
         final resData = Map<String, dynamic>.from(dashRes['data'] ?? dashRes);
+        final weeklyTraining = WeeklyTrainingSummary.tryParse(
+          resData['weekly_training'],
+        );
 
         debugPrint(
           "✅ GET Dashboard done — widgets count: ${(resData['widgets'] as List?)?.length ?? 0}",
@@ -1130,6 +1136,10 @@ class DashboardScreenState extends State<DashboardScreen>
           _sleepSubscore = sleepSub;
           _nutritionSubscore = nutriSub;
           _mindfulnessSubscore = mindSub;
+          // A staged deployment can return an older dashboard contract. Keep
+          // the section unavailable in that case instead of crashing or
+          // fabricating a replacement graph.
+          _weeklyTraining = weeklyTraining;
           _lastSynced = DateTime.now();
 
           // Metric widgets
@@ -4152,9 +4162,13 @@ class DashboardScreenState extends State<DashboardScreen>
                   //   child: _buildActiveChallengeCard(theme, isDark),
                   // ),
 
-                  // Your Last 12 Days Graph
+                  // Plan-aware weekly training summary
                   SliverToBoxAdapter(
-                    child: _buildLastDaysActivityBarGraph(theme, isDark),
+                    child: WeeklyTrainingSummarySection(
+                      summary: _weeklyTraining,
+                      loading: _isSyncing,
+                      onRefresh: () => _fetchRealData(forceSync: true),
+                    ),
                   ),
 
                   // Bottom padding
@@ -4918,6 +4932,7 @@ class DashboardScreenState extends State<DashboardScreen>
     );
   }
 
+  // ignore: unused_element
   Widget _buildLastDaysActivityBarGraph(ThemeData theme, bool isDark) {
     final labelColor = isDark ? Colors.white60 : Colors.black54;
 

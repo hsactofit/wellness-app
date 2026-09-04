@@ -136,7 +136,7 @@ class FacilityBookingService {
       '/api/facility-workout-data-consent',
       body: {
         'granted': granted,
-        'disclosure_version': 'facility-workout-data-v2',
+        'disclosure_version': 'facility-workout-data-v3',
       },
     );
     return _expect(
@@ -263,12 +263,14 @@ class FacilityWorkoutDataConsent {
   const FacilityWorkoutDataConsent({
     required this.active,
     required this.disclosureVersion,
+    required this.disclosureText,
     this.grantedAt,
     this.revokedAt,
   });
 
   final bool active;
   final String disclosureVersion;
+  final String disclosureText;
   final DateTime? grantedAt;
   final DateTime? revokedAt;
 
@@ -277,7 +279,8 @@ class FacilityWorkoutDataConsent {
         active: body['active'] == true,
         disclosureVersion:
             body['disclosure_version']?.toString() ??
-            'facility-workout-data-v2',
+            'facility-workout-data-v3',
+        disclosureText: body['disclosure_text']?.toString() ?? '',
         grantedAt: body['granted_at'] == null
             ? null
             : DateTime.tryParse(body['granted_at'].toString()),
@@ -508,6 +511,7 @@ class WorkoutReport {
     this.generatedAt,
     this.retryCount = 0,
     this.nextAttemptAt,
+    this.selfFeedback,
   });
 
   final String id;
@@ -528,6 +532,7 @@ class WorkoutReport {
   final DateTime? generatedAt;
   final int retryCount;
   final DateTime? nextAttemptAt;
+  final WorkoutSelfFeedbackSummary? selfFeedback;
 
   bool get isComplete => status == 'complete';
   bool get isPreparing => status == 'pending' || status == 'generating';
@@ -557,5 +562,47 @@ class WorkoutReport {
     generatedAt: DateTime.tryParse(body['generated_at']?.toString() ?? ''),
     retryCount: (body['retry_count'] as num?)?.toInt() ?? 0,
     nextAttemptAt: DateTime.tryParse(body['next_attempt_at']?.toString() ?? ''),
+    selfFeedback: body['self_feedback'] is Map
+        ? WorkoutSelfFeedbackSummary.fromJson(body['self_feedback'] as Map)
+        : null,
   );
+}
+
+class WorkoutSelfFeedbackSummary {
+  const WorkoutSelfFeedbackSummary({
+    required this.status,
+    this.workoutQuality,
+    this.postWorkoutFeeling,
+    this.painPresent,
+    this.painSeverity,
+    this.painBodyAreas = const [],
+    this.painNote,
+    this.perceivedProgress,
+    this.note,
+  });
+
+  final String status;
+  final int? workoutQuality;
+  final String? postWorkoutFeeling;
+  final bool? painPresent;
+  final int? painSeverity;
+  final List<String> painBodyAreas;
+  final String? painNote;
+  final String? perceivedProgress;
+  final String? note;
+
+  factory WorkoutSelfFeedbackSummary.fromJson(Map body) =>
+      WorkoutSelfFeedbackSummary(
+        status: body['status']?.toString() ?? 'pending',
+        workoutQuality: (body['workout_quality'] as num?)?.toInt(),
+        postWorkoutFeeling: body['post_workout_feeling']?.toString(),
+        painPresent: body['pain_present'] as bool?,
+        painSeverity: (body['pain_severity'] as num?)?.toInt(),
+        painBodyAreas: (body['pain_body_areas'] as List? ?? [])
+            .map((item) => item.toString())
+            .toList(growable: false),
+        painNote: body['pain_note']?.toString(),
+        perceivedProgress: body['perceived_progress']?.toString(),
+        note: body['note']?.toString(),
+      );
 }
