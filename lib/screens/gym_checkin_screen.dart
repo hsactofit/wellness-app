@@ -1248,15 +1248,15 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
             const SizedBox(height: 5),
             Wrap(spacing: 6, runSpacing: 2, children: badges),
           ],
-          const SizedBox(height: 10),
-          Text(
-            instant
-                ? 'Ask the manager for a one-time approval.'
-                : facility.bookingClosed
-                ? 'Bookings for today have closed at 10:00 PM. Choose tomorrow to reserve a slot.'
-                : '${facility.availableSlots} places left across ${facility.slots.length} hourly slots',
-            style: TextStyle(color: isDark ? Colors.white70 : Colors.black54),
-          ),
+          if (instant || facility.bookingClosed) ...[
+            const SizedBox(height: 10),
+            Text(
+              instant
+                  ? 'Ask the manager for a one-time approval.'
+                  : 'Bookings for today have closed at 10:00 PM. Choose tomorrow to reserve a slot.',
+              style: TextStyle(color: isDark ? Colors.white70 : Colors.black54),
+            ),
+          ],
           const SizedBox(height: 10),
           SizedBox(
             width: double.infinity,
