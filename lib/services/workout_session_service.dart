@@ -67,7 +67,8 @@ typedef WorkoutSessionPrompt =
 
 /// Owns local workout-session persistence, authenticated attendance calls,
 /// and background-safe reminders. Android's foreground service keeps the
-/// notification timer alive; iOS resumes the local reminder/location monitor
+/// notification timer alive; iOS keeps its Live Activity alive from
+/// foregrounded check-in through authenticated checkout and re-establishes it
 /// when the app returns to the foreground. The server remains authoritative.
 class WorkoutSessionService {
   WorkoutSessionService._();
@@ -98,6 +99,9 @@ class WorkoutSessionService {
   Timer? _hourlyTimer;
   StreamSubscription<Position>? _positionSubscription;
   WorkoutSessionPrompt? _promptHandler;
+  http.Client _httpClient = http.Client();
+  Future<String?> Function() _accessTokenProvider = () =>
+      AuthService.instance.getAccessToken();
   bool _promptInProgress = false;
   bool _outsideFacility = false;
   bool _wasInsideFacility = false;
@@ -105,6 +109,17 @@ class WorkoutSessionService {
   /// Notifies open workout screens when another part of the app changes the
   /// persisted session (for example, the global hourly/geofence prompt).
   final ValueNotifier<int> sessionRefreshSignal = ValueNotifier<int>(0);
+
+  @visibleForTesting
+  void setHttpClient(http.Client client) {
+    _httpClient.close();
+    _httpClient = client;
+  }
+
+  @visibleForTesting
+  void setAccessTokenProvider(Future<String?> Function() provider) {
+    _accessTokenProvider = provider;
+  }
 
   void configurePromptHandler(WorkoutSessionPrompt? handler) {
     _promptHandler = handler;
@@ -135,6 +150,19 @@ class WorkoutSessionService {
     );
   }
 
+  /// Recreates a missing iOS Live Activity while Flutter is in the foreground.
+  /// It is intentionally separate from server recovery so a system display
+  /// problem never changes the active server workout.
+  Future<PersistentTimerStatus?> ensurePersistentTimerForActiveSession() async {
+    final session = await loadActiveSession();
+    if (session == null) return null;
+    return BackgroundWorkoutService.instance.showPersistentTimer(
+      sessionId: session.id,
+      facilityName: session.facilityName,
+      checkInAt: session.checkInAt,
+    );
+  }
+
   /// Reconcile the recovery cache with the server-owned open session. A
   /// process restart or OS eviction can remove the local cache while the
   /// server session is still active; a missing session is the only expected
@@ -144,15 +172,15 @@ class WorkoutSessionService {
   }) async {
     final cached = await loadActiveSession();
     try {
-      var token = await AuthService.instance.getAccessToken();
-      var response = await http.get(
+      var token = await _accessTokenProvider();
+      var response = await _httpClient.get(
         AuthService.apiUrl('/api/attendance/me/active'),
         headers: {if (token != null) 'Authorization': 'Bearer $token'},
       );
       if (response.statusCode == 401) {
         await AuthService.instance.refreshSessionToken();
-        token = await AuthService.instance.getAccessToken();
-        response = await http.get(
+        token = await _accessTokenProvider();
+        response = await _httpClient.get(
           AuthService.apiUrl('/api/attendance/me/active'),
           headers: {if (token != null) 'Authorization': 'Bearer $token'},
         );
@@ -187,8 +215,8 @@ class WorkoutSessionService {
     String? bookingId,
     String? instantRequestId,
   }) async {
-    final token = await AuthService.instance.getAccessToken();
-    final response = await http.post(
+    final token = await _accessTokenProvider();
+    final response = await _httpClient.post(
       AuthService.apiUrl('/api/attendance/checkin'),
       headers: {
         'Content-Type': 'application/json',
@@ -283,8 +311,8 @@ class WorkoutSessionService {
     final prefs = await SharedPreferences.getInstance();
     final checkoutRef = prefs.getString(_checkoutRefKey) ?? Uuid().v4();
     await prefs.setString(_checkoutRefKey, checkoutRef);
-    final token = await AuthService.instance.getAccessToken();
-    final response = await http.post(
+    final token = await _accessTokenProvider();
+    final response = await _httpClient.post(
       AuthService.apiUrl('/api/attendance/checkout'),
       headers: {
         'Content-Type': 'application/json',
@@ -316,8 +344,8 @@ class WorkoutSessionService {
   }
 
   Future<void> continueWorkout({String? reason}) async {
-    final token = await AuthService.instance.getAccessToken();
-    final response = await http.post(
+    final token = await _accessTokenProvider();
+    final response = await _httpClient.post(
       AuthService.apiUrl('/api/attendance/continue'),
       headers: {
         'Content-Type': 'application/json',

@@ -4,6 +4,14 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
+/// The outcome of asking the operating system to show the workout timer.
+///
+/// iOS members can disable Live Activities in Settings, and devices below
+/// iOS 16.1 do not support them. These states are intentionally reported to
+/// Flutter so Gym Access can explain the missing system surface without
+/// blocking the server-authoritative workout session.
+enum PersistentTimerStatus { active, disabled, unsupported, failed }
+
 /// Small platform bridge for the persistent workout indicator.
 ///
 /// Android uses a foreground service. iOS uses a Live Activity where the OS
@@ -17,7 +25,6 @@ class BackgroundWorkoutService {
     // Initialise it before registering the platform-channel callback.
     WidgetsFlutterBinding.ensureInitialized();
     _channel.setMethodCallHandler(_handleNativeCall);
-    unawaited(_markDartReady());
   }
 
   static final BackgroundWorkoutService instance = BackgroundWorkoutService._();
@@ -25,6 +32,7 @@ class BackgroundWorkoutService {
   final ValueNotifier<int> checkoutRequestedSignal = ValueNotifier<int>(0);
   final ValueNotifier<int> geofenceExitedSignal = ValueNotifier<int>(0);
   final ValueNotifier<int> continueRequestedSignal = ValueNotifier<int>(0);
+  bool _uiReady = false;
 
   Future<void> _handleNativeCall(MethodCall call) async {
     switch (call.method) {
@@ -37,13 +45,19 @@ class BackgroundWorkoutService {
     }
   }
 
-  Future<void> _markDartReady() async {
-    if (kIsWeb) return;
+  /// Flush native deep links only after [MainShell] has installed its event
+  /// listeners. Calling this from the singleton constructor could otherwise
+  /// lose a cold-launch checkout request before Flutter navigation exists.
+  Future<void> markUiReady() async {
+    if (kIsWeb || _uiReady) return;
+    _uiReady = true;
     try {
       await _channel.invokeMethod<void>('ready');
     } on PlatformException catch (error) {
+      _uiReady = false;
       debugPrint('Workout background bridge unavailable: $error');
     } on MissingPluginException catch (error) {
+      _uiReady = false;
       debugPrint('Workout background bridge unavailable: $error');
     }
   }
@@ -85,31 +99,41 @@ class BackgroundWorkoutService {
     return false;
   }
 
-  /// Makes the operating-system timer visible after the member leaves the
-  /// in-app active-workout view. Native code owns the actual clock so it
-  /// continues while Dart is paused or the phone is locked.
-  Future<void> showPersistentTimer({
+  /// Ensures the operating-system timer represents this active workout.
+  ///
+  /// iOS creates or updates its Live Activity while the app is foregrounded;
+  /// Android starts its existing foreground-service chronometer. The native
+  /// result lets the app guide an iPhone member if Live Activities are off.
+  Future<PersistentTimerStatus> showPersistentTimer({
     required String sessionId,
     required String facilityName,
     required DateTime checkInAt,
   }) async {
-    if (kIsWeb) return;
+    if (kIsWeb) return PersistentTimerStatus.unsupported;
     try {
-      await _channel.invokeMethod<void>('showTimer', {
+      final status = await _channel.invokeMethod<String>('showTimer', {
         'sessionId': sessionId,
         'facilityName': facilityName,
         'checkInAt': checkInAt.millisecondsSinceEpoch,
       });
+      return switch (status) {
+        'disabled' => PersistentTimerStatus.disabled,
+        'unsupported' => PersistentTimerStatus.unsupported,
+        'failed' => PersistentTimerStatus.failed,
+        _ => PersistentTimerStatus.active,
+      };
     } on PlatformException catch (error) {
       debugPrint('Workout timer surface unavailable: $error');
+      return PersistentTimerStatus.failed;
     } on MissingPluginException catch (error) {
       debugPrint('Workout timer surface unavailable: $error');
+      return PersistentTimerStatus.failed;
     }
   }
 
-  /// Removes only the duplicate operating-system timer while the member is
-  /// looking at the in-app timer. It deliberately leaves native geofencing
-  /// and workout-completion reminders running.
+  /// Removes Android's duplicate foreground notification while the member is
+  /// viewing the in-app workout. On iOS this deliberately does nothing: its
+  /// Live Activity must remain active until authenticated checkout.
   Future<void> hidePersistentTimer() async {
     if (kIsWeb) return;
     try {

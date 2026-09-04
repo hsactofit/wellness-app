@@ -6,20 +6,26 @@ import WidgetKit
 struct WorkoutLiveActivityWidget: Widget {
   var body: some WidgetConfiguration {
     ActivityConfiguration(for: WorkoutLiveActivityAttributes.self) { context in
-      HStack(spacing: 12) {
-        Image(systemName: "figure.strengthtraining.traditional")
-          .foregroundStyle(.orange)
-        VStack(alignment: .leading, spacing: 2) {
-          Text("Workout in progress")
-            .font(.caption)
-            .foregroundStyle(.secondary)
-          Text(context.state.facilityName)
-            .font(.headline)
-            .lineLimit(1)
+      VStack(alignment: .leading, spacing: 8) {
+        HStack(spacing: 12) {
+          Image(systemName: "figure.strengthtraining.traditional")
+            .foregroundStyle(.orange)
+          VStack(alignment: .leading, spacing: 2) {
+            Text("Workout in progress")
+              .font(.caption)
+              .foregroundStyle(.secondary)
+            Text(context.state.facilityName)
+              .font(.headline)
+              .lineLimit(1)
+          }
+          Spacer()
+          Text(context.state.checkInAt, style: .timer)
+            .monospacedDigit()
         }
-        Spacer()
-        Text(context.state.checkInAt, style: .timer)
-          .monospacedDigit()
+        Link(destination: URL(string: "medifit://workout/checkout")!) {
+          Label("Open checkout", systemImage: "rectangle.portrait.and.arrow.right")
+            .font(.subheadline.weight(.semibold))
+        }
       }
       .padding(.horizontal)
       .widgetURL(URL(string: "medifit://workout/checkout"))
@@ -39,7 +45,7 @@ struct WorkoutLiveActivityWidget: Widget {
         }
         DynamicIslandExpandedRegion(.bottom) {
           Link(destination: URL(string: "medifit://workout/checkout")!) {
-            Label("Checkout", systemImage: "rectangle.portrait.and.arrow.right")
+            Label("Open checkout", systemImage: "rectangle.portrait.and.arrow.right")
               .frame(maxWidth: .infinity)
           }
         }

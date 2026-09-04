@@ -48,11 +48,18 @@ import UserNotifications
     open url: URL,
     options: [UIApplication.OpenURLOptionsKey: Any] = [:]
   ) -> Bool {
-    if url.scheme == "medifit", url.host == "workout", url.path == "/checkout" {
-      emitToFlutter("checkoutRequested")
-      return true
-    }
+    if handleWorkoutURL(url) { return true }
     return super.application(app, open: url, options: options)
+  }
+
+  /// Shared by UIApplication and the scene delegate because current Flutter
+  /// iOS apps route warm URL opens through UISceneDelegate.
+  func handleWorkoutURL(_ url: URL) -> Bool {
+    guard url.scheme == "medifit", url.host == "workout", url.path == "/checkout" else {
+      return false
+    }
+    emitToFlutter("checkoutRequested")
+    return true
   }
 
   override func userNotificationCenter(
@@ -101,8 +108,7 @@ import UserNotifications
       let longitude = values["longitude"] as? Double
       result(latitude != nil && longitude != nil)
     case "showTimer":
-      showWorkoutTimer(call.arguments as? [String: Any] ?? [:])
-      result(nil)
+      result(showWorkoutTimer(call.arguments as? [String: Any] ?? [:]))
     case "hideTimer":
       hideWorkoutTimer()
       result(nil)
@@ -127,9 +133,10 @@ import UserNotifications
 
     requestNotificationPermission()
     scheduleHourlyPrompt(after: slotEndAt ?? checkInAt.addingTimeInterval(60 * 60))
-    if values["showPersistentTimer"] as? Bool ?? true {
-      showWorkoutTimer(values)
-    }
+    // A Live Activity must be started while the app is foregrounded. It stays
+    // active even while the in-app workout view is visible, so it is ready
+    // when the member returns to the Home or Lock Screen.
+    _ = showWorkoutTimer(values)
 
     guard let latitude = values["latitude"] as? Double,
           let longitude = values["longitude"] as? Double else { return }
@@ -168,24 +175,24 @@ import UserNotifications
       promptNotificationId,
       exitNotificationId,
     ])
-    if let sessionId = activeSessionId {
+    if let sessionId = activeSessionId, #available(iOS 16.1, *) {
       endLiveActivity(sessionId: sessionId)
     }
     activeSessionId = nil
     activeCheckInAt = nil
   }
 
-  /// Ends only the visual Live Activity. Region monitoring and scheduled
-  /// workout reminders must survive while the member reads the in-app timer.
+  /// iOS intentionally keeps its Live Activity active while the in-app timer
+  /// is visible. Ending it here and trying to recreate it after backgrounding
+  /// is unreliable because ActivityKit starts ordinary activities only while
+  /// the app is foregrounded.
   private func hideWorkoutTimer() {
-    if let sessionId = activeSessionId {
-      endLiveActivity(sessionId: sessionId)
-    }
+    // Android owns the hide/show behavior for its foreground notification.
   }
 
-  private func showWorkoutTimer(_ values: [String: Any]) {
+  private func showWorkoutTimer(_ values: [String: Any]) -> String {
     let sessionId = values["sessionId"] as? String ?? activeSessionId ?? ""
-    guard !sessionId.isEmpty else { return }
+    guard !sessionId.isEmpty else { return "failed" }
     activeSessionId = sessionId
     activeFacilityName = values["facilityName"] as? String ?? activeFacilityName
     let checkInMilliseconds = values["checkInAt"] as? NSNumber
@@ -193,11 +200,14 @@ import UserNotifications
       Date(timeIntervalSince1970: $0.doubleValue / 1000)
     } ?? activeCheckInAt ?? Date()
     activeCheckInAt = checkInAt
-    startLiveActivity(
-      sessionId: sessionId,
-      facilityName: activeFacilityName,
-      checkInAt: checkInAt
-    )
+    if #available(iOS 16.1, *) {
+      return startLiveActivity(
+        sessionId: sessionId,
+        facilityName: activeFacilityName,
+        checkInAt: checkInAt
+      )
+    }
+    return "unsupported"
   }
 
   private var promptNotificationId: String {
@@ -271,14 +281,25 @@ import UserNotifications
     }
   }
 
-  private func startLiveActivity(sessionId: String, facilityName: String, checkInAt: Date) {
-    guard #available(iOS 16.1, *) else { return }
+  @available(iOS 16.1, *)
+  private func startLiveActivity(sessionId: String, facilityName: String, checkInAt: Date) -> String {
+    guard ActivityAuthorizationInfo().areActivitiesEnabled else { return "disabled" }
     // Resuming from the timer page can request the same surface more than
     // once. Keep a single Live Activity per workout session.
-    if Activity<WorkoutLiveActivityAttributes>.activities.contains(where: {
-      $0.attributes.sessionId == sessionId
-    }) {
-      return
+    let activities = Activity<WorkoutLiveActivityAttributes>.activities
+    if let activity = activities.first(where: { $0.attributes.sessionId == sessionId }) {
+      let state = WorkoutLiveActivityAttributes.ContentState(
+        facilityName: facilityName,
+        checkInAt: checkInAt
+      )
+      updateLiveActivity(activity, state: state)
+      return "active"
+    }
+    // New activities must start while foregrounded. If the OS removed the
+    // surface, Flutter retries from its next foreground lifecycle event.
+    guard UIApplication.shared.applicationState == .active else { return "failed" }
+    for activity in activities {
+      endLiveActivity(activity)
     }
     let attributes = WorkoutLiveActivityAttributes(sessionId: sessionId)
     let state = WorkoutLiveActivityAttributes.ContentState(
@@ -299,25 +320,45 @@ import UserNotifications
           pushType: nil
         )
       }
+      return "active"
     } catch {
-      // Notifications remain the supported system fallback if Live Activities
-      // are disabled by the member or unavailable on this iOS version.
+      NSLog("Medifit Live Activity start failed: %@", error.localizedDescription)
+      return "failed"
     }
   }
 
-  private func endLiveActivity(sessionId: String) {
-    guard #available(iOS 16.1, *) else { return }
-    for activity in Activity<WorkoutLiveActivityAttributes>.activities where activity.attributes.sessionId == sessionId {
-      Task {
-        if #available(iOS 16.2, *) {
-          await activity.end(
-            ActivityContent(state: activity.contentState, staleDate: nil),
-            dismissalPolicy: .immediate
-          )
-        } else {
-          await activity.end(using: activity.contentState, dismissalPolicy: .immediate)
-        }
+  @available(iOS 16.1, *)
+  private func updateLiveActivity(
+    _ activity: Activity<WorkoutLiveActivityAttributes>,
+    state: WorkoutLiveActivityAttributes.ContentState
+  ) {
+    Task {
+      if #available(iOS 16.2, *) {
+        await activity.update(ActivityContent(state: state, staleDate: nil))
+      } else {
+        await activity.update(using: state)
       }
+    }
+  }
+
+  @available(iOS 16.1, *)
+  private func endLiveActivity(_ activity: Activity<WorkoutLiveActivityAttributes>) {
+    Task {
+      if #available(iOS 16.2, *) {
+        await activity.end(
+          ActivityContent(state: activity.contentState, staleDate: nil),
+          dismissalPolicy: .immediate
+        )
+      } else {
+        await activity.end(using: activity.contentState, dismissalPolicy: .immediate)
+      }
+    }
+  }
+
+  @available(iOS 16.1, *)
+  private func endLiveActivity(sessionId: String) {
+    for activity in Activity<WorkoutLiveActivityAttributes>.activities where activity.attributes.sessionId == sessionId {
+      endLiveActivity(activity)
     }
   }
 }

@@ -11,6 +11,7 @@ import io.flutter.plugin.common.MethodChannel
 class MainActivity : FlutterFragmentActivity() {
     private val channelName = "com.medifit/workout_background"
     private var backgroundChannel: MethodChannel? = null
+    private var checkoutRequestPending = false
 
     override fun configureFlutterEngine(@NonNull flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -27,7 +28,7 @@ class MainActivity : FlutterFragmentActivity() {
                 }
                 "showTimer" -> {
                     startWorkoutTimer(call)
-                    result.success(null)
+                    result.success("active")
                 }
                 "hideTimer" -> {
                     // This hides only the foreground-service notification.
@@ -40,18 +41,24 @@ class MainActivity : FlutterFragmentActivity() {
                     stopWorkoutTimer()
                     result.success(null)
                 }
-                // iOS queues native events until Flutter has registered its
-                // handler. Android does not need a queue, but accepting the
-                // shared readiness handshake keeps the bridge quiet and the
-                // Dart contract platform-neutral.
-                "ready" -> result.success(null)
+                // A foreground-service action can launch Android before
+                // Flutter has registered MainShell's navigation listener.
+                // Match iOS by flushing only after Dart explicitly signals
+                // that the listener is ready.
+                "ready" -> {
+                    if (checkoutRequestPending) {
+                        backgroundChannel?.invokeMethod("checkoutRequested", null)
+                        checkoutRequestPending = false
+                    }
+                    result.success(null)
+                }
                 else -> result.notImplemented()
             }
         }
         // The foreground-service action can cold-start the activity. Deliver
-        // it after the channel is ready just as we do for a warm onNewIntent.
+        // it after Flutter signals readiness just as we do for a warm intent.
         if (intent?.action == WorkoutForegroundService.ACTION_CHECKOUT) {
-            backgroundChannel?.invokeMethod("checkoutRequested", null)
+            checkoutRequestPending = true
         }
     }
 
@@ -77,6 +84,7 @@ class MainActivity : FlutterFragmentActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         if (intent.action == WorkoutForegroundService.ACTION_CHECKOUT) {
+            if (checkoutRequestPending) return
             backgroundChannel?.invokeMethod("checkoutRequested", null)
         }
     }

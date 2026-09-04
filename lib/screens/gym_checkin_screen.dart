@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../app_brand.dart';
@@ -66,6 +68,10 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
   bool _actionInProgress = false;
   bool _cameraPermissionGranted = false;
   bool _ratingDialogOpen = false;
+  PersistentTimerStatus? _persistentTimerStatus;
+
+  bool get _usesIosLiveActivity =>
+      !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
 
   @override
   void initState() {
@@ -82,8 +88,8 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
     WidgetsBinding.instance.removeObserver(this);
     final activeSession = _session;
     if (activeSession != null) {
-      // Returning to Home (or any other app) must restore the native timer.
-      // The checkout path clears _session first, so it never recreates one.
+      // Android restores its foreground notification when Gym Access closes.
+      // iOS keeps its Live Activity active throughout the workout.
       unawaited(_showPersistentTimer(activeSession));
     }
     WorkoutSessionService.instance.sessionRefreshSignal.removeListener(
@@ -116,6 +122,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
     if (session != null) {
       _completedItems.clear();
       await _hidePersistentTimer();
+      await _ensureIosPersistentTimer();
       _startTimer();
       await WorkoutSessionService.instance.startMonitoring(
         requestLocationPermission: true,
@@ -133,6 +140,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
       setState(() {
         _session = null;
         _view = _AccessView.home;
+        _persistentTimerStatus = null;
       });
       _timer?.cancel();
       widget.onStatusChanged?.call();
@@ -141,29 +149,47 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
     if (session != null && _session == null) {
       setState(() => _session = session);
       await _hidePersistentTimer();
+      await _ensureIosPersistentTimer();
       _startTimer();
     }
   }
 
-  /// The full-screen timer is the member's primary workout surface. Avoid
-  /// duplicating it in the notification shade while that page is visible.
+  /// Android hides its notification while the full-screen workout timer is
+  /// visible. iOS deliberately keeps its Live Activity until checkout.
   Future<void> _hidePersistentTimer() async {
     if (_session == null) return;
+    if (_usesIosLiveActivity) return;
     await BackgroundWorkoutService.instance.hidePersistentTimer();
   }
 
-  Future<void> _showPersistentTimer(ActiveWorkoutSession session) {
-    return BackgroundWorkoutService.instance.showPersistentTimer(
+  Future<void> _showPersistentTimer(ActiveWorkoutSession session) async {
+    final status = await BackgroundWorkoutService.instance.showPersistentTimer(
       sessionId: session.id,
       facilityName: session.facilityName,
       checkInAt: session.checkInAt,
     );
+    if (_usesIosLiveActivity && mounted) {
+      setState(() => _persistentTimerStatus = status);
+    }
+  }
+
+  Future<void> _ensureIosPersistentTimer() async {
+    if (!_usesIosLiveActivity || _session == null) return;
+    final status = await WorkoutSessionService.instance
+        .ensurePersistentTimerForActiveSession();
+    if (mounted) setState(() => _persistentTimerStatus = status);
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     final session = _session;
     if (session == null) return;
+    if (_usesIosLiveActivity) {
+      if (state == AppLifecycleState.resumed) {
+        unawaited(_ensureIosPersistentTimer());
+      }
+      return;
+    }
     switch (state) {
       case AppLifecycleState.resumed:
         unawaited(_hidePersistentTimer());
@@ -818,6 +844,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
         });
         unawaited(_loadBookings());
         await _hidePersistentTimer();
+        await _ensureIosPersistentTimer();
         _startTimer();
         widget.onStatusChanged?.call();
         _showSnack('Workout started. Your timer is running.');
@@ -1531,6 +1558,12 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
               ],
             ),
           ),
+          if (_usesIosLiveActivity &&
+              _persistentTimerStatus != null &&
+              _persistentTimerStatus != PersistentTimerStatus.active) ...[
+            const SizedBox(height: 12),
+            _buildLiveActivityWarning(_persistentTimerStatus!),
+          ],
           const SizedBox(height: 16),
           Text(
             "Today's workout plan",
@@ -1644,6 +1677,58 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
       name: name,
       details: exerciseDetails(item),
       onOpen: () => _openExerciseVideo(name, videoId),
+    );
+  }
+
+  Widget _buildLiveActivityWarning(PersistentTimerStatus status) {
+    final message = switch (status) {
+      PersistentTimerStatus.disabled =>
+        'Live Activities are turned off for Wellnessconnect. Your workout remains active, but turn them on in iPhone Settings to keep the timer visible outside the app.',
+      PersistentTimerStatus.unsupported =>
+        'Your iPhone does not support Live Activities. Your workout remains active and checkout is still available here.',
+      PersistentTimerStatus.failed =>
+        'The workout timer could not appear outside the app. Your workout remains active; retry while the app is open.',
+      PersistentTimerStatus.active => '',
+    };
+    return Card(
+      color: Theme.of(context).colorScheme.errorContainer,
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Workout timer unavailable',
+              style: TextStyle(
+                fontWeight: FontWeight.w800,
+                color: Theme.of(context).colorScheme.onErrorContainer,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              message,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onErrorContainer,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              children: [
+                if (status == PersistentTimerStatus.disabled)
+                  OutlinedButton(
+                    onPressed: () => openAppSettings(),
+                    child: const Text('Open Settings'),
+                  ),
+                OutlinedButton(
+                  onPressed: _ensureIosPersistentTimer,
+                  child: const Text('Retry'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:ui';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'dashboard_screen.dart';
 import 'challenges_screen.dart';
@@ -20,6 +21,7 @@ class MainShell extends StatefulWidget {
 
 class MainShellState extends State<MainShell> with WidgetsBindingObserver {
   int _currentIndex = 0;
+  bool _openingCheckout = false;
 
   @override
   void initState() {
@@ -42,7 +44,11 @@ class MainShellState extends State<MainShell> with WidgetsBindingObserver {
     BackgroundWorkoutService.instance.continueRequestedSignal.addListener(
       _continueFromNotification,
     );
+    // Native checkout actions may arrive during a cold launch. Flush them only
+    // after these listeners are installed so the request cannot be lost.
+    unawaited(BackgroundWorkoutService.instance.markUiReady());
     WorkoutSessionService.instance.startMonitoring();
+    _ensureIosLiveActivity();
   }
 
   @override
@@ -62,13 +68,26 @@ class MainShellState extends State<MainShell> with WidgetsBindingObserver {
   }
 
   Future<void> _openCheckoutFromNotification() async {
-    if (!mounted) return;
-    final session = await WorkoutSessionService.instance.loadActiveSession();
-    if (session == null || !mounted) return;
-    await Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const GymCheckinScreen()),
-    );
+    if (!mounted || _openingCheckout) return;
+    _openingCheckout = true;
+    try {
+      final session = await WorkoutSessionService.instance.loadActiveSession();
+      if (session == null || !mounted) return;
+      await Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const GymCheckinScreen()),
+      );
+    } finally {
+      _openingCheckout = false;
+    }
+  }
+
+  void _ensureIosLiveActivity() {
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
+      unawaited(
+        WorkoutSessionService.instance.ensurePersistentTimerForActiveSession(),
+      );
+    }
   }
 
   Future<void> _showNativeGeofencePrompt() async {
@@ -99,6 +118,7 @@ class MainShellState extends State<MainShell> with WidgetsBindingObserver {
       // the next overdue hourly question appear instead of silently keeping
       // an abandoned workout active.
       WorkoutSessionService.instance.startMonitoring();
+      _ensureIosLiveActivity();
     }
   }
 
