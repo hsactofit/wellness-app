@@ -434,6 +434,8 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
       });
       _showSnack('Slot booked at ${booking.facilityName}.');
       await _showBookingConfirmation(booking);
+      if (!mounted) return;
+      setState(() => _view = _AccessView.home);
       unawaited(_loadFacilities());
       unawaited(_loadBookings());
     } on FacilityBookingException catch (error) {
