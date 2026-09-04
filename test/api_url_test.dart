@@ -16,4 +16,11 @@ void main() {
   test('non-API paths remain rooted at the configured host', () {
     expect(AuthService.apiUrl('/health').path, '/health');
   });
+
+  test('canonical paths are not versioned twice', () {
+    expect(
+      AuthService.apiUrl('/api/v1/attendance/workout-reports').path,
+      '/api/v1/attendance/workout-reports',
+    );
+  });
 }

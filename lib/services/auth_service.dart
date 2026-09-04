@@ -175,18 +175,27 @@ class AuthService {
   /// build. Existing callers may continue to pass their legacy `/api/...`
   /// paths, so older screens remain compatible with the versioned server.
   static Uri apiUrl(String path) {
-    final base = apiBaseUrl.endsWith('/')
-        ? apiBaseUrl.substring(0, apiBaseUrl.length - 1)
-        : apiBaseUrl;
     final prefixedPath = apiPathPrefix.startsWith('/')
         ? apiPathPrefix
         : '/$apiPathPrefix';
     final prefix = prefixedPath.endsWith('/') && prefixedPath.length > 1
         ? prefixedPath.substring(0, prefixedPath.length - 1)
         : prefixedPath;
+    final configuredBase = apiBaseUrl.endsWith('/')
+        ? apiBaseUrl.substring(0, apiBaseUrl.length - 1)
+        : apiBaseUrl;
+    // Release commands historically supplied either the host or a host that
+    // already ended in `/api/v1`. Keep route construction canonical in both
+    // cases so no request can acquire a duplicated API namespace.
+    final base = configuredBase.endsWith(prefix)
+        ? configuredBase.substring(0, configuredBase.length - prefix.length)
+        : configuredBase;
     final normalizedPath = path.startsWith('/') ? path : '/$path';
     const legacyPrefix = '/api';
 
+    if (normalizedPath == prefix || normalizedPath.startsWith('$prefix/')) {
+      return Uri.parse('$base$normalizedPath');
+    }
     if (normalizedPath == legacyPrefix ||
         normalizedPath.startsWith('$legacyPrefix/')) {
       return Uri.parse(
