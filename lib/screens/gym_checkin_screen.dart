@@ -1581,6 +1581,10 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
     final id = item['id']?.toString() ?? item['name']?.toString() ?? 'exercise';
     final name = item['name']?.toString() ?? 'Exercise';
     final details = exerciseDetails(item);
+    final targets = workoutTargetMusclesFromJson(item['target_muscles']);
+    final targetSummary = targets.singleOrNull == fullBodyTargetMuscle
+        ? 'Full-body training'
+        : workoutTargetMuscleSummary(targets);
     return Card(
       child: CheckboxListTile(
         value: _completedItems.contains(id),
@@ -1594,7 +1598,41 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
           });
         },
         title: Text(name, style: const TextStyle(fontWeight: FontWeight.w700)),
-        subtitle: details.isEmpty ? null : Text(details),
+        isThreeLine: details.isNotEmpty && targets.isNotEmpty,
+        subtitle: details.isEmpty && targets.isEmpty
+            ? null
+            : Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (details.isNotEmpty) Text(details),
+                  if (targets.isNotEmpty) ...[
+                    if (details.isNotEmpty) const SizedBox(height: 3),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.my_location_outlined,
+                          size: 14,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            'Targets · $targetSummary',
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ],
+              ),
       ),
     );
   }

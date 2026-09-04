@@ -53,7 +53,7 @@ void main() {
     ]);
   });
 
-  testWidgets('shows front and back body views with target labels', (
+  testWidgets('shows an interactive front and back anatomy guide', (
     tester,
   ) async {
     await tester.pumpWidget(
@@ -64,7 +64,7 @@ void main() {
       ),
     );
 
-    expect(find.text('Muscles targeted today'), findsOneWidget);
+    expect(find.text('Today\'s muscle focus'), findsOneWidget);
     expect(find.text('Front'), findsOneWidget);
     expect(find.text('Back'), findsOneWidget);
     expect(find.text('Biceps'), findsOneWidget);
@@ -72,6 +72,57 @@ void main() {
     expect(
       find.bySemanticsLabel('Target muscles today: Biceps, Triceps'),
       findsOneWidget,
+    );
+
+    await tester.tap(find.text('Biceps'));
+    await tester.pump();
+
+    expect(find.text('Biceps · front upper arms'), findsOneWidget);
+  });
+
+  testWidgets('explains a full-body workout without an ambiguous label', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: WorkoutMuscleMapCard(targetMuscles: ['full_body']),
+        ),
+      ),
+    );
+
+    expect(find.text('Full-body training'), findsOneWidget);
+    expect(
+      find.text('Today\'s exercises work the upper body, core and lower body.'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('renders a polished full-body guide in dark mode', (tester) async {
+    const mapKey = Key('full-body-muscle-map');
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeData.dark(useMaterial3: true),
+        home: const Scaffold(
+          body: ColoredBox(
+            color: Color(0xFF0A0D10),
+            child: Center(
+              child: SizedBox(
+                width: 390,
+                child: RepaintBoundary(
+                  key: mapKey,
+                  child: WorkoutMuscleMapCard(targetMuscles: ['full_body']),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await expectLater(
+      find.byKey(mapKey),
+      matchesGoldenFile('goldens/workout_muscle_map_full_body_dark.png'),
     );
   });
 }
