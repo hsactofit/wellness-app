@@ -12,6 +12,7 @@ class MainActivity : FlutterFragmentActivity() {
     private val channelName = "com.medifit/workout_background"
     private var backgroundChannel: MethodChannel? = null
     private var checkoutRequestPending = false
+    private var dartReady = false
 
     override fun configureFlutterEngine(@NonNull flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -46,10 +47,8 @@ class MainActivity : FlutterFragmentActivity() {
                 // Match iOS by flushing only after Dart explicitly signals
                 // that the listener is ready.
                 "ready" -> {
-                    if (checkoutRequestPending) {
-                        backgroundChannel?.invokeMethod("checkoutRequested", null)
-                        checkoutRequestPending = false
-                    }
+                    dartReady = true
+                    flushCheckoutRequest()
                     result.success(null)
                 }
                 else -> result.notImplemented()
@@ -84,8 +83,14 @@ class MainActivity : FlutterFragmentActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         if (intent.action == WorkoutForegroundService.ACTION_CHECKOUT) {
-            if (checkoutRequestPending) return
-            backgroundChannel?.invokeMethod("checkoutRequested", null)
+            checkoutRequestPending = true
+            flushCheckoutRequest()
         }
+    }
+
+    private fun flushCheckoutRequest() {
+        if (!dartReady || !checkoutRequestPending) return
+        backgroundChannel?.invokeMethod("checkoutRequested", null)
+        checkoutRequestPending = false
     }
 }
