@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import '../models/plan_models.dart';
+import '../models/workout_muscles.dart';
 import '../services/api_service.dart';
 import '../services/reviewed_plan_pdf_service.dart';
 import '../widgets/glass_card.dart';
@@ -912,6 +913,14 @@ class _PlanScreenState extends State<PlanScreen> with WidgetsBindingObserver {
                         if (ex.dosageLabel.isNotEmpty)
                           Text(
                             ex.dosageLabel,
+                            style: TextStyle(
+                              color: secondaryTextColor,
+                              fontSize: 11,
+                            ),
+                          ),
+                        if (ex.targetMuscles.isNotEmpty)
+                          Text(
+                            'Targets: ${workoutTargetMuscleSummary(ex.targetMuscles)}',
                             style: TextStyle(
                               color: secondaryTextColor,
                               fontSize: 11,

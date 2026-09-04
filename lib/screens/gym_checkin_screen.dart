@@ -15,6 +15,8 @@ import '../services/facility_rating_service.dart';
 import '../services/workout_session_service.dart';
 import '../widgets/exercise_video_tile.dart';
 import '../widgets/glass_card.dart';
+import '../widgets/workout_muscle_map.dart';
+import '../models/workout_muscles.dart';
 import 'exercise_video_screen.dart';
 
 /// Member-facing facility access surface.
@@ -1466,6 +1468,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
     final session = _session!;
     final plan = session.planSnapshot;
     final videoPlan = exercisesWithDemonstrationVideos(plan);
+    final targetMuscles = targetMusclesForWorkoutSnapshot(plan);
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 110),
       child: Column(
@@ -1547,6 +1550,10 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
             )
           else
             ...plan.map(_planItem),
+          if (targetMuscles.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            WorkoutMuscleMapCard(targetMuscles: targetMuscles),
+          ],
           if (videoPlan.isNotEmpty) ...[
             const SizedBox(height: 16),
             Text(

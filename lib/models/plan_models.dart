@@ -1,3 +1,5 @@
+import 'workout_muscles.dart';
+
 enum PlanKind { workout, nutrition }
 
 const List<String> _weekdayNames = [
@@ -20,6 +22,7 @@ class WorkoutExercise {
   final String? reps;
   final int? restSec;
   final String? notes;
+  final List<String> targetMuscles;
 
   const WorkoutExercise({
     required this.name,
@@ -27,6 +30,7 @@ class WorkoutExercise {
     this.reps,
     this.restSec,
     this.notes,
+    this.targetMuscles = const [],
   });
 
   factory WorkoutExercise.fromJson(Map<String, dynamic> json) {
@@ -36,6 +40,7 @@ class WorkoutExercise {
       reps: json['reps']?.toString(),
       restSec: (json['rest_sec'] as num?)?.toInt(),
       notes: json['notes']?.toString(),
+      targetMuscles: workoutTargetMusclesFromJson(json['target_muscles']),
     );
   }
 
