@@ -6,25 +6,30 @@ import WidgetKit
 struct WorkoutLiveActivityWidget: Widget {
   var body: some WidgetConfiguration {
     ActivityConfiguration(for: WorkoutLiveActivityAttributes.self) { context in
-      VStack(alignment: .leading, spacing: 8) {
-        HStack(spacing: 12) {
-          Image(systemName: "figure.strengthtraining.traditional")
-            .foregroundStyle(.orange)
-          VStack(alignment: .leading, spacing: 2) {
-            Text("Workout in progress")
-              .font(.caption)
-              .foregroundStyle(.secondary)
-            Text(context.state.facilityName)
-              .font(.headline)
-              .lineLimit(1)
-          }
-          Spacer()
+      HStack(spacing: 12) {
+        Image(systemName: "figure.strengthtraining.traditional")
+          .foregroundStyle(.orange)
+        VStack(alignment: .leading, spacing: 2) {
+          Text("Workout in progress")
+            .font(.caption)
+            .foregroundStyle(.secondary)
+          Text(context.state.facilityName)
+            .font(.headline)
+            .lineLimit(1)
+        }
+        Spacer(minLength: 8)
+        VStack(alignment: .trailing, spacing: 6) {
           Text(context.state.checkInAt, style: .timer)
             .monospacedDigit()
-        }
-        Link(destination: URL(string: "medifit://workout/checkout")!) {
-          Label("Open checkout", systemImage: "rectangle.portrait.and.arrow.right")
-            .font(.subheadline.weight(.semibold))
+          Link(destination: URL(string: "medifit://workout/checkout")!) {
+            Text("Checkout")
+              .font(.caption.weight(.bold))
+              .foregroundStyle(.white)
+              .padding(.horizontal, 12)
+              .padding(.vertical, 7)
+              .background(.red, in: Capsule())
+          }
+          .buttonStyle(.plain)
         }
       }
       .padding(.horizontal)
@@ -45,8 +50,9 @@ struct WorkoutLiveActivityWidget: Widget {
         }
         DynamicIslandExpandedRegion(.bottom) {
           Link(destination: URL(string: "medifit://workout/checkout")!) {
-            Label("Open checkout", systemImage: "rectangle.portrait.and.arrow.right")
+            Label("Checkout", systemImage: "rectangle.portrait.and.arrow.right")
               .frame(maxWidth: .infinity)
+              .foregroundStyle(.red)
           }
         }
       } compactLeading: {
