@@ -446,41 +446,37 @@ class _AnatomyBodyPainter extends CustomPainter {
     canvas.save();
     canvas.scale(size.width / 100, size.height / 210);
 
-    final bodyColor = Color.alphaBlend(
-      colorScheme.onSurface.withValues(
-        alpha: colorScheme.brightness == Brightness.dark ? 0.13 : 0.075,
-      ),
-      colorScheme.surface,
-    );
+    final bodyColor = colorScheme.brightness == Brightness.dark
+        ? const Color(0xFFD5A48B)
+        : const Color(0xFFE7B69D);
+    final targetColor = colorScheme.brightness == Brightness.dark
+        ? const Color(0xFFFF6254)
+        : const Color(0xFFE5483A);
     final bodyPaint = Paint()..color = bodyColor;
     final outline = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.15
-      ..color = colorScheme.onSurface.withValues(
-        alpha: colorScheme.brightness == Brightness.dark ? 0.32 : 0.17,
-      );
+      ..strokeWidth = 0.9
+      ..color = colorScheme.brightness == Brightness.dark
+          ? const Color(0xFF8B5C52)
+          : const Color(0xFFB57667);
 
     _drawBodyBase(canvas, bodyPaint, outline);
 
     void drawMuscle(Path path, String muscle) {
       if (!_isTarget(muscle)) return;
       final isFocused = _isFocused(muscle);
-      final alpha = _isFullBody
-          ? (isFocused ? 0.64 : 0.18)
-          : (isFocused ? 0.88 : 0.20);
       final fill = Paint()
-        ..color = Color.alphaBlend(
-          colorScheme.primary.withValues(alpha: alpha),
-          bodyColor,
-        );
+        ..color = isFocused
+            ? targetColor
+            : Color.alphaBlend(targetColor.withValues(alpha: 0.28), bodyColor);
       canvas.drawPath(path, fill);
       if (selectedMuscle == muscle) {
         canvas.drawPath(
           path,
           Paint()
             ..style = PaintingStyle.stroke
-            ..strokeWidth = 1.05
-            ..color = colorScheme.primary,
+            ..strokeWidth = 0.9
+            ..color = const Color(0xFFFFA69E),
         );
       }
     }
@@ -499,14 +495,14 @@ class _AnatomyBodyPainter extends CustomPainter {
       canvas.drawPath(path, outline);
     }
 
-    final head = Path()..addOval(const Rect.fromLTWH(40, 4, 20, 23));
+    final head = Path()..addOval(const Rect.fromLTWH(40.5, 3, 19, 22));
     draw(head);
     draw(
       Path()
         ..addRRect(
           RRect.fromRectAndRadius(
-            const Rect.fromLTWH(45, 25, 10, 12),
-            const Radius.circular(4),
+            const Rect.fromLTWH(45, 23, 10, 14),
+            const Radius.circular(4.5),
           ),
         ),
     );
@@ -514,26 +510,29 @@ class _AnatomyBodyPainter extends CustomPainter {
     draw(
       Path()
         ..moveTo(45, 32)
-        ..cubicTo(37, 33, 29, 36, 27, 45)
-        ..cubicTo(30, 55, 33, 63, 34, 75)
-        ..cubicTo(35, 87, 34, 95, 31, 105)
-        ..cubicTo(36, 111, 42, 114, 50, 114)
-        ..cubicTo(58, 114, 64, 111, 69, 105)
-        ..cubicTo(66, 95, 65, 87, 66, 75)
-        ..cubicTo(67, 63, 70, 55, 73, 45)
-        ..cubicTo(71, 36, 63, 33, 55, 32)
+        ..cubicTo(37, 33, 30, 36, 27, 44)
+        ..cubicTo(29, 52, 32, 61, 33, 72)
+        ..cubicTo(35, 83, 34, 94, 31, 106)
+        ..cubicTo(35, 113, 41, 117, 50, 118)
+        ..cubicTo(59, 117, 65, 113, 69, 106)
+        ..cubicTo(66, 94, 65, 83, 67, 72)
+        ..cubicTo(68, 61, 71, 52, 73, 44)
+        ..cubicTo(70, 36, 63, 33, 55, 32)
         ..close(),
     );
 
     final leftArm = Path()
-      ..moveTo(30, 41)
-      ..cubicTo(22, 43, 17, 49, 17, 61)
-      ..lineTo(16, 91)
-      ..cubicTo(16, 101, 20, 107, 25, 106)
-      ..cubicTo(30, 105, 32, 99, 31, 91)
-      ..lineTo(31, 69)
-      ..cubicTo(35, 58, 38, 48, 36, 43)
-      ..cubicTo(35, 40, 33, 40, 30, 41)
+      ..moveTo(31, 39)
+      ..cubicTo(23, 40, 17, 47, 16, 59)
+      ..lineTo(14, 90)
+      ..cubicTo(14, 100, 16, 108, 19, 113)
+      ..cubicTo(20, 117, 20, 122, 19, 126)
+      ..cubicTo(20, 129, 23, 130, 25, 128)
+      ..cubicTo(27, 126, 28, 119, 28, 113)
+      ..cubicTo(31, 105, 31, 96, 30, 88)
+      ..lineTo(30, 69)
+      ..cubicTo(34, 56, 37, 47, 36, 42)
+      ..cubicTo(35, 39, 33, 38, 31, 39)
       ..close();
     draw(leftArm);
     canvas.save();
@@ -543,13 +542,14 @@ class _AnatomyBodyPainter extends CustomPainter {
     canvas.restore();
 
     final leftLeg = Path()
-      ..moveTo(36, 106)
-      ..cubicTo(31, 120, 31, 144, 34, 166)
-      ..lineTo(35, 197)
-      ..cubicTo(36, 205, 40, 208, 45, 207)
-      ..cubicTo(49, 206, 50, 202, 49, 196)
-      ..lineTo(48, 166)
-      ..cubicTo(50, 145, 50, 121, 47, 108)
+      ..moveTo(36, 112)
+      ..cubicTo(31, 126, 31, 148, 34, 169)
+      ..lineTo(35, 196)
+      ..cubicTo(35, 203, 34, 209, 31, 213)
+      ..cubicTo(33, 216, 41, 216, 45, 214)
+      ..cubicTo(49, 211, 50, 206, 49, 198)
+      ..lineTo(48, 170)
+      ..cubicTo(51, 148, 50, 126, 47, 113)
       ..close();
     draw(leftLeg);
     canvas.save();
@@ -560,113 +560,289 @@ class _AnatomyBodyPainter extends CustomPainter {
   }
 
   void _drawFrontMuscles(void Function(Path path, String muscle) draw) {
-    void oval(Rect rect, String muscle) => draw(Path()..addOval(rect), muscle);
-    void rounded(Rect rect, String muscle, [double radius = 4]) => draw(
-      Path()
-        ..addRRect(
-          RRect.fromRectAndRadius(rect, Radius.circular(radius)),
-        ),
-      muscle,
-    );
-    Rect mirror(Rect rect) => Rect.fromLTRB(
-      100 - rect.right,
-      rect.top,
-      100 - rect.left,
-      rect.bottom,
-    );
-
-    oval(const Rect.fromLTWH(27, 35, 17, 15), 'shoulders');
-    oval(mirror(const Rect.fromLTWH(27, 35, 17, 15)), 'shoulders');
+    final leftShoulder = Path()
+      ..moveTo(30, 37)
+      ..cubicTo(24, 38, 21, 43, 22, 49)
+      ..cubicTo(25, 53, 30, 54, 35, 52)
+      ..cubicTo(39, 49, 40, 43, 37, 39)
+      ..close();
+    draw(leftShoulder, 'shoulders');
+    final rightShoulder = Path()
+      ..moveTo(70, 37)
+      ..cubicTo(76, 38, 79, 43, 78, 49)
+      ..cubicTo(75, 53, 70, 54, 65, 52)
+      ..cubicTo(61, 49, 60, 43, 63, 39)
+      ..close();
+    draw(rightShoulder, 'shoulders');
 
     final leftChest = Path()
-      ..moveTo(33, 49)
-      ..cubicTo(38, 45, 45, 46, 49, 50)
+      ..moveTo(34, 49)
+      ..cubicTo(38, 44, 45, 45, 49, 49)
       ..lineTo(49, 63)
-      ..cubicTo(42, 64, 35, 62, 32, 57)
+      ..cubicTo(43, 64, 36, 61, 33, 56)
       ..close();
     draw(leftChest, 'chest');
     final rightChest = Path()
-      ..moveTo(67, 49)
-      ..cubicTo(62, 45, 55, 46, 51, 50)
+      ..moveTo(66, 49)
+      ..cubicTo(62, 44, 55, 45, 51, 49)
       ..lineTo(51, 63)
-      ..cubicTo(58, 64, 65, 62, 68, 57)
+      ..cubicTo(57, 64, 64, 61, 67, 56)
       ..close();
     draw(rightChest, 'chest');
 
-    rounded(const Rect.fromLTWH(41, 66, 8, 11), 'core', 3);
-    rounded(const Rect.fromLTWH(51, 66, 8, 11), 'core', 3);
-    rounded(const Rect.fromLTWH(41, 79, 8, 11), 'core', 3);
-    rounded(const Rect.fromLTWH(51, 79, 8, 11), 'core', 3);
-    rounded(const Rect.fromLTWH(41, 92, 8, 9), 'core', 3);
-    rounded(const Rect.fromLTWH(51, 92, 8, 9), 'core', 3);
+    final leftOblique = Path()
+      ..moveTo(35, 63)
+      ..cubicTo(38, 65, 40, 69, 40, 80)
+      ..lineTo(39, 95)
+      ..cubicTo(36, 93, 34, 88, 34, 80)
+      ..close();
+    draw(leftOblique, 'core');
+    final rightOblique = Path()
+      ..moveTo(65, 63)
+      ..cubicTo(62, 65, 60, 69, 60, 80)
+      ..lineTo(61, 95)
+      ..cubicTo(64, 93, 66, 88, 66, 80)
+      ..close();
+    draw(rightOblique, 'core');
+    for (final rect in const [
+      Rect.fromLTWH(42, 65, 7, 9),
+      Rect.fromLTWH(51, 65, 7, 9),
+      Rect.fromLTWH(42, 76, 7, 9),
+      Rect.fromLTWH(51, 76, 7, 9),
+      Rect.fromLTWH(42, 87, 7, 8),
+      Rect.fromLTWH(51, 87, 7, 8),
+    ]) {
+      draw(
+        Path()
+          ..addRRect(
+            RRect.fromRectAndRadius(rect, const Radius.circular(2.8)),
+          ),
+        'core',
+      );
+    }
 
-    oval(const Rect.fromLTWH(19, 53, 11, 26), 'biceps');
-    oval(mirror(const Rect.fromLTWH(19, 53, 11, 26)), 'biceps');
-    oval(const Rect.fromLTWH(18, 79, 10, 22), 'forearms');
-    oval(mirror(const Rect.fromLTWH(18, 79, 10, 22)), 'forearms');
+    final leftBiceps = Path()
+      ..moveTo(20, 54)
+      ..cubicTo(17, 60, 17, 69, 20, 76)
+      ..cubicTo(23, 80, 28, 79, 29, 74)
+      ..lineTo(29, 60)
+      ..cubicTo(27, 54, 23, 52, 20, 54)
+      ..close();
+    draw(leftBiceps, 'biceps');
+    final rightBiceps = Path()
+      ..moveTo(80, 54)
+      ..cubicTo(83, 60, 83, 69, 80, 76)
+      ..cubicTo(77, 80, 72, 79, 71, 74)
+      ..lineTo(71, 60)
+      ..cubicTo(73, 54, 77, 52, 80, 54)
+      ..close();
+    draw(rightBiceps, 'biceps');
 
-    oval(const Rect.fromLTWH(34, 111, 13, 50), 'quadriceps');
-    oval(mirror(const Rect.fromLTWH(34, 111, 13, 50)), 'quadriceps');
-    rounded(const Rect.fromLTWH(45, 115, 4, 43), 'inner_thighs', 2);
-    rounded(const Rect.fromLTWH(51, 115, 4, 43), 'inner_thighs', 2);
-    oval(const Rect.fromLTWH(36, 166, 11, 33), 'calves');
-    oval(mirror(const Rect.fromLTWH(36, 166, 11, 33)), 'calves');
+    final leftForearm = Path()
+      ..moveTo(18, 78)
+      ..cubicTo(15, 85, 15, 98, 19, 104)
+      ..cubicTo(22, 107, 26, 104, 27, 99)
+      ..lineTo(27, 84)
+      ..cubicTo(25, 79, 21, 77, 18, 78)
+      ..close();
+    draw(leftForearm, 'forearms');
+    final rightForearm = Path()
+      ..moveTo(82, 78)
+      ..cubicTo(85, 85, 85, 98, 81, 104)
+      ..cubicTo(78, 107, 74, 104, 73, 99)
+      ..lineTo(73, 84)
+      ..cubicTo(75, 79, 79, 77, 82, 78)
+      ..close();
+    draw(rightForearm, 'forearms');
+
+    final leftQuad = Path()
+      ..moveTo(35, 116)
+      ..cubicTo(31, 129, 32, 150, 35, 165)
+      ..cubicTo(38, 170, 44, 169, 46, 164)
+      ..lineTo(47, 124)
+      ..cubicTo(45, 117, 39, 113, 35, 116)
+      ..close();
+    draw(leftQuad, 'quadriceps');
+    final rightQuad = Path()
+      ..moveTo(65, 116)
+      ..cubicTo(69, 129, 68, 150, 65, 165)
+      ..cubicTo(62, 170, 56, 169, 54, 164)
+      ..lineTo(53, 124)
+      ..cubicTo(55, 117, 61, 113, 65, 116)
+      ..close();
+    draw(rightQuad, 'quadriceps');
+
+    final leftInnerThigh = Path()
+      ..moveTo(45, 119)
+      ..cubicTo(43, 134, 43, 151, 45, 161)
+      ..cubicTo(47, 164, 49, 161, 49, 157)
+      ..lineTo(48, 123)
+      ..close();
+    draw(leftInnerThigh, 'inner_thighs');
+    final rightInnerThigh = Path()
+      ..moveTo(55, 119)
+      ..cubicTo(57, 134, 57, 151, 55, 161)
+      ..cubicTo(53, 164, 51, 161, 51, 157)
+      ..lineTo(52, 123)
+      ..close();
+    draw(rightInnerThigh, 'inner_thighs');
+
+    final leftCalf = Path()
+      ..moveTo(36, 169)
+      ..cubicTo(33, 181, 34, 196, 38, 202)
+      ..cubicTo(42, 205, 46, 200, 46, 194)
+      ..lineTo(46, 177)
+      ..cubicTo(44, 171, 40, 168, 36, 169)
+      ..close();
+    draw(leftCalf, 'calves');
+    final rightCalf = Path()
+      ..moveTo(64, 169)
+      ..cubicTo(67, 181, 66, 196, 62, 202)
+      ..cubicTo(58, 205, 54, 200, 54, 194)
+      ..lineTo(54, 177)
+      ..cubicTo(56, 171, 60, 168, 64, 169)
+      ..close();
+    draw(rightCalf, 'calves');
   }
 
   void _drawBackMuscles(void Function(Path path, String muscle) draw) {
-    void oval(Rect rect, String muscle) => draw(Path()..addOval(rect), muscle);
-    void rounded(Rect rect, String muscle, [double radius = 4]) => draw(
-      Path()
-        ..addRRect(
-          RRect.fromRectAndRadius(rect, Radius.circular(radius)),
-        ),
-      muscle,
-    );
-    Rect mirror(Rect rect) => Rect.fromLTRB(
-      100 - rect.right,
-      rect.top,
-      100 - rect.left,
-      rect.bottom,
-    );
-
-    oval(const Rect.fromLTWH(27, 35, 17, 15), 'shoulders');
-    oval(mirror(const Rect.fromLTWH(27, 35, 17, 15)), 'shoulders');
+    final leftShoulder = Path()
+      ..moveTo(30, 37)
+      ..cubicTo(24, 38, 21, 43, 22, 49)
+      ..cubicTo(25, 53, 30, 54, 35, 52)
+      ..cubicTo(39, 49, 40, 43, 37, 39)
+      ..close();
+    draw(leftShoulder, 'shoulders');
+    final rightShoulder = Path()
+      ..moveTo(70, 37)
+      ..cubicTo(76, 38, 79, 43, 78, 49)
+      ..cubicTo(75, 53, 70, 54, 65, 52)
+      ..cubicTo(61, 49, 60, 43, 63, 39)
+      ..close();
+    draw(rightShoulder, 'shoulders');
 
     final upperBack = Path()
-      ..moveTo(33, 48)
-      ..cubicTo(40, 43, 60, 43, 67, 48)
-      ..lineTo(64, 66)
-      ..cubicTo(56, 71, 44, 71, 36, 66)
+      ..moveTo(37, 44)
+      ..cubicTo(41, 39, 46, 37, 50, 37)
+      ..cubicTo(54, 37, 59, 39, 63, 44)
+      ..lineTo(65, 60)
+      ..cubicTo(58, 66, 42, 66, 35, 60)
       ..close();
     draw(upperBack, 'upper_back');
     final leftLat = Path()
-      ..moveTo(36, 67)
-      ..cubicTo(40, 69, 45, 70, 49, 69)
-      ..lineTo(49, 92)
-      ..cubicTo(43, 93, 37, 89, 35, 81)
+      ..moveTo(36, 62)
+      ..cubicTo(40, 64, 45, 65, 49, 64)
+      ..lineTo(49, 93)
+      ..cubicTo(43, 95, 37, 90, 35, 80)
       ..close();
     draw(leftLat, 'lats');
     final rightLat = Path()
-      ..moveTo(64, 67)
-      ..cubicTo(60, 69, 55, 70, 51, 69)
-      ..lineTo(51, 92)
-      ..cubicTo(57, 93, 63, 89, 65, 81)
+      ..moveTo(64, 62)
+      ..cubicTo(60, 64, 55, 65, 51, 64)
+      ..lineTo(51, 93)
+      ..cubicTo(57, 95, 63, 90, 65, 80)
       ..close();
     draw(rightLat, 'lats');
-    rounded(const Rect.fromLTWH(42, 89, 7, 14), 'lower_back', 3);
-    rounded(const Rect.fromLTWH(51, 89, 7, 14), 'lower_back', 3);
 
-    oval(const Rect.fromLTWH(19, 53, 11, 26), 'triceps');
-    oval(mirror(const Rect.fromLTWH(19, 53, 11, 26)), 'triceps');
-    oval(const Rect.fromLTWH(18, 79, 10, 22), 'forearms');
-    oval(mirror(const Rect.fromLTWH(18, 79, 10, 22)), 'forearms');
+    final leftLowerBack = Path()
+      ..moveTo(42, 91)
+      ..cubicTo(44, 88, 47, 88, 49, 91)
+      ..lineTo(49, 105)
+      ..cubicTo(46, 106, 43, 104, 42, 99)
+      ..close();
+    draw(leftLowerBack, 'lower_back');
+    final rightLowerBack = Path()
+      ..moveTo(58, 91)
+      ..cubicTo(56, 88, 53, 88, 51, 91)
+      ..lineTo(51, 105)
+      ..cubicTo(54, 106, 57, 104, 58, 99)
+      ..close();
+    draw(rightLowerBack, 'lower_back');
 
-    oval(const Rect.fromLTWH(34, 104, 15, 18), 'glutes');
-    oval(mirror(const Rect.fromLTWH(34, 104, 15, 18)), 'glutes');
-    oval(const Rect.fromLTWH(34, 122, 13, 42), 'hamstrings');
-    oval(mirror(const Rect.fromLTWH(34, 122, 13, 42)), 'hamstrings');
-    oval(const Rect.fromLTWH(36, 166, 11, 33), 'calves');
-    oval(mirror(const Rect.fromLTWH(36, 166, 11, 33)), 'calves');
+    final leftTriceps = Path()
+      ..moveTo(20, 54)
+      ..cubicTo(17, 61, 17, 70, 20, 77)
+      ..cubicTo(23, 80, 28, 78, 29, 73)
+      ..lineTo(29, 59)
+      ..cubicTo(27, 54, 23, 52, 20, 54)
+      ..close();
+    draw(leftTriceps, 'triceps');
+    final rightTriceps = Path()
+      ..moveTo(80, 54)
+      ..cubicTo(83, 61, 83, 70, 80, 77)
+      ..cubicTo(77, 80, 72, 78, 71, 73)
+      ..lineTo(71, 59)
+      ..cubicTo(73, 54, 77, 52, 80, 54)
+      ..close();
+    draw(rightTriceps, 'triceps');
+
+    final leftForearm = Path()
+      ..moveTo(18, 78)
+      ..cubicTo(15, 85, 15, 98, 19, 104)
+      ..cubicTo(22, 107, 26, 104, 27, 99)
+      ..lineTo(27, 84)
+      ..cubicTo(25, 79, 21, 77, 18, 78)
+      ..close();
+    draw(leftForearm, 'forearms');
+    final rightForearm = Path()
+      ..moveTo(82, 78)
+      ..cubicTo(85, 85, 85, 98, 81, 104)
+      ..cubicTo(78, 107, 74, 104, 73, 99)
+      ..lineTo(73, 84)
+      ..cubicTo(75, 79, 79, 77, 82, 78)
+      ..close();
+    draw(rightForearm, 'forearms');
+
+    final leftGlute = Path()
+      ..moveTo(35, 105)
+      ..cubicTo(32, 108, 32, 116, 36, 120)
+      ..cubicTo(40, 124, 47, 122, 49, 117)
+      ..lineTo(49, 106)
+      ..cubicTo(45, 103, 39, 102, 35, 105)
+      ..close();
+    draw(leftGlute, 'glutes');
+    final rightGlute = Path()
+      ..moveTo(65, 105)
+      ..cubicTo(68, 108, 68, 116, 64, 120)
+      ..cubicTo(60, 124, 53, 122, 51, 117)
+      ..lineTo(51, 106)
+      ..cubicTo(55, 103, 61, 102, 65, 105)
+      ..close();
+    draw(rightGlute, 'glutes');
+
+    final leftHamstring = Path()
+      ..moveTo(35, 121)
+      ..cubicTo(31, 135, 32, 153, 35, 166)
+      ..cubicTo(38, 171, 44, 169, 46, 164)
+      ..lineTo(47, 128)
+      ..cubicTo(45, 122, 39, 119, 35, 121)
+      ..close();
+    draw(leftHamstring, 'hamstrings');
+    final rightHamstring = Path()
+      ..moveTo(65, 121)
+      ..cubicTo(69, 135, 68, 153, 65, 166)
+      ..cubicTo(62, 171, 56, 169, 54, 164)
+      ..lineTo(53, 128)
+      ..cubicTo(55, 122, 61, 119, 65, 121)
+      ..close();
+    draw(rightHamstring, 'hamstrings');
+
+    final leftCalf = Path()
+      ..moveTo(36, 169)
+      ..cubicTo(33, 181, 34, 196, 38, 202)
+      ..cubicTo(42, 205, 46, 200, 46, 194)
+      ..lineTo(46, 177)
+      ..cubicTo(44, 171, 40, 168, 36, 169)
+      ..close();
+    draw(leftCalf, 'calves');
+    final rightCalf = Path()
+      ..moveTo(64, 169)
+      ..cubicTo(67, 181, 66, 196, 62, 202)
+      ..cubicTo(58, 205, 54, 200, 54, 194)
+      ..lineTo(54, 177)
+      ..cubicTo(56, 171, 60, 168, 64, 169)
+      ..close();
+    draw(rightCalf, 'calves');
   }
 
   @override
