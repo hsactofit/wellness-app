@@ -237,7 +237,7 @@ class FacilityBookingService {
   }
 
   Future<List<WorkoutReport>> workoutReports() async {
-    final response = await _send('GET', '/api/attendance/workout-reports');
+    final response = await _send('GET', '/api/v1/attendance/workout-reports');
     return _expect(
       response,
       (body) => (body as List)
@@ -492,19 +492,70 @@ class WorkoutReport {
   const WorkoutReport({
     required this.id,
     required this.status,
+    required this.sessionId,
+    required this.facilityId,
+    required this.facilityName,
+    required this.checkInAt,
+    required this.checkOutAt,
+    required this.durationMin,
+    required this.planSnapshot,
+    required this.completedItemIds,
+    required this.intensity,
+    required this.completionPct,
     this.calories,
     this.summary,
+    this.recoveryNote,
+    this.generatedAt,
+    this.retryCount = 0,
+    this.nextAttemptAt,
   });
 
   final String id;
   final String status;
+  final String sessionId;
+  final String facilityId;
+  final String facilityName;
+  final DateTime? checkInAt;
+  final DateTime? checkOutAt;
+  final int? durationMin;
+  final List<Map<String, dynamic>> planSnapshot;
+  final List<String> completedItemIds;
   final int? calories;
+  final String? intensity;
+  final double? completionPct;
   final String? summary;
+  final String? recoveryNote;
+  final DateTime? generatedAt;
+  final int retryCount;
+  final DateTime? nextAttemptAt;
+
+  bool get isComplete => status == 'complete';
+  bool get isPreparing => status == 'pending' || status == 'generating';
+  bool get hasRetryScheduled => status == 'failed' && nextAttemptAt != null;
 
   factory WorkoutReport.fromJson(Map body) => WorkoutReport(
     id: body['id'].toString(),
     status: body['status']?.toString() ?? 'pending',
+    sessionId: body['session_id']?.toString() ?? '',
+    facilityId: body['facility_id']?.toString() ?? '',
+    facilityName: body['facility_name']?.toString() ?? 'Facility workout',
+    checkInAt: DateTime.tryParse(body['check_in_at']?.toString() ?? ''),
+    checkOutAt: DateTime.tryParse(body['check_out_at']?.toString() ?? ''),
+    durationMin: (body['duration_min'] as num?)?.toInt(),
+    planSnapshot: (body['plan_snapshot'] as List? ?? [])
+        .whereType<Map>()
+        .map((item) => Map<String, dynamic>.from(item))
+        .toList(growable: false),
+    completedItemIds: (body['completed_item_ids'] as List? ?? [])
+        .map((item) => item.toString())
+        .toList(growable: false),
     calories: (body['ai_estimated_calories'] as num?)?.toInt(),
+    intensity: body['ai_intensity']?.toString(),
+    completionPct: (body['completion_pct'] as num?)?.toDouble(),
     summary: body['summary']?.toString(),
+    recoveryNote: body['recovery_note']?.toString(),
+    generatedAt: DateTime.tryParse(body['generated_at']?.toString() ?? ''),
+    retryCount: (body['retry_count'] as num?)?.toInt() ?? 0,
+    nextAttemptAt: DateTime.tryParse(body['next_attempt_at']?.toString() ?? ''),
   );
 }

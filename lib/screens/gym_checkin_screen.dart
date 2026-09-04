@@ -20,6 +20,7 @@ import '../widgets/glass_card.dart';
 import '../widgets/workout_muscle_map.dart';
 import '../models/workout_muscles.dart';
 import 'exercise_video_screen.dart';
+import 'workout_reports_screen.dart';
 
 /// Member-facing facility access surface.
 ///
@@ -888,7 +889,9 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
       });
       _timer?.cancel();
       widget.onStatusChanged?.call();
-      _showSnack('Checked out at ${_formatTime(result.checkOutAt)}.');
+      _showSnack(
+        'Checked out at ${_formatTime(result.checkOutAt)}. Your workout report is being prepared.',
+      );
       await _loadFacilities();
       await _loadBookings();
       if (!mounted) return;
@@ -1022,6 +1025,15 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
             subtitle: 'Request approval from the facility manager',
             onTap: _openInstant,
             color: Colors.orangeAccent,
+          ),
+          _accessChoice(
+            icon: Icons.insights_outlined,
+            title: 'Workout Reports',
+            subtitle: 'Review completed workouts and download PDFs',
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const WorkoutReportsScreen()),
+            ),
+            color: Colors.teal,
           ),
           if (upcomingBookings(_bookings).isNotEmpty) ...[
             const SizedBox(height: 18),
