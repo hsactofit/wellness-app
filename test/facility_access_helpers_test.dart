@@ -53,6 +53,35 @@ void main() {
     );
   });
 
+  test(
+    'previous bookings retain completed, attended, and absent slot states',
+    () {
+      final completed = _booking(id: '1', status: 'completed', day: day);
+      final attended = _booking(id: '2', status: 'checked_in', day: day);
+      final absent = _booking(id: '3', status: 'no_show', day: day);
+      final pendingWorker = _booking(id: '4', status: 'booked', day: day);
+      final cancelled = _booking(id: '5', status: 'cancelled', day: day);
+      final now = day.add(const Duration(hours: 12));
+
+      expect(
+        previousBookings([
+          completed,
+          attended,
+          absent,
+          pendingWorker,
+          cancelled,
+        ], now: now).map((item) => item.id),
+        ['1', '2', '3', '4'],
+      );
+      expect(bookingHistoryStatus(completed, now: now)?.label, 'Done');
+      expect(bookingHistoryStatus(completed, now: now)?.attended, isTrue);
+      expect(bookingHistoryStatus(attended, now: now)?.label, 'Attended');
+      expect(bookingHistoryStatus(absent, now: now)?.label, 'Absent');
+      expect(bookingHistoryStatus(absent, now: now)?.attended, isFalse);
+      expect(bookingHistoryStatus(pendingWorker, now: now)?.label, 'Absent');
+    },
+  );
+
   test('same-day booking is detected before another API round-trip', () {
     final existing = _booking(id: '1', status: 'booked', day: day);
     expect(bookingOnDay([existing], day)?.id, '1');

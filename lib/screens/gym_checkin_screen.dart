@@ -989,6 +989,17 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
             const SizedBox(height: 4),
             ...upcomingBookings(_bookings).take(5).map(_bookingCard),
           ],
+          if (previousBookings(_bookings).isNotEmpty) ...[
+            const SizedBox(height: 18),
+            Text(
+              'Previous bookings',
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 4),
+            ...previousBookings(_bookings).take(5).map(_bookingCard),
+          ],
         ],
       ),
     );
@@ -1219,14 +1230,36 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
   }
 
   Widget _bookingCard(MemberBooking booking) {
+    final historyStatus = bookingHistoryStatus(booking);
     return Card(
       child: ListTile(
         title: Text(
           booking.facilityName,
           style: const TextStyle(fontWeight: FontWeight.w700),
         ),
-        subtitle: Text('${_formatSlot(booking.slot)} · ${booking.status}'),
-        trailing: booking.status == 'booked'
+        subtitle: Wrap(
+          spacing: 6,
+          runSpacing: 2,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            Text(_formatSlot(booking.slot)),
+            Text(
+              historyStatus?.label ?? booking.status,
+              style: TextStyle(
+                color: historyStatus == null
+                    ? null
+                    : historyStatus.attended
+                    ? Colors.green
+                    : Colors.redAccent,
+                fontSize: 12,
+                fontWeight: historyStatus == null
+                    ? FontWeight.normal
+                    : FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+        trailing: isUpcomingBooking(booking)
             ? IconButton(
                 tooltip: 'Check in',
                 icon: const Icon(Icons.qr_code_scanner),
