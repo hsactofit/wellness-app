@@ -597,7 +597,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
 
   Future<void> _requestInstant(EligibleFacility facility) async {
     if (!await _ensureRatingComplete()) return;
-    if (!await _ensureWorkoutDataConsent(action: 'request instant check-in')) {
+    if (!await _ensureWorkoutDataConsent(action: 'start an instant check-in')) {
       return;
     }
     setState(() {
@@ -615,9 +615,16 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
       setState(() {
         _accessRequest = request;
         _instantRequestId = request.id;
-        _view = _AccessView.instantStatus;
+        _expectedFacilityCode = facility.code;
       });
-      _startRequestPolling();
+      if (request.approved) {
+        await _openScanner();
+      } else {
+        // Keep the compatibility path for a member whose app has updated
+        // before the API. Current API responses are immediately approved.
+        setState(() => _view = _AccessView.instantStatus);
+        _startRequestPolling();
+      }
     } on FacilityBookingException catch (error) {
       if (mounted) _showSnack(error.message, isError: true);
     } finally {
@@ -1008,7 +1015,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
           ),
           const SizedBox(height: 8),
           Text(
-            'Reserve a one-hour slot in advance, or ask the facility manager for an instant check-in.',
+            'Reserve a one-hour slot in advance, or check in instantly when you arrive.',
             style: Theme.of(
               context,
             ).textTheme.bodyMedium?.copyWith(color: Colors.grey),
@@ -1024,7 +1031,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
           _accessChoice(
             icon: Icons.flash_on_outlined,
             title: 'Instant Check-in',
-            subtitle: 'Request approval from the facility manager',
+            subtitle: 'Check in now; your facility manager is notified',
             onTap: _openInstant,
             color: Colors.orangeAccent,
           ),
@@ -1252,7 +1259,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
             const SizedBox(height: 10),
             Text(
               instant
-                  ? 'Ask the manager for a one-time approval.'
+                  ? 'Check in now. Your facility manager will be notified.'
                   : 'Bookings for today have closed at 10:00 PM. Choose tomorrow to reserve a slot.',
               style: TextStyle(color: isDark ? Colors.white70 : Colors.black54),
             ),
@@ -1276,7 +1283,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
               ),
               label: Text(
                 instant
-                    ? 'Request instant check-in'
+                    ? 'Check in now'
                     : facility.bookingClosed
                     ? "View tomorrow's slots"
                     : 'View hourly slots',
@@ -1335,6 +1342,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
       return const Center(child: CircularProgressIndicator());
     }
     final pending = request.status == 'pending';
+    final instant = request.requestType == 'instant_checkin';
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 100),
       child: Column(
@@ -1356,7 +1364,9 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
           const SizedBox(height: 14),
           Text(
             pending
-                ? 'Waiting for ${request.facilityName}'
+                ? instant
+                      ? 'Preparing instant check-in'
+                      : 'Waiting for ${request.facilityName}'
                 : request.approved
                 ? 'Request approved'
                 : request.status == 'expired'
@@ -1370,7 +1380,9 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
           const SizedBox(height: 8),
           Text(
             pending
-                ? 'The facility manager has up to 15 minutes to approve this request.'
+                ? instant
+                      ? 'Please try again in a moment.'
+                      : 'The facility manager has up to 15 minutes to approve this request.'
                 : request.approved
                 ? 'Scan the facility QR and enter your member code to begin.'
                 : request.resolutionNote ??
