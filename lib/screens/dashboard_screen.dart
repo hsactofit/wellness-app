@@ -4848,9 +4848,10 @@ class DashboardScreenState extends State<DashboardScreen>
                   onTap: _openExerciseLibrary,
                 ),
                 _buildQuickAccessItem(
-                  "🪪",
-                  "Health Card",
+                  "📊",
+                  "Update Health",
                   const Color(0xFF2ECAE5),
+                  onTap: _openUpdateYourHealth,
                 ),
                 _buildQuickAccessItem(
                   "🛡️",
