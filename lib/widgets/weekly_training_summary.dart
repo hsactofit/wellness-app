@@ -141,7 +141,7 @@ class _ConsistencyCard extends StatelessWidget {
         children: [
           _CardHeading(
             title: 'Consistency',
-            subtitle: _consistencySubtitle(summary),
+            subtitle: 'Workout days this week',
             onEdit: () => _showWorkoutEditor(context, summary, onRefresh),
           ),
           const SizedBox(height: 4),
@@ -163,17 +163,10 @@ class _DayTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final (color, icon) = switch (day.state) {
-      'completed' => (const Color(0xFF1976D2), Icons.check_rounded),
-      'missed' => (const Color(0xFFC75A5A), Icons.close_rounded),
-      'future' => (const Color(0xFF77839A), Icons.more_horiz_rounded),
-      'extra' => (const Color(0xFF139B70), Icons.add_rounded),
-      _ => (const Color(0xFF596273), Icons.bedtime_outlined),
-    };
-    final label = day.state.replaceAll('_', ' ');
+    final hasWorkout = day.completed || day.extraWorkout;
     return Semantics(
       label:
-          '${day.weekday}: $label${day.memberEntered ? ', member-entered' : ''}',
+          '${day.weekday}: ${hasWorkout ? 'workout completed' : 'no workout completed'}${day.memberEntered ? ', member-entered' : ''}',
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 2),
         child: Column(
@@ -181,22 +174,24 @@ class _DayTile extends StatelessWidget {
             Container(
               height: 45,
               decoration: BoxDecoration(
-                color: color.withValues(alpha: .9),
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Center(child: Icon(icon, color: Colors.white, size: 20)),
+              child: hasWorkout
+                  ? const Center(
+                      child: Icon(
+                        Icons.check_rounded,
+                        color: Color(0xFF26C281),
+                        size: 24,
+                      ),
+                    )
+                  : null,
             ),
             const SizedBox(height: 5),
             Text(
               day.weekday.isEmpty ? '?' : day.weekday.substring(0, 1),
               style: const TextStyle(fontWeight: FontWeight.w700),
             ),
-            if (day.memberEntered)
-              const Icon(
-                Icons.edit_note_rounded,
-                size: 13,
-                semanticLabel: 'Member-entered',
-              ),
           ],
         ),
       ),
@@ -1222,18 +1217,6 @@ WeeklyMetric _metricFor(String metric, WeeklyTrainingSummary summary) =>
     : metric == 'resting_heart_rate'
     ? summary.restingHeartRate
     : summary.sleep;
-String _consistencySubtitle(WeeklyTrainingSummary summary) {
-  if (!summary.planAvailable) {
-    return summary.planMessage ?? 'Actual training days';
-  }
-  final due = summary.plannedDaysDue;
-  if (due == 0) return 'No planned workout days are due yet';
-  if (summary.completedPlannedDays == 0) {
-    return '$due planned day${due == 1 ? '' : 's'} due · no workouts completed';
-  }
-  return '${summary.completedPlannedDays} of $due planned day${due == 1 ? '' : 's'} completed';
-}
-
 String _title(String value) => value
     .split('_')
     .map(

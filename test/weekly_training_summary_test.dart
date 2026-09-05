@@ -31,76 +31,84 @@ void main() {
     expect(find.text('Retry'), findsOneWidget);
   });
 
-  testWidgets('consistency uses plain-language progress and a compact editor', (
-    tester,
-  ) async {
-    final summary = WeeklyTrainingSummary(
-      weekStart: DateTime(2026, 9, 1),
-      weekEnd: DateTime(2026, 9, 7),
-      asOf: DateTime(2026, 9, 5),
-      planAvailable: true,
-      planMessage: null,
-      completedPlannedDays: 0,
-      plannedDaysDue: 2,
-      totalPlannedDays: 3,
-      futurePlannedDays: 1,
-      actualTrainingDays: 0,
-      days: List.generate(
-        7,
-        (index) => WeeklyTrainingDay(
-          date: DateTime(2026, 9, index + 1),
-          weekday: const ['M', 'T', 'W', 'T', 'F', 'S', 'S'][index],
-          state: index < 4
-              ? 'rest'
-              : index < 6
-              ? 'missed'
-              : 'future',
-          planned: index >= 4,
-          due: index < 6,
-          completed: false,
-          extraWorkout: false,
-          memberEntered: false,
+  testWidgets(
+    'consistency shows only completed-workout ticks and a compact editor',
+    (tester) async {
+      final summary = WeeklyTrainingSummary(
+        weekStart: DateTime(2026, 9, 1),
+        weekEnd: DateTime(2026, 9, 7),
+        asOf: DateTime(2026, 9, 5),
+        planAvailable: true,
+        planMessage: null,
+        completedPlannedDays: 0,
+        plannedDaysDue: 2,
+        totalPlannedDays: 3,
+        futurePlannedDays: 1,
+        actualTrainingDays: 0,
+        days: List.generate(
+          7,
+          (index) => WeeklyTrainingDay(
+            date: DateTime(2026, 9, index + 1),
+            weekday: const ['M', 'T', 'W', 'T', 'F', 'S', 'S'][index],
+            state: index < 4
+                ? 'rest'
+                : index == 4
+                ? 'extra'
+                : index < 6
+                ? 'missed'
+                : 'future',
+            planned: index >= 4,
+            due: index < 6,
+            completed: false,
+            extraWorkout: index == 4,
+            memberEntered: false,
+          ),
         ),
-      ),
-      totalIncludedSessions: 0,
-      trainingTypes: const [],
-      includedSessions: const [],
-      weight: _metric('weight', 'kg'),
-      restingHeartRate: _metric('resting_heart_rate', 'bpm'),
-      sleep: _metric('sleep', 'hours'),
-      activeCorrectionIds: const {},
-    );
+        totalIncludedSessions: 0,
+        trainingTypes: const [],
+        includedSessions: const [],
+        weight: _metric('weight', 'kg'),
+        restingHeartRate: _metric('resting_heart_rate', 'bpm'),
+        sleep: _metric('sleep', 'hours'),
+        activeCorrectionIds: const {},
+      );
 
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: SingleChildScrollView(
-            child: WeeklyTrainingSummarySection(
-              summary: summary,
-              loading: false,
-              onRefresh: () async {},
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: WeeklyTrainingSummarySection(
+                summary: summary,
+                loading: false,
+                onRefresh: () async {},
+              ),
             ),
           ),
         ),
-      ),
-    );
+      );
 
-    expect(
-      find.text('2 planned days due · no workouts completed'),
-      findsOneWidget,
-    );
-    expect(find.text('0/2'), findsNothing);
-    expect(
-      find.text('Completed · Missed · Future · Rest · Extra workout'),
-      findsNothing,
-    );
+      expect(find.text('Workout days this week'), findsOneWidget);
+      expect(find.text('0/2'), findsNothing);
+      expect(
+        find.text('2 planned days due · no workouts completed'),
+        findsNothing,
+      );
+      expect(find.byIcon(Icons.check_rounded), findsOneWidget);
+      expect(find.byIcon(Icons.close_rounded), findsNothing);
+      expect(find.byIcon(Icons.more_horiz_rounded), findsNothing);
+      expect(find.byIcon(Icons.bedtime_outlined), findsNothing);
+      expect(
+        find.text('Completed · Missed · Future · Rest · Extra workout'),
+        findsNothing,
+      );
 
-    await tester.tap(find.text('Edit').first);
-    await tester.pumpAndSettle();
+      await tester.tap(find.text('Edit').first);
+      await tester.pumpAndSettle();
 
-    expect(find.text('View correction history'), findsNothing);
-    expect(find.text('Completed sessions'), findsNothing);
-  });
+      expect(find.text('View correction history'), findsNothing);
+      expect(find.text('Completed sessions'), findsNothing);
+    },
+  );
 }
 
 WeeklyMetric _metric(String metric, String unit) => WeeklyMetric(
