@@ -750,6 +750,39 @@ class ApiService {
     );
   }
 
+  Future<BodyCompositionComparison> updateBodyCompositionComparison({
+    required String comparisonId,
+    required String olderReportId,
+    required String newerReportId,
+  }) async {
+    final response = await _put(
+      '/api/v1/health/body-composition-comparisons/$comparisonId',
+      body: {
+        'older_report_id': olderReportId,
+        'newer_report_id': newerReportId,
+      },
+    );
+    if (response.statusCode == 200) {
+      return BodyCompositionComparison.fromJson(
+        Map<String, dynamic>.from(jsonDecode(response.body) as Map),
+      );
+    }
+    throw Exception(
+      'Failed to update comparison: ${response.statusCode} ${response.body}',
+    );
+  }
+
+  Future<void> deleteBodyCompositionComparison(String comparisonId) async {
+    final response = await _delete(
+      '/api/v1/health/body-composition-comparisons/$comparisonId',
+    );
+    if (response.statusCode != 204) {
+      throw Exception(
+        'Failed to delete comparison: ${response.statusCode} ${response.body}',
+      );
+    }
+  }
+
   Future<BodyCompositionComparison> fetchBodyCompositionComparison(
     String comparisonId,
   ) async {

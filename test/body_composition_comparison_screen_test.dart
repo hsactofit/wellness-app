@@ -76,6 +76,19 @@ void main() {
       expect(find.text('1 recorded once'), findsOneWidget);
       expect(find.text('BMI context'), findsOneWidget);
       expect(find.text('Measurements compared'), findsOneWidget);
+      expect(find.byTooltip('Edit comparison'), findsOneWidget);
+      expect(find.byTooltip('Delete comparison'), findsOneWidget);
+      await tester.tap(find.byTooltip('Delete comparison'));
+      await tester.pumpAndSettle();
+      expect(find.text('Delete comparison?'), findsOneWidget);
+      expect(
+        find.text(
+          'This permanently deletes the saved comparison. Your health reports will not be deleted.',
+        ),
+        findsOneWidget,
+      );
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
       await tester.scrollUntilVisible(
         find.text('2 kg lower than earlier'),
         240,

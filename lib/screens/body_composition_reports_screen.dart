@@ -120,14 +120,45 @@ class _BodyCompositionReportsScreenState
                 subtitle: Text(
                   '${comparison.metrics.length} metrics · ${comparison.elapsedDays} days elapsed',
                 ),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => BodyCompositionComparisonDetailScreen(
-                      comparison: comparison,
+                trailing: PopupMenuButton<_ComparisonAction>(
+                  tooltip: 'Comparison actions',
+                  onSelected: (action) {
+                    switch (action) {
+                      case _ComparisonAction.edit:
+                        _editComparison(comparison);
+                      case _ComparisonAction.delete:
+                        _deleteComparison(comparison);
+                    }
+                  },
+                  itemBuilder: (_) => const [
+                    PopupMenuItem(
+                      value: _ComparisonAction.edit,
+                      child: ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: Icon(Icons.edit_outlined),
+                        title: Text('Edit comparison'),
+                      ),
                     ),
-                  ),
+                    PopupMenuItem(
+                      value: _ComparisonAction.delete,
+                      child: ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: Icon(Icons.delete_outline),
+                        title: Text('Delete comparison'),
+                      ),
+                    ),
+                  ],
                 ),
+                onTap: () async {
+                  await Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => BodyCompositionComparisonDetailScreen(
+                        comparison: comparison,
+                      ),
+                    ),
+                  );
+                  if (mounted) await _refresh();
+                },
               ),
             );
           },
@@ -318,6 +349,58 @@ class _BodyCompositionReportsScreenState
     }
   }
 
+  Future<void> _editComparison(BodyCompositionComparison comparison) async {
+    final updated = await Navigator.of(context).push<BodyCompositionComparison>(
+      MaterialPageRoute(
+        builder: (_) =>
+            BodyCompositionComparisonScreen(existingComparison: comparison),
+      ),
+    );
+    if (updated == null || !mounted) return;
+    await _refresh();
+    if (!mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Comparison updated.')));
+  }
+
+  Future<void> _deleteComparison(BodyCompositionComparison comparison) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Delete comparison?'),
+        content: const Text(
+          'This permanently deletes the saved comparison. Your health reports will not be deleted.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    try {
+      await ApiService.instance.deleteBodyCompositionComparison(comparison.id);
+      if (!mounted) return;
+      await _refresh();
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Comparison deleted.')));
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not delete the comparison: $error')),
+      );
+    }
+  }
+
   List<(String, String)> _metrics(BodyCompositionReport report) {
     final m = report.measurements;
     return [
@@ -384,3 +467,5 @@ class _BodyCompositionReportsScreenState
   String _date(DateTime value) =>
       '${value.day.toString().padLeft(2, '0')} ${const ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][value.month - 1]} ${value.year}';
 }
+
+enum _ComparisonAction { edit, delete }

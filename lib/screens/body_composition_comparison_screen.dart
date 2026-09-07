@@ -7,7 +7,9 @@ import '../services/body_composition_comparison_presentation.dart';
 import '../services/body_composition_pdf_service.dart';
 
 class BodyCompositionComparisonScreen extends StatefulWidget {
-  const BodyCompositionComparisonScreen({super.key});
+  const BodyCompositionComparisonScreen({super.key, this.existingComparison});
+
+  final BodyCompositionComparison? existingComparison;
 
   @override
   State<BodyCompositionComparisonScreen> createState() =>
@@ -24,6 +26,8 @@ class _BodyCompositionComparisonScreenState
   @override
   void initState() {
     super.initState();
+    _olderId = widget.existingComparison?.olderReportId;
+    _newerId = widget.existingComparison?.newerReportId;
     _reportsFuture = ApiService.instance.fetchBodyCompositionReports();
   }
 
@@ -31,13 +35,23 @@ class _BodyCompositionComparisonScreenState
     if (_olderId == null || _newerId == null || _olderId == _newerId) return;
     setState(() => _submitting = true);
     try {
-      final comparison = await ApiService.instance
-          .createBodyCompositionComparison(
-            olderReportId: _olderId!,
-            newerReportId: _newerId!,
-            clientSubmissionId: const Uuid().v4(),
-          );
+      final existing = widget.existingComparison;
+      final comparison = existing == null
+          ? await ApiService.instance.createBodyCompositionComparison(
+              olderReportId: _olderId!,
+              newerReportId: _newerId!,
+              clientSubmissionId: const Uuid().v4(),
+            )
+          : await ApiService.instance.updateBodyCompositionComparison(
+              comparisonId: existing.id,
+              olderReportId: _olderId!,
+              newerReportId: _newerId!,
+            );
       if (!mounted) return;
+      if (existing != null) {
+        Navigator.of(context).pop(comparison);
+        return;
+      }
       await Navigator.of(context).push(
         MaterialPageRoute(
           builder: (_) =>
@@ -47,7 +61,13 @@ class _BodyCompositionComparisonScreenState
     } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not compare reports: $error')),
+          SnackBar(
+            content: Text(
+              widget.existingComparison == null
+                  ? 'Could not compare reports: $error'
+                  : 'Could not update comparison: $error',
+            ),
+          ),
         );
       }
     } finally {
@@ -58,7 +78,13 @@ class _BodyCompositionComparisonScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Compare Reports')),
+      appBar: AppBar(
+        title: Text(
+          widget.existingComparison == null
+              ? 'Compare Reports'
+              : 'Edit comparison',
+        ),
+      ),
       body: FutureBuilder<List<BodyCompositionReport>>(
         future: _reportsFuture,
         builder: (context, snapshot) {
@@ -114,7 +140,11 @@ class _BodyCompositionComparisonScreenState
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Icon(Icons.compare_arrows_outlined),
-                label: const Text('Compare Reports'),
+                label: Text(
+                  widget.existingComparison == null
+                      ? 'Compare Reports'
+                      : 'Save comparison',
+                ),
               ),
             ],
           );
@@ -158,7 +188,7 @@ class _BodyCompositionComparisonScreenState
       '${value.day.toString().padLeft(2, '0')}/${value.month.toString().padLeft(2, '0')}/${value.year}';
 }
 
-class BodyCompositionComparisonDetailScreen extends StatelessWidget {
+class BodyCompositionComparisonDetailScreen extends StatefulWidget {
   const BodyCompositionComparisonDetailScreen({
     super.key,
     required this.comparison,
@@ -167,7 +197,70 @@ class BodyCompositionComparisonDetailScreen extends StatelessWidget {
   final BodyCompositionComparison comparison;
 
   @override
+  State<BodyCompositionComparisonDetailScreen> createState() =>
+      _BodyCompositionComparisonDetailScreenState();
+}
+
+class _BodyCompositionComparisonDetailScreenState
+    extends State<BodyCompositionComparisonDetailScreen> {
+  late BodyCompositionComparison _comparison;
+
+  @override
+  void initState() {
+    super.initState();
+    _comparison = widget.comparison;
+  }
+
+  Future<void> _edit() async {
+    final updated = await Navigator.of(context).push<BodyCompositionComparison>(
+      MaterialPageRoute(
+        builder: (_) =>
+            BodyCompositionComparisonScreen(existingComparison: _comparison),
+      ),
+    );
+    if (updated == null || !mounted) return;
+    setState(() => _comparison = updated);
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Comparison updated.')));
+  }
+
+  Future<void> _delete() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Delete comparison?'),
+        content: const Text(
+          'This permanently deletes the saved comparison. Your health reports will not be deleted.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    try {
+      await ApiService.instance.deleteBodyCompositionComparison(_comparison.id);
+      if (!mounted) return;
+      Navigator.of(context).pop(true);
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not delete the comparison: $error')),
+      );
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final comparison = _comparison;
     final comparedMetrics = comparison.metrics
         .where(BodyCompositionComparisonPresentation.isComparable)
         .toList(growable: false);
@@ -184,6 +277,16 @@ class BodyCompositionComparisonDetailScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Report Comparison'),
         actions: [
+          IconButton(
+            tooltip: 'Edit comparison',
+            onPressed: _edit,
+            icon: const Icon(Icons.edit_outlined),
+          ),
+          IconButton(
+            tooltip: 'Delete comparison',
+            onPressed: _delete,
+            icon: const Icon(Icons.delete_outline),
+          ),
           IconButton(
             tooltip: 'Download PDF',
             onPressed: () async {
@@ -286,7 +389,7 @@ class BodyCompositionComparisonDetailScreen extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              '${comparison.elapsedDays} ${comparison.elapsedDays == 1 ? 'day' : 'days'} between measurements',
+              '${_comparison.elapsedDays} ${_comparison.elapsedDays == 1 ? 'day' : 'days'} between measurements',
               style: Theme.of(
                 context,
               ).textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
@@ -317,27 +420,27 @@ class BodyCompositionComparisonDetailScreen extends StatelessWidget {
               children: [
                 _summaryChip(
                   context,
-                  '${BodyCompositionComparisonPresentation.comparableCount(comparison)} compared',
+                  '${BodyCompositionComparisonPresentation.comparableCount(_comparison)} compared',
                 ),
                 _summaryChip(
                   context,
-                  '${BodyCompositionComparisonPresentation.changedCount(comparison)} changed',
+                  '${BodyCompositionComparisonPresentation.changedCount(_comparison)} changed',
                 ),
                 if (BodyCompositionComparisonPresentation.unchangedCount(
-                      comparison,
+                      _comparison,
                     ) >
                     0)
                   _summaryChip(
                     context,
-                    '${BodyCompositionComparisonPresentation.unchangedCount(comparison)} unchanged',
+                    '${BodyCompositionComparisonPresentation.unchangedCount(_comparison)} unchanged',
                   ),
                 if (BodyCompositionComparisonPresentation.recordedOnceCount(
-                      comparison,
+                      _comparison,
                     ) >
                     0)
                   _summaryChip(
                     context,
-                    '${BodyCompositionComparisonPresentation.recordedOnceCount(comparison)} recorded once',
+                    '${BodyCompositionComparisonPresentation.recordedOnceCount(_comparison)} recorded once',
                   ),
               ],
             ),
@@ -395,10 +498,10 @@ class BodyCompositionComparisonDetailScreen extends StatelessWidget {
               context,
               label: 'Reported BMI',
               earlier: BodyCompositionComparisonPresentation.formatNumber(
-                comparison.olderReport.measurements.reportedBmi,
+                _comparison.olderReport.measurements.reportedBmi,
               ),
               latest: BodyCompositionComparisonPresentation.formatNumber(
-                comparison.newerReport.measurements.reportedBmi,
+                _comparison.newerReport.measurements.reportedBmi,
               ),
               olderDate: olderDate,
               newerDate: newerDate,
@@ -408,9 +511,9 @@ class BodyCompositionComparisonDetailScreen extends StatelessWidget {
               context,
               label: 'App-calculated BMI',
               earlier:
-                  '${BodyCompositionComparisonPresentation.formatNumber(comparison.olderReport.calculatedBmi)}${comparison.olderReport.bmiBand == null ? '' : ' · ${comparison.olderReport.bmiBand}'}',
+                  '${BodyCompositionComparisonPresentation.formatNumber(_comparison.olderReport.calculatedBmi)}${_comparison.olderReport.bmiBand == null ? '' : ' · ${_comparison.olderReport.bmiBand}'}',
               latest:
-                  '${BodyCompositionComparisonPresentation.formatNumber(comparison.newerReport.calculatedBmi)}${comparison.newerReport.bmiBand == null ? '' : ' · ${comparison.newerReport.bmiBand}'}',
+                  '${BodyCompositionComparisonPresentation.formatNumber(_comparison.newerReport.calculatedBmi)}${_comparison.newerReport.bmiBand == null ? '' : ' · ${_comparison.newerReport.bmiBand}'}',
               olderDate: olderDate,
               newerDate: newerDate,
             ),
