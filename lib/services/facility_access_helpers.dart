@@ -1,7 +1,7 @@
 import 'facility_booking_service.dart';
 
-/// Prevents repeated camera frames from opening more than one member-code
-/// dialog while the first QR check-in is still being resolved.
+/// Prevents repeated camera frames from starting more than one QR check-in
+/// while the first scan is still being resolved.
 class QrCheckinGate {
   bool _active = false;
 
@@ -82,8 +82,28 @@ MemberBooking? bookingOnDay(List<MemberBooking> bookings, DateTime day) {
 bool isAlreadyBookedMessage(String message) {
   final normalized = message.toLowerCase();
   return normalized.contains('already have a booking') ||
-      normalized.contains('already have the booking');
+      normalized.contains('already have the booking') ||
+      normalized.contains('overlaps another booking');
 }
 
-String facilityDayKey(DateTime day, {int page = 1}) =>
-    '${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}:$page';
+MemberBooking? overlappingBooking(
+  List<MemberBooking> bookings,
+  FacilitySlot slot,
+) {
+  for (final booking in bookings.where(
+    (booking) => booking.status == 'booked' || booking.status == 'checked_in',
+  )) {
+    if (booking.slot.startsAt.isBefore(slot.endsAt) &&
+        booking.slot.endsAt.isAfter(slot.startsAt)) {
+      return booking;
+    }
+  }
+  return null;
+}
+
+String facilityDayKey(
+  DateTime day, {
+  int page = 1,
+  String activity = kDefaultFacilityActivity,
+}) =>
+    '${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}:$page:$activity';

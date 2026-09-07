@@ -7,6 +7,7 @@ import '../services/facility_booking_service.dart';
 import '../services/workout_report_pdf_service.dart';
 import '../services/workout_report_presentation.dart';
 import '../widgets/glass_card.dart';
+import 'workout_report_edit_screen.dart';
 
 class WorkoutReportsScreen extends StatefulWidget {
   const WorkoutReportsScreen({super.key, this.loadReports});
@@ -189,7 +190,7 @@ class _WorkoutReportsScreenState extends State<WorkoutReportsScreen> {
             ),
           ),
           isThreeLine: true,
-          trailing: ready
+          trailing: ready && !report.aiStale
               ? const Icon(Icons.chevron_right)
               : Chip(
                   label: Text(WorkoutReportPresentation.statusLabel(report)),
@@ -201,13 +202,14 @@ class _WorkoutReportsScreenState extends State<WorkoutReportsScreen> {
                   backgroundColor: statusColor.withValues(alpha: 0.10),
                   side: BorderSide.none,
                 ),
-          onTap: ready
-              ? () => Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => WorkoutReportDetailScreen(report: report),
-                  ),
-                )
-              : null,
+          onTap: () async {
+            await Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => WorkoutReportDetailScreen(report: report),
+              ),
+            );
+            if (mounted) await _refresh(showLoading: false);
+          },
         ),
       ),
     );
@@ -217,10 +219,13 @@ class _WorkoutReportsScreenState extends State<WorkoutReportsScreen> {
     final progress = facts.completionPct == null
         ? 'No checklist'
         : '${facts.completionPct!.round()}% complete';
-    final calories = report.calories == null
+    final calories = report.aiStale
+        ? 'estimate updating'
+        : report.calories == null
         ? 'estimate pending'
         : '${report.calories} kcal estimated';
-    return '$progress - $calories';
+    final edited = report.memberEdited ? ' · Edited by member' : '';
+    return '$progress - $calories$edited';
   }
 
   String _duration(int? minutes) =>
@@ -233,16 +238,33 @@ class _WorkoutReportsScreenState extends State<WorkoutReportsScreen> {
   }
 }
 
-class WorkoutReportDetailScreen extends StatelessWidget {
+class WorkoutReportDetailScreen extends StatefulWidget {
   const WorkoutReportDetailScreen({super.key, required this.report});
 
   final WorkoutReport report;
 
   @override
+  State<WorkoutReportDetailScreen> createState() =>
+      _WorkoutReportDetailScreenState();
+}
+
+class _WorkoutReportDetailScreenState extends State<WorkoutReportDetailScreen> {
+  late WorkoutReport report;
+
+  @override
+  void initState() {
+    super.initState();
+    report = widget.report;
+  }
+
+  @override
   Widget build(BuildContext context) {
     final facts = WorkoutReportPresentation.factsFor(report);
     return Scaffold(
-      appBar: AppBar(title: const Text('Workout Report')),
+      appBar: AppBar(
+        title: const Text('Workout Report'),
+        actions: [TextButton(onPressed: _edit, child: const Text('Edit'))],
+      ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 30),
         children: [
@@ -271,6 +293,44 @@ class WorkoutReportDetailScreen extends StatelessWidget {
             )
           else
             ...facts.items.map((item) => _checklistItem(context, item)),
+          if (facts.hasExtraWork) ...[
+            const SizedBox(height: 20),
+            _sectionTitle(context, 'Extra work'),
+            const SizedBox(height: 8),
+            ...facts.items
+                .where((item) => item.extraSetCount > 0)
+                .map(
+                  (item) => Card(
+                    child: ListTile(
+                      leading: const Icon(Icons.add_circle_outline),
+                      title: Text(item.name),
+                      subtitle: Text(
+                        '${item.extraCompletedIndexes.length}/${item.extraSetCount} extra sets',
+                      ),
+                    ),
+                  ),
+                ),
+            ...facts.extraExercises.map(
+              (item) => Card(
+                child: ListTile(
+                  leading: Icon(
+                    item.exerciseCompleted
+                        ? Icons.check_circle
+                        : Icons.radio_button_unchecked,
+                    color: item.exerciseCompleted ? Colors.green : Colors.grey,
+                  ),
+                  title: Text(item.name),
+                  subtitle: Text(
+                    item.sets > 0
+                        ? '${item.completedSetIndexes.length}/${item.sets} sets${item.reps == null || item.reps!.isEmpty ? '' : ' · ${item.reps} reps'}'
+                        : item.exerciseCompleted
+                        ? 'Completed'
+                        : 'Not completed',
+                  ),
+                ),
+              ),
+            ),
+          ],
           if (_hasText(report.summary) || _hasText(report.recoveryNote)) ...[
             const SizedBox(height: 20),
             _sectionTitle(context, 'Tarqa workout insight'),
@@ -350,7 +410,7 @@ class WorkoutReportDetailScreen extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'COMPLETED WORKOUT',
+          report.memberEdited ? 'EDITED BY MEMBER' : 'COMPLETED WORKOUT',
           style: Theme.of(context).textTheme.labelSmall?.copyWith(
             letterSpacing: 1.2,
             fontWeight: FontWeight.w800,
@@ -386,7 +446,11 @@ class WorkoutReportDetailScreen extends StatelessWidget {
         context,
         Icons.local_fire_department_outlined,
         'Estimated calories',
-        report.calories == null ? 'Pending' : '${report.calories} kcal',
+        report.aiStale
+            ? 'Updating'
+            : report.calories == null
+            ? 'Pending'
+            : '${report.calories} kcal',
       ),
       _stat(
         context,
@@ -474,7 +538,9 @@ class WorkoutReportDetailScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '${facts.completedCount} of ${facts.items.length} exercises completed',
+                  facts.prescribedSetCount == 0
+                      ? '${facts.completedCount} of ${facts.items.length} exercises completed'
+                      : '${facts.completedSetCount} of ${facts.prescribedSetCount} assigned sets completed',
                   style: const TextStyle(fontWeight: FontWeight.w800),
                 ),
                 const SizedBox(height: 14),
@@ -559,10 +625,8 @@ class WorkoutReportDetailScreen extends StatelessWidget {
         style: const TextStyle(fontWeight: FontWeight.w700),
       ),
       subtitle: item.details.isEmpty
-          ? Text(item.completed ? 'Completed' : 'Not completed')
-          : Text(
-              '${item.completed ? 'Completed' : 'Not completed'} - ${item.details}',
-            ),
+          ? Text(item.setSummary)
+          : Text('${item.setSummary} - ${item.details}'),
     ),
   );
 
@@ -589,6 +653,16 @@ class WorkoutReportDetailScreen extends StatelessWidget {
       context,
     ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
   );
+
+  Future<void> _edit() async {
+    final updated = await Navigator.of(context).push<WorkoutReport>(
+      MaterialPageRoute(
+        builder: (_) => WorkoutReportEditScreen(report: report),
+      ),
+    );
+    if (!mounted || updated == null) return;
+    setState(() => report = updated);
+  }
 
   Future<void> _download(BuildContext context) async {
     try {

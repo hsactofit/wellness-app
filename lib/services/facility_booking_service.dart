@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:uuid/uuid.dart';
 
 import 'auth_service.dart';
+import 'workout_progress.dart';
 
 /// Client for the versioned facility-booking and access-request API.
 ///
@@ -44,6 +45,8 @@ class FacilityBookingService {
           return http.delete(requestUri, headers: headers);
         case 'PUT':
           return http.put(requestUri, headers: headers, body: encoded);
+        case 'PATCH':
+          return http.patch(requestUri, headers: headers, body: encoded);
         default:
           throw ArgumentError('Unsupported HTTP method $method');
       }
@@ -88,20 +91,33 @@ class FacilityBookingService {
     return 'Facility request failed ($code)';
   }
 
-  Future<FacilityPage> fetchFacilities(DateTime day, {int page = 1}) async {
+  Future<FacilityPage> fetchFacilities(
+    DateTime day, {
+    int page = 1,
+    String activity = kDefaultFacilityActivity,
+  }) async {
     final response = await _send(
       'GET',
       '/api/facilities/eligible',
-      query: {'date': _date(day), 'page': '$page', 'page_size': '10'},
+      query: {
+        'date': _date(day),
+        'page': '$page',
+        'page_size': '10',
+        'activity': activity,
+      },
     );
     return _expect(response, (body) => FacilityPage.fromJson(body as Map));
   }
 
-  Future<List<FacilitySlot>> fetchSlots(String facilityId, DateTime day) async {
+  Future<List<FacilitySlot>> fetchSlots(
+    String facilityId,
+    DateTime day, {
+    String activity = kDefaultFacilityActivity,
+  }) async {
     final response = await _send(
       'GET',
       '/api/facilities/$facilityId/slots',
-      query: {'date': _date(day)},
+      query: {'date': _date(day), 'activity': activity},
     );
     return _expect(
       response,
@@ -162,6 +178,7 @@ class FacilityBookingService {
 
   Future<FacilityAccessRequest> requestInstant(
     String facilityId, {
+    String activity = kDefaultFacilityActivity,
     String? reason,
   }) async {
     final response = await _send(
@@ -169,6 +186,7 @@ class FacilityBookingService {
       '/api/facility-access/instant-requests',
       body: {
         'facility_id': facilityId,
+        'activity_code': activity,
         if (reason != null && reason.isNotEmpty) 'reason': reason,
         'idempotency_key': _uuid.v4(),
       },
@@ -182,6 +200,7 @@ class FacilityBookingService {
   Future<FacilityAccessRequest> requestCapacity(
     String facilityId, {
     DateTime? requestedFor,
+    String activity = kDefaultFacilityActivity,
     String? reason,
   }) async {
     final response = await _send(
@@ -189,6 +208,7 @@ class FacilityBookingService {
       '/api/facility-access/capacity-requests',
       body: {
         'facility_id': facilityId,
+        'activity_code': activity,
         if (requestedFor != null)
           'requested_for': requestedFor.toIso8601String(),
         if (reason != null && reason.isNotEmpty) 'reason': reason,
@@ -246,9 +266,50 @@ class FacilityBookingService {
     );
   }
 
+  Future<WorkoutReport> correctWorkoutReport({
+    required String reportId,
+    required int expectedRevision,
+    required WorkoutProgress progress,
+  }) async {
+    final response = await _send(
+      'PATCH',
+      '/api/v1/attendance/workout-reports/$reportId',
+      body: {
+        'expected_revision': expectedRevision,
+        'assigned': progress.assigned.map(
+          (key, value) => MapEntry(key, value.toJson()),
+        ),
+        'extra_sets': progress.extraSets.map(
+          (key, value) => MapEntry(key, value.toJson()),
+        ),
+        'extra_exercises': progress.extraExercises
+            .map((item) => item.toJson())
+            .toList(),
+      },
+    );
+    return _expect(response, (body) => WorkoutReport.fromJson(body as Map));
+  }
+
   static String _date(DateTime value) =>
       '${value.year.toString().padLeft(4, '0')}-${value.month.toString().padLeft(2, '0')}-${value.day.toString().padLeft(2, '0')}';
 }
+
+const kDefaultFacilityActivity = 'gym';
+
+const kFacilityActivities = <String, String>{
+  'gym': 'Gym',
+  'yoga': 'Yoga',
+  'zumba': 'Zumba',
+  'meditation': 'Meditation',
+  'pilates': 'Pilates',
+  'aerobics': 'Aerobics',
+};
+
+String facilityActivityLabel(String? code) =>
+    kFacilityActivities[code ?? kDefaultFacilityActivity] ?? 'Gym';
+
+bool isGymActivity(String? code) =>
+    (code ?? kDefaultFacilityActivity) == kDefaultFacilityActivity;
 
 class FacilityBookingException implements Exception {
   FacilityBookingException(this.message, {this.statusCode});
@@ -374,6 +435,8 @@ class FacilitySlot {
     required this.capacity,
     required this.booked,
     required this.remaining,
+    this.activityCode = kDefaultFacilityActivity,
+    this.activityLabel = 'Gym',
   });
 
   final String id;
@@ -383,6 +446,8 @@ class FacilitySlot {
   final int capacity;
   final int booked;
   final int remaining;
+  final String activityCode;
+  final String activityLabel;
 
   bool get isStarted => startsAt.isBefore(DateTime.now());
 
@@ -394,6 +459,10 @@ class FacilitySlot {
     capacity: (body['capacity'] as num?)?.toInt() ?? 0,
     booked: (body['booked'] as num?)?.toInt() ?? 0,
     remaining: (body['remaining'] as num?)?.toInt() ?? 0,
+    activityCode: body['activity_code']?.toString() ?? kDefaultFacilityActivity,
+    activityLabel:
+        body['activity_label']?.toString() ??
+        facilityActivityLabel(body['activity_code']?.toString()),
   );
 }
 
@@ -407,6 +476,8 @@ class MemberBooking {
     required this.bookingDate,
     required this.status,
     required this.capacityOverride,
+    this.activityCode = kDefaultFacilityActivity,
+    this.activityLabel = 'Gym',
   });
 
   final String id;
@@ -417,6 +488,8 @@ class MemberBooking {
   final DateTime bookingDate;
   final String status;
   final bool capacityOverride;
+  final String activityCode;
+  final String activityLabel;
 
   MemberBooking copyWith({String? status}) => MemberBooking(
     id: id,
@@ -427,18 +500,28 @@ class MemberBooking {
     bookingDate: bookingDate,
     status: status ?? this.status,
     capacityOverride: capacityOverride,
+    activityCode: activityCode,
+    activityLabel: activityLabel,
   );
 
-  factory MemberBooking.fromJson(Map body) => MemberBooking(
-    id: body['id'].toString(),
-    facilityId: body['facility_id'].toString(),
-    facilityName: body['facility_name']?.toString() ?? 'Facility',
-    facilityCode: body['facility_code']?.toString() ?? '',
-    slot: FacilitySlot.fromJson(body['slot'] as Map),
-    bookingDate: DateTime.parse(body['booking_date'].toString()),
-    status: body['status']?.toString() ?? 'booked',
-    capacityOverride: body['capacity_override'] == true,
-  );
+  factory MemberBooking.fromJson(Map body) {
+    final slot = FacilitySlot.fromJson(body['slot'] as Map);
+    final activityCode = body['activity_code']?.toString() ?? slot.activityCode;
+    return MemberBooking(
+      id: body['id'].toString(),
+      facilityId: body['facility_id'].toString(),
+      facilityName: body['facility_name']?.toString() ?? 'Facility',
+      facilityCode: body['facility_code']?.toString() ?? '',
+      slot: slot,
+      bookingDate: DateTime.parse(body['booking_date'].toString()),
+      status: body['status']?.toString() ?? 'booked',
+      capacityOverride: body['capacity_override'] == true,
+      activityCode: activityCode,
+      activityLabel:
+          body['activity_label']?.toString() ??
+          facilityActivityLabel(activityCode),
+    );
+  }
 }
 
 class FacilityAccessRequest {
@@ -454,6 +537,8 @@ class FacilityAccessRequest {
     required this.suggestedSlotId,
     required this.resolvedByName,
     required this.resolutionNote,
+    this.activityCode = kDefaultFacilityActivity,
+    this.activityLabel = 'Gym',
   });
 
   final String id;
@@ -467,6 +552,8 @@ class FacilityAccessRequest {
   final String? suggestedSlotId;
   final String? resolvedByName;
   final String? resolutionNote;
+  final String activityCode;
+  final String activityLabel;
 
   bool get approved => status == 'approved';
   bool get rejected => status == 'rejected';
@@ -488,6 +575,10 @@ class FacilityAccessRequest {
     suggestedSlotId: body['suggested_slot_id']?.toString(),
     resolvedByName: body['resolved_by_name']?.toString(),
     resolutionNote: body['resolution_note']?.toString(),
+    activityCode: body['activity_code']?.toString() ?? kDefaultFacilityActivity,
+    activityLabel:
+        body['activity_label']?.toString() ??
+        facilityActivityLabel(body['activity_code']?.toString()),
   );
 }
 
@@ -503,8 +594,17 @@ class WorkoutReport {
     required this.durationMin,
     required this.planSnapshot,
     required this.completedItemIds,
+    required this.workoutProgress,
     required this.intensity,
     required this.completionPct,
+    this.revision = 1,
+    this.editedAt,
+    this.memberEdited = false,
+    this.aiStale = false,
+    this.prescribedSetCount,
+    this.completedSetCount,
+    this.extraExerciseCount = 0,
+    this.extraSetCount = 0,
     this.calories,
     this.summary,
     this.recoveryNote,
@@ -524,6 +624,15 @@ class WorkoutReport {
   final int? durationMin;
   final List<Map<String, dynamic>> planSnapshot;
   final List<String> completedItemIds;
+  final WorkoutProgress workoutProgress;
+  final int revision;
+  final DateTime? editedAt;
+  final bool memberEdited;
+  final bool aiStale;
+  final int? prescribedSetCount;
+  final int? completedSetCount;
+  final int extraExerciseCount;
+  final int extraSetCount;
   final int? calories;
   final String? intensity;
   final double? completionPct;
@@ -534,38 +643,61 @@ class WorkoutReport {
   final DateTime? nextAttemptAt;
   final WorkoutSelfFeedbackSummary? selfFeedback;
 
-  bool get isComplete => status == 'complete';
-  bool get isPreparing => status == 'pending' || status == 'generating';
+  bool get isComplete => status == 'complete' && !aiStale;
+  bool get isPreparing =>
+      status == 'pending' || status == 'generating' || aiStale;
   bool get hasRetryScheduled => status == 'failed' && nextAttemptAt != null;
 
-  factory WorkoutReport.fromJson(Map body) => WorkoutReport(
-    id: body['id'].toString(),
-    status: body['status']?.toString() ?? 'pending',
-    sessionId: body['session_id']?.toString() ?? '',
-    facilityId: body['facility_id']?.toString() ?? '',
-    facilityName: body['facility_name']?.toString() ?? 'Facility workout',
-    checkInAt: DateTime.tryParse(body['check_in_at']?.toString() ?? ''),
-    checkOutAt: DateTime.tryParse(body['check_out_at']?.toString() ?? ''),
-    durationMin: (body['duration_min'] as num?)?.toInt(),
-    planSnapshot: (body['plan_snapshot'] as List? ?? [])
+  factory WorkoutReport.fromJson(Map body) {
+    final planSnapshot = (body['plan_snapshot'] as List? ?? [])
         .whereType<Map>()
         .map((item) => Map<String, dynamic>.from(item))
-        .toList(growable: false),
-    completedItemIds: (body['completed_item_ids'] as List? ?? [])
+        .toList(growable: false);
+    final completedItemIds = (body['completed_item_ids'] as List? ?? [])
         .map((item) => item.toString())
-        .toList(growable: false),
-    calories: (body['ai_estimated_calories'] as num?)?.toInt(),
-    intensity: body['ai_intensity']?.toString(),
-    completionPct: (body['completion_pct'] as num?)?.toDouble(),
-    summary: body['summary']?.toString(),
-    recoveryNote: body['recovery_note']?.toString(),
-    generatedAt: DateTime.tryParse(body['generated_at']?.toString() ?? ''),
-    retryCount: (body['retry_count'] as num?)?.toInt() ?? 0,
-    nextAttemptAt: DateTime.tryParse(body['next_attempt_at']?.toString() ?? ''),
-    selfFeedback: body['self_feedback'] is Map
-        ? WorkoutSelfFeedbackSummary.fromJson(body['self_feedback'] as Map)
-        : null,
-  );
+        .toList(growable: false);
+    final storedProgress = body['workout_progress'] is Map
+        ? body['workout_progress'] as Map
+        : null;
+    return WorkoutReport(
+      id: body['id'].toString(),
+      status: body['status']?.toString() ?? 'pending',
+      sessionId: body['session_id']?.toString() ?? '',
+      facilityId: body['facility_id']?.toString() ?? '',
+      facilityName: body['facility_name']?.toString() ?? 'Facility workout',
+      checkInAt: DateTime.tryParse(body['check_in_at']?.toString() ?? ''),
+      checkOutAt: DateTime.tryParse(body['check_out_at']?.toString() ?? ''),
+      durationMin: (body['duration_min'] as num?)?.toInt(),
+      planSnapshot: planSnapshot,
+      completedItemIds: completedItemIds,
+      workoutProgress: WorkoutProgress.coerce(
+        planSnapshot: planSnapshot,
+        completedItemIds: completedItemIds,
+        stored: storedProgress,
+      ),
+      revision: (body['revision'] as num?)?.toInt() ?? 1,
+      editedAt: DateTime.tryParse(body['edited_at']?.toString() ?? ''),
+      memberEdited: body['member_edited'] == true,
+      aiStale: body['ai_stale'] == true,
+      prescribedSetCount: (body['prescribed_set_count'] as num?)?.toInt(),
+      completedSetCount: (body['completed_set_count'] as num?)?.toInt(),
+      extraExerciseCount: (body['extra_exercise_count'] as num?)?.toInt() ?? 0,
+      extraSetCount: (body['extra_set_count'] as num?)?.toInt() ?? 0,
+      calories: (body['ai_estimated_calories'] as num?)?.toInt(),
+      intensity: body['ai_intensity']?.toString(),
+      completionPct: (body['completion_pct'] as num?)?.toDouble(),
+      summary: body['summary']?.toString(),
+      recoveryNote: body['recovery_note']?.toString(),
+      generatedAt: DateTime.tryParse(body['generated_at']?.toString() ?? ''),
+      retryCount: (body['retry_count'] as num?)?.toInt() ?? 0,
+      nextAttemptAt: DateTime.tryParse(
+        body['next_attempt_at']?.toString() ?? '',
+      ),
+      selfFeedback: body['self_feedback'] is Map
+          ? WorkoutSelfFeedbackSummary.fromJson(body['self_feedback'] as Map)
+          : null,
+    );
+  }
 }
 
 class WorkoutSelfFeedbackSummary {

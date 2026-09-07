@@ -30,7 +30,7 @@ MemberBooking _booking({
 void main() {
   final day = DateTime(2026, 9, 3);
 
-  test('QR check-in gate allows only one member-code dialog at a time', () {
+  test('QR check-in gate allows only one check-in at a time', () {
     final gate = QrCheckinGate();
 
     expect(gate.tryBegin(), isTrue);
@@ -111,7 +111,41 @@ void main() {
       isAlreadyBookedMessage('You already have a booking on this day'),
       isTrue,
     );
+    expect(
+      isAlreadyBookedMessage(
+        'This time overlaps another booking. Choose a different hour',
+      ),
+      isTrue,
+    );
     expect(isAlreadyBookedMessage('This slot is full'), isFalse);
+  });
+
+  test('overlapping bookings are detected across activities', () {
+    final gym = _booking(id: '1', status: 'booked', day: day);
+    final yogaSlot = FacilitySlot(
+      id: 'slot-yoga',
+      facilityId: 'fac-1',
+      startsAt: day.add(const Duration(hours: 10)),
+      endsAt: day.add(const Duration(hours: 11)),
+      capacity: 10,
+      booked: 1,
+      remaining: 9,
+      activityCode: 'yoga',
+      activityLabel: 'Yoga',
+    );
+    final laterSlot = FacilitySlot(
+      id: 'slot-later',
+      facilityId: 'fac-1',
+      startsAt: day.add(const Duration(hours: 12)),
+      endsAt: day.add(const Duration(hours: 13)),
+      capacity: 10,
+      booked: 0,
+      remaining: 10,
+      activityCode: 'yoga',
+      activityLabel: 'Yoga',
+    );
+    expect(overlappingBooking([gym], yogaSlot)?.id, '1');
+    expect(overlappingBooking([gym], laterSlot), isNull);
   });
 
   test('facility page reads the server-provided same-day cutoff', () {

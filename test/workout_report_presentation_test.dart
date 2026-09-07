@@ -38,8 +38,11 @@ void main() {
       expect(completeReport.checkOutAt, DateTime.utc(2026, 9, 4, 9, 48));
       expect(facts.completedCount, 2);
       expect(facts.notCompletedCount, 1);
-      expect(facts.completionPct, closeTo(66.67, 0.01));
+      expect(facts.completedSetCount, 4);
+      expect(facts.prescribedSetCount, 7);
+      expect(facts.completionPct, closeTo(57.14, 0.01));
       expect(facts.items.map((item) => item.completed), [true, false, true]);
+      expect(facts.items.first.setSummary, '3/3 sets');
       expect(facts.items.first.details, 'sets: 3 - reps: 12');
     },
   );

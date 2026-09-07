@@ -11,6 +11,7 @@ import 'auth_service.dart';
 import 'background_workout_service.dart';
 import 'facility_rating_service.dart';
 import 'workout_feedback_service.dart';
+import 'workout_progress.dart';
 
 enum WorkoutSessionPromptReason { hourly, slotEnd, leftFacility }
 
@@ -27,6 +28,7 @@ class ActiveWorkoutSession {
     this.instantRequestId,
     this.slotEndAt,
     this.planSnapshot = const [],
+    this.activityCode = 'gym',
   });
 
   final String id;
@@ -40,8 +42,10 @@ class ActiveWorkoutSession {
   final String? instantRequestId;
   final DateTime? slotEndAt;
   final List<Map<String, dynamic>> planSnapshot;
+  final String activityCode;
 
   bool get hasGeofence => latitude != null && longitude != null;
+  bool get isGymSession => activityCode == 'gym';
 }
 
 class WorkoutSessionException implements Exception {
@@ -100,6 +104,8 @@ class WorkoutSessionService {
   static const _instantRequestIdKey = 'gym_instant_request_id';
   static const _slotEndKey = 'gym_slot_end_at';
   static const _planSnapshotKey = 'gym_plan_snapshot';
+  static const _activityCodeKey = 'gym_activity_code';
+  static const _checklistProgressKey = 'gym_checklist_progress';
   static const _nativeGeofenceKey = 'gym_native_geofence_registered';
   // Keep this separate from the server's attendance time. The server can
   // return an already-open record, but the first reminder must wait one hour
@@ -159,6 +165,7 @@ class WorkoutSessionService {
       instantRequestId: prefs.getString(_instantRequestIdKey),
       slotEndAt: DateTime.tryParse(prefs.getString(_slotEndKey) ?? ''),
       planSnapshot: planSnapshot,
+      activityCode: prefs.getString(_activityCodeKey) ?? 'gym',
     );
   }
 
@@ -224,7 +231,6 @@ class WorkoutSessionService {
 
   Future<Map<String, dynamic>> checkIn({
     required String facilityCode,
-    required String memberPin,
     String? bookingId,
     String? instantRequestId,
   }) async {
@@ -237,7 +243,6 @@ class WorkoutSessionService {
       },
       body: jsonEncode(<String, dynamic>{
         'facility_code': facilityCode,
-        'member_pin': memberPin,
         'method': 'QR scan',
         'activity': 'Workout',
         'client_ref': Uuid().v4(),
@@ -270,6 +275,12 @@ class WorkoutSessionService {
         .map((item) => Map<String, dynamic>.from(item))
         .toList();
 
+    final previousSessionId = prefs.getString(_sessionIdKey);
+    final nextSessionId = session['id']?.toString() ?? '';
+    if (previousSessionId != nextSessionId) {
+      await prefs.remove(_checklistProgressKey);
+    }
+
     await prefs.setBool(_checkedInKey, true);
     await prefs.setString(_nameKey, name);
     await prefs.setString(_placeKey, fallbackFacilityPlace);
@@ -283,6 +294,10 @@ class WorkoutSessionService {
     );
     await _setOptionalString(prefs, _slotEndKey, session['slot_end_at']);
     await prefs.setString(_planSnapshotKey, jsonEncode(planSnapshot));
+    await prefs.setString(
+      _activityCodeKey,
+      session['activity_code']?.toString() ?? 'gym',
+    );
     if (resetLocalReminderState) {
       await prefs.setString(
         _hourlyPromptAnchorKey,
@@ -311,8 +326,37 @@ class WorkoutSessionService {
     await prefs.setBool(_nativeGeofenceKey, nativeGeofenceRegistered);
   }
 
+  Future<WorkoutProgress> loadChecklistProgress(String sessionId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_checklistProgressKey);
+    if (raw == null || raw.isEmpty) return const WorkoutProgress();
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is! Map) return const WorkoutProgress();
+      if (decoded['session_id']?.toString() != sessionId) {
+        return const WorkoutProgress();
+      }
+      final progress = decoded['progress'];
+      return WorkoutProgress.fromJson(progress is Map ? progress : null);
+    } catch (_) {
+      return const WorkoutProgress();
+    }
+  }
+
+  Future<void> saveChecklistProgress({
+    required String sessionId,
+    required WorkoutProgress progress,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+      _checklistProgressKey,
+      jsonEncode({'session_id': sessionId, 'progress': progress.toJson()}),
+    );
+  }
+
   Future<WorkoutCheckoutResult> checkout({
     List<String> completedItemIds = const [],
+    WorkoutProgress? workoutProgress,
   }) async {
     final prefs = await SharedPreferences.getInstance();
     final checkoutRef = prefs.getString(_checkoutRefKey) ?? Uuid().v4();
@@ -327,6 +371,8 @@ class WorkoutSessionService {
       body: jsonEncode(<String, dynamic>{
         'client_ref': checkoutRef,
         'completed_item_ids': completedItemIds,
+        if (workoutProgress != null)
+          'workout_progress': workoutProgress.toJson(),
       }),
     );
 
@@ -467,6 +513,8 @@ class WorkoutSessionService {
     await prefs.remove(_instantRequestIdKey);
     await prefs.remove(_slotEndKey);
     await prefs.remove(_planSnapshotKey);
+    await prefs.remove(_activityCodeKey);
+    await prefs.remove(_checklistProgressKey);
     await prefs.remove(_nativeGeofenceKey);
     await prefs.remove(_hourlyPromptAnchorKey);
     await prefs.remove(_lastHourlyPromptKey);

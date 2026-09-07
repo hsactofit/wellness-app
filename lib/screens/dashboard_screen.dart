@@ -439,14 +439,6 @@ class DashboardScreenState extends State<DashboardScreen>
     });
   }
 
-  Future<void> _setSetupCompleted(bool val) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('healthSetupCompleted', val);
-    setState(() {
-      _healthSetupCompleted = val;
-    });
-  }
-
   Future<void> _setConnectRequested(bool val) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('healthConnectRequested', val);
@@ -2196,72 +2188,6 @@ class DashboardScreenState extends State<DashboardScreen>
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildState3SubModeB(ThemeData theme, bool isDark) {
-    final textColor = isDark ? Colors.white : Colors.black87;
-    final secondaryTextColor = isDark ? Colors.grey[400] : Colors.grey[600];
-
-    return Column(
-      children: [
-        // 2. Verified No Data Mode Banner - MOVED TO BOTTOM
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: GlassCard(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Row(
-                  children: [
-                    Icon(
-                      Icons.info_outline,
-                      color: AppTheme.actionOf(context),
-                      size: 32,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        "No activity has been detected yet",
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: textColor,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  "We automatically check your connected fitness app whenever you open or return to Medifit. New health data will appear here when available.",
-                  style: TextStyle(
-                    color: secondaryTextColor,
-                    fontSize: 12,
-                    height: 1.4,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: TextButton(
-                    onPressed: () {
-                      _setSetupCompleted(false);
-                    },
-                    child: Text(
-                      "View Sync Guide",
-                      style: TextStyle(
-                        color: AppTheme.actionOf(context),
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
     );
   }
 
@@ -4016,16 +3942,11 @@ class DashboardScreenState extends State<DashboardScreen>
                           : _buildState1Banner(theme, isDark),
                     ),
 
-                  // Guide/Setup status card when connected but no data
-                  if (_isConnected && !_hasHealthData)
-                    if (!_healthSetupCompleted)
-                      SliverToBoxAdapter(
-                        child: _buildState3SubModeA(theme, isDark),
-                      )
-                    else
-                      SliverToBoxAdapter(
-                        child: _buildState3SubModeB(theme, isDark),
-                      ),
+                  // Only show setup guidance until it has been completed.
+                  if (_isConnected && !_hasHealthData && !_healthSetupCompleted)
+                    SliverToBoxAdapter(
+                      child: _buildState3SubModeA(theme, isDark),
+                    ),
 
                   // Main Wellness & Score Card
                   SliverToBoxAdapter(

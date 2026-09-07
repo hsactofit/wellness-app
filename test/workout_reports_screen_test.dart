@@ -45,6 +45,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Workout Report'), findsOneWidget);
+    expect(find.text('Edit'), findsOneWidget);
 
     await tester.pumpWidget(const SizedBox());
   });

@@ -298,11 +298,11 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     }
 
     try {
-      // Real wellness-server enrolment pipeline (see app/api/v1/enrolment.py):
+      // Real wellness-server enrolment pipeline:
       // start -> health-assessment -> consent. `consent` auto-activates the
-      // Member row (and issues a member code) when no medical clearance is
-      // required; otherwise the enrolment lands in the staff clearance queue
-      // and the member sees "pending review" until a doctor/HR approves it.
+      // Member row when no medical clearance is required; otherwise the
+      // enrolment lands in the staff clearance queue and the member sees
+      // "pending review" until a doctor/HR approves it.
       final started = await AuthService.instance.startEnrolment(
         corporateId: _selectedCorporateId!,
         facilityId: _selectedFacilityId!,
@@ -337,19 +337,10 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       await prefs.setBool('onboarding_completed', true);
       await prefs.setString('enrolment_stage', stage);
 
-      // The server's member code ends in the four-digit employee code. It is
-      // issued only once activation completes and is used after a facility QR
-      // scan to begin a workout session.
-      final accessCode = result['access_code'] as String?;
-      final checkinCode = accessCode?.split('-').last;
-      if (checkinCode != null && RegExp(r'^\d{4}$').hasMatch(checkinCode)) {
-        await prefs.setString('member_checkin_code', checkinCode);
-      }
-
       if (!mounted) return;
 
       if (stage != 'activated') {
-        // Needs medical clearance before a Member row/member code exists —
+        // Needs medical clearance before a Member row exists —
         // dashboard_screen.dart and other member-only endpoints will 409
         // until staff approves it. Let the user know instead of silently
         // dropping them into a broken dashboard.
@@ -369,11 +360,6 @@ class _OnboardingScreenState extends State<OnboardingScreen>
         return;
       }
 
-      if (checkinCode != null &&
-          RegExp(r'^\d{4}$').hasMatch(checkinCode) &&
-          mounted) {
-        await _showCheckinCodeDialog(checkinCode);
-      }
       if (!mounted) return;
 
       // Navigate to the main dashboard shell
@@ -402,48 +388,6 @@ class _OnboardingScreenState extends State<OnboardingScreen>
         curve: Curves.easeOut,
       );
     }
-  }
-
-  Future<void> _showCheckinCodeDialog(String code) {
-    return showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (dialogContext) => AlertDialog(
-        icon: const Icon(Icons.pin_outlined, size: 32),
-        title: const Text('Your workout check-in code'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'After scanning a ${AppBrand.name} facility QR code, enter this code to start a workout session. Keep it private.',
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 20),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
-              decoration: BoxDecoration(
-                color: Theme.of(dialogContext).colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                code,
-                style: const TextStyle(
-                  fontSize: 30,
-                  letterSpacing: 10,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          FilledButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('I saved it'),
-          ),
-        ],
-      ),
-    );
   }
 
   @override

@@ -7,9 +7,40 @@ import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wellnessconnect/services/auth_service.dart';
 import 'package:wellnessconnect/services/background_workout_service.dart';
+import 'package:wellnessconnect/services/workout_progress.dart';
 import 'package:wellnessconnect/services/workout_session_service.dart';
 
 void main() {
+  test('QR check-in sends no member code or PIN', () async {
+    final requests = <http.Request>[];
+    WorkoutSessionService.instance.setAccessTokenProvider(
+      () async => 'test-access-token',
+    );
+    WorkoutSessionService.instance.setHttpClient(
+      MockClient((request) async {
+        requests.add(request);
+        return http.Response('{"id":"session-qr"}', 200);
+      }),
+    );
+
+    try {
+      await WorkoutSessionService.instance.checkIn(facilityCode: 'BLR1');
+
+      final body = jsonDecode(requests.single.body) as Map<String, dynamic>;
+      expect(body['facility_code'], 'BLR1');
+      expect(body.containsKey('member_pin'), isFalse);
+      expect(
+        requests.single.headers['authorization'],
+        'Bearer test-access-token',
+      );
+    } finally {
+      WorkoutSessionService.instance.setHttpClient(http.Client());
+      WorkoutSessionService.instance.setAccessTokenProvider(
+        () => AuthService.instance.getAccessToken(),
+      );
+    }
+  });
+
   test(
     'new local check-in anchors the hourly reminder instead of an old server time',
     () async {
@@ -254,11 +285,33 @@ void main() {
     );
 
     try {
-      final result = await WorkoutSessionService.instance.checkout();
+      await WorkoutSessionService.instance.saveChecklistProgress(
+        sessionId: 'session-checkout-success',
+        progress: const WorkoutProgress(
+          assigned: {
+            'exercise-1': AssignedExerciseProgress(
+              completedSetIndexes: [1, 2],
+              exerciseCompleted: false,
+            ),
+          },
+        ),
+      );
+      final result = await WorkoutSessionService.instance.checkout(
+        completedItemIds: const [],
+        workoutProgress: const WorkoutProgress(
+          assigned: {
+            'exercise-1': AssignedExerciseProgress(
+              completedSetIndexes: [1, 2],
+              exerciseCompleted: false,
+            ),
+          },
+        ),
+      );
 
       final prefs = await SharedPreferences.getInstance();
       expect(result.checkOutAt, DateTime.utc(2026, 9, 4, 10, 30));
       expect(prefs.getBool('gym_checked_in'), isNull);
+      expect(prefs.getString('gym_checklist_progress'), isNull);
       expect(calls.where((call) => call.method == 'stop'), hasLength(1));
     } finally {
       await WorkoutSessionService.instance.clearLocalSession();

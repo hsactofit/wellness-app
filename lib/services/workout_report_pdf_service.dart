@@ -49,7 +49,9 @@ class WorkoutReportPdfService {
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
                 pw.Text(
-                  'COMPLETED WORKOUT',
+                  report.memberEdited
+                      ? 'EDITED BY MEMBER'
+                      : 'COMPLETED WORKOUT',
                   style: pw.TextStyle(
                     color: PdfColors.white,
                     fontSize: 9,
@@ -148,7 +150,9 @@ class WorkoutReportPdfService {
                       crossAxisAlignment: pw.CrossAxisAlignment.start,
                       children: [
                         pw.Text(
-                          '${facts.completedCount} of ${facts.items.length} exercises completed',
+                          facts.prescribedSetCount == 0
+                              ? '${facts.completedCount} of ${facts.items.length} exercises completed'
+                              : '${facts.completedSetCount} of ${facts.prescribedSetCount} assigned sets completed',
                           style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
                         ),
                         pw.SizedBox(height: 10),
@@ -206,20 +210,60 @@ class WorkoutReportPdfService {
               cellAlignment: pw.Alignment.centerLeft,
               headers: const ['Status', 'Exercise', 'Plan details'],
               columnWidths: const {
-                0: pw.FlexColumnWidth(0.75),
-                1: pw.FlexColumnWidth(1.35),
-                2: pw.FlexColumnWidth(2.3),
+                0: pw.FlexColumnWidth(0.95),
+                1: pw.FlexColumnWidth(1.25),
+                2: pw.FlexColumnWidth(2.2),
               },
               data: facts.items
                   .map(
                     (item) => [
-                      item.completed ? 'Completed' : 'Not completed',
+                      _pdfText(item.setSummary),
                       _pdfText(item.name),
                       _pdfText(item.details.isEmpty ? '-' : item.details),
                     ],
                   )
                   .toList(growable: false),
             ),
+          if (facts.hasExtraWork) ...[
+            pw.SizedBox(height: 16),
+            _sectionTitle('Extra work', accent),
+            pw.SizedBox(height: 8),
+            pw.TableHelper.fromTextArray(
+              headerStyle: pw.TextStyle(
+                color: PdfColors.white,
+                fontWeight: pw.FontWeight.bold,
+                fontSize: 8,
+              ),
+              headerDecoration: const pw.BoxDecoration(
+                color: PdfColors.blueGrey700,
+              ),
+              cellStyle: const pw.TextStyle(fontSize: 8),
+              cellAlignment: pw.Alignment.centerLeft,
+              headers: const ['Type', 'Exercise', 'Detail'],
+              data: [
+                ...facts.items
+                    .where((item) => item.extraSetCount > 0)
+                    .map(
+                      (item) => [
+                        'Extra sets',
+                        _pdfText(item.name),
+                        '${item.extraCompletedIndexes.length}/${item.extraSetCount}',
+                      ],
+                    ),
+                ...facts.extraExercises.map(
+                  (item) => [
+                    item.source == 'library' ? 'Library' : 'Custom',
+                    _pdfText(item.name),
+                    item.sets > 0
+                        ? '${item.completedSetIndexes.length}/${item.sets} sets'
+                        : item.exerciseCompleted
+                        ? 'Completed'
+                        : 'Not completed',
+                  ],
+                ),
+              ],
+            ),
+          ],
           if (_hasText(report.summary) || _hasText(report.recoveryNote)) ...[
             pw.SizedBox(height: 20),
             _sectionTitle('Tarqa workout insight', accent),

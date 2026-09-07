@@ -7,7 +7,6 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../app_brand.dart';
 import '../services/camera_permission_gate.dart';
 import '../services/background_workout_service.dart';
 import '../services/facility_access_helpers.dart';
@@ -15,6 +14,7 @@ import '../services/facility_booking_service.dart';
 import '../services/facility_directions_launcher.dart';
 import '../services/facility_rating_service.dart';
 import '../services/workout_feedback_service.dart';
+import '../services/workout_progress.dart';
 import '../services/workout_session_service.dart';
 import '../widgets/exercise_video_tile.dart';
 import '../widgets/glass_card.dart';
@@ -26,8 +26,8 @@ import 'workout_reports_screen.dart';
 /// Member-facing facility access surface.
 ///
 /// A booking or an approved instant request is always carried through to the
-/// server check-in call. The QR and four-digit member code are still required
-/// at the door, so a stale booking/request cannot be used by itself.
+/// server check-in call. The facility QR is required at the door, so a stale
+/// booking/request cannot be used by itself.
 class GymCheckinScreen extends StatefulWidget {
   const GymCheckinScreen({super.key, this.onStatusChanged});
 
@@ -46,11 +46,12 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
   final _workoutFeedbackService = WorkoutFeedbackService.instance;
   final _manualFacilityController = TextEditingController();
   final _reasonController = TextEditingController();
-  final _completedItems = <String>{};
+  WorkoutProgress _progress = const WorkoutProgress();
   final _qrCheckinGate = QrCheckinGate();
 
   _AccessView _view = _AccessView.home;
   DateTime _selectedDay = DateTime.now();
+  String _selectedActivity = kDefaultFacilityActivity;
   FacilityPage? _facilityPage;
   final Map<String, FacilityPage> _facilityCache = {};
   List<MemberBooking> _bookings = const [];
@@ -125,7 +126,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
       _loading = false;
     });
     if (session != null) {
-      _completedItems.clear();
+      await _restoreChecklist(session);
       await _hidePersistentTimer();
       await _ensureIosPersistentTimer();
       _startTimer();
@@ -156,6 +157,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
     }
     if (session != null && _session == null) {
       setState(() => _session = session);
+      await _restoreChecklist(session);
       await _hidePersistentTimer();
       await _ensureIosPersistentTimer();
       _startTimer();
@@ -217,6 +219,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
       final page = await _bookingService.fetchFacilities(
         _selectedDay,
         page: _facilityPageNumber,
+        activity: _selectedActivity,
       );
       if (!mounted) return;
       setState(() {
@@ -224,6 +227,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
         _facilityCache[facilityDayKey(
               _selectedDay,
               page: _facilityPageNumber,
+              activity: _selectedActivity,
             )] =
             page;
       });
@@ -351,7 +355,8 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
 
   void _openFacilities() {
     final today = DateTime.now();
-    final cached = _facilityCache[facilityDayKey(today)];
+    final cached =
+        _facilityCache[facilityDayKey(today, activity: _selectedActivity)];
     setState(() {
       _view = _AccessView.facilities;
       _facilityPageNumber = 1;
@@ -364,7 +369,11 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
   }
 
   void _openInstant() {
-    final cached = _facilityCache[facilityDayKey(_selectedDay)];
+    final cached =
+        _facilityCache[facilityDayKey(
+          _selectedDay,
+          activity: _selectedActivity,
+        )];
     setState(() {
       _view = _AccessView.instantFacilities;
       _facilityPageNumber = 1;
@@ -376,7 +385,8 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
   }
 
   Future<void> _changeDay(DateTime day) async {
-    final cached = _facilityCache[facilityDayKey(day)];
+    final cached =
+        _facilityCache[facilityDayKey(day, activity: _selectedActivity)];
     setState(() {
       _selectedDay = day;
       _facilityPageNumber = 1;
@@ -388,7 +398,12 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
   }
 
   void _changeFacilityPage(int page) {
-    final cached = _facilityCache[facilityDayKey(_selectedDay, page: page)];
+    final cached =
+        _facilityCache[facilityDayKey(
+          _selectedDay,
+          page: page,
+          activity: _selectedActivity,
+        )];
     setState(() {
       _facilityPageNumber = page;
       _facilityPage = cached;
@@ -407,6 +422,14 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
       _cameraPermissionGranted = false;
     });
     unawaited(_loadBookings());
+  }
+
+  Future<bool> _ensureActivityConsent({
+    required String action,
+    String? activity,
+  }) async {
+    if (!isGymActivity(activity ?? _selectedActivity)) return true;
+    return _ensureWorkoutDataConsent(action: action);
   }
 
   Future<bool> _ensureWorkoutDataConsent({required String action}) async {
@@ -463,19 +486,28 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
 
   Future<void> _bookSlot(EligibleFacility facility, FacilitySlot slot) async {
     if (slot.remaining <= 0 || slot.isStarted) return;
-    final existing = bookingOnDay(_bookings, _selectedDay);
+    final existing = overlappingBooking(_bookings, slot);
     if (existing != null) {
       await _showAlreadyBookedDialog(existing);
       return;
     }
     if (!await _ensureRatingComplete()) return;
-    if (!await _ensureWorkoutDataConsent(action: 'book this slot')) return;
+    if (!await _ensureActivityConsent(
+      action: 'book this slot',
+      activity: slot.activityCode,
+    )) {
+      return;
+    }
     setState(() => _actionInProgress = true);
     try {
       final booking = await _bookingService.bookSlot(slot.id);
       if (!mounted) return;
       _facilityCache.remove(
-        facilityDayKey(_selectedDay, page: _facilityPageNumber),
+        facilityDayKey(
+          _selectedDay,
+          page: _facilityPageNumber,
+          activity: _selectedActivity,
+        ),
       );
       setState(() {
         _actionInProgress = false;
@@ -509,12 +541,12 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
   Future<void> _showAlreadyBookedDialog(MemberBooking? booking) async {
     if (!mounted) return;
     final details = booking == null
-        ? 'You already have a facility booking on this day. Only one slot can be reserved per day.'
-        : 'You already booked ${booking.facilityName} at ${_formatSlot(booking.slot)}. Cancel that booking first if you want a different slot.';
+        ? 'This time overlaps another booking. Choose a different hour.'
+        : 'You already booked ${booking.activityLabel} at ${booking.facilityName} (${_formatSlot(booking.slot)}). Choose a different hour or cancel that booking first.';
     await showDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('You already have a booking on this day'),
+        title: const Text('This time overlaps another booking'),
         content: Text(details),
         actions: [
           TextButton(
@@ -533,7 +565,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
       builder: (dialogContext) => AlertDialog(
         title: const Text('Slot booked'),
         content: Text(
-          '${booking.facilityName}\n${_formatSlot(booking.slot)}\n\nScan the facility QR at the door during this hour to start your workout.',
+          '${booking.activityLabel} at ${booking.facilityName}\n${_formatSlot(booking.slot)}\n\nScan the facility QR at the door during this hour to start.',
         ),
         actions: [
           TextButton(
@@ -549,7 +581,43 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
     _bookingId = booking.id;
     _instantRequestId = null;
     _expectedFacilityCode = booking.facilityCode;
+    _selectedActivity = booking.activityCode;
     _openScanner();
+  }
+
+  void _selectActivity(String code) {
+    if (code == _selectedActivity) return;
+    final cached = _facilityCache[facilityDayKey(_selectedDay, activity: code)];
+    setState(() {
+      _selectedActivity = code;
+      _facilityPageNumber = 1;
+      _facilityPage = cached;
+    });
+    if (cached == null &&
+        (_view == _AccessView.facilities ||
+            _view == _AccessView.instantFacilities)) {
+      unawaited(_loadFacilities());
+    }
+  }
+
+  Widget _activityChooser() {
+    final entries = kFacilityActivities.entries.toList();
+    return SizedBox(
+      height: 42,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: entries.length,
+        separatorBuilder: (_, _) => const SizedBox(width: 8),
+        itemBuilder: (context, index) {
+          final entry = entries[index];
+          return ChoiceChip(
+            selected: _selectedActivity == entry.key,
+            label: Text(entry.value),
+            onSelected: (_) => _selectActivity(entry.key),
+          );
+        },
+      ),
+    );
   }
 
   Future<void> _showSlotPicker(EligibleFacility facility) async {
@@ -620,9 +688,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
 
   Future<void> _requestCapacity(EligibleFacility facility) async {
     if (!await _ensureRatingComplete()) return;
-    if (!await _ensureWorkoutDataConsent(
-      action: 'request a capacity override',
-    )) {
+    if (!await _ensureActivityConsent(action: 'request a capacity override')) {
       return;
     }
     setState(() => _actionInProgress = true);
@@ -630,6 +696,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
       final request = await _bookingService.requestCapacity(
         facility.id,
         requestedFor: _selectedDay,
+        activity: _selectedActivity,
         reason: 'All displayed slots are full',
       );
       if (!mounted) return;
@@ -649,7 +716,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
 
   Future<void> _requestInstant(EligibleFacility facility) async {
     if (!await _ensureRatingComplete()) return;
-    if (!await _ensureWorkoutDataConsent(action: 'start an instant check-in')) {
+    if (!await _ensureActivityConsent(action: 'start an instant check-in')) {
       return;
     }
     setState(() {
@@ -659,6 +726,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
     try {
       final request = await _bookingService.requestInstant(
         facility.id,
+        activity: _selectedActivity,
         reason: _reasonController.text.trim().isEmpty
             ? null
             : _reasonController.text.trim(),
@@ -749,9 +817,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
     final requestId = _instantRequestId;
     if (requestId == null || _accessRequest?.suggestedSlotId == null) return;
     if (!await _ensureRatingComplete()) return;
-    if (!await _ensureWorkoutDataConsent(
-      action: 'accept this suggested slot',
-    )) {
+    if (!await _ensureActivityConsent(action: 'accept this suggested slot')) {
       return;
     }
     setState(() => _actionInProgress = true);
@@ -852,24 +918,20 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
         return;
       }
       if (!await _ensureRatingComplete()) return;
-      if (!await _ensureWorkoutDataConsent(action: 'check in')) return;
-      _scannerController?.stop();
-      if (!mounted) return;
-      final pin = await showDialog<String>(
-        context: context,
-        builder: (_) => MemberPinDialog(
-          facilityName: _instantFacility?.name ?? 'your facility',
-        ),
-      );
-      if (pin == null || !mounted) {
-        if (mounted) _scannerController?.start();
+      if (!await _ensureActivityConsent(
+        action: 'check in',
+        activity: _bookings
+            .where((booking) => booking.id == _bookingId)
+            .map((booking) => booking.activityCode)
+            .firstOrNull,
+      )) {
         return;
       }
+      _scannerController?.stop();
       setState(() => _actionInProgress = true);
       try {
         final session = await WorkoutSessionService.instance.checkIn(
           facilityCode: _expectedFacilityCode ?? code,
-          memberPin: pin,
           bookingId: _bookingId,
           instantRequestId: _instantRequestId,
         );
@@ -881,7 +943,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
           showPersistentTimer: false,
         );
         // The 2 km reminder origin is the exact device position after this
-        // successful QR/PIN check-in — never the facility's stored map pin.
+        // successful QR check-in — never the facility's stored map pin.
         // Location is optional for check-in, so a refusal only disables this
         // automatic reminder and leaves manual checkout available.
         final scannerOriginArmed = await WorkoutSessionService.instance
@@ -895,6 +957,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
         if (!mounted) return;
         setState(() {
           _session = active;
+          _progress = const WorkoutProgress();
           if (checkedInBookingId != null) {
             _bookings = _bookings
                 .map(
@@ -950,14 +1013,18 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
     setState(() => _actionInProgress = true);
     try {
       final result = await WorkoutSessionService.instance.checkout(
-        completedItemIds: _completedItems.toList(),
+        completedItemIds: _progress.assigned.entries
+            .where((entry) => entry.value.exerciseCompleted)
+            .map((entry) => entry.key)
+            .toList(),
+        workoutProgress: _progress,
       );
       if (!mounted) return;
       setState(() {
         _session = null;
         _view = _AccessView.home;
         _elapsed = Duration.zero;
-        _completedItems.clear();
+        _progress = const WorkoutProgress();
       });
       _timer?.cancel();
       widget.onStatusChanged?.call();
@@ -994,9 +1061,9 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
       builder: (dialogContext) => AlertDialog(
         title: const Text('Finish workout?'),
         content: Text(
-          _completedItems.isEmpty
-              ? 'No exercises are selected. You can still check out.'
-              : '${_completedItems.length} exercise(s) selected. You can still check out if the checklist is incomplete.',
+          _completedExerciseCount == 0
+              ? 'No exercises are fully completed. You can still check out.'
+              : '$_completedExerciseCount exercise(s) fully completed. You can still check out if the checklist is incomplete.',
         ),
         actions: [
           TextButton(
@@ -1078,23 +1145,26 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            'Start a facility workout',
+            'Book a facility activity',
             style: Theme.of(
               context,
             ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 8),
           Text(
-            'Reserve a one-hour slot in advance, or check in instantly when you arrive.',
+            'Choose Gym, Yoga, Zumba, or another hourly activity, then reserve a slot or check in when you arrive.',
             style: Theme.of(
               context,
             ).textTheme.bodyMedium?.copyWith(color: Colors.grey),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 12),
+          _activityChooser(),
+          const SizedBox(height: 12),
           _accessChoice(
             icon: Icons.event_available_outlined,
             title: 'Book a Slot',
-            subtitle: 'Choose a facility and hourly availability',
+            subtitle:
+                'Choose a facility and hourly ${facilityActivityLabel(_selectedActivity)} availability',
             onTap: _openFacilities,
             color: Colors.indigoAccent,
           ),
@@ -1176,11 +1246,15 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                instant ? 'Choose a facility' : 'Choose a facility and slot',
+                instant
+                    ? 'Choose a facility for ${facilityActivityLabel(_selectedActivity)}'
+                    : 'Choose a facility and ${facilityActivityLabel(_selectedActivity)} slot',
                 style: Theme.of(
                   context,
                 ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
               ),
+              const SizedBox(height: 10),
+              _activityChooser(),
               if (!instant) ...[
                 const SizedBox(height: 10),
                 SizedBox(
@@ -1370,7 +1444,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
     return Card(
       child: ListTile(
         title: Text(
-          booking.facilityName,
+          '${booking.activityLabel} · ${booking.facilityName}',
           style: const TextStyle(fontWeight: FontWeight.w700),
         ),
         subtitle: Wrap(
@@ -1454,7 +1528,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
                       ? 'Please try again in a moment.'
                       : 'The facility manager has up to 15 minutes to approve this request.'
                 : request.approved
-                ? 'Scan the facility QR and enter your member code to begin.'
+                ? 'Scan the facility QR to begin.'
                 : request.resolutionNote ??
                       'The facility manager declined this walk-in. Book the suggested empty slot or choose another nearby facility.',
             textAlign: TextAlign.center,
@@ -1510,8 +1584,10 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
             ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 8),
-          const Text(
-            'Use the QR displayed at the facility entrance. The member code is required next.',
+          Text(
+            isGymActivity(_selectedActivity)
+                ? 'Use the QR displayed at the facility entrance to begin your workout.'
+                : 'Use the QR displayed at the facility entrance to start ${facilityActivityLabel(_selectedActivity)}.',
           ),
           const SizedBox(height: 18),
           ClipRRect(
@@ -1618,9 +1694,13 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
                 const SizedBox(height: 10),
                 Chip(
                   label: Text(
-                    session.instantRequestId != null
-                        ? 'Instant check-in'
-                        : 'Booked slot',
+                    [
+                      facilityActivityLabel(session.activityCode),
+                      if (session.instantRequestId != null)
+                        'Instant check-in'
+                      else
+                        'Booked slot',
+                    ].join(' · '),
                   ),
                   avatar: Icon(
                     session.instantRequestId != null
@@ -1630,8 +1710,10 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
                   ),
                 ),
                 const SizedBox(height: 8),
-                const Text(
-                  'WORKOUT DURATION',
+                Text(
+                  session.isGymSession
+                      ? 'WORKOUT DURATION'
+                      : 'SESSION DURATION',
                   style: TextStyle(
                     letterSpacing: 1.1,
                     fontSize: 11,
@@ -1661,39 +1743,49 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
             _buildLiveActivityWarning(_persistentTimerStatus!),
           ],
           const SizedBox(height: 16),
-          Text(
-            "Today's workout plan",
-            style: Theme.of(
-              context,
-            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
-          ),
-          const SizedBox(height: 8),
-          if (plan.isEmpty)
-            const Card(
-              child: Padding(
-                padding: EdgeInsets.all(18),
-                child: Text(
-                  'No workout assigned today. You can still check out when you finish.',
-                ),
-              ),
-            )
-          else
-            ...plan.map(_planItem),
-          if (targetMuscles.isNotEmpty) ...[
-            const SizedBox(height: 16),
-            WorkoutMuscleMapCard(targetMuscles: targetMuscles),
-          ],
-          if (videoPlan.isNotEmpty) ...[
-            const SizedBox(height: 16),
+          if (session.isGymSession) ...[
             Text(
-              'Exercise videos',
+              "Today's workout plan",
               style: Theme.of(
                 context,
               ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 8),
-            ...videoPlan.map(_videoItem),
-          ],
+            if (plan.isEmpty)
+              const Card(
+                child: Padding(
+                  padding: EdgeInsets.all(18),
+                  child: Text(
+                    'No workout assigned today. You can still check out when you finish.',
+                  ),
+                ),
+              )
+            else
+              ...plan.map(_planItem),
+            if (targetMuscles.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              WorkoutMuscleMapCard(targetMuscles: targetMuscles),
+            ],
+            if (videoPlan.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              Text(
+                'Exercise videos',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+              ),
+              const SizedBox(height: 8),
+              ...videoPlan.map(_videoItem),
+            ],
+          ] else
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(18),
+                child: Text(
+                  'You are checked in for ${facilityActivityLabel(session.activityCode)}. Check out when the session ends.',
+                ),
+              ),
+            ),
           const SizedBox(height: 16),
           FilledButton.icon(
             style: FilledButton.styleFrom(backgroundColor: Colors.redAccent),
@@ -1706,62 +1798,155 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
     );
   }
 
+  int get _completedExerciseCount => _progress.assigned.values
+      .where((entry) => entry.exerciseCompleted)
+      .length;
+
+  Future<void> _restoreChecklist(ActiveWorkoutSession session) async {
+    final restored = await WorkoutSessionService.instance.loadChecklistProgress(
+      session.id,
+    );
+    if (!mounted) return;
+    setState(() => _progress = restored);
+  }
+
+  Future<void> _persistChecklist() async {
+    final session = _session;
+    if (session == null) return;
+    await WorkoutSessionService.instance.saveChecklistProgress(
+      sessionId: session.id,
+      progress: _progress,
+    );
+  }
+
+  void _setAssignedProgress(String id, AssignedExerciseProgress entry) {
+    setState(() {
+      _progress = _progress.copyWith(
+        assigned: {..._progress.assigned, id: entry},
+      );
+    });
+    unawaited(_persistChecklist());
+  }
+
   Widget _planItem(Map<String, dynamic> item) {
-    final id = item['id']?.toString() ?? item['name']?.toString() ?? 'exercise';
+    final id = exerciseIdOf(item);
     final name = item['name']?.toString() ?? 'Exercise';
     final details = exerciseDetails(item);
+    final prescribed = prescribedSetCount(item);
+    final entry = _progress.forExercise(id);
+    final setsDone = allPrescribedSetsComplete(item, entry.completedSetIndexes);
     final targets = workoutTargetMusclesFromJson(item['target_muscles']);
     final targetSummary = targets.singleOrNull == fullBodyTargetMuscle
         ? 'Full-body training'
         : workoutTargetMuscleSummary(targets);
+    final repsLabel = item['reps']?.toString().trim();
     return Card(
-      child: CheckboxListTile(
-        value: _completedItems.contains(id),
-        onChanged: (selected) {
-          setState(() {
-            if (selected == true) {
-              _completedItems.add(id);
-            } else {
-              _completedItems.remove(id);
-            }
-          });
-        },
-        title: Text(name, style: const TextStyle(fontWeight: FontWeight.w700)),
-        isThreeLine: details.isNotEmpty && targets.isNotEmpty,
-        subtitle: details.isEmpty && targets.isEmpty
-            ? null
-            : Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (details.isNotEmpty) Text(details),
-                  if (targets.isNotEmpty) ...[
-                    if (details.isNotEmpty) const SizedBox(height: 3),
-                    Row(
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            CheckboxListTile(
+              value: entry.exerciseCompleted,
+              onChanged: setsDone
+                  ? (selected) => _setAssignedProgress(
+                      id,
+                      gatedAssignedProgress(
+                        item: item,
+                        completedSetIndexes: entry.completedSetIndexes,
+                        exerciseCompleted: selected == true,
+                      ),
+                    )
+                  : null,
+              title: Text(
+                name,
+                style: const TextStyle(fontWeight: FontWeight.w700),
+              ),
+              subtitle: details.isEmpty && targets.isEmpty
+                  ? Text(
+                      prescribed > 0
+                          ? 'Complete every set before ticking this exercise'
+                          : 'Mark this exercise when it is finished',
+                    )
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(
-                          Icons.my_location_outlined,
-                          size: 14,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                        const SizedBox(width: 4),
-                        Expanded(
-                          child: Text(
-                            'Targets · $targetSummary',
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.onSurfaceVariant,
-                                  fontWeight: FontWeight.w700,
+                        if (details.isNotEmpty) Text(details),
+                        if (targets.isNotEmpty) ...[
+                          if (details.isNotEmpty) const SizedBox(height: 3),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.my_location_outlined,
+                                size: 14,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                              const SizedBox(width: 4),
+                              Expanded(
+                                child: Text(
+                                  'Targets · $targetSummary',
+                                  style: Theme.of(context).textTheme.bodySmall
+                                      ?.copyWith(
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.onSurfaceVariant,
+                                        fontWeight: FontWeight.w700,
+                                      ),
                                 ),
+                              ),
+                            ],
                           ),
-                        ),
+                        ],
+                        if (prescribed > 0) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            setsDone
+                                ? 'All sets done — you can mark the exercise complete'
+                                : 'Tick each set. The exercise stays locked until every set is done.',
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ],
                       ],
                     ),
+            ),
+            if (prescribed > 0)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 0, 12, 4),
+                child: Column(
+                  children: [
+                    for (var setIndex = 1; setIndex <= prescribed; setIndex++)
+                      CheckboxListTile(
+                        dense: true,
+                        contentPadding: const EdgeInsets.only(left: 20),
+                        value: entry.completedSetIndexes.contains(setIndex),
+                        onChanged: (selected) {
+                          final next = {...entry.completedSetIndexes};
+                          if (selected == true) {
+                            next.add(setIndex);
+                          } else {
+                            next.remove(setIndex);
+                          }
+                          _setAssignedProgress(
+                            id,
+                            gatedAssignedProgress(
+                              item: item,
+                              completedSetIndexes: next.toList(),
+                              exerciseCompleted: entry.exerciseCompleted,
+                            ),
+                          );
+                        },
+                        title: Text(
+                          repsLabel == null || repsLabel.isEmpty
+                              ? 'Set $setIndex'
+                              : 'Set $setIndex · $repsLabel reps',
+                        ),
+                      ),
                   ],
-                ],
+                ),
               ),
+          ],
+        ),
       ),
     );
   }
@@ -1874,15 +2059,6 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
 
   bool _sameDay(DateTime a, DateTime b) =>
       a.year == b.year && a.month == b.month && a.day == b.day;
-}
-
-class MemberPinDialog extends StatefulWidget {
-  const MemberPinDialog({super.key, required this.facilityName});
-
-  final String facilityName;
-
-  @override
-  State<MemberPinDialog> createState() => _MemberPinDialogState();
 }
 
 class _FacilityRatingDialog extends StatefulWidget {
@@ -2358,74 +2534,6 @@ class _WorkoutSelfFeedbackDialogState
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
               : const Text('Submit feedback'),
-        ),
-      ],
-    );
-  }
-}
-
-class _MemberPinDialogState extends State<MemberPinDialog> {
-  final _controller = TextEditingController();
-  String? _error;
-  bool _submitting = false;
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  void _submit() {
-    if (_submitting) return;
-    final value = _controller.text.trim();
-    if (RegExp(r'^\d{4}$').hasMatch(value)) {
-      setState(() => _submitting = true);
-      FocusScope.of(context).unfocus();
-      Navigator.pop(context, value);
-    } else {
-      setState(() => _error = 'Enter all 4 digits');
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Enter member code'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Enter the four-digit code issued for your ${AppBrand.name} membership at ${widget.facilityName}.',
-          ),
-          const SizedBox(height: 14),
-          TextField(
-            controller: _controller,
-            autofocus: true,
-            maxLength: 4,
-            obscureText: true,
-            keyboardType: TextInputType.number,
-            decoration: InputDecoration(
-              labelText: '4-digit code',
-              errorText: _error,
-              border: const OutlineInputBorder(),
-            ),
-            onChanged: (value) {
-              if (_error != null) setState(() => _error = null);
-              if (RegExp(r'^\d{4}$').hasMatch(value)) _submit();
-            },
-            onSubmitted: (_) => _submit(),
-          ),
-        ],
-      ),
-      actions: [
-        TextButton(
-          onPressed: _submitting ? null : () => Navigator.pop(context),
-          child: const Text('Cancel'),
-        ),
-        FilledButton(
-          onPressed: _submitting ? null : _submit,
-          child: const Text('Start workout'),
         ),
       ],
     );
