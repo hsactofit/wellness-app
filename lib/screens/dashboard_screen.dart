@@ -4781,13 +4781,13 @@ class DashboardScreenState extends State<DashboardScreen>
               childAspectRatio: 1.25,
               children: [
                 _buildQuickAccessItem(
-                  "📄",
+                  Icons.description_outlined,
                   "Health Reports",
                   const Color(0xFF2ECAE5),
                   onTap: _openHealthReports,
                 ),
                 _buildQuickAccessItem(
-                  "🍲",
+                  Icons.restaurant_menu_rounded,
                   "Log Meal",
                   const Color(0xFFFFB03A),
                   onTap: () {
@@ -4802,7 +4802,7 @@ class DashboardScreenState extends State<DashboardScreen>
                   },
                 ),
                 _buildQuickAccessItem(
-                  "🥗",
+                  Icons.event_note_outlined,
                   "Meal Plan",
                   const Color(0xFFFF9F43),
                   onTap: () {
@@ -4822,7 +4822,7 @@ class DashboardScreenState extends State<DashboardScreen>
                   },
                 ),
                 _buildQuickAccessItem(
-                  "💪",
+                  Icons.fitness_center_rounded,
                   "Workout",
                   const Color(0xFF5B8CFF),
                   onTap: () {
@@ -4842,19 +4842,19 @@ class DashboardScreenState extends State<DashboardScreen>
                   },
                 ),
                 _buildQuickAccessItem(
-                  "🎥",
+                  Icons.video_library_outlined,
                   "Exercise Library",
                   const Color(0xFF3D8BFF),
                   onTap: _openExerciseLibrary,
                 ),
                 _buildQuickAccessItem(
-                  "📊",
+                  Icons.monitor_heart_outlined,
                   "Update Health",
                   const Color(0xFF2ECAE5),
                   onTap: _openUpdateYourHealth,
                 ),
                 _buildQuickAccessItem(
-                  "🛡️",
+                  Icons.shield_outlined,
                   "SOS",
                   const Color(0xFFFF3B30),
                   onTap: () {
@@ -4865,13 +4865,13 @@ class DashboardScreenState extends State<DashboardScreen>
                   },
                 ),
                 _buildQuickAccessItem(
-                  "🏆",
+                  Icons.emoji_events_outlined,
                   "Compete",
                   const Color(0xFFFFD60A),
                   onTap: _openChallenges,
                 ),
                 _buildQuickAccessItem(
-                  "🧠",
+                  Icons.psychology_outlined,
                   "Mood",
                   const Color(0xFF8F6BFF),
                   onTap: () {
@@ -4892,7 +4892,7 @@ class DashboardScreenState extends State<DashboardScreen>
   }
 
   Widget _buildQuickAccessItem(
-    String emoji,
+    IconData icon,
     String title,
     Color color, {
     VoidCallback? onTap,
@@ -4914,9 +4914,7 @@ class DashboardScreenState extends State<DashboardScreen>
                 width: 1.2,
               ),
             ),
-            child: Center(
-              child: Text(emoji, style: const TextStyle(fontSize: 22)),
-            ),
+            child: Icon(icon, size: 26, color: color),
           ),
           const SizedBox(height: 6),
           Text(
