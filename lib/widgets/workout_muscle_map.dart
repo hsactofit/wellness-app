@@ -3,6 +3,14 @@ import 'package:flutter/material.dart';
 import '../models/workout_muscles.dart';
 import 'glass_card.dart';
 
+const Color _lightTargetMuscleColor = Color(0xFFE5483A);
+const Color _darkTargetMuscleColor = Color(0xFFFF6D55);
+
+Color _targetMuscleColor(ColorScheme colorScheme) =>
+    colorScheme.brightness == Brightness.dark
+    ? _darkTargetMuscleColor
+    : _lightTargetMuscleColor;
+
 /// An interactive, neutral anatomy guide for the muscles in an active workout.
 ///
 /// It does not imply a member's body shape or left/right asymmetry. The named
@@ -229,6 +237,7 @@ class _TargetMuscleChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final targetColor = _targetMuscleColor(scheme);
     final label = workoutTargetMuscleLabel(muscle);
     return Semantics(
       label: '$label target. Tap to locate it on the body map.',
@@ -240,16 +249,14 @@ class _TargetMuscleChip extends StatelessWidget {
         showCheckmark: false,
         side: BorderSide(
           color: selected
-              ? scheme.primary
+              ? targetColor
               : scheme.outlineVariant.withValues(alpha: 0.8),
         ),
         avatar: Container(
           width: 8,
           height: 8,
           decoration: BoxDecoration(
-            color: selected
-                ? scheme.primary
-                : scheme.primary.withValues(alpha: 0.55),
+            color: selected ? targetColor : targetColor.withValues(alpha: 0.55),
             shape: BoxShape.circle,
           ),
         ),
@@ -268,15 +275,16 @@ class _FocusCaption extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final targetColor = _targetMuscleColor(scheme);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 9),
       decoration: BoxDecoration(
-        color: scheme.primary.withValues(alpha: 0.09),
+        color: targetColor.withValues(alpha: 0.09),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
         children: [
-          Icon(Icons.my_location_rounded, size: 17, color: scheme.primary),
+          Icon(Icons.my_location_rounded, size: 17, color: targetColor),
           const SizedBox(width: 7),
           Expanded(
             child: Text(
@@ -556,14 +564,13 @@ class _DetailedAnatomyHighlightPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     canvas.save();
     canvas.scale(size.width / 512, size.height / 1536);
+    final targetColor = _targetMuscleColor(colorScheme);
 
     void draw(String muscle, List<Path> paths) {
       if (!_isTarget(muscle)) return;
       final isFocused = _isFocused(muscle);
       final fill = Paint()
-        ..color = colorScheme.primary.withValues(
-          alpha: isFocused ? 0.78 : 0.28,
-        );
+        ..color = targetColor.withValues(alpha: isFocused ? 0.78 : 0.28);
       for (final path in paths) {
         canvas.drawPath(path, fill);
         if (selectedMuscle == muscle) {
@@ -801,16 +808,14 @@ class _MapKey extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final targetColor = _targetMuscleColor(scheme);
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Container(
           width: 9,
           height: 9,
-          decoration: BoxDecoration(
-            color: scheme.primary,
-            shape: BoxShape.circle,
-          ),
+          decoration: BoxDecoration(color: targetColor, shape: BoxShape.circle),
         ),
         const SizedBox(width: 6),
         Text(

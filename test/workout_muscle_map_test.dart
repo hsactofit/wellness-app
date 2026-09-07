@@ -92,6 +92,34 @@ void main() {
     expect(find.text('Biceps · front upper arms'), findsOneWidget);
   });
 
+  testWidgets('keeps target indicators red when the light theme is black', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeData(
+          useMaterial3: true,
+          colorScheme: const ColorScheme.light(primary: Colors.black),
+        ),
+        home: const Scaffold(
+          body: WorkoutMuscleMapCard(targetMuscles: ['chest']),
+        ),
+      ),
+    );
+
+    final chip = tester.widget<ChoiceChip>(find.byType(ChoiceChip));
+    final avatar = chip.avatar! as Container;
+    final decoration = avatar.decoration! as BoxDecoration;
+
+    expect(decoration.color, const Color(0xFFE5483A).withValues(alpha: 0.55));
+
+    await tester.tap(find.text('Chest'));
+    await tester.pump();
+
+    final selectedChip = tester.widget<ChoiceChip>(find.byType(ChoiceChip));
+    expect(selectedChip.side, const BorderSide(color: Color(0xFFE5483A)));
+  });
+
   testWidgets('explains a full-body workout without an ambiguous label', (
     tester,
   ) async {
