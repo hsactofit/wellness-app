@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
+import '../theme/app_theme.dart';
 import '../widgets/glass_card.dart';
 
 class MetricDetailScreen extends StatefulWidget {
@@ -143,7 +144,7 @@ class _MetricDetailScreenState extends State<MetricDetailScreen>
           // Theme ambient background
           Positioned.fill(
             child: Container(
-              color: isDark ? const Color(0xFF0F0F12) : const Color(0xFFF6F8FC),
+              color: isDark ? const Color(0xFF0F0F12) : AppTheme.lightBg,
             ),
           ),
           // Animated Glow Blobs pulsing in background

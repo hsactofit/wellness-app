@@ -38,7 +38,7 @@ class _MedicalConsentSheetState extends State<MedicalConsentSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Icon(Icons.security, size: 48, color: Colors.blue),
+          Icon(Icons.security, size: 48, color: theme.colorScheme.primary),
           const SizedBox(height: 16),
           Text(
             "Consent Form: Medical Records Sync",
@@ -70,7 +70,7 @@ class _MedicalConsentSheetState extends State<MedicalConsentSheet> {
               style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
             ),
             value: _isChecked,
-            activeColor: Colors.blue,
+            activeColor: theme.colorScheme.primary,
             onChanged: (val) {
               setState(() {
                 _isChecked = val ?? false;
@@ -90,7 +90,7 @@ class _MedicalConsentSheetState extends State<MedicalConsentSheet> {
               Expanded(
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
+                    backgroundColor: theme.colorScheme.primary,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -124,9 +124,12 @@ class _MedicalConsentSheetState extends State<MedicalConsentSheet> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             "• ",
-            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue),
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.primary,
+            ),
           ),
           Expanded(
             child: Text(

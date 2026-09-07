@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/meal_analysis.dart';
 import 'nutrition_logging_screen.dart';
 import '../services/api_service.dart';
+import '../theme/app_theme.dart';
 import '../widgets/glass_card.dart';
 
 /// Real chat backed by /api/ai/chat — plain Q&A only, deliberately no
@@ -613,7 +614,7 @@ class _AIScreenState extends State<AIScreen> {
         children: [
           Positioned.fill(
             child: Container(
-              color: isDark ? const Color(0xFF0B1010) : const Color(0xFFF6F8FC),
+              color: isDark ? const Color(0xFF0B1010) : AppTheme.lightBg,
             ),
           ),
           Positioned(
@@ -626,10 +627,10 @@ class _AIScreenState extends State<AIScreen> {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    const Color(
-                      0xFF27D7A1,
-                    ).withValues(alpha: isDark ? 0.13 : 0.08),
-                    const Color(0xFF27D7A1).withValues(alpha: 0.0),
+                    isDark
+                        ? const Color(0xFF27D7A1).withValues(alpha: 0.13)
+                        : AppTheme.brandPrimary.withValues(alpha: 0.08),
+                    Colors.transparent,
                   ],
                 ),
               ),
@@ -645,10 +646,10 @@ class _AIScreenState extends State<AIScreen> {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    const Color(
-                      0xFFFF8A4C,
-                    ).withValues(alpha: isDark ? 0.07 : 0.05),
-                    const Color(0xFFFF8A4C).withValues(alpha: 0.0),
+                    isDark
+                        ? const Color(0xFFFF8A4C).withValues(alpha: 0.07)
+                        : AppTheme.brandInk.withValues(alpha: 0.05),
+                    Colors.transparent,
                   ],
                 ),
               ),

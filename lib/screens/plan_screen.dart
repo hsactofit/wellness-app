@@ -5,6 +5,7 @@ import '../models/plan_models.dart';
 import '../models/workout_muscles.dart';
 import '../services/api_service.dart';
 import '../services/reviewed_plan_pdf_service.dart';
+import '../theme/app_theme.dart';
 import '../widgets/glass_card.dart';
 
 String reviewedPlanConsentWarning(String planLabel) =>
@@ -62,8 +63,14 @@ class PlanScreen extends StatefulWidget {
 class _PlanScreenState extends State<PlanScreen> with WidgetsBindingObserver {
   bool _isWorkout(PlanKind k) => k == PlanKind.workout;
   bool get _isWorkoutKind => _isWorkout(widget.kind);
-  Color get _accent =>
-      _isWorkoutKind ? const Color(0xFF5B8CFF) : const Color(0xFFFF9F43);
+  Color get _accent {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    if (_isWorkoutKind) {
+      return isDark ? const Color(0xFF5B8CFF) : AppTheme.brandPrimary;
+    }
+    return isDark ? const Color(0xFFFF9F43) : const Color(0xFF5F7A72);
+  }
+
   String get _title => _isWorkoutKind ? 'Workout Plan' : 'Nutrition Plan';
   String get _planType => _isWorkoutKind ? 'workout' : 'nutrition';
   String get _planLabel => _isWorkoutKind ? 'workout' : 'nutrition';
@@ -276,7 +283,7 @@ class _PlanScreenState extends State<PlanScreen> with WidgetsBindingObserver {
         children: [
           Positioned.fill(
             child: Container(
-              color: isDark ? const Color(0xFF0F0F12) : const Color(0xFFF6F8FC),
+              color: isDark ? const Color(0xFF0F0F12) : AppTheme.lightBg,
             ),
           ),
           Positioned(

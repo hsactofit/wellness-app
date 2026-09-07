@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import '../services/health_service.dart';
 import '../services/api_service.dart';
+import '../theme/app_theme.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/water/wave_painter.dart';
 
@@ -583,7 +584,7 @@ class _WaterLoggingScreenState extends State<WaterLoggingScreen>
           // 1. Glowing Morphic Background
           Positioned.fill(
             child: Container(
-              color: isDark ? const Color(0xFF0F0F12) : const Color(0xFFF6F8FC),
+              color: isDark ? const Color(0xFF0F0F12) : AppTheme.lightBg,
             ),
           ),
           Positioned(

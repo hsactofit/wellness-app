@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../services/api_service.dart';
+import '../theme/app_theme.dart';
 import '../widgets/glass_card.dart';
 
 /// A member's daily mood/stress check-in — feeds the counsellor's real
@@ -73,9 +74,7 @@ class _MoodCheckinScreenState extends State<MoodCheckinScreen> {
     final secondaryText = isDark ? Colors.white60 : Colors.black54;
 
     return Scaffold(
-      backgroundColor: isDark
-          ? const Color(0xFF0F0F12)
-          : const Color(0xFFF6F8FC),
+      backgroundColor: isDark ? const Color(0xFF0F0F12) : AppTheme.lightBg,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,

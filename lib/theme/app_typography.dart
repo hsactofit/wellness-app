@@ -13,13 +13,13 @@ class AppTypography {
   /// Full Material 3 [TextTheme] for the given brightness.
   static TextTheme textTheme(Brightness brightness) {
     final isDark = brightness == Brightness.dark;
-    final primary = isDark ? Colors.white : const Color(0xFF122033);
+    final primary = isDark ? Colors.white : const Color(0xFF182B3A);
     final secondary = isDark
         ? Colors.white.withValues(alpha: 0.72)
-        : const Color(0xFF5C6775);
+        : const Color(0xFF596B78);
     final muted = isDark
         ? Colors.white.withValues(alpha: 0.52)
-        : const Color(0xFF7A8490);
+        : const Color(0xFF7C8D94);
 
     TextStyle base({
       double size = 14,

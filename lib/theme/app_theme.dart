@@ -4,13 +4,13 @@ import 'app_typography.dart';
 
 /// App-wide light / dark themes with consistent typography & color.
 ///
-/// Light mode is the corporate Medifit system (off-white, navy ink, red CTA).
-/// Dark mode tokens are intentionally unchanged.
+/// Light mode is the corporate Medifit system (warm off-white, navy ink,
+/// muted teal CTA). Dark mode tokens are intentionally unchanged.
 class AppTheme {
   AppTheme._();
 
-  /// Medifit red used for light-mode actions, selection, and focus.
-  static const Color brandPrimary = Color(0xFFE5483A);
+  /// Muted teal used for light-mode actions, selection, and focus.
+  static const Color brandPrimary = Color(0xFF176B63);
 
   /// Original shared brand red. Dark ColorScheme still uses this value.
   static const Color darkBrandPrimary = Color(0xFFFF6D55);
@@ -19,10 +19,12 @@ class AppTheme {
   static const Color brandSecondary = Color(0xFF2EE5A3);
   static const Color brandAccent = Color(0xFF5B8CFF);
 
-  static const Color brandInk = Color(0xFF122033);
-  static const Color brandSoft = Color(0xFFFDECEA);
-  static const Color lightBg = Color(0xFFF6F5F2);
-  static const Color lightMuted = Color(0xFF5C6775);
+  static const Color brandInk = Color(0xFF182B3A);
+  static const Color brandSoft = Color(0xFFE8F2EF);
+  static const Color lightBg = Color(0xFFF6F7F5);
+  static const Color lightMuted = Color(0xFF596B78);
+  static const Color lightBorder = Color(0xFFDCE3E1);
+  static const Color lightDanger = Color(0xFFB42318);
 
   static const Color darkBg = Color(0xFF0A0D10);
   static const Color darkSurface = Color(0xFF0F1318);
@@ -64,14 +66,14 @@ class AppTheme {
       surface: Colors.white,
       onSurface: ink,
       onSurfaceVariant: lightMuted,
-      outline: const Color(0xFFD9D4CC),
-      outlineVariant: const Color(0xFFE8E4DC),
-      error: const Color(0xFFC62828),
+      outline: lightBorder,
+      outlineVariant: const Color(0xFFE8ECEA),
+      error: lightDanger,
       onError: Colors.white,
       surfaceContainerLowest: Colors.white,
-      surfaceContainerLow: const Color(0xFFFBF9F6),
+      surfaceContainerLow: const Color(0xFFFBFCFA),
       surfaceContainer: lightBg,
-      surfaceContainerHigh: const Color(0xFFF0EEE9),
+      surfaceContainerHigh: const Color(0xFFEEEFED),
     );
 
     final textTheme = AppTypography.textTheme(Brightness.light);

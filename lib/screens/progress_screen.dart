@@ -176,7 +176,7 @@ class _ProgressScreenState extends State<ProgressScreen>
           // Background
           Positioned.fill(
             child: Container(
-              color: isDark ? const Color(0xFF0F0F12) : const Color(0xFFF6F8FC),
+              color: isDark ? const Color(0xFF0F0F12) : AppTheme.lightBg,
             ),
           ),
           Positioned(
@@ -189,8 +189,10 @@ class _ProgressScreenState extends State<ProgressScreen>
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    Colors.blue.withValues(alpha: isDark ? 0.15 : 0.1),
-                    Colors.blue.withValues(alpha: 0.0),
+                    isDark
+                        ? Colors.blue.withValues(alpha: 0.15)
+                        : AppTheme.brandPrimary.withValues(alpha: 0.08),
+                    Colors.transparent,
                   ],
                 ),
               ),
@@ -324,28 +326,28 @@ class _ProgressScreenState extends State<ProgressScreen>
                           "🚶 Steps",
                           "${avgSteps.round()}",
                           "avg / target ${targetSteps.round()}",
-                          Colors.green,
+                          isDark ? Colors.green : AppTheme.brandPrimary,
                           avgSteps / targetSteps,
                         ),
                         _MetricInfo(
                           "🔥 Calories",
                           "${avgCalories.round()} kcal",
                           "avg / target ${targetCalories.round()}",
-                          Colors.orange,
+                          isDark ? Colors.orange : const Color(0xFFC45C4A),
                           avgCalories / targetCalories,
                         ),
                         _MetricInfo(
                           "🌙 Sleep",
                           "${avgSleep.toStringAsFixed(1)} hrs",
                           "avg / target ${targetSleep.toStringAsFixed(0)}h",
-                          Colors.purple,
+                          isDark ? Colors.purple : const Color(0xFF5E7380),
                           avgSleep / targetSleep,
                         ),
                         _MetricInfo(
                           "💧 Hydration",
                           "${avgWater.round()} ml",
                           "avg / target ${targetWater.round()}ml",
-                          Colors.blue,
+                          isDark ? Colors.blue : const Color(0xFF3D7A8A),
                           avgWater / targetWater,
                         ),
                       ];
@@ -480,10 +482,26 @@ class _ProgressScreenState extends State<ProgressScreen>
     if (graphData.isEmpty) return const SizedBox.shrink();
 
     final metricOptions = [
-      {"key": "steps", "label": "Steps", "color": Colors.green},
-      {"key": "calories", "label": "Calories", "color": Colors.orange},
-      {"key": "sleep", "label": "Sleep", "color": Colors.purple},
-      {"key": "water", "label": "Water", "color": Colors.blue},
+      {
+        "key": "steps",
+        "label": "Steps",
+        "color": isDark ? Colors.green : AppTheme.brandPrimary,
+      },
+      {
+        "key": "calories",
+        "label": "Calories",
+        "color": isDark ? Colors.orange : const Color(0xFFC45C4A),
+      },
+      {
+        "key": "sleep",
+        "label": "Sleep",
+        "color": isDark ? Colors.purple : const Color(0xFF5E7380),
+      },
+      {
+        "key": "water",
+        "label": "Water",
+        "color": isDark ? Colors.blue : const Color(0xFF3D7A8A),
+      },
     ];
 
     final selectedOption = metricOptions.firstWhere(

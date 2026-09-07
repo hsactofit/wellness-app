@@ -182,7 +182,7 @@ class _NotificationSettingsScreenState
           // Background
           Positioned.fill(
             child: Container(
-              color: isDark ? const Color(0xFF0F0F12) : const Color(0xFFF6F8FC),
+              color: isDark ? const Color(0xFF0F0F12) : AppTheme.lightBg,
             ),
           ),
           Positioned(

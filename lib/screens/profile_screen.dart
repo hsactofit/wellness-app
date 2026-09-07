@@ -6,6 +6,7 @@ import '../app_brand.dart';
 import '../services/auth_service.dart';
 import '../services/api_service.dart';
 import '../services/facility_booking_service.dart';
+import '../theme/app_theme.dart';
 import '../widgets/glass_card.dart';
 import '../main.dart';
 import 'welcome_screen.dart';
@@ -24,6 +25,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   static const Color _mint = Color(0xFF2EE5A3);
   static const Color _violet = Color(0xFF8F6BFF);
   static const Color _sky = Color(0xFF5B8CFF);
+
+  Color _accentOf(bool isDark) => isDark ? _accent : AppTheme.brandPrimary;
+  Color _mintOf(bool isDark) => isDark ? _mint : const Color(0xFF3D8B6E);
+  Color _violetOf(bool isDark) => isDark ? _violet : AppTheme.brandInk;
+  Color _skyOf(bool isDark) => isDark ? _sky : const Color(0xFF5E7380);
 
   String _name = "User";
   String _email = "";
@@ -548,12 +554,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
           children: [
             Positioned.fill(
               child: Container(
-                color: isDark
-                    ? const Color(0xFF0F0F12)
-                    : const Color(0xFFF6F8FC),
+                color: isDark ? const Color(0xFF0F0F12) : AppTheme.lightBg,
               ),
             ),
-            const Center(child: CircularProgressIndicator(color: _accent)),
+            Center(
+              child: CircularProgressIndicator(
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
           ],
         ),
       );
@@ -570,7 +578,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           // Morph background
           Positioned.fill(
             child: Container(
-              color: isDark ? const Color(0xFF0F0F12) : const Color(0xFFF6F8FC),
+              color: isDark ? const Color(0xFF0F0F12) : AppTheme.lightBg,
             ),
           ),
           Positioned(
@@ -583,8 +591,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    _accent.withValues(alpha: isDark ? 0.22 : 0.14),
-                    _accent.withValues(alpha: 0),
+                    _accentOf(isDark).withValues(alpha: isDark ? 0.22 : 0.10),
+                    _accentOf(isDark).withValues(alpha: 0),
                   ],
                 ),
               ),
@@ -600,8 +608,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    _violet.withValues(alpha: isDark ? 0.18 : 0.10),
-                    _violet.withValues(alpha: 0),
+                    _violetOf(isDark).withValues(alpha: isDark ? 0.18 : 0.06),
+                    _violetOf(isDark).withValues(alpha: 0),
                   ],
                 ),
               ),
@@ -617,8 +625,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    _sky.withValues(alpha: isDark ? 0.14 : 0.08),
-                    _sky.withValues(alpha: 0),
+                    _skyOf(isDark).withValues(alpha: isDark ? 0.14 : 0.05),
+                    _skyOf(isDark).withValues(alpha: 0),
                   ],
                 ),
               ),
@@ -627,7 +635,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
           SafeArea(
             child: RefreshIndicator(
-              color: _accent,
+              color: _accentOf(isDark),
               onRefresh: _loadProfileData,
               child: SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(
@@ -707,7 +715,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             textColor: textColor,
                             secondary: secondary,
                             icon: Icons.height_rounded,
-                            color: _sky,
+                            color: _skyOf(isDark),
                             label: 'HEIGHT',
                             value: _height > 0
                                 ? '${_height % 1 == 0 ? _height.round() : _height.toStringAsFixed(1)}'
@@ -746,7 +754,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             textColor: textColor,
                             secondary: secondary,
                             icon: Icons.cake_outlined,
-                            color: _accent,
+                            color: _accentOf(isDark),
                             title: 'Date of birth',
                             value: _formatDobDisplay(_dob),
                           ),
@@ -756,7 +764,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             textColor: textColor,
                             secondary: secondary,
                             icon: Icons.wc_rounded,
-                            color: _violet,
+                            color: _violetOf(isDark),
                             title: 'Gender',
                             value: _gender,
                           ),
@@ -766,7 +774,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             textColor: textColor,
                             secondary: secondary,
                             icon: Icons.mail_outline_rounded,
-                            color: _sky,
+                            color: _skyOf(isDark),
                             title: 'Email',
                             value: _email.isEmpty ? 'Not set' : _email,
                           ),
@@ -777,7 +785,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               textColor: textColor,
                               secondary: secondary,
                               icon: Icons.pin_outlined,
-                              color: _mint,
+                              color: _mintOf(isDark),
                               title: 'Workout check-in code',
                               value: _checkinCode!,
                             ),
@@ -801,7 +809,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             textColor: textColor,
                             secondary: secondary,
                             icon: Icons.track_changes_rounded,
-                            color: _accent,
+                            color: _accentOf(isDark),
                             title: 'Health goals',
                             subtitle: 'Steps, water, sleep & calorie targets',
                             trailing: Icon(
@@ -862,7 +870,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             textColor: textColor,
                             secondary: secondary,
                             icon: Icons.palette_outlined,
-                            color: _violet,
+                            color: _violetOf(isDark),
                             title: 'Appearance',
                             subtitle: 'Theme · ${_themeModeLabel()}',
                             trailing: Icon(
@@ -878,10 +886,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             textColor: textColor,
                             secondary: secondary,
                             icon: Icons.fitness_center_outlined,
-                            color: _mint,
+                            color: _mintOf(isDark),
                             title: 'Facility workout-data sharing',
-                            subtitle:
-                                'Manage AI workout-report sharing',
+                            subtitle: 'Manage AI workout-report sharing',
                             trailing: Icon(
                               Icons.chevron_right_rounded,
                               color: secondary,
@@ -974,9 +981,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-                content: Text(
-                  'Facility workout-data sharing withdrawn. Manager access ends now, and new bookings and check-ins are blocked until you approve again.',
-                ),
+              content: Text(
+                'Facility workout-data sharing withdrawn. Manager access ends now, and new bookings and check-ins are blocked until you approve again.',
+              ),
             ),
           );
         }
@@ -1010,8 +1017,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              _accent.withValues(alpha: isDark ? 0.18 : 0.12),
-              _violet.withValues(alpha: isDark ? 0.10 : 0.06),
+              _accentOf(isDark).withValues(alpha: isDark ? 0.18 : 0.10),
+              _violetOf(isDark).withValues(alpha: isDark ? 0.10 : 0.05),
               Colors.transparent,
             ],
           ),
@@ -1027,14 +1034,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   padding: const EdgeInsets.all(3),
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    gradient: const LinearGradient(
+                    gradient: LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
-                      colors: [_accent, _violet, _sky],
+                      colors: [
+                        _accentOf(isDark),
+                        _violetOf(isDark),
+                        _skyOf(isDark),
+                      ],
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: _accent.withValues(alpha: 0.35),
+                        color: _accentOf(isDark).withValues(alpha: 0.28),
                         blurRadius: 16,
                         offset: const Offset(0, 6),
                       ),
@@ -1051,7 +1062,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         style: TextStyle(
                           fontSize: 30,
                           fontWeight: FontWeight.w900,
-                          color: _accent,
+                          color: _accentOf(isDark),
                         ),
                       ),
                     ),
@@ -1097,14 +1108,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(20),
-                            color: _mint.withValues(alpha: 0.14),
+                            color: _mintOf(isDark).withValues(alpha: 0.14),
                           ),
                           child: Text(
                             '$age yrs · $_gender',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w800,
-                              color: _mint,
+                              color: _mintOf(isDark),
                             ),
                           ),
                         ),
@@ -1124,12 +1135,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   height: 44,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(14),
-                    gradient: const LinearGradient(
-                      colors: [_accent, Color(0xFFFF8A70)],
+                    gradient: LinearGradient(
+                      colors: isDark
+                          ? const [_accent, Color(0xFFFF8A70)]
+                          : const [AppTheme.brandPrimary, Color(0xFF1C7A71)],
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: _accent.withValues(alpha: 0.3),
+                        color: _accentOf(isDark).withValues(alpha: 0.28),
                         blurRadius: 12,
                         offset: const Offset(0, 5),
                       ),
@@ -1227,7 +1240,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       alignment: Alignment.center,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(8),
-        gradient: const LinearGradient(colors: [_violet, _sky]),
+        gradient: LinearGradient(colors: [_violetOf(isDark), _skyOf(isDark)]),
       ),
       child: Text(
         initials.isEmpty ? 'C' : initials,
@@ -1510,7 +1523,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     Color? textColorOverride,
     IconData? icon,
   }) {
-    final color = fillColor ?? _accent;
+    final color = fillColor ?? _accentOf(isDark);
     final borderColor =
         outlineColor ??
         (isDark
@@ -1605,13 +1618,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
             color: selected
-                ? _accent.withValues(alpha: isDark ? 0.16 : 0.10)
+                ? _accentOf(isDark).withValues(alpha: isDark ? 0.16 : 0.10)
                 : (isDark
                       ? Colors.white.withValues(alpha: 0.04)
                       : Colors.black.withValues(alpha: 0.03)),
             border: Border.all(
               color: selected
-                  ? _accent.withValues(alpha: 0.5)
+                  ? _accentOf(isDark).withValues(alpha: 0.5)
                   : (isDark
                         ? Colors.white.withValues(alpha: 0.08)
                         : Colors.black.withValues(alpha: 0.05)),
@@ -1626,7 +1639,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
                   color: selected
-                      ? _accent.withValues(alpha: 0.18)
+                      ? _accentOf(isDark).withValues(alpha: 0.18)
                       : (isDark
                             ? Colors.white.withValues(alpha: 0.06)
                             : Colors.black.withValues(alpha: 0.04)),
@@ -1634,7 +1647,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: Icon(
                   icon,
                   color: selected
-                      ? _accent
+                      ? _accentOf(isDark)
                       : (isDark ? Colors.white70 : Colors.black54),
                 ),
               ),
@@ -1663,7 +1676,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Icon(
                 selected ? Icons.check_circle_rounded : Icons.circle_outlined,
                 color: selected
-                    ? _accent
+                    ? _accentOf(isDark)
                     : (isDark ? Colors.white30 : Colors.black26),
               ),
             ],
@@ -1701,7 +1714,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: _accent, width: 1.4),
+          borderSide: BorderSide(color: _accentOf(isDark), width: 1.4),
         ),
       ),
     );
@@ -1765,7 +1778,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: _accent, width: 1.4),
+          borderSide: BorderSide(color: _accentOf(isDark), width: 1.4),
         ),
       ),
       items: items
@@ -1798,7 +1811,7 @@ class _EditProfileSheet extends StatefulWidget {
 }
 
 class _EditProfileSheetState extends State<_EditProfileSheet> {
-  static const Color _accent = Color(0xFFFF6D55);
+  Color get _accent => Theme.of(context).colorScheme.primary;
 
   late final TextEditingController _nameController;
   late final TextEditingController _heightController;
@@ -2039,7 +2052,7 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(color: _accent, width: 1.4),
+        borderSide: BorderSide(color: _accent, width: 1.4),
       ),
     );
   }
@@ -2078,10 +2091,12 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
             gradient: filled
-                ? const LinearGradient(
+                ? LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [Color(0xFFFF8A70), _accent],
+                    colors: Theme.of(context).brightness == Brightness.dark
+                        ? const [Color(0xFFFF8A70), Color(0xFFFF6D55)]
+                        : const [Color(0xFF1C7A71), AppTheme.brandPrimary],
                   )
                 : null,
             color: filled

@@ -125,6 +125,14 @@ class MetricCard extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
 
     final mockDataset = _getMockDataForType();
+    final iconWell = isDark
+        ? color.withValues(alpha: 0.12)
+        : theme.colorScheme.primaryContainer;
+    final valueColor = isDark ? Colors.white : theme.colorScheme.onSurface;
+    final labelColor = isDark
+        ? Colors.white60
+        : theme.colorScheme.onSurfaceVariant;
+    final sparkColor = isDark ? color : theme.colorScheme.primary;
 
     final card = GlassCard(
       padding: const EdgeInsets.all(12),
@@ -140,7 +148,7 @@ class MetricCard extends StatelessWidget {
                 width: 32,
                 height: 32,
                 decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.12),
+                  color: iconWell,
                   shape: BoxShape.circle,
                 ),
                 child: Center(
@@ -162,7 +170,7 @@ class MetricCard extends StatelessWidget {
                   textAlign: TextAlign.end,
                   style: TextStyle(
                     fontSize: 9.5,
-                    color: isDark ? Colors.white60 : Colors.black54,
+                    color: labelColor,
                     fontWeight: FontWeight.w600,
                   ),
                   overflow: TextOverflow.ellipsis,
@@ -181,7 +189,7 @@ class MetricCard extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w900,
-                  color: isDark ? Colors.white : Colors.black87,
+                  color: valueColor,
                   letterSpacing: -0.5,
                 ),
               ),
@@ -192,7 +200,7 @@ class MetricCard extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w700,
-                    color: isDark ? Colors.white60 : Colors.black54,
+                    color: labelColor,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -204,7 +212,9 @@ class MetricCard extends StatelessWidget {
           SizedBox(
             height: 28,
             width: double.infinity,
-            child: CustomPaint(painter: SparklinePainter(mockDataset, color)),
+            child: CustomPaint(
+              painter: SparklinePainter(mockDataset, sparkColor),
+            ),
           ),
         ],
       ),

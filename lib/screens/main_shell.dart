@@ -289,13 +289,13 @@ class MainShellState extends State<MainShell> with WidgetsBindingObserver {
                   decoration: BoxDecoration(
                     color: isDark
                         ? const Color(0xFF16161C).withValues(alpha: 0.75)
-                        : const Color(0xFFFFFFFF).withValues(alpha: 0.92),
+                        : const Color(0xFFFFFFFF).withValues(alpha: 0.96),
                     borderRadius: BorderRadius.circular(24),
                     border: Border.all(
                       color: isDark
                           ? Colors.white.withValues(alpha: 0.08)
-                          : const Color(0xFF122033).withValues(alpha: 0.08),
-                      width: 1.5,
+                          : const Color(0xFFDCE3E1),
+                      width: isDark ? 1.5 : 1.0,
                     ),
                     boxShadow: [
                       BoxShadow(
@@ -405,6 +405,8 @@ class MainShellState extends State<MainShell> with WidgetsBindingObserver {
 
   Widget _buildCenterAINavItem(int index) {
     final isSelected = _currentIndex == index;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final glow = isDark ? const Color(0xFFFF6D55) : const Color(0xFF176B63);
 
     return Semantics(
       button: true,
@@ -421,8 +423,10 @@ class MainShellState extends State<MainShell> with WidgetsBindingObserver {
           margin: const EdgeInsets.symmetric(horizontal: 4),
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            gradient: const LinearGradient(
-              colors: [Color(0xFFFF8A4C), Color(0xFFEF5D51)],
+            gradient: LinearGradient(
+              colors: isDark
+                  ? const [Color(0xFFFF8A4C), Color(0xFFEF5D51)]
+                  : const [Color(0xFF1C7A71), Color(0xFF176B63)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
@@ -432,9 +436,7 @@ class MainShellState extends State<MainShell> with WidgetsBindingObserver {
             ),
             boxShadow: [
               BoxShadow(
-                color: const Color(
-                  0xFFFF6D55,
-                ).withValues(alpha: isSelected ? 0.38 : 0.16),
+                color: glow.withValues(alpha: isSelected ? 0.38 : 0.16),
                 blurRadius: 10,
                 spreadRadius: 1,
                 offset: const Offset(0, 3),

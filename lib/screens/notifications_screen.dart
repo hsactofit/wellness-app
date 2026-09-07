@@ -4,6 +4,7 @@ import '../models/plan_models.dart';
 import '../screens/challenges_screen.dart';
 import '../screens/plan_screen.dart';
 import '../services/api_service.dart';
+import '../theme/app_theme.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -75,7 +76,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     return switch (priority) {
       'critical' => Colors.redAccent,
       'high' => Colors.orange,
-      _ => const Color(0xFF5B8CFF),
+      _ =>
+        Theme.of(context).brightness == Brightness.dark
+            ? const Color(0xFF5B8CFF)
+            : AppTheme.brandPrimary,
     };
   }
 
