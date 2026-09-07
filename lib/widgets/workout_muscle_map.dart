@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/workout_muscles.dart';
+import '../theme/app_theme.dart';
 import 'glass_card.dart';
 
 const Color _lightTargetMuscleColor = Color(0xFFE5483A);
@@ -395,32 +396,60 @@ class _AnatomyViewSwitch extends StatelessWidget {
   final _AnatomyMapView value;
   final ValueChanged<_AnatomyMapView> onChanged;
 
+  static const _gold = AppTheme.lightGold;
+  static const _brown = Color(0xFF5C4033);
+
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final isFront = value == _AnatomyMapView.front;
     return Container(
+      height: 40,
       decoration: BoxDecoration(
         color: Colors.black.withValues(alpha: 0.24),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: scheme.outlineVariant.withValues(alpha: 0.55),
-        ),
+        border: Border.all(color: _gold.withValues(alpha: 0.35)),
       ),
-      child: Row(
-        children: [
-          _AnatomyViewOption(
-            label: 'Front',
-            icon: Icons.accessibility_new_rounded,
-            selected: value == _AnatomyMapView.front,
-            onTap: () => onChanged(_AnatomyMapView.front),
-          ),
-          _AnatomyViewOption(
-            label: 'Back',
-            icon: Icons.accessibility_new_rounded,
-            selected: value == _AnatomyMapView.back,
-            onTap: () => onChanged(_AnatomyMapView.back),
-          ),
-        ],
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final thumbWidth = (constraints.maxWidth - 6) / 2;
+          return Stack(
+            children: [
+              AnimatedAlign(
+                duration: const Duration(milliseconds: 220),
+                curve: Curves.easeInOut,
+                alignment: isFront
+                    ? Alignment.centerLeft
+                    : Alignment.centerRight,
+                child: Padding(
+                  padding: const EdgeInsets.all(3),
+                  child: Container(
+                    width: thumbWidth,
+                    decoration: BoxDecoration(
+                      color: _gold,
+                      borderRadius: BorderRadius.circular(9),
+                    ),
+                  ),
+                ),
+              ),
+              Row(
+                children: [
+                  _AnatomyViewOption(
+                    label: 'Front',
+                    icon: Icons.accessibility_new_rounded,
+                    selected: isFront,
+                    onTap: () => onChanged(_AnatomyMapView.front),
+                  ),
+                  _AnatomyViewOption(
+                    label: 'Back',
+                    icon: Icons.accessibility_new_rounded,
+                    selected: !isFront,
+                    onTap: () => onChanged(_AnatomyMapView.back),
+                  ),
+                ],
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -441,7 +470,9 @@ class _AnatomyViewOption extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final color = selected
+        ? _AnatomyViewSwitch._brown
+        : _AnatomyViewSwitch._gold;
     return Expanded(
       child: Semantics(
         button: true,
@@ -450,30 +481,19 @@ class _AnatomyViewOption extends StatelessWidget {
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(10),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 160),
+          child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 7),
-            decoration: BoxDecoration(
-              color: selected ? scheme.primary.withValues(alpha: 0.20) : null,
-              borderRadius: BorderRadius.circular(10),
-            ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
-                  icon,
-                  size: 16,
-                  color: selected ? scheme.primary : const Color(0xFFC9BBB5),
-                ),
+                Icon(icon, size: 16, color: color),
                 const SizedBox(width: 6),
                 Flexible(
                   child: Text(
                     label,
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: selected
-                          ? scheme.onSurface
-                          : const Color(0xFFC9BBB5),
+                      color: color,
                       fontWeight: FontWeight.w800,
                     ),
                   ),

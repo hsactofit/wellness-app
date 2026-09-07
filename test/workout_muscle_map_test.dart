@@ -92,6 +92,28 @@ void main() {
     expect(find.text('Biceps · front upper arms'), findsOneWidget);
   });
 
+  testWidgets('keeps Front and Back labels readable after switching views', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: WorkoutMuscleMapCard(targetMuscles: ['biceps', 'triceps']),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Back'));
+    await tester.pumpAndSettle();
+    expect(find.text('Front'), findsOneWidget);
+    expect(find.text('Back'), findsOneWidget);
+
+    await tester.tap(find.text('Front'));
+    await tester.pumpAndSettle();
+    expect(find.text('Front'), findsOneWidget);
+    expect(find.text('Back'), findsOneWidget);
+  });
+
   testWidgets('keeps target indicators red when the light theme is black', (
     tester,
   ) async {
