@@ -29,6 +29,45 @@ List<int> uniqueSetIndexes(Iterable<dynamic>? values, int maximum) {
   return ordered;
 }
 
+/// Keep only a contiguous prefix: set 2 cannot count unless set 1 is done.
+List<int> sequentialSetIndexes(Iterable<dynamic>? values, int maximum) {
+  final unique = uniqueSetIndexes(values, maximum);
+  if (unique.isEmpty) return const [];
+  final sequential = <int>[];
+  for (var index = 1; index <= maximum; index++) {
+    if (!unique.contains(index)) break;
+    sequential.add(index);
+  }
+  return sequential;
+}
+
+bool isSequentialSetUnlocked(int setIndex, List<int> completed) {
+  if (setIndex <= 1) return true;
+  final done = completed.toSet();
+  for (var index = 1; index < setIndex; index++) {
+    if (!done.contains(index)) return false;
+  }
+  return true;
+}
+
+List<int> toggleSequentialSet({
+  required Iterable<int> completed,
+  required int setIndex,
+  required bool selected,
+  required int maximum,
+}) {
+  final current = sequentialSetIndexes(completed, maximum);
+  if (setIndex < 1 || setIndex > maximum) return current;
+  if (selected) {
+    if (!isSequentialSetUnlocked(setIndex, current)) return current;
+    return sequentialSetIndexes([...current, setIndex], maximum);
+  }
+  return [
+    for (final index in current)
+      if (index < setIndex) index,
+  ];
+}
+
 class AssignedExerciseProgress {
   const AssignedExerciseProgress({
     this.completedSetIndexes = const [],
@@ -54,7 +93,7 @@ class AssignedExerciseProgress {
   factory AssignedExerciseProgress.fromJson(Map<String, dynamic>? json) {
     if (json == null) return const AssignedExerciseProgress();
     return AssignedExerciseProgress(
-      completedSetIndexes: uniqueSetIndexes(
+      completedSetIndexes: sequentialSetIndexes(
         json['completed_set_indexes'] as Iterable?,
         100,
       ),
@@ -92,12 +131,12 @@ class ExtraSetsProgress {
 
   factory ExtraSetsProgress.fromJson(Map<String, dynamic>? json) {
     if (json == null) return const ExtraSetsProgress();
-    final count = (json['count'] as num?)?.toInt() ?? 0;
+    final count = ((json['count'] as num?)?.toInt() ?? 0).clamp(0, 10);
     return ExtraSetsProgress(
-      count: count.clamp(0, 10),
-      completedIndexes: uniqueSetIndexes(
+      count: count,
+      completedIndexes: sequentialSetIndexes(
         json['completed_indexes'] as Iterable?,
-        10,
+        count,
       ),
       reps: json['reps']?.toString(),
     );
@@ -163,7 +202,7 @@ class ExtraExerciseProgress {
     reps: json['reps']?.toString(),
     source: json['source']?.toString() ?? 'custom',
     videoId: json['video_id']?.toString(),
-    completedSetIndexes: uniqueSetIndexes(
+    completedSetIndexes: sequentialSetIndexes(
       json['completed_set_indexes'] as Iterable?,
       20,
     ),
@@ -284,7 +323,7 @@ class WorkoutProgress {
 bool allPrescribedSetsComplete(Map<String, dynamic> item, List<int> completed) {
   final prescribed = prescribedSetCount(item);
   if (prescribed <= 0) return true;
-  return uniqueSetIndexes(completed, prescribed).length == prescribed;
+  return sequentialSetIndexes(completed, prescribed).length == prescribed;
 }
 
 AssignedExerciseProgress gatedAssignedProgress({
@@ -293,11 +332,64 @@ AssignedExerciseProgress gatedAssignedProgress({
   required bool exerciseCompleted,
 }) {
   final prescribed = prescribedSetCount(item);
-  final completed = uniqueSetIndexes(completedSetIndexes, prescribed);
+  final completed = sequentialSetIndexes(completedSetIndexes, prescribed);
   final setsDone = prescribed <= 0 || completed.length == prescribed;
   return AssignedExerciseProgress(
     completedSetIndexes: completed,
-    exerciseCompleted: exerciseCompleted && setsDone,
+    exerciseCompleted: prescribed <= 0 ? exerciseCompleted : setsDone,
+  );
+}
+
+ExtraSetsProgress gatedExtraSetsProgress(ExtraSetsProgress extra) =>
+    extra.copyWith(
+      completedIndexes: sequentialSetIndexes(
+        extra.completedIndexes,
+        extra.count,
+      ),
+    );
+
+ExtraExerciseProgress gatedExtraExerciseProgress(
+  ExtraExerciseProgress item, {
+  List<int>? completedSetIndexes,
+  bool? exerciseCompleted,
+}) {
+  final completed = sequentialSetIndexes(
+    completedSetIndexes ?? item.completedSetIndexes,
+    item.sets,
+  );
+  final setsDone = item.sets <= 0 || completed.length == item.sets;
+  return item.copyWith(
+    completedSetIndexes: completed,
+    exerciseCompleted: item.sets <= 0
+        ? (exerciseCompleted ?? item.exerciseCompleted)
+        : setsDone,
+  );
+}
+
+WorkoutProgress normalizeWorkoutProgress({
+  required List<Map<String, dynamic>> planSnapshot,
+  required WorkoutProgress progress,
+}) {
+  final assigned = <String, AssignedExerciseProgress>{};
+  for (final (index, item) in planSnapshot.indexed) {
+    final id = exerciseIdOf(item, fallbackIndex: index);
+    final current = progress.forExercise(id);
+    assigned[id] = gatedAssignedProgress(
+      item: item,
+      completedSetIndexes: current.completedSetIndexes,
+      exerciseCompleted: current.exerciseCompleted,
+    );
+  }
+  return progress.copyWith(
+    assigned: assigned,
+    extraSets: {
+      for (final entry in progress.extraSets.entries)
+        entry.key: gatedExtraSetsProgress(entry.value),
+    },
+    extraExercises: [
+      for (final item in progress.extraExercises)
+        gatedExtraExerciseProgress(item),
+    ],
   );
 }
 
@@ -313,7 +405,10 @@ AssignedExerciseProgress gatedAssignedProgress({
     prescribed += units > 0 ? units : 1;
     final entry = progress.forExercise(id);
     if (units > 0) {
-      completed += uniqueSetIndexes(entry.completedSetIndexes, units).length;
+      completed += sequentialSetIndexes(
+        entry.completedSetIndexes,
+        units,
+      ).length;
     } else if (entry.exerciseCompleted) {
       completed += 1;
     }

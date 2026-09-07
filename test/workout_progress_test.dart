@@ -24,6 +24,62 @@ void main() {
     expect(complete.exerciseCompleted, isTrue);
   });
 
+  test('auto-completes the exercise once every set is ticked in order', () {
+    final skipped = gatedAssignedProgress(
+      item: snapshot.first,
+      completedSetIndexes: const [1, 3],
+      exerciseCompleted: false,
+    );
+    final allDone = gatedAssignedProgress(
+      item: snapshot.first,
+      completedSetIndexes: const [1, 2, 3],
+      exerciseCompleted: false,
+    );
+
+    expect(skipped.completedSetIndexes, [1]);
+    expect(skipped.exerciseCompleted, isFalse);
+    expect(allDone.completedSetIndexes, [1, 2, 3]);
+    expect(allDone.exerciseCompleted, isTrue);
+  });
+
+  test('unlocks the next set only after the previous set is ticked', () {
+    expect(isSequentialSetUnlocked(1, const []), isTrue);
+    expect(isSequentialSetUnlocked(2, const []), isFalse);
+    expect(isSequentialSetUnlocked(2, const [1]), isTrue);
+    expect(isSequentialSetUnlocked(3, const [1]), isFalse);
+    expect(isSequentialSetUnlocked(3, const [1, 2]), isTrue);
+  });
+
+  test('unchecking a set clears every later set', () {
+    expect(
+      toggleSequentialSet(
+        completed: const [1, 2, 3],
+        setIndex: 2,
+        selected: false,
+        maximum: 3,
+      ),
+      [1],
+    );
+    expect(
+      toggleSequentialSet(
+        completed: const [1],
+        setIndex: 2,
+        selected: true,
+        maximum: 3,
+      ),
+      [1, 2],
+    );
+    expect(
+      toggleSequentialSet(
+        completed: const [1],
+        setIndex: 3,
+        selected: true,
+        maximum: 3,
+      ),
+      [1],
+    );
+  });
+
   test('computes assigned set completion and ignores extra work', () {
     final progress = WorkoutProgress(
       assigned: {

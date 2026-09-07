@@ -35,21 +35,15 @@ class _WorkoutReportEditScreenState extends State<WorkoutReportEditScreen> {
       _error = null;
     });
     try {
-      final assigned = <String, AssignedExerciseProgress>{};
-      for (final (index, item) in _plan.indexed) {
-        final id = exerciseIdOf(item, fallbackIndex: index);
-        final current = _progress.forExercise(id);
-        assigned[id] = gatedAssignedProgress(
-          item: item,
-          completedSetIndexes: current.completedSetIndexes,
-          exerciseCompleted: current.exerciseCompleted,
-        );
-      }
+      final progress = normalizeWorkoutProgress(
+        planSnapshot: _plan,
+        progress: _progress,
+      );
       final updated = await FacilityBookingService.instance
           .correctWorkoutReport(
             reportId: widget.report.id,
             expectedRevision: widget.report.revision,
-            progress: _progress.copyWith(assigned: assigned),
+            progress: progress,
           );
       if (!mounted) return;
       Navigator.of(context).pop(updated);
@@ -190,7 +184,7 @@ class _WorkoutReportEditScreenState extends State<WorkoutReportEditScreen> {
       completedSetIndexes: _progress.forExercise(id).completedSetIndexes,
       exerciseCompleted: _progress.forExercise(id).exerciseCompleted,
     );
-    final extra = _progress.extraSetsFor(id);
+    final extra = gatedExtraSetsProgress(_progress.extraSetsFor(id));
     final reps = item['reps']?.toString().trim() ?? extra.reps ?? '';
     final setsDone = allPrescribedSetsComplete(
       item,
@@ -205,23 +199,25 @@ class _WorkoutReportEditScreenState extends State<WorkoutReportEditScreen> {
           children: [
             CheckboxListTile(
               value: assigned.exerciseCompleted,
-              onChanged: setsDone
-                  ? (selected) => _setAssigned(
+              onChanged: prescribed > 0
+                  ? null
+                  : (selected) => _setAssigned(
                       id,
                       gatedAssignedProgress(
                         item: item,
                         completedSetIndexes: assigned.completedSetIndexes,
                         exerciseCompleted: selected == true,
                       ),
-                    )
-                  : null,
+                    ),
               title: Text(
                 name,
                 style: const TextStyle(fontWeight: FontWeight.w700),
               ),
               subtitle: Text(
                 prescribed > 0
-                    ? 'Tick every assigned set before marking this complete'
+                    ? setsDone
+                          ? 'All sets done — exercise complete'
+                          : 'Tick assigned sets in order. The next set stays locked until the previous set is done'
                     : 'Mark complete if this exercise was finished',
               ),
             ),
@@ -232,22 +228,25 @@ class _WorkoutReportEditScreenState extends State<WorkoutReportEditScreen> {
                   dense: true,
                   contentPadding: const EdgeInsets.only(left: 28, right: 16),
                   value: assigned.completedSetIndexes.contains(number),
-                  onChanged: (selected) {
-                    final next = {...assigned.completedSetIndexes};
-                    if (selected == true) {
-                      next.add(number);
-                    } else {
-                      next.remove(number);
-                    }
-                    _setAssigned(
-                      id,
-                      gatedAssignedProgress(
-                        item: item,
-                        completedSetIndexes: next.toList(),
-                        exerciseCompleted: assigned.exerciseCompleted,
-                      ),
-                    );
-                  },
+                  onChanged:
+                      isSequentialSetUnlocked(
+                        number,
+                        assigned.completedSetIndexes,
+                      )
+                      ? (selected) => _setAssigned(
+                          id,
+                          gatedAssignedProgress(
+                            item: item,
+                            completedSetIndexes: toggleSequentialSet(
+                              completed: assigned.completedSetIndexes,
+                              setIndex: number,
+                              selected: selected == true,
+                              maximum: prescribed,
+                            ),
+                            exerciseCompleted: assigned.exerciseCompleted,
+                          ),
+                        )
+                      : null,
                   title: Text(
                     reps.isEmpty ? 'Set $number' : 'Set $number · $reps reps',
                   ),
@@ -260,18 +259,20 @@ class _WorkoutReportEditScreenState extends State<WorkoutReportEditScreen> {
                   dense: true,
                   contentPadding: const EdgeInsets.only(left: 28, right: 16),
                   value: extra.completedIndexes.contains(number),
-                  onChanged: (selected) {
-                    final next = {...extra.completedIndexes};
-                    if (selected == true) {
-                      next.add(number);
-                    } else {
-                      next.remove(number);
-                    }
-                    _setExtraSets(
-                      id,
-                      extra.copyWith(completedIndexes: next.toList()),
-                    );
-                  },
+                  onChanged:
+                      isSequentialSetUnlocked(number, extra.completedIndexes)
+                      ? (selected) => _setExtraSets(
+                          id,
+                          extra.copyWith(
+                            completedIndexes: toggleSequentialSet(
+                              completed: extra.completedIndexes,
+                              setIndex: number,
+                              selected: selected == true,
+                              maximum: extra.count,
+                            ),
+                          ),
+                        )
+                      : null,
                   title: Text(
                     reps.isEmpty
                         ? 'Extra set $number'
@@ -302,11 +303,13 @@ class _WorkoutReportEditScreenState extends State<WorkoutReportEditScreen> {
                     final nextCount = extra.count - 1;
                     _setExtraSets(
                       id,
-                      extra.copyWith(
-                        count: nextCount,
-                        completedIndexes: extra.completedIndexes
-                            .where((index) => index <= nextCount)
-                            .toList(),
+                      gatedExtraSetsProgress(
+                        extra.copyWith(
+                          count: nextCount,
+                          completedIndexes: extra.completedIndexes
+                              .where((index) => index <= nextCount)
+                              .toList(),
+                        ),
                       ),
                     );
                   },
@@ -320,10 +323,7 @@ class _WorkoutReportEditScreenState extends State<WorkoutReportEditScreen> {
   }
 
   Widget _extraExerciseCard(int index, ExtraExerciseProgress item) {
-    final setsDone =
-        item.sets <= 0 ||
-        uniqueSetIndexes(item.completedSetIndexes, item.sets).length ==
-            item.sets;
+    final extra = gatedExtraExerciseProgress(item);
     return Card(
       margin: const EdgeInsets.only(bottom: 10),
       child: Padding(
@@ -331,19 +331,22 @@ class _WorkoutReportEditScreenState extends State<WorkoutReportEditScreen> {
         child: Column(
           children: [
             CheckboxListTile(
-              value: item.exerciseCompleted,
-              onChanged: setsDone
-                  ? (selected) => _replaceExtra(
+              value: extra.exerciseCompleted,
+              onChanged: extra.sets > 0
+                  ? null
+                  : (selected) => _replaceExtra(
                       index,
-                      item.copyWith(exerciseCompleted: selected == true),
-                    )
-                  : null,
+                      gatedExtraExerciseProgress(
+                        extra,
+                        exerciseCompleted: selected == true,
+                      ),
+                    ),
               title: Text(
-                item.name,
+                extra.name,
                 style: const TextStyle(fontWeight: FontWeight.w700),
               ),
               subtitle: Text(
-                item.source == 'library'
+                extra.source == 'library'
                     ? 'From Exercise Library'
                     : 'Custom exercise',
               ),
@@ -358,36 +361,32 @@ class _WorkoutReportEditScreenState extends State<WorkoutReportEditScreen> {
                 icon: const Icon(Icons.delete_outline),
               ),
             ),
-            if (item.sets > 0)
-              ...List.generate(item.sets, (setIndex) {
+            if (extra.sets > 0)
+              ...List.generate(extra.sets, (setIndex) {
                 final number = setIndex + 1;
                 return CheckboxListTile(
                   dense: true,
                   contentPadding: const EdgeInsets.only(left: 28, right: 16),
-                  value: item.completedSetIndexes.contains(number),
-                  onChanged: (selected) {
-                    final next = {...item.completedSetIndexes};
-                    if (selected == true) {
-                      next.add(number);
-                    } else {
-                      next.remove(number);
-                    }
-                    final completed = next.toList();
-                    final allDone =
-                        uniqueSetIndexes(completed, item.sets).length ==
-                        item.sets;
-                    _replaceExtra(
-                      index,
-                      item.copyWith(
-                        completedSetIndexes: completed,
-                        exerciseCompleted: item.exerciseCompleted && allDone,
-                      ),
-                    );
-                  },
+                  value: extra.completedSetIndexes.contains(number),
+                  onChanged:
+                      isSequentialSetUnlocked(number, extra.completedSetIndexes)
+                      ? (selected) => _replaceExtra(
+                          index,
+                          gatedExtraExerciseProgress(
+                            extra,
+                            completedSetIndexes: toggleSequentialSet(
+                              completed: extra.completedSetIndexes,
+                              setIndex: number,
+                              selected: selected == true,
+                              maximum: extra.sets,
+                            ),
+                          ),
+                        )
+                      : null,
                   title: Text(
-                    item.reps == null || item.reps!.isEmpty
+                    extra.reps == null || extra.reps!.isEmpty
                         ? 'Set $number'
-                        : 'Set $number · ${item.reps} reps',
+                        : 'Set $number · ${extra.reps} reps',
                   ),
                 );
               }),

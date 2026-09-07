@@ -1012,12 +1012,16 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
     if (_session == null || _actionInProgress) return;
     setState(() => _actionInProgress = true);
     try {
+      final progress = normalizeWorkoutProgress(
+        planSnapshot: _session!.planSnapshot,
+        progress: _progress,
+      );
       final result = await WorkoutSessionService.instance.checkout(
-        completedItemIds: _progress.assigned.entries
+        completedItemIds: progress.assigned.entries
             .where((entry) => entry.value.exerciseCompleted)
             .map((entry) => entry.key)
             .toList(),
-        workoutProgress: _progress,
+        workoutProgress: progress,
       );
       if (!mounted) return;
       setState(() {
@@ -1807,7 +1811,14 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
       session.id,
     );
     if (!mounted) return;
-    setState(() => _progress = restored);
+    final normalized = normalizeWorkoutProgress(
+      planSnapshot: session.planSnapshot,
+      progress: restored,
+    );
+    setState(() => _progress = normalized);
+    if (jsonEncode(normalized.toJson()) != jsonEncode(restored.toJson())) {
+      unawaited(_persistChecklist());
+    }
   }
 
   Future<void> _persistChecklist() async {
@@ -1833,7 +1844,11 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
     final name = item['name']?.toString() ?? 'Exercise';
     final details = exerciseDetails(item);
     final prescribed = prescribedSetCount(item);
-    final entry = _progress.forExercise(id);
+    final entry = gatedAssignedProgress(
+      item: item,
+      completedSetIndexes: _progress.forExercise(id).completedSetIndexes,
+      exerciseCompleted: _progress.forExercise(id).exerciseCompleted,
+    );
     final setsDone = allPrescribedSetsComplete(item, entry.completedSetIndexes);
     final targets = workoutTargetMusclesFromJson(item['target_muscles']);
     final targetSummary = targets.singleOrNull == fullBodyTargetMuscle
@@ -1848,16 +1863,16 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
           children: [
             CheckboxListTile(
               value: entry.exerciseCompleted,
-              onChanged: setsDone
-                  ? (selected) => _setAssignedProgress(
+              onChanged: prescribed > 0
+                  ? null
+                  : (selected) => _setAssignedProgress(
                       id,
                       gatedAssignedProgress(
                         item: item,
                         completedSetIndexes: entry.completedSetIndexes,
                         exerciseCompleted: selected == true,
                       ),
-                    )
-                  : null,
+                    ),
               title: Text(
                 name,
                 style: const TextStyle(fontWeight: FontWeight.w700),
@@ -1865,7 +1880,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
               subtitle: details.isEmpty && targets.isEmpty
                   ? Text(
                       prescribed > 0
-                          ? 'Complete every set before ticking this exercise'
+                          ? 'Tick each set in order. This exercise ticks itself when every set is done'
                           : 'Mark this exercise when it is finished',
                     )
                   : Column(
@@ -1902,8 +1917,8 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
                           const SizedBox(height: 4),
                           Text(
                             setsDone
-                                ? 'All sets done — you can mark the exercise complete'
-                                : 'Tick each set. The exercise stays locked until every set is done.',
+                                ? 'All sets done — exercise complete'
+                                : 'Tick sets in order. The next set stays locked until the previous set is done.',
                             style: Theme.of(context).textTheme.bodySmall,
                           ),
                         ],
@@ -1920,22 +1935,25 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
                         dense: true,
                         contentPadding: const EdgeInsets.only(left: 20),
                         value: entry.completedSetIndexes.contains(setIndex),
-                        onChanged: (selected) {
-                          final next = {...entry.completedSetIndexes};
-                          if (selected == true) {
-                            next.add(setIndex);
-                          } else {
-                            next.remove(setIndex);
-                          }
-                          _setAssignedProgress(
-                            id,
-                            gatedAssignedProgress(
-                              item: item,
-                              completedSetIndexes: next.toList(),
-                              exerciseCompleted: entry.exerciseCompleted,
-                            ),
-                          );
-                        },
+                        onChanged:
+                            isSequentialSetUnlocked(
+                              setIndex,
+                              entry.completedSetIndexes,
+                            )
+                            ? (selected) => _setAssignedProgress(
+                                id,
+                                gatedAssignedProgress(
+                                  item: item,
+                                  completedSetIndexes: toggleSequentialSet(
+                                    completed: entry.completedSetIndexes,
+                                    setIndex: setIndex,
+                                    selected: selected == true,
+                                    maximum: prescribed,
+                                  ),
+                                  exerciseCompleted: entry.exerciseCompleted,
+                                ),
+                              )
+                            : null,
                         title: Text(
                           repsLabel == null || repsLabel.isEmpty
                               ? 'Set $setIndex'
