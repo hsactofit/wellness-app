@@ -4,9 +4,14 @@ import '../models/body_composition_report.dart';
 import '../services/api_service.dart';
 
 class BodyCompositionReportReviewScreen extends StatefulWidget {
-  const BodyCompositionReportReviewScreen({super.key, required this.draft});
+  const BodyCompositionReportReviewScreen({
+    super.key,
+    required this.draft,
+    this.existingReport,
+  });
 
   final BodyCompositionDraft draft;
+  final BodyCompositionReport? existingReport;
 
   @override
   State<BodyCompositionReportReviewScreen> createState() =>
@@ -18,7 +23,7 @@ class _BodyCompositionReportReviewScreenState
   final Map<String, TextEditingController> _controllers = {};
   late List<_AdditionalRow> _additionalRows;
   late DateTime _measuredAt;
-  bool _editing = false;
+  late bool _editing;
   bool _wasEdited = false;
   bool _uploading = false;
 
@@ -59,6 +64,7 @@ class _BodyCompositionReportReviewScreenState
         .map((item) => _AdditionalRow.fromMeasurement(item))
         .toList();
     _measuredAt = widget.draft.measuredAt;
+    _editing = widget.existingReport != null;
   }
 
   void _set(String key, double? value) {
@@ -177,22 +183,35 @@ class _BodyCompositionReportReviewScreenState
 
     setState(() => _uploading = true);
     try {
-      final report = await ApiService.instance.uploadBodyCompositionReport(
-        BodyCompositionDraft(
-          clientSubmissionId: widget.draft.clientSubmissionId,
-          measuredAt: _measuredAt,
-          ocrTranscript: widget.draft.ocrTranscript,
-          measurements: measurements,
-          inputMethod: widget.draft.inputMethod,
-        ),
-        memberCorrected: _wasEdited,
+      final draft = BodyCompositionDraft(
+        clientSubmissionId: widget.draft.clientSubmissionId,
+        measuredAt: _measuredAt,
+        ocrTranscript: widget.draft.ocrTranscript,
+        measurements: measurements,
+        inputMethod: widget.draft.inputMethod,
       );
+      final existing = widget.existingReport;
+      final report = existing == null
+          ? await ApiService.instance.uploadBodyCompositionReport(
+              draft,
+              memberCorrected: _wasEdited,
+            )
+          : await ApiService.instance.updateBodyCompositionReport(
+              existing.id,
+              draft,
+            );
       if (!mounted) return;
       Navigator.of(context).pop(report);
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not upload the report: $error')),
+        SnackBar(
+          content: Text(
+            widget.existingReport == null
+                ? 'Could not upload the report: $error'
+                : 'Could not update the report: $error',
+          ),
+        ),
       );
       setState(() => _uploading = false);
     }
@@ -202,7 +221,13 @@ class _BodyCompositionReportReviewScreenState
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Your health report')),
+      appBar: AppBar(
+        title: Text(
+          widget.existingReport == null
+              ? 'Your health report'
+              : 'Edit health report',
+        ),
+      ),
       body: SafeArea(
         child: Column(
           children: [
@@ -283,20 +308,24 @@ class _BodyCompositionReportReviewScreenState
                 padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
                 child: Row(
                   children: [
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: _uploading
-                            ? null
-                            : () => setState(() {
-                                _editing = !_editing;
-                              }),
-                        icon: Icon(
-                          _editing ? Icons.check : Icons.edit_outlined,
+                    if (widget.existingReport == null) ...[
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: _uploading
+                              ? null
+                              : () => setState(() {
+                                  _editing = !_editing;
+                                }),
+                          icon: Icon(
+                            _editing ? Icons.check : Icons.edit_outlined,
+                          ),
+                          label: Text(
+                            _editing ? 'Done Editing' : 'Make Changes',
+                          ),
                         ),
-                        label: Text(_editing ? 'Done Editing' : 'Make Changes'),
                       ),
-                    ),
-                    const SizedBox(width: 12),
+                      const SizedBox(width: 12),
+                    ],
                     Expanded(
                       child: FilledButton.icon(
                         onPressed: _uploading ? null : _upload,
@@ -308,8 +337,16 @@ class _BodyCompositionReportReviewScreenState
                                   strokeWidth: 2,
                                 ),
                               )
-                            : const Icon(Icons.cloud_upload_outlined),
-                        label: const Text('Approve & Save'),
+                            : Icon(
+                                widget.existingReport == null
+                                    ? Icons.cloud_upload_outlined
+                                    : Icons.save_outlined,
+                              ),
+                        label: Text(
+                          widget.existingReport == null
+                              ? 'Approve & Save'
+                              : 'Save changes',
+                        ),
                       ),
                     ),
                   ],

@@ -677,6 +677,38 @@ class ApiService {
     );
   }
 
+  Future<BodyCompositionReport> updateBodyCompositionReport(
+    String reportId,
+    BodyCompositionDraft draft,
+  ) async {
+    final response = await _put(
+      '/api/v1/health/body-composition-reports/$reportId',
+      body: {
+        'measured_at': draft.measuredAt.toUtc().toIso8601String(),
+        'measurements': draft.measurements.toJson(),
+      },
+    );
+    if (response.statusCode == 200) {
+      return BodyCompositionReport.fromJson(
+        Map<String, dynamic>.from(jsonDecode(response.body) as Map),
+      );
+    }
+    throw Exception(
+      'Failed to update health report: ${response.statusCode} ${response.body}',
+    );
+  }
+
+  Future<void> deleteBodyCompositionReport(String reportId) async {
+    final response = await _delete(
+      '/api/v1/health/body-composition-reports/$reportId',
+    );
+    if (response.statusCode != 204) {
+      throw Exception(
+        'Failed to delete health report: ${response.statusCode} ${response.body}',
+      );
+    }
+  }
+
   Future<BodyCompositionComparison> createBodyCompositionComparison({
     required String olderReportId,
     required String newerReportId,

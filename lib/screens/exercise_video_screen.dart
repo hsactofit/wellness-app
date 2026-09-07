@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -25,7 +26,9 @@ class _ExerciseVideoScreenState extends State<ExerciseVideoScreen> {
   VideoPlayerController? _controller;
   String? _error;
   bool _loading = true;
+  bool _showControls = true;
   String _title = '';
+  Timer? _controlsTimer;
 
   @override
   void initState() {
@@ -36,6 +39,7 @@ class _ExerciseVideoScreenState extends State<ExerciseVideoScreen> {
 
   @override
   void dispose() {
+    _controlsTimer?.cancel();
     _controller?.removeListener(_onControllerTick);
     _controller?.dispose();
     super.dispose();
@@ -86,6 +90,7 @@ class _ExerciseVideoScreenState extends State<ExerciseVideoScreen> {
       _controller = controller;
       _loading = false;
     });
+    _scheduleControlsHide();
   }
 
   Future<void> _openNetwork(Uri url) async {
@@ -101,6 +106,7 @@ class _ExerciseVideoScreenState extends State<ExerciseVideoScreen> {
       _controller = controller;
       _loading = false;
     });
+    _scheduleControlsHide();
   }
 
   void _onControllerTick() {
@@ -116,8 +122,32 @@ class _ExerciseVideoScreenState extends State<ExerciseVideoScreen> {
     if (isComplete) await controller.seekTo(Duration.zero);
     if (value.isPlaying) {
       await controller.pause();
+      _controlsTimer?.cancel();
+      if (mounted) setState(() => _showControls = true);
     } else {
       await controller.play();
+      if (mounted) setState(() => _showControls = true);
+      _scheduleControlsHide();
+    }
+  }
+
+  void _scheduleControlsHide() {
+    _controlsTimer?.cancel();
+    _controlsTimer = Timer(const Duration(milliseconds: 1200), () {
+      final controller = _controller;
+      if (!mounted || controller == null || !controller.value.isPlaying) return;
+      setState(() => _showControls = false);
+    });
+  }
+
+  void _toggleControls() {
+    final controller = _controller;
+    if (controller == null) return;
+    setState(() => _showControls = !_showControls);
+    if (_showControls && controller.value.isPlaying) {
+      _scheduleControlsHide();
+    } else {
+      _controlsTimer?.cancel();
     }
   }
 
@@ -187,24 +217,29 @@ class _ExerciseVideoScreenState extends State<ExerciseVideoScreen> {
               child: Stack(
                 alignment: Alignment.center,
                 children: [
-                  VideoPlayer(controller),
-                  IconButton(
-                    iconSize: 56,
-                    color: Colors.white,
-                    tooltip: isComplete
-                        ? 'Replay'
-                        : value.isPlaying
-                        ? 'Pause'
-                        : 'Play',
-                    onPressed: _togglePlayback,
-                    icon: Icon(
-                      isComplete
-                          ? Icons.replay
-                          : value.isPlaying
-                          ? Icons.pause_circle
-                          : Icons.play_circle,
-                    ),
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: _toggleControls,
+                    child: VideoPlayer(controller),
                   ),
+                  if (_showControls || !value.isPlaying || isComplete)
+                    IconButton(
+                      iconSize: 56,
+                      color: Colors.white,
+                      tooltip: isComplete
+                          ? 'Replay'
+                          : value.isPlaying
+                          ? 'Pause'
+                          : 'Play',
+                      onPressed: _togglePlayback,
+                      icon: Icon(
+                        isComplete
+                            ? Icons.replay
+                            : value.isPlaying
+                            ? Icons.pause_circle
+                            : Icons.play_circle,
+                      ),
+                    ),
                 ],
               ),
             ),

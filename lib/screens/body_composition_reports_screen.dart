@@ -4,6 +4,7 @@ import '../models/body_composition_report.dart';
 import '../services/api_service.dart';
 import '../services/body_composition_pdf_service.dart';
 import 'body_composition_comparison_screen.dart';
+import 'body_composition_report_review_screen.dart';
 
 /// Report Library: member-approved reports and persistent comparisons are
 /// deliberately separate tabs so the source transcript is never confused
@@ -176,7 +177,7 @@ class _BodyCompositionReportsScreenState
     );
   }
 
-  void _showDetail(BodyCompositionReport report) {
+  Future<void> _showDetail(BodyCompositionReport report) async {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -199,6 +200,16 @@ class _BodyCompositionReportsScreenState
                         fontWeight: FontWeight.w900,
                       ),
                     ),
+                  ),
+                  IconButton(
+                    tooltip: 'Edit report',
+                    onPressed: () => _editReport(context, report),
+                    icon: const Icon(Icons.edit_outlined),
+                  ),
+                  IconButton(
+                    tooltip: 'Delete report',
+                    onPressed: () => _deleteReport(context, report),
+                    icon: const Icon(Icons.delete_outline),
                   ),
                   IconButton(
                     tooltip: 'Download PDF',
@@ -237,6 +248,74 @@ class _BodyCompositionReportsScreenState
         ),
       ),
     );
+  }
+
+  Future<void> _editReport(
+    BuildContext sheetContext,
+    BodyCompositionReport report,
+  ) async {
+    Navigator.of(sheetContext).pop();
+    final updated = await Navigator.of(context).push<BodyCompositionReport>(
+      MaterialPageRoute(
+        builder: (_) => BodyCompositionReportReviewScreen(
+          draft: BodyCompositionDraft(
+            clientSubmissionId: report.clientSubmissionId,
+            measuredAt: report.measuredAt,
+            ocrTranscript: report.ocrTranscript,
+            measurements: report.measurements,
+            inputMethod: report.inputMethod,
+          ),
+          existingReport: report,
+        ),
+      ),
+    );
+    if (updated == null || !mounted) return;
+    await _refresh();
+    if (!mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Health report updated.')));
+  }
+
+  Future<void> _deleteReport(
+    BuildContext sheetContext,
+    BodyCompositionReport report,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: sheetContext,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Delete health report?'),
+        content: const Text(
+          'This permanently deletes the report and any comparisons that use it.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    try {
+      await ApiService.instance.deleteBodyCompositionReport(report.id);
+      if (!mounted || !sheetContext.mounted) return;
+      Navigator.of(sheetContext).pop();
+      await _refresh();
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Health report deleted.')));
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not delete the report: $error')),
+      );
+    }
   }
 
   List<(String, String)> _metrics(BodyCompositionReport report) {
