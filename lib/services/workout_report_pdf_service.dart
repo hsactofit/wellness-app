@@ -266,7 +266,7 @@ class WorkoutReportPdfService {
           ],
           if (_hasText(report.summary) || _hasText(report.recoveryNote)) ...[
             pw.SizedBox(height: 20),
-            _sectionTitle('Tarqa workout insight', accent),
+            _sectionTitle('Workout insights', accent),
             pw.SizedBox(height: 8),
             if (_hasText(report.summary))
               _insightCard('Session summary', report.summary!),

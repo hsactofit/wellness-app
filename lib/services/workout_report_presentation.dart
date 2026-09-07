@@ -49,11 +49,11 @@ class WorkoutReportPresentation {
 
   static String statusDescription(WorkoutReport report) {
     if (report.aiStale) {
-      return 'Your checklist is saved. Tarqa is updating the estimated workout insights.';
+      return 'Your checklist is saved. Your estimated workout insights are being updated.';
     }
     if (report.isComplete) return 'Your workout report is ready to review.';
     if (report.isPreparing) {
-      return 'Tarqa is preparing your estimated workout insights. This page refreshes automatically.';
+      return 'Your estimated workout insights are being prepared. This page refreshes automatically.';
     }
     if (report.hasRetryScheduled) {
       return 'Your workout facts are safely saved. We will retry the AI estimate automatically.';

@@ -333,7 +333,7 @@ class _WorkoutReportDetailScreenState extends State<WorkoutReportDetailScreen> {
           ],
           if (_hasText(report.summary) || _hasText(report.recoveryNote)) ...[
             const SizedBox(height: 20),
-            _sectionTitle(context, 'Tarqa workout insight'),
+            _sectionTitle(context, 'Workout insights'),
             const SizedBox(height: 8),
             if (_hasText(report.summary))
               _insight(context, 'Session summary', report.summary!),

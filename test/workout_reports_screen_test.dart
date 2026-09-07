@@ -46,6 +46,9 @@ void main() {
 
     expect(find.text('Workout Report'), findsOneWidget);
     expect(find.text('Edit'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Workout insights'), 300);
+    expect(find.text('Workout insights'), findsOneWidget);
+    expect(find.textContaining('Tarqa'), findsNothing);
 
     await tester.pumpWidget(const SizedBox());
   });
@@ -63,10 +66,11 @@ void main() {
     expect(find.text('Preparing'), findsOneWidget);
     expect(
       find.textContaining(
-        'Tarqa is preparing your estimated workout insights. This page refreshes automatically.',
+        'Your estimated workout insights are being prepared. This page refreshes automatically.',
       ),
       findsOneWidget,
     );
+    expect(find.textContaining('Tarqa'), findsNothing);
 
     await tester.pumpWidget(const SizedBox());
   });
