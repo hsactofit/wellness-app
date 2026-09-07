@@ -1929,7 +1929,11 @@ class DashboardScreenState extends State<DashboardScreen>
         padding: const EdgeInsets.all(16),
         child: Row(
           children: [
-            const Text("⚠️", style: TextStyle(fontSize: 28)),
+            Icon(
+              Icons.warning_amber_rounded,
+              size: 28,
+              color: Colors.amber[700],
+            ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -4251,7 +4255,7 @@ class DashboardScreenState extends State<DashboardScreen>
                   accent: isDark
                       ? const Color(0xFF5B8CFF)
                       : AppTheme.brandPrimary,
-                  emoji: '💪',
+                  icon: Icons.fitness_center_rounded,
                   kindLabel: 'WORKOUT',
                   snap: _todayWorkoutSnap,
                   emptyTitle: 'Build workout',
@@ -4282,7 +4286,7 @@ class DashboardScreenState extends State<DashboardScreen>
                   accent: isDark
                       ? const Color(0xFFFF9F43)
                       : const Color(0xFFB89A62),
-                  emoji: '🥗',
+                  icon: Icons.restaurant_menu_rounded,
                   kindLabel: 'NUTRITION',
                   snap: _todayNutritionSnap,
                   emptyTitle: 'Build meal plan',
@@ -4316,7 +4320,7 @@ class DashboardScreenState extends State<DashboardScreen>
     required Color textColor,
     required Color secondary,
     required Color accent,
-    required String emoji,
+    required IconData icon,
     required String kindLabel,
     required TodayPlanSnapshot snap,
     required String emptyTitle,
@@ -4377,10 +4381,7 @@ class DashboardScreenState extends State<DashboardScreen>
                         ],
                       ),
                       child: Center(
-                        child: Text(
-                          emoji,
-                          style: const TextStyle(fontSize: 17),
-                        ),
+                        child: Icon(icon, color: accent, size: 20),
                       ),
                     ),
                     const Spacer(),
@@ -5113,7 +5114,7 @@ class DashboardScreenState extends State<DashboardScreen>
               textColor: textColor,
               secondary: secondary,
               accent: const Color(0xFFFF3B30),
-              emoji: '🛡️',
+              icon: Icons.shield_outlined,
               badge: 'SOS',
               title: 'Emergency',
               subtitle: 'Alert contacts',
@@ -5132,7 +5133,9 @@ class DashboardScreenState extends State<DashboardScreen>
               textColor: textColor,
               secondary: secondary,
               accent: Colors.indigoAccent,
-              emoji: _gymCheckedIn ? '🏋️‍♂️' : '📍',
+              icon: _gymCheckedIn
+                  ? Icons.fitness_center_rounded
+                  : Icons.qr_code_scanner_rounded,
               badge: _gymCheckedIn ? 'GYM ACTIVE' : 'GYM',
               title: _gymCheckedIn ? (_gymName ?? 'Workout') : 'Gym Check-in',
               subtitle: _gymCheckedIn
@@ -5164,7 +5167,7 @@ class DashboardScreenState extends State<DashboardScreen>
     required Color textColor,
     required Color secondary,
     required Color accent,
-    required String emoji,
+    required IconData icon,
     required String badge,
     required String title,
     required String subtitle,
@@ -5200,7 +5203,7 @@ class DashboardScreenState extends State<DashboardScreen>
                     ],
                   ),
                   child: Center(
-                    child: Text(emoji, style: const TextStyle(fontSize: 18)),
+                    child: Icon(icon, color: accent, size: 20),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -5437,13 +5440,13 @@ class DashboardScreenState extends State<DashboardScreen>
                     ),
                   ),
                   child: Center(
-                    child: _gymCheckedIn
-                        ? const Text("🏋️‍♂️", style: TextStyle(fontSize: 16))
-                        : const Icon(
-                            Icons.qr_code_scanner_rounded,
-                            color: Colors.indigoAccent,
-                            size: 18,
-                          ),
+                    child: Icon(
+                      _gymCheckedIn
+                          ? Icons.fitness_center_rounded
+                          : Icons.qr_code_scanner_rounded,
+                      color: Colors.indigoAccent,
+                      size: 18,
+                    ),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -5524,22 +5527,21 @@ class DashboardScreenState extends State<DashboardScreen>
         : color.withValues(alpha: 0.04);
     final borderColor = color.withValues(alpha: 0.25);
 
-    // Determine category icon
-    String emoji = "🏆";
+    IconData categoryIcon = Icons.emoji_events_outlined;
     if (challenge.metricType == 'steps') {
-      emoji = "👣";
+      categoryIcon = Icons.directions_walk_rounded;
     } else if (challenge.metricType == 'water') {
-      emoji = "🥤";
+      categoryIcon = Icons.water_drop_outlined;
     } else if (challenge.metricType == 'sleep') {
-      emoji = "🌙";
+      categoryIcon = Icons.bedtime_outlined;
     } else if (challenge.metricType == 'calories') {
-      emoji = "🔥";
+      categoryIcon = Icons.local_fire_department_outlined;
     } else if (challenge.metricType == 'heart_rate') {
-      emoji = "❤️";
+      categoryIcon = Icons.favorite_border_rounded;
     } else if (challenge.metricType == 'workouts' ||
         challenge.name.toLowerCase().contains('gym') ||
         challenge.name.toLowerCase().contains('workout')) {
-      emoji = "🏋️‍♂️";
+      categoryIcon = Icons.fitness_center_rounded;
     }
 
     final progressVal = ((challenge.progressPct ?? 0.0) / 100).clamp(0.0, 1.0);
@@ -5564,7 +5566,6 @@ class DashboardScreenState extends State<DashboardScreen>
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             child: Row(
               children: [
-                // Thin circular progress ring wrapping the emoji
                 SizedBox(
                   width: 38,
                   height: 38,
@@ -5579,7 +5580,7 @@ class DashboardScreenState extends State<DashboardScreen>
                             : Colors.black.withValues(alpha: 0.04),
                         valueColor: AlwaysStoppedAnimation<Color>(color),
                       ),
-                      Text(emoji, style: const TextStyle(fontSize: 14)),
+                      Icon(categoryIcon, size: 16, color: color),
                     ],
                   ),
                 ),

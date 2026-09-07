@@ -74,7 +74,9 @@ class _PlanScreenState extends State<PlanScreen> with WidgetsBindingObserver {
   String get _title => _isWorkoutKind ? 'Workout Plan' : 'Nutrition Plan';
   String get _planType => _isWorkoutKind ? 'workout' : 'nutrition';
   String get _planLabel => _isWorkoutKind ? 'workout' : 'nutrition';
-  String get _emoji => _isWorkoutKind ? '💪' : '🥗';
+  IconData get _kindIcon => _isWorkoutKind
+      ? Icons.fitness_center_rounded
+      : Icons.restaurant_menu_rounded;
 
   bool _isLoading = true;
   bool _isGenerating = false;
@@ -372,7 +374,7 @@ class _PlanScreenState extends State<PlanScreen> with WidgetsBindingObserver {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text("⚠️", style: TextStyle(fontSize: 40)),
+            Icon(Icons.error_outline_rounded, size: 40, color: _accent),
             const SizedBox(height: 12),
             Text(
               _loadError!,
@@ -424,7 +426,7 @@ class _PlanScreenState extends State<PlanScreen> with WidgetsBindingObserver {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(_emoji, style: const TextStyle(fontSize: 38)),
+              Icon(_kindIcon, size: 38, color: _accent),
               const SizedBox(height: 14),
               Text(
                 'Your ${_isWorkoutKind ? 'workout' : 'diet'} plan is in review',
@@ -471,11 +473,7 @@ class _PlanScreenState extends State<PlanScreen> with WidgetsBindingObserver {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(
-                _emoji,
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 38),
-              ),
+              Center(child: Icon(_kindIcon, size: 38, color: _accent)),
               const SizedBox(height: 12),
               Text(
                 'Confirm AI processing consent',
@@ -702,7 +700,7 @@ class _PlanScreenState extends State<PlanScreen> with WidgetsBindingObserver {
               children: [
                 Row(
                   children: [
-                    Text(_emoji, style: const TextStyle(fontSize: 22)),
+                    Icon(_kindIcon, size: 22, color: _accent),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -1089,7 +1087,7 @@ class _PlanScreenState extends State<PlanScreen> with WidgetsBindingObserver {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(_emoji, style: const TextStyle(fontSize: 34)),
+                Icon(_kindIcon, size: 34, color: _accent),
                 const SizedBox(height: 12),
                 Text(
                   "Request your $_title",
