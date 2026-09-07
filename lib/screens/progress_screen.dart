@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import '../models/demo_health_metrics.dart';
 import '../services/api_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/glass_card.dart';
@@ -8,10 +9,10 @@ class ProgressScreen extends StatefulWidget {
   const ProgressScreen({super.key});
 
   @override
-  State<ProgressScreen> createState() => _ProgressScreenState();
+  State<ProgressScreen> createState() => ProgressScreenState();
 }
 
-class _ProgressScreenState extends State<ProgressScreen>
+class ProgressScreenState extends State<ProgressScreen>
     with SingleTickerProviderStateMixin {
   String _selectedPeriod = "Weekly";
   late Future<Map<String, dynamic>> _trendsFuture;
@@ -39,11 +40,23 @@ class _ProgressScreenState extends State<ProgressScreen>
     super.dispose();
   }
 
+  void refresh() {
+    if (!mounted) return;
+    final future = _fetchTrendsFromServer().then((data) {
+      _chartAnimController.forward(from: 0.0);
+      return data;
+    });
+    setState(() {
+      _trendsFuture = future;
+    });
+  }
+
   // wellness-server has no combined trends endpoint — this composes the
   // shape the UI below expects from real, already-built pieces: goals for
   // targets, and one /api/health/graph call per metric for series +
-  // averages. Days are merged by date; a day only appears if at least one
-  // metric has real synced/logged data for it (no fabricated zero-fill).
+  // averages. Days are merged by date. Today's hydration logs are overlaid
+  // so Home water intake is not dropped by a stale tab. Sleep and water
+  // fall back to demo series only when those metrics have no live values.
   Future<Map<String, dynamic>> _fetchTrendsFromServer() async {
     final email = await ApiService.instance.getUserEmail();
     final periodParam = _selectedPeriod == "Daily"
@@ -78,6 +91,7 @@ class _ProgressScreenState extends State<ProgressScreen>
         period: periodParam,
         title: 'Water',
       ),
+      _fetchTodayWaterLogs(email),
     ]);
 
     final goals = results[0];
@@ -85,6 +99,7 @@ class _ProgressScreenState extends State<ProgressScreen>
     final caloriesRes = results[2];
     final sleepRes = results[3];
     final waterRes = results[4];
+    final waterLogs = results[5];
 
     double avgOf(Map<String, dynamic> r) =>
         (r['average'] as num?)?.toDouble() ?? 0.0;
@@ -93,7 +108,8 @@ class _ProgressScreenState extends State<ProgressScreen>
     void mergeIn(Map<String, dynamic> res, String key) {
       final points = res['data'] as List<dynamic>? ?? [];
       for (final raw in points) {
-        final p = raw as Map<String, dynamic>;
+        if (raw is! Map) continue;
+        final p = Map<String, dynamic>.from(raw);
         final label = p['label'] as String? ?? '';
         if (label.isEmpty) continue;
         final row = byDate.putIfAbsent(label, () => {});
@@ -105,6 +121,22 @@ class _ProgressScreenState extends State<ProgressScreen>
     mergeIn(caloriesRes, 'calories');
     mergeIn(sleepRes, 'sleep');
     mergeIn(waterRes, 'water');
+
+    final todayWater = _todayWaterMl(waterLogs);
+    _overlayLiveValue(byDate, 'water', todayWater, periodParam);
+
+    _fillMissingMetric(
+      byDate,
+      key: 'sleep',
+      metric: 'sleep',
+      period: periodParam,
+    );
+    _fillMissingMetric(
+      byDate,
+      key: 'water',
+      metric: 'water',
+      period: periodParam,
+    );
 
     final sortedDates = byDate.keys.toList()..sort();
 
@@ -149,8 +181,19 @@ class _ProgressScreenState extends State<ProgressScreen>
       'averages': {
         'steps': avgOf(stepsRes),
         'calories': avgOf(caloriesRes),
-        'sleep': avgOf(sleepRes),
-        'hydration': avgOf(waterRes),
+        'sleep':
+            DemoHealthMetrics.firstPositive([
+              avgOf(sleepRes),
+              _averageOf(byDate, 'sleep'),
+            ]) ??
+            0.0,
+        'hydration':
+            DemoHealthMetrics.firstPositive([
+              avgOf(waterRes),
+              todayWater,
+              _averageOf(byDate, 'water'),
+            ]) ??
+            0.0,
       },
       'targets': {
         'steps': targetSteps,
@@ -161,6 +204,72 @@ class _ProgressScreenState extends State<ProgressScreen>
       'history': history,
       'graph_data': graphData,
     };
+  }
+
+  Future<Map<String, dynamic>> _fetchTodayWaterLogs(String email) async {
+    try {
+      return await ApiService.instance.fetchWaterLogs(email);
+    } catch (_) {
+      return const <String, dynamic>{};
+    }
+  }
+
+  double _todayWaterMl(Map<String, dynamic> waterLogs) {
+    final totalRaw =
+        waterLogs['water_intake_today_ml'] ?? waterLogs['water_intake_today'];
+    if (totalRaw == null) return 0.0;
+    if (totalRaw is num) return totalRaw.toDouble();
+    return double.tryParse('$totalRaw') ?? 0.0;
+  }
+
+  void _overlayLiveValue(
+    Map<String, Map<String, double>> byDate,
+    String key,
+    double value,
+    String periodParam,
+  ) {
+    if (value <= 0) return;
+    final now = DateTime.now();
+    for (final label in {
+      DemoHealthMetrics.isoDate(now),
+      DemoHealthMetrics.periodBucketLabel(now, periodParam),
+    }) {
+      final row = byDate.putIfAbsent(label, () => {});
+      final current = row[key] ?? 0.0;
+      if (value > current) row[key] = value;
+    }
+  }
+
+  void _fillMissingMetric(
+    Map<String, Map<String, double>> byDate, {
+    required String key,
+    required String metric,
+    required String period,
+  }) {
+    if (byDate.values.any((row) => (row[key] ?? 0) > 0)) return;
+    final dummy = DemoHealthMetrics.graphSeries(metric: metric, period: period);
+    if (byDate.isEmpty) {
+      for (final point in dummy) {
+        byDate[point['label'] as String] = {
+          key: (point['value'] as num).toDouble(),
+        };
+      }
+      return;
+    }
+    final dates = byDate.keys.toList()..sort();
+    for (var index = 0; index < dates.length; index++) {
+      byDate[dates[index]]![key] = (dummy[index % dummy.length]['value'] as num)
+          .toDouble();
+    }
+  }
+
+  double _averageOf(Map<String, Map<String, double>> byDate, String key) {
+    final values = byDate.values
+        .map((row) => row[key] ?? 0.0)
+        .where((value) => value > 0)
+        .toList();
+    if (values.isEmpty) return 0.0;
+    return values.reduce((a, b) => a + b) / values.length;
   }
 
   @override

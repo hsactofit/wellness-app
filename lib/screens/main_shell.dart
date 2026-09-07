@@ -8,6 +8,7 @@ import 'ai_screen.dart';
 import 'progress_screen.dart';
 import 'profile_screen.dart';
 import 'gym_checkin_screen.dart';
+import '../theme/app_theme.dart';
 import '../services/background_workout_service.dart';
 import '../services/push_service.dart';
 import '../services/workout_session_service.dart';
@@ -240,14 +241,22 @@ class MainShellState extends State<MainShell> with WidgetsBindingObserver {
     setState(() {
       _currentIndex = index;
     });
+    _refreshTab(index);
+  }
+
+  void _refreshTab(int index) {
     if (index == 0) {
       _dashboardKey.currentState?.refreshData();
+    } else if (index == 3) {
+      _progressKey.currentState?.refresh();
     }
   }
 
   // Key to refresh dashboard when switching back to it
   final GlobalKey<DashboardScreenState> _dashboardKey =
       GlobalKey<DashboardScreenState>();
+  final GlobalKey<ProgressScreenState> _progressKey =
+      GlobalKey<ProgressScreenState>();
 
   @override
   Widget build(BuildContext context) {
@@ -267,20 +276,23 @@ class MainShellState extends State<MainShell> with WidgetsBindingObserver {
               ),
               const ChallengesScreen(),
               const AIScreen(),
-              const ProgressScreen(),
+              ProgressScreen(key: _progressKey),
               const ProfileScreen(),
             ],
           ),
 
-          // Floating Glassmorphic Bottom Navigation Bar
+          // Floating bottom navigation — dark rail in light mode.
           Positioned(
             bottom: 24,
             left: 16,
             right: 16,
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(24),
+              borderRadius: BorderRadius.circular(28),
               child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+                filter: ImageFilter.blur(
+                  sigmaX: isDark ? 15 : 0,
+                  sigmaY: isDark ? 15 : 0,
+                ),
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                     vertical: 8,
@@ -289,21 +301,21 @@ class MainShellState extends State<MainShell> with WidgetsBindingObserver {
                   decoration: BoxDecoration(
                     color: isDark
                         ? const Color(0xFF16161C).withValues(alpha: 0.75)
-                        : const Color(0xFFFFFFFF).withValues(alpha: 0.96),
-                    borderRadius: BorderRadius.circular(24),
+                        : AppTheme.lightNav,
+                    borderRadius: BorderRadius.circular(28),
                     border: Border.all(
                       color: isDark
                           ? Colors.white.withValues(alpha: 0.08)
-                          : const Color(0xFFDCE3E1),
+                          : Colors.white.withValues(alpha: 0.08),
                       width: isDark ? 1.5 : 1.0,
                     ),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withValues(
-                          alpha: isDark ? 0.25 : 0.08,
+                          alpha: isDark ? 0.25 : 0.22,
                         ),
-                        blurRadius: 20,
-                        offset: const Offset(0, 8),
+                        blurRadius: isDark ? 20 : 24,
+                        offset: const Offset(0, 10),
                       ),
                     ],
                   ),
@@ -349,8 +361,9 @@ class MainShellState extends State<MainShell> with WidgetsBindingObserver {
   ) {
     final isSelected = _currentIndex == index;
     final theme = Theme.of(context);
-    final activeColor = theme.colorScheme.primary;
     final isDark = theme.brightness == Brightness.dark;
+    final activeColor = isDark ? theme.colorScheme.primary : AppTheme.lightGold;
+    final idleColor = isDark ? Colors.white54 : const Color(0xFF9A958C);
 
     return Expanded(
       child: GestureDetector(
@@ -358,10 +371,7 @@ class MainShellState extends State<MainShell> with WidgetsBindingObserver {
           setState(() {
             _currentIndex = index;
           });
-          // Auto-trigger a data refresh on the dashboard when moving back to Home
-          if (index == 0) {
-            _dashboardKey.currentState?.refreshData();
-          }
+          _refreshTab(index);
         },
         behavior: HitTestBehavior.opaque,
         child: AnimatedContainer(
@@ -371,7 +381,7 @@ class MainShellState extends State<MainShell> with WidgetsBindingObserver {
           margin: const EdgeInsets.symmetric(horizontal: 2),
           decoration: BoxDecoration(
             color: isSelected
-                ? activeColor.withValues(alpha: 0.08)
+                ? activeColor.withValues(alpha: isDark ? 0.08 : 0.16)
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(16),
           ),
@@ -380,9 +390,7 @@ class MainShellState extends State<MainShell> with WidgetsBindingObserver {
             children: [
               Icon(
                 isSelected ? selectedIcon : unselectedIcon,
-                color: isSelected
-                    ? activeColor
-                    : (isDark ? Colors.white54 : Colors.black54),
+                color: isSelected ? activeColor : idleColor,
                 size: 22,
               ),
               const SizedBox(height: 4),
@@ -391,9 +399,7 @@ class MainShellState extends State<MainShell> with WidgetsBindingObserver {
                 style: TextStyle(
                   fontSize: 10,
                   fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                  color: isSelected
-                      ? activeColor
-                      : (isDark ? Colors.white54 : Colors.black54),
+                  color: isSelected ? activeColor : idleColor,
                 ),
               ),
             ],
@@ -406,7 +412,7 @@ class MainShellState extends State<MainShell> with WidgetsBindingObserver {
   Widget _buildCenterAINavItem(int index) {
     final isSelected = _currentIndex == index;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final glow = isDark ? const Color(0xFFFF6D55) : const Color(0xFF176B63);
+    final glow = isDark ? const Color(0xFFFF6D55) : AppTheme.lightGold;
 
     return Semantics(
       button: true,
@@ -426,12 +432,14 @@ class MainShellState extends State<MainShell> with WidgetsBindingObserver {
             gradient: LinearGradient(
               colors: isDark
                   ? const [Color(0xFFFF8A4C), Color(0xFFEF5D51)]
-                  : const [Color(0xFF1C7A71), Color(0xFF176B63)],
+                  : const [Color(0xFFE8D5A8), Color(0xFFD4B98A)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
             border: Border.all(
-              color: isSelected ? Colors.white : Colors.white38,
+              color: isSelected
+                  ? Colors.white
+                  : (isDark ? Colors.white38 : Colors.white24),
               width: isSelected ? 2 : 1,
             ),
             boxShadow: [
@@ -443,9 +451,9 @@ class MainShellState extends State<MainShell> with WidgetsBindingObserver {
               ),
             ],
           ),
-          child: const Icon(
+          child: Icon(
             Icons.fitness_center_rounded,
-            color: Colors.white,
+            color: isDark ? Colors.white : AppTheme.brandInk,
             size: 22,
           ),
         ),

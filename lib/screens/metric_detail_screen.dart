@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import '../models/demo_health_metrics.dart';
 import '../services/api_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/glass_card.dart';
@@ -82,16 +83,28 @@ class _MetricDetailScreenState extends State<MetricDetailScreen>
     });
 
     try {
-      final data = await ApiService.instance.fetchGraphData(
+      var data = await ApiService.instance.fetchGraphData(
         email: widget.email,
         metric: widget.metric,
         period: _selectedPeriod,
         title: widget.title,
       );
 
+      List<dynamic> chartData = data['data'] is List
+          ? List<dynamic>.from(data['data'] as List)
+          : <dynamic>[];
+      if (DemoHealthMetrics.covers(widget.metric) &&
+          DemoHealthMetrics.seriesIsEmpty(chartData)) {
+        data = DemoHealthMetrics.graphPayload(
+          metric: widget.metric,
+          period: _selectedPeriod,
+        );
+        chartData = List<dynamic>.from(data['data'] as List);
+      }
+
       setState(() {
         _apiResponse = data;
-        _chartData = data['data'] ?? [];
+        _chartData = chartData;
         _isLoading = false;
       });
       _chartAnimController.forward(from: 0.0);

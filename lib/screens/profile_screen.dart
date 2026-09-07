@@ -27,7 +27,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   static const Color _sky = Color(0xFF5B8CFF);
 
   Color _accentOf(bool isDark) => isDark ? _accent : AppTheme.brandPrimary;
-  Color _mintOf(bool isDark) => isDark ? _mint : const Color(0xFF3D8B6E);
+  Color _mintOf(bool isDark) => isDark ? _mint : const Color(0xFFB89A62);
   Color _violetOf(bool isDark) => isDark ? _violet : AppTheme.brandInk;
   Color _skyOf(bool isDark) => isDark ? _sky : const Color(0xFF5E7380);
 
@@ -1138,7 +1138,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     gradient: LinearGradient(
                       colors: isDark
                           ? const [_accent, Color(0xFFFF8A70)]
-                          : const [AppTheme.brandPrimary, Color(0xFF1C7A71)],
+                          : const [AppTheme.brandInk, Color(0xFF2A2A2A)],
                     ),
                     boxShadow: [
                       BoxShadow(
@@ -2096,7 +2096,7 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
                     end: Alignment.bottomRight,
                     colors: Theme.of(context).brightness == Brightness.dark
                         ? const [Color(0xFFFF8A70), Color(0xFFFF6D55)]
-                        : const [Color(0xFF1C7A71), AppTheme.brandPrimary],
+                        : const [Color(0xFF2A2A2A), AppTheme.brandInk],
                   )
                 : null,
             color: filled

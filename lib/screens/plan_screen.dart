@@ -68,7 +68,7 @@ class _PlanScreenState extends State<PlanScreen> with WidgetsBindingObserver {
     if (_isWorkoutKind) {
       return isDark ? const Color(0xFF5B8CFF) : AppTheme.brandPrimary;
     }
-    return isDark ? const Color(0xFFFF9F43) : const Color(0xFF5F7A72);
+    return isDark ? const Color(0xFFFF9F43) : const Color(0xFFB89A62);
   }
 
   String get _title => _isWorkoutKind ? 'Workout Plan' : 'Nutrition Plan';

@@ -31,6 +31,7 @@ import 'exercise_library_screen.dart';
 import 'update_health_hub_screen.dart';
 import '../models/plan_models.dart';
 import '../models/body_composition_report.dart';
+import '../models/demo_health_metrics.dart';
 import '../models/weekly_training.dart';
 import '../widgets/water/wave_painter.dart';
 import '../widgets/weekly_training_summary.dart';
@@ -466,6 +467,37 @@ class DashboardScreenState extends State<DashboardScreen>
         _healthData.sleepDuration > 0 ||
         _healthData.distance > 0;
   }
+
+  double get _displayHeartRateBpm =>
+      DemoHealthMetrics.firstPositive([
+        _apiHeartRateValue,
+        _healthData.heartRate,
+      ]) ??
+      DemoHealthMetrics.heartRateBpm;
+
+  double get _displayRestingHeartRateBpm =>
+      DemoHealthMetrics.firstPositive([
+        _apiHeartRateTarget,
+        _healthData.restingHeartRate,
+      ]) ??
+      DemoHealthMetrics.restingHeartRateBpm;
+
+  String get _displayHeartRateStatus {
+    final status = _apiHeartRateStatus;
+    if (status != null && status.isNotEmpty) return status;
+    return DemoHealthMetrics.heartRateStatus;
+  }
+
+  double? get _liveSleepHours => DemoHealthMetrics.firstPositive([
+    _apiSleepValue,
+    _healthData.sleepDuration,
+  ]);
+
+  double get _displaySleepHours =>
+      _liveSleepHours ?? DemoHealthMetrics.sleepHours;
+
+  String? get _displaySleepStatus =>
+      _liveSleepHours != null ? _apiSleepStatus : DemoHealthMetrics.sleepStatus;
 
   int get _wellnessScore {
     if (_serverWellnessScore != null) return _serverWellnessScore!;
@@ -3908,7 +3940,7 @@ class DashboardScreenState extends State<DashboardScreen>
                   colors: [
                     isDark
                         ? Colors.green.withValues(alpha: 0.18)
-                        : const Color(0xFFC5D5CE).withValues(alpha: 0.55),
+                        : const Color(0xFFE0CFA8).withValues(alpha: 0.45),
                     Colors.transparent,
                   ],
                 ),
@@ -4004,12 +4036,9 @@ class DashboardScreenState extends State<DashboardScreen>
                                 flex: 2,
                                 child: _buildHeartRateCard(
                                   isDark,
-                                  _apiHeartRateValue ?? _healthData.heartRate,
-                                  _apiHeartRateTarget ??
-                                      (_healthData.restingHeartRate > 0
-                                          ? _healthData.restingHeartRate
-                                          : 64.0),
-                                  _apiHeartRateStatus,
+                                  _displayHeartRateBpm,
+                                  _displayRestingHeartRateBpm,
+                                  _displayHeartRateStatus,
                                   () => _navigateToMetricDetail(
                                     'heart_rate',
                                     'Heart Rate',
@@ -4045,9 +4074,9 @@ class DashboardScreenState extends State<DashboardScreen>
                                 flex: 3,
                                 child: _buildSleepCard(
                                   isDark,
-                                  _apiSleepValue ?? _healthData.sleepDuration,
+                                  _displaySleepHours,
                                   _apiSleepTarget ?? _sleepGoal,
-                                  _apiSleepStatus,
+                                  _displaySleepStatus,
                                   () => _navigateToMetricDetail(
                                     'sleep',
                                     'Sleep',
@@ -4252,7 +4281,7 @@ class DashboardScreenState extends State<DashboardScreen>
                   secondary: labelColor,
                   accent: isDark
                       ? const Color(0xFFFF9F43)
-                      : const Color(0xFF5F7A72),
+                      : const Color(0xFFB89A62),
                   emoji: '🥗',
                   kindLabel: 'NUTRITION',
                   snap: _todayNutritionSnap,

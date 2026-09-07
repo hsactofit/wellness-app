@@ -4,13 +4,14 @@ import 'app_typography.dart';
 
 /// App-wide light / dark themes with consistent typography & color.
 ///
-/// Light mode is the corporate Medifit system (warm off-white, navy ink,
-/// muted teal CTA). Dark mode tokens are intentionally unchanged.
+/// Light mode follows a quiet corporate editorial system: warm parchment
+/// canvas, near-black ink, black CTAs, and a champagne-gold accent.
+/// Dark mode is unchanged.
 class AppTheme {
   AppTheme._();
 
-  /// Muted teal used for light-mode actions, selection, and focus.
-  static const Color brandPrimary = Color(0xFF176B63);
+  /// Near-black used for light-mode actions, selection, and focus.
+  static const Color brandPrimary = Color(0xFF161616);
 
   /// Original shared brand red. Dark ColorScheme still uses this value.
   static const Color darkBrandPrimary = Color(0xFFFF6D55);
@@ -19,12 +20,14 @@ class AppTheme {
   static const Color brandSecondary = Color(0xFF2EE5A3);
   static const Color brandAccent = Color(0xFF5B8CFF);
 
-  static const Color brandInk = Color(0xFF182B3A);
-  static const Color brandSoft = Color(0xFFE8F2EF);
-  static const Color lightBg = Color(0xFFF6F7F5);
-  static const Color lightMuted = Color(0xFF596B78);
-  static const Color lightBorder = Color(0xFFDCE3E1);
+  static const Color brandInk = Color(0xFF161616);
+  static const Color brandSoft = Color(0xFFF0E6D4);
+  static const Color lightBg = Color(0xFFF6F1E6);
+  static const Color lightMuted = Color(0xFF6F675C);
+  static const Color lightBorder = Color(0xFFE6DCCB);
   static const Color lightDanger = Color(0xFFB42318);
+  static const Color lightGold = Color(0xFFE0CFA8);
+  static const Color lightNav = Color(0xFF161616);
 
   static const Color darkBg = Color(0xFF0A0D10);
   static const Color darkSurface = Color(0xFF0F1318);
@@ -57,9 +60,9 @@ class AppTheme {
       onPrimary: Colors.white,
       primaryContainer: brandSoft,
       onPrimaryContainer: ink,
-      secondary: ink,
+      secondary: const Color(0xFFB89A62),
       onSecondary: Colors.white,
-      secondaryContainer: const Color(0xFFEEF1F6),
+      secondaryContainer: const Color(0xFFF3E8D4),
       onSecondaryContainer: ink,
       tertiary: brandAccent,
       onTertiary: Colors.white,
@@ -67,13 +70,13 @@ class AppTheme {
       onSurface: ink,
       onSurfaceVariant: lightMuted,
       outline: lightBorder,
-      outlineVariant: const Color(0xFFE8ECEA),
+      outlineVariant: const Color(0xFFEFE6D6),
       error: lightDanger,
       onError: Colors.white,
       surfaceContainerLowest: Colors.white,
-      surfaceContainerLow: const Color(0xFFFBFCFA),
+      surfaceContainerLow: const Color(0xFFF8F3E8),
       surfaceContainer: lightBg,
-      surfaceContainerHigh: const Color(0xFFEEEFED),
+      surfaceContainerHigh: const Color(0xFFE9DFCC),
     );
 
     final textTheme = AppTypography.textTheme(Brightness.light);
@@ -109,7 +112,7 @@ class AppTheme {
           foregroundColor: Colors.white,
           textStyle: textTheme.labelLarge,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(16),
           ),
         ),
       ),
@@ -118,6 +121,9 @@ class AppTheme {
           backgroundColor: brandPrimary,
           foregroundColor: Colors.white,
           textStyle: textTheme.labelLarge,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
