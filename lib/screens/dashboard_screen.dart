@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../services/health_service.dart';
 import '../services/api_service.dart';
 import '../services/push_service.dart';
+import '../services/workout_session_service.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/metric_card.dart';
 import '../widgets/concentric_rings_chart.dart';
@@ -89,6 +90,8 @@ class DashboardScreenState extends State<DashboardScreen>
   int? _nutritionSubscore;
   int? _mindfulnessSubscore;
   WeeklyTrainingSummary? _weeklyTraining;
+  RecentActivity? _recentActivity;
+  int _dashboardRequestGeneration = 0;
   Future<List<Map<String, dynamic>>> _dailyRecordsFuture = Future.value(
     <Map<String, dynamic>>[],
   );
@@ -188,6 +191,9 @@ class DashboardScreenState extends State<DashboardScreen>
     PushService.instance.notificationRefreshSignal.addListener(
       _handleNotificationRefresh,
     );
+    WorkoutSessionService.instance.sessionRefreshSignal.addListener(
+      _handleSessionRefresh,
+    );
     // Do not read HealthKit/Health Connect until this member has connected
     // it. In particular, a fresh SSO session on iOS has no HealthKit grant
     // yet, and eager reads produce platform errors while the dashboard opens.
@@ -217,6 +223,9 @@ class DashboardScreenState extends State<DashboardScreen>
     PushService.instance.notificationRefreshSignal.removeListener(
       _handleNotificationRefresh,
     );
+    WorkoutSessionService.instance.sessionRefreshSignal.removeListener(
+      _handleSessionRefresh,
+    );
     _gymTimer?.cancel();
     _activeGoalsScrollTimer?.cancel();
     _activeGoalsScrollController?.dispose();
@@ -236,6 +245,10 @@ class DashboardScreenState extends State<DashboardScreen>
 
   void _handleNotificationRefresh() {
     _loadUnreadNotifications();
+  }
+
+  void _handleSessionRefresh() {
+    unawaited(_fetchRealData(showSyncIndicator: false, syncHealth: false));
   }
 
   Future<void> _loadUnreadNotifications() async {
@@ -866,11 +879,13 @@ class DashboardScreenState extends State<DashboardScreen>
   Future<void> _fetchRealData({
     bool forceSync = false,
     bool showSyncIndicator = true,
+    bool syncHealth = true,
   }) async {
+    final requestGeneration = ++_dashboardRequestGeneration;
     try {
       final prefs = await SharedPreferences.getInstance();
       final healthSyncEnabled = prefs.getBool('health_sync_enabled') ?? false;
-      final dailyRecordsFuture = healthSyncEnabled
+      final dailyRecordsFuture = healthSyncEnabled && syncHealth
           ? HealthService.instance.fetchDailyHealthDataForPeriod(
               days: 7,
               forceRefresh: forceSync,
@@ -913,13 +928,19 @@ class DashboardScreenState extends State<DashboardScreen>
             "Failed to fetch daily records for sync. Proceeding with empty. Error: $e",
           );
         }
-        await _syncAndRefreshDashboard(email, syncData);
+        await _syncAndRefreshDashboard(
+          email,
+          syncData,
+          requestGeneration: requestGeneration,
+          syncHealth: syncHealth,
+        );
+        if (requestGeneration != _dashboardRequestGeneration) return;
         await _fetchTodayPlans(email);
       }
     } catch (e) {
       debugPrint("Error in _fetchRealData combined flow: $e");
     } finally {
-      if (mounted && showSyncIndicator) {
+      if (mounted && requestGeneration == _dashboardRequestGeneration) {
         setState(() => _isSyncing = false);
       }
     }
@@ -959,26 +980,38 @@ class DashboardScreenState extends State<DashboardScreen>
 
   Future<void> _syncAndRefreshDashboard(
     String email,
-    List<Map<String, dynamic>> dailyRecords,
-  ) async {
+    List<Map<String, dynamic>> dailyRecords, {
+    required int requestGeneration,
+    required bool syncHealth,
+  }) async {
     final future = () async {
       try {
         // 1. POST sync — uploads health data, returns score/summary/macros (NO widgets)
-        final syncRes = await ApiService.instance.syncDashboard(
-          email,
-          dailyRecords,
-        );
-        final syncData = Map<String, dynamic>.from(syncRes['data'] ?? syncRes);
+        final syncData = <String, dynamic>{};
+        if (syncHealth) {
+          final syncRes = await ApiService.instance.syncDashboard(
+            email,
+            dailyRecords,
+          );
+          syncData.addAll(
+            Map<String, dynamic>.from(syncRes['data'] ?? syncRes),
+          );
+        }
 
-        debugPrint(
-          "✅ Sync POST done — score: ${syncData['wellness_score']}, water: ${syncData['water_intake_today']}",
-        );
+        if (syncHealth) {
+          debugPrint(
+            "✅ Sync POST done — score: ${syncData['wellness_score']}, water: ${syncData['water_intake_today']}",
+          );
+        }
 
         // 2. GET dashboard — returns full DashboardResponse WITH widgets array
         final dashRes = await ApiService.instance.getDashboard(email);
         final resData = Map<String, dynamic>.from(dashRes['data'] ?? dashRes);
         final weeklyTraining = WeeklyTrainingSummary.tryParse(
           resData['weekly_training'],
+        );
+        final recentActivity = RecentActivity.tryParse(
+          resData['recent_activity'],
         );
 
         debugPrint(
@@ -995,11 +1028,20 @@ class DashboardScreenState extends State<DashboardScreen>
           resData['recommendations'] ?? syncData['recommendations'] ?? [],
         );
 
-        // Subscores come from POST sync response
-        final int activeSub = syncData['active_subscore'] ?? 0;
-        final int sleepSub = syncData['sleep_subscore'] ?? 0;
-        final int nutriSub = syncData['nutrition_subscore'] ?? 0;
-        final int mindSub = syncData['mindfulness_subscore'] ?? 0;
+        // A session-completion refresh is GET-only, so use the dashboard
+        // fields when this request deliberately skipped the health sync POST.
+        final int activeSub =
+            syncData['active_subscore'] ?? resData['active_subscore'] ?? 0;
+        final int sleepSub =
+            syncData['sleep_subscore'] ?? resData['sleep_subscore'] ?? 0;
+        final int nutriSub =
+            syncData['nutrition_subscore'] ??
+            resData['nutrition_subscore'] ??
+            0;
+        final int mindSub =
+            syncData['mindfulness_subscore'] ??
+            resData['mindfulness_subscore'] ??
+            0;
 
         // Nutrition totals are calculated server-side from saved MealLog
         // values in the member's local calendar day. This preserves the AI
@@ -1152,6 +1194,9 @@ class DashboardScreenState extends State<DashboardScreen>
         // calls, so there is nothing to reconcile here.
 
         // ── Commit all API data to state ──────────────────────────────────────
+        if (!mounted || requestGeneration != _dashboardRequestGeneration) {
+          return;
+        }
         setState(() {
           _serverWellnessScore = score;
           _serverDailySummary = summary;
@@ -1164,6 +1209,7 @@ class DashboardScreenState extends State<DashboardScreen>
           // the section unavailable in that case instead of crashing or
           // fabricating a replacement graph.
           _weeklyTraining = weeklyTraining;
+          _recentActivity = recentActivity;
           _lastSynced = DateTime.now();
 
           // Metric widgets
@@ -4126,6 +4172,7 @@ class DashboardScreenState extends State<DashboardScreen>
                   SliverToBoxAdapter(
                     child: WeeklyTrainingSummarySection(
                       summary: _weeklyTraining,
+                      recentActivity: _recentActivity,
                       loading: _isSyncing,
                       onRefresh: () => _fetchRealData(forceSync: true),
                     ),
@@ -4380,9 +4427,7 @@ class DashboardScreenState extends State<DashboardScreen>
                           ),
                         ],
                       ),
-                      child: Center(
-                        child: Icon(icon, color: accent, size: 20),
-                      ),
+                      child: Center(child: Icon(icon, color: accent, size: 20)),
                     ),
                     const Spacer(),
                     Container(
@@ -5202,9 +5247,7 @@ class DashboardScreenState extends State<DashboardScreen>
                       ),
                     ],
                   ),
-                  child: Center(
-                    child: Icon(icon, color: accent, size: 20),
-                  ),
+                  child: Center(child: Icon(icon, color: accent, size: 20)),
                 ),
                 const SizedBox(width: 10),
                 Expanded(

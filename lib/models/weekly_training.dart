@@ -49,7 +49,12 @@ class WeeklyTrainingSummary {
       final weight = WeeklyMetric.tryParse(json['weight']);
       final heart = WeeklyMetric.tryParse(json['resting_heart_rate']);
       final sleep = WeeklyMetric.tryParse(json['sleep']);
-      if (weekStart == null || weekEnd == null || asOf == null || weight == null || heart == null || sleep == null) {
+      if (weekStart == null ||
+          weekEnd == null ||
+          asOf == null ||
+          weight == null ||
+          heart == null ||
+          sleep == null) {
         return null;
       }
       return WeeklyTrainingSummary(
@@ -65,12 +70,17 @@ class WeeklyTrainingSummary {
         actualTrainingDays: _int(json['actual_training_days']),
         days: _records(json['days']).map(WeeklyTrainingDay.fromJson).toList(),
         totalIncludedSessions: _int(json['total_included_sessions']),
-        trainingTypes: _records(json['training_types']).map(TrainingTypeCount.fromJson).toList(),
-        includedSessions: _records(json['included_sessions']).map(IncludedTrainingSession.fromJson).toList(),
+        trainingTypes: _records(
+          json['training_types'],
+        ).map(TrainingTypeCount.fromJson).toList(),
+        includedSessions: _records(
+          json['included_sessions'],
+        ).map(IncludedTrainingSession.fromJson).toList(),
         weight: weight,
         restingHeartRate: heart,
         sleep: sleep,
-        activeCorrectionIds: (json['active_correction_ids'] as Map?)?.map(
+        activeCorrectionIds:
+            (json['active_correction_ids'] as Map?)?.map(
               (key, entry) => MapEntry(key.toString(), entry.toString()),
             ) ??
             const {},
@@ -78,6 +88,58 @@ class WeeklyTrainingSummary {
     } catch (_) {
       return null;
     }
+  }
+}
+
+class RecentActivity {
+  final String sessionId;
+  final String activityCode;
+  final String activityName;
+  final String facilityName;
+  final DateTime completedAt;
+  final DateTime localDate;
+  final int? durationMinutes;
+
+  const RecentActivity({
+    required this.sessionId,
+    required this.activityCode,
+    required this.activityName,
+    required this.facilityName,
+    required this.completedAt,
+    required this.localDate,
+    required this.durationMinutes,
+  });
+
+  static RecentActivity? tryParse(Object? value) {
+    if (value is! Map) return null;
+    final json = Map<String, dynamic>.from(value);
+    final sessionId = json['session_id']?.toString() ?? '';
+    final activityCode = json['activity_code']?.toString() ?? '';
+    final activityName = json['activity_name']?.toString() ?? '';
+    final facilityName = json['facility_name']?.toString() ?? '';
+    final completedAt = DateTime.tryParse(
+      json['completed_at']?.toString() ?? '',
+    );
+    final localDate = DateTime.tryParse(json['local_date']?.toString() ?? '');
+    if (sessionId.isEmpty ||
+        activityCode.isEmpty ||
+        activityName.isEmpty ||
+        facilityName.isEmpty ||
+        completedAt == null ||
+        localDate == null) {
+      return null;
+    }
+    return RecentActivity(
+      sessionId: sessionId,
+      activityCode: activityCode,
+      activityName: activityName,
+      facilityName: facilityName,
+      completedAt: completedAt,
+      localDate: localDate,
+      durationMinutes: json['duration_minutes'] is num
+          ? (json['duration_minutes'] as num).toInt()
+          : null,
+    );
   }
 }
 
@@ -102,8 +164,10 @@ class WeeklyTrainingDay {
     required this.memberEntered,
   });
 
-  factory WeeklyTrainingDay.fromJson(Map<String, dynamic> json) => WeeklyTrainingDay(
-        date: DateTime.tryParse(json['date']?.toString() ?? '') ?? DateTime.now(),
+  factory WeeklyTrainingDay.fromJson(Map<String, dynamic> json) =>
+      WeeklyTrainingDay(
+        date:
+            DateTime.tryParse(json['date']?.toString() ?? '') ?? DateTime.now(),
         weekday: json['weekday']?.toString() ?? '',
         state: json['state']?.toString() ?? 'rest',
         planned: json['planned'] == true,
@@ -120,7 +184,8 @@ class TrainingTypeCount {
 
   const TrainingTypeCount({required this.type, required this.count});
 
-  factory TrainingTypeCount.fromJson(Map<String, dynamic> json) => TrainingTypeCount(
+  factory TrainingTypeCount.fromJson(Map<String, dynamic> json) =>
+      TrainingTypeCount(
         type: json['training_type']?.toString() ?? 'other',
         count: _int(json['count']),
       );
@@ -143,11 +208,15 @@ class IncludedTrainingSession {
     required this.correctionId,
   });
 
-  factory IncludedTrainingSession.fromJson(Map<String, dynamic> json) => IncludedTrainingSession(
+  factory IncludedTrainingSession.fromJson(Map<String, dynamic> json) =>
+      IncludedTrainingSession(
         id: json['id']?.toString(),
-        date: DateTime.tryParse(json['date']?.toString() ?? '') ?? DateTime.now(),
+        date:
+            DateTime.tryParse(json['date']?.toString() ?? '') ?? DateTime.now(),
         type: json['training_type']?.toString() ?? 'other',
-        durationMinutes: json['duration_minutes'] is num ? (json['duration_minutes'] as num).toInt() : null,
+        durationMinutes: json['duration_minutes'] is num
+            ? (json['duration_minutes'] as num).toInt()
+            : null,
         memberEntered: json['member_entered'] == true,
         correctionId: json['correction_id']?.toString(),
       );
@@ -189,7 +258,9 @@ class WeeklyMetric {
       sampleCount: _int(json['sample_count']),
       comparisonSampleCount: _int(json['comparison_sample_count']),
       displayBasis: json['display_basis']?.toString() ?? '',
-      sparkline: _records(json['sparkline']).map(WeeklyMetricPoint.fromJson).toList(),
+      sparkline: _records(
+        json['sparkline'],
+      ).map(WeeklyMetricPoint.fromJson).toList(),
       activeCorrectionId: json['active_correction_id']?.toString(),
     );
   }
@@ -208,18 +279,23 @@ class WeeklyMetricPoint {
     required this.correctionId,
   });
 
-  factory WeeklyMetricPoint.fromJson(Map<String, dynamic> json) => WeeklyMetricPoint(
-        date: DateTime.tryParse(json['date']?.toString() ?? '') ?? DateTime.now(),
+  factory WeeklyMetricPoint.fromJson(Map<String, dynamic> json) =>
+      WeeklyMetricPoint(
+        date:
+            DateTime.tryParse(json['date']?.toString() ?? '') ?? DateTime.now(),
         value: _doubleOrNull(json['value']) ?? 0,
         memberEntered: json['source']?.toString() == 'member_entered',
         correctionId: json['correction_id']?.toString(),
       );
 }
 
-List<Map<String, dynamic>> _records(Object? value) => (value as List? ?? const [])
-    .whereType<Map>()
-    .map((item) => Map<String, dynamic>.from(item))
-    .toList();
+List<Map<String, dynamic>> _records(Object? value) =>
+    (value as List? ?? const [])
+        .whereType<Map>()
+        .map((item) => Map<String, dynamic>.from(item))
+        .toList();
 
-int _int(Object? value) => value is num ? value.toInt() : int.tryParse(value?.toString() ?? '') ?? 0;
-double? _doubleOrNull(Object? value) => value is num ? value.toDouble() : double.tryParse(value?.toString() ?? '');
+int _int(Object? value) =>
+    value is num ? value.toInt() : int.tryParse(value?.toString() ?? '') ?? 0;
+double? _doubleOrNull(Object? value) =>
+    value is num ? value.toDouble() : double.tryParse(value?.toString() ?? '');

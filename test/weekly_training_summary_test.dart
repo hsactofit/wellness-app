@@ -15,6 +15,7 @@ void main() {
         home: Scaffold(
           body: WeeklyTrainingSummarySection(
             summary: null,
+            recentActivity: null,
             loading: false,
             onRefresh: () async {},
           ),
@@ -79,6 +80,7 @@ void main() {
             body: SingleChildScrollView(
               child: WeeklyTrainingSummarySection(
                 summary: summary,
+                recentActivity: null,
                 loading: false,
                 onRefresh: () async {},
               ),
@@ -144,6 +146,15 @@ void main() {
             body: SingleChildScrollView(
               child: WeeklyTrainingSummarySection(
                 summary: summary,
+                recentActivity: RecentActivity(
+                  sessionId: 'recent-session',
+                  activityCode: 'yoga',
+                  activityName: 'Yoga',
+                  facilityName: 'Medifit Indiranagar',
+                  completedAt: DateTime(2026, 9, 8, 10),
+                  localDate: DateTime(2026, 9, 8),
+                  durationMinutes: 45,
+                ),
                 loading: false,
                 onRefresh: () async {},
               ),
@@ -158,6 +169,18 @@ void main() {
         findsNothing,
       );
       expect(find.text('View workout reports'), findsNothing);
+      expect(find.text('Recent activity'), findsOneWidget);
+      expect(find.text('Yoga'), findsOneWidget);
+      expect(find.text('Medifit Indiranagar'), findsOneWidget);
+      expect(find.text('8 Sep 2026 · 45 min'), findsOneWidget);
+      expect(
+        tester.getTopLeft(find.text('Consistency')).dy,
+        lessThan(tester.getTopLeft(find.text('Recent activity')).dy),
+      );
+      expect(
+        tester.getTopLeft(find.text('Recent activity')).dy,
+        lessThan(tester.getTopLeft(find.text('Body & recovery')).dy),
+      );
       expect(find.text('Consistency'), findsOneWidget);
       expect(find.text('Body & recovery'), findsOneWidget);
       expect(find.text('Edit'), findsNWidgets(2));
@@ -174,6 +197,7 @@ void main() {
           body: SingleChildScrollView(
             child: WeeklyTrainingSummarySection(
               summary: _summary(includedSessions: const []),
+              recentActivity: null,
               loading: false,
               onRefresh: () async {},
             ),
@@ -186,6 +210,73 @@ void main() {
     expect(find.text('Completed workouts'), findsNothing);
     expect(find.text('Body & recovery'), findsOneWidget);
   });
+
+  test('recent activity parser is additive and tolerates older responses', () {
+    expect(RecentActivity.tryParse(null), isNull);
+    expect(RecentActivity.tryParse(<String, dynamic>{}), isNull);
+    final activity = RecentActivity.tryParse(<String, dynamic>{
+      'session_id': 'session-1',
+      'activity_code': 'zumba',
+      'activity_name': 'Zumba',
+      'facility_name': 'Medifit Indiranagar',
+      'completed_at': '2026-09-08T11:00:00+05:30',
+      'local_date': '2026-09-08',
+      'duration_minutes': 50,
+    });
+    expect(activity?.activityName, 'Zumba');
+    expect(activity?.durationMinutes, 50);
+  });
+
+  testWidgets(
+    'recent activity handles every activity icon and missing duration',
+    (tester) async {
+      tester.view.physicalSize = const Size(320, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      const activities = <String, IconData>{
+        'gym': Icons.fitness_center_rounded,
+        'yoga': Icons.self_improvement_rounded,
+        'zumba': Icons.music_note_rounded,
+        'meditation': Icons.spa_rounded,
+        'pilates': Icons.accessibility_new_rounded,
+        'aerobics': Icons.directions_run_rounded,
+      };
+      for (final entry in activities.entries) {
+        await tester.pumpWidget(
+          MaterialApp(
+            themeMode: ThemeMode.dark,
+            darkTheme: ThemeData.dark(),
+            home: MediaQuery(
+              data: const MediaQueryData(textScaler: TextScaler.linear(1.5)),
+              child: Scaffold(
+                body: SingleChildScrollView(
+                  child: WeeklyTrainingSummarySection(
+                    summary: _summary(includedSessions: const []),
+                    recentActivity: RecentActivity(
+                      sessionId: 'session-${entry.key}',
+                      activityCode: entry.key,
+                      activityName: entry.key,
+                      facilityName:
+                          'A very long corporate facility name that needs two lines',
+                      completedAt: DateTime(2026, 9, 8, 12),
+                      localDate: DateTime(2026, 9, 8),
+                      durationMinutes: null,
+                    ),
+                    loading: false,
+                    onRefresh: () async {},
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+        expect(find.byIcon(entry.value), findsOneWidget);
+        expect(find.text('8 Sep 2026 · Duration not recorded'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      }
+    },
+  );
 }
 
 WeeklyTrainingSummary _summary({

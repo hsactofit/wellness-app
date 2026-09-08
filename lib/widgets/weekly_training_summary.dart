@@ -27,11 +27,13 @@ class WeeklyTrainingSummarySection extends StatelessWidget {
   const WeeklyTrainingSummarySection({
     super.key,
     required this.summary,
+    required this.recentActivity,
     required this.loading,
     required this.onRefresh,
   });
 
   final WeeklyTrainingSummary? summary;
+  final RecentActivity? recentActivity;
   final bool loading;
   final Future<void> Function() onRefresh;
 
@@ -74,12 +76,124 @@ class WeeklyTrainingSummarySection extends StatelessWidget {
       child: Column(
         children: [
           _ConsistencyCard(summary: data, onRefresh: onRefresh),
+          if (recentActivity != null) ...[
+            const SizedBox(height: 12),
+            _RecentActivityCard(activity: recentActivity!),
+          ],
           const SizedBox(height: 12),
           _RecoveryCard(summary: data, onRefresh: onRefresh),
         ],
       ),
     );
   }
+}
+
+class _RecentActivityCard extends StatelessWidget {
+  const _RecentActivityCard({required this.activity});
+
+  final RecentActivity activity;
+
+  @override
+  Widget build(BuildContext context) {
+    final duration = activity.durationMinutes;
+    final detail = duration == null
+        ? '${_activityDate(activity.localDate)} · Duration not recorded'
+        : '${_activityDate(activity.localDate)} · $duration min';
+    final colors = Theme.of(context).colorScheme;
+    return GlassCard(
+      margin: EdgeInsets.zero,
+      child: Semantics(
+        container: true,
+        label:
+            'Recent activity. ${activity.activityName} at ${activity.facilityName}. $detail.',
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Recent activity',
+              style: TextStyle(fontSize: 21, fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 46,
+                  height: 46,
+                  decoration: BoxDecoration(
+                    color: colors.primary.withValues(alpha: 0.12),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    _activityIcon(activity.activityCode),
+                    color: colors.primary,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        activity.activityName,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        activity.facilityName,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(color: colors.onSurfaceVariant),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        detail,
+                        style: TextStyle(
+                          color: colors.onSurfaceVariant,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+IconData _activityIcon(String code) => switch (code) {
+  'yoga' => Icons.self_improvement_rounded,
+  'zumba' => Icons.music_note_rounded,
+  'meditation' => Icons.spa_rounded,
+  'pilates' => Icons.accessibility_new_rounded,
+  'aerobics' => Icons.directions_run_rounded,
+  _ => Icons.fitness_center_rounded,
+};
+
+String _activityDate(DateTime value) {
+  const months = <String>[
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ];
+  return '${value.day} ${months[value.month - 1]} ${value.year}';
 }
 
 class _CardHeading extends StatelessWidget {
