@@ -2182,8 +2182,10 @@ class _FacilityRatingDialogState extends State<_FacilityRatingDialog> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Your first completed visit helps your organisation understand the facility experience.',
+              Text(
+                widget.prompt.isMonthly
+                    ? 'Your recent visits help your organisation understand how this facility is performing.'
+                    : 'Your first completed visit helps your organisation understand the facility experience.',
               ),
               const SizedBox(height: 12),
               _ratingRow(

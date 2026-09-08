@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 
 import 'auth_service.dart';
 
-/// The one pending first-visit feedback item is server-owned.  This service
+/// The pending first-visit or monthly feedback item is server-owned. This service
 /// deliberately does not cache it: a completed submission must immediately
 /// release the server-side facility gate on every device.
 class FacilityRatingService {
@@ -103,17 +103,22 @@ class FacilityRatingPrompt {
     required this.facilityId,
     required this.facilityName,
     required this.sourceSessionId,
+    required this.requestKind,
   });
 
   final String id;
   final String facilityId;
   final String facilityName;
   final String sourceSessionId;
+  final String requestKind;
+
+  bool get isMonthly => requestKind == 'monthly';
 
   factory FacilityRatingPrompt.fromJson(Map body) => FacilityRatingPrompt(
     id: body['id'].toString(),
     facilityId: body['facility_id'].toString(),
     facilityName: body['facility_name']?.toString() ?? 'this facility',
     sourceSessionId: body['source_session_id'].toString(),
+    requestKind: body['request_kind']?.toString() ?? 'first_visit',
   );
 }
