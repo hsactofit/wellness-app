@@ -211,51 +211,52 @@ class _TrainingTypeCard extends StatelessWidget {
       1,
       (max, item) => item.count > max ? item.count : max,
     );
+    final workoutCount = summary.totalIncludedSessions;
+    final hasUnspecifiedType = summary.trainingTypes.any(
+      (item) => item.type == 'other',
+    );
     return GlassCard(
       margin: EdgeInsets.zero,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: _CardHeading(
-                  title: 'How you trained',
-                  subtitle: 'Included sessions by type',
-                  onEdit: () => _showWorkoutEditor(context, summary, onRefresh),
-                ),
-              ),
-              Text(
-                '${summary.totalIncludedSessions}',
-                style: TextStyle(
-                  fontSize: 26,
-                  color: Theme.of(context).colorScheme.primary,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-            ],
+          _CardHeading(
+            title: 'Completed workouts',
+            subtitle: 'This week, grouped by workout type',
+            onEdit: () => _showWorkoutEditor(context, summary, onRefresh),
           ),
           if (summary.trainingTypes.isEmpty)
             const Padding(
               padding: EdgeInsets.only(top: 8),
               child: Text('No completed sessions yet this week.'),
             )
-          else
+          else ...[
+            Padding(
+              padding: const EdgeInsets.only(top: 10),
+              child: Text(
+                '$workoutCount ${workoutCount == 1 ? 'workout' : 'workouts'} completed this week',
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.primary,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
             ...summary.trainingTypes.map(
               (item) => Padding(
                 padding: const EdgeInsets.only(top: 13),
                 child: Row(
                   children: [
                     SizedBox(
-                      width: 84,
+                      width: 96,
                       child: Text(
-                        _title(item.type),
+                        _trainingTypeLabel(item.type),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     Expanded(
                       child: Semantics(
-                        label: '${_title(item.type)}, ${item.count} sessions',
+                        label:
+                            '${_trainingTypeLabel(item.type)}, ${item.count} ${item.count == 1 ? 'workout' : 'workouts'}',
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(8),
                           child: LinearProgressIndicator(
@@ -280,11 +281,26 @@ class _TrainingTypeCard extends StatelessWidget {
                 ),
               ),
             ),
+          ],
+          if (hasUnspecifiedType)
+            Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: Text(
+                'Not specified means the workout was recorded without a workout type.',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ),
         ],
       ),
     );
   }
 }
+
+String _trainingTypeLabel(String type) =>
+    type == 'other' ? 'Not specified' : _title(type);
 
 class _RecoveryCard extends StatelessWidget {
   const _RecoveryCard({required this.summary, required this.onRefresh});

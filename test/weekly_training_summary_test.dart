@@ -109,7 +109,83 @@ void main() {
       expect(find.text('Completed sessions'), findsNothing);
     },
   );
+
+  testWidgets('workout breakdown explains its total and unspecified type', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(393, 852);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final summary = _summary(
+      totalIncludedSessions: 1,
+      trainingTypes: const [TrainingTypeCount(type: 'other', count: 1)],
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: WeeklyTrainingSummarySection(
+              summary: summary,
+              loading: false,
+              onRefresh: () async {},
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('Completed workouts'), findsOneWidget);
+    expect(find.text('This week, grouped by workout type'), findsOneWidget);
+    expect(find.text('1 workout completed this week'), findsOneWidget);
+    expect(find.text('Not specified'), findsOneWidget);
+    expect(
+      find.text(
+        'Not specified means the workout was recorded without a workout type.',
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('How you trained'), findsNothing);
+    expect(find.text('Other'), findsNothing);
+  });
 }
+
+WeeklyTrainingSummary _summary({
+  required int totalIncludedSessions,
+  required List<TrainingTypeCount> trainingTypes,
+}) => WeeklyTrainingSummary(
+  weekStart: DateTime(2026, 9, 7),
+  weekEnd: DateTime(2026, 9, 13),
+  asOf: DateTime(2026, 9, 8),
+  planAvailable: true,
+  planMessage: null,
+  completedPlannedDays: 1,
+  plannedDaysDue: 1,
+  totalPlannedDays: 1,
+  futurePlannedDays: 0,
+  actualTrainingDays: totalIncludedSessions == 0 ? 0 : 1,
+  days: List.generate(
+    7,
+    (index) => WeeklyTrainingDay(
+      date: DateTime(2026, 9, 7 + index),
+      weekday: const ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][index],
+      state: index == 0 ? 'completed' : 'rest',
+      planned: index == 0,
+      due: index == 0,
+      completed: index == 0,
+      extraWorkout: false,
+      memberEntered: false,
+    ),
+  ),
+  totalIncludedSessions: totalIncludedSessions,
+  trainingTypes: trainingTypes,
+  includedSessions: const [],
+  weight: _metric('weight', 'kg'),
+  restingHeartRate: _metric('resting_heart_rate', 'bpm'),
+  sleep: _metric('sleep', 'hours'),
+  activeCorrectionIds: const {},
+);
 
 WeeklyMetric _metric(String metric, String unit) => WeeklyMetric(
   metric: metric,
