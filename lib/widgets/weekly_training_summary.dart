@@ -29,13 +29,11 @@ class WeeklyTrainingSummarySection extends StatelessWidget {
     required this.summary,
     required this.loading,
     required this.onRefresh,
-    required this.onViewWorkoutReports,
   });
 
   final WeeklyTrainingSummary? summary;
   final bool loading;
   final Future<void> Function() onRefresh;
-  final VoidCallback onViewWorkoutReports;
 
   @override
   Widget build(BuildContext context) {
@@ -76,13 +74,6 @@ class WeeklyTrainingSummarySection extends StatelessWidget {
       child: Column(
         children: [
           _ConsistencyCard(summary: data, onRefresh: onRefresh),
-          if (data.includedSessions.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            _LatestWorkoutCard(
-              sessions: data.includedSessions,
-              onViewWorkoutReports: onViewWorkoutReports,
-            ),
-          ],
           const SizedBox(height: 12),
           _RecoveryCard(summary: data, onRefresh: onRefresh),
         ],
@@ -205,125 +196,6 @@ class _DayTile extends StatelessWidget {
     );
   }
 }
-
-class _LatestWorkoutCard extends StatelessWidget {
-  const _LatestWorkoutCard({
-    required this.sessions,
-    required this.onViewWorkoutReports,
-  });
-
-  final List<IncludedTrainingSession> sessions;
-  final VoidCallback onViewWorkoutReports;
-
-  @override
-  Widget build(BuildContext context) {
-    final latest = sessions.reduce(
-      (current, session) =>
-          session.date.isBefore(current.date) ? current : session,
-    );
-    final duration = latest.durationMinutes;
-    final detail = duration == null
-        ? '${_weekdayLabel(latest.date)} · Duration not recorded'
-        : '${_weekdayLabel(latest.date)} · $duration min';
-
-    return GlassCard(
-      margin: EdgeInsets.zero,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Latest workout',
-            style: TextStyle(fontSize: 21, fontWeight: FontWeight.w800),
-          ),
-          const SizedBox(height: 3),
-          Text(
-            'Most recent completed session this week',
-            style: TextStyle(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-          ),
-          const SizedBox(height: 14),
-          Container(
-            padding: const EdgeInsets.all(13),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.primary.withValues(alpha: 0.12),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.fitness_center_rounded,
-                    color: Theme.of(context).colorScheme.primary,
-                    size: 23,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        _trainingTypeLabel(latest.type),
-                        style: const TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        detail,
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                      if (latest.memberEntered) ...[
-                        const SizedBox(height: 6),
-                        const _MemberEnteredBadge(),
-                      ],
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Align(
-            alignment: Alignment.centerRight,
-            child: TextButton.icon(
-              onPressed: onViewWorkoutReports,
-              icon: const Icon(Icons.description_outlined, size: 19),
-              label: const Text('View workout reports'),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-String _weekdayLabel(DateTime date) {
-  const weekdays = [
-    'Monday',
-    'Tuesday',
-    'Wednesday',
-    'Thursday',
-    'Friday',
-    'Saturday',
-    'Sunday',
-  ];
-  return weekdays[date.weekday - 1];
-}
-
-String _trainingTypeLabel(String type) =>
-    type == 'other' ? 'Workout' : _title(type);
 
 class _RecoveryCard extends StatelessWidget {
   const _RecoveryCard({required this.summary, required this.onRefresh});

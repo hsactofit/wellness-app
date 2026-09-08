@@ -17,7 +17,6 @@ void main() {
             summary: null,
             loading: false,
             onRefresh: () async {},
-            onViewWorkoutReports: () {},
           ),
         ),
       ),
@@ -82,7 +81,6 @@ void main() {
                 summary: summary,
                 loading: false,
                 onRefresh: () async {},
-                onViewWorkoutReports: () {},
               ),
             ),
           ),
@@ -112,64 +110,60 @@ void main() {
     },
   );
 
-  testWidgets('latest workout shows the newest completed session', (
-    tester,
-  ) async {
-    var openedReports = false;
-    tester.view.physicalSize = const Size(393, 852);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
-    final summary = _summary(
-      includedSessions: [
-        IncludedTrainingSession(
-          id: 'older-session',
-          date: DateTime(2026, 9, 7),
-          type: 'cardio',
-          durationMinutes: 30,
-          memberEntered: false,
-          correctionId: null,
-        ),
-        IncludedTrainingSession(
-          id: 'latest-session',
-          date: DateTime(2026, 9, 8),
-          type: 'strength',
-          durationMinutes: 42,
-          memberEntered: false,
-          correctionId: null,
-        ),
-      ],
-    );
+  testWidgets(
+    'weekly summary omits latest workout even with completed sessions',
+    (tester) async {
+      tester.view.physicalSize = const Size(393, 852);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final summary = _summary(
+        includedSessions: [
+          IncludedTrainingSession(
+            id: 'older-session',
+            date: DateTime(2026, 9, 7),
+            type: 'cardio',
+            durationMinutes: 30,
+            memberEntered: false,
+            correctionId: null,
+          ),
+          IncludedTrainingSession(
+            id: 'latest-session',
+            date: DateTime(2026, 9, 8),
+            type: 'strength',
+            durationMinutes: 42,
+            memberEntered: false,
+            correctionId: null,
+          ),
+        ],
+      );
 
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: SingleChildScrollView(
-            child: WeeklyTrainingSummarySection(
-              summary: summary,
-              loading: false,
-              onRefresh: () async {},
-              onViewWorkoutReports: () => openedReports = true,
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: WeeklyTrainingSummarySection(
+                summary: summary,
+                loading: false,
+                onRefresh: () async {},
+              ),
             ),
           ),
         ),
-      ),
-    );
+      );
 
-    expect(find.text('Latest workout'), findsOneWidget);
-    expect(
-      find.text('Most recent completed session this week'),
-      findsOneWidget,
-    );
-    expect(find.text('Strength'), findsOneWidget);
-    expect(find.text('Tuesday · 42 min'), findsOneWidget);
-    expect(find.text('View workout reports'), findsOneWidget);
-    expect(find.text('Cardio'), findsNothing);
-    expect(find.text('Completed workouts'), findsNothing);
-
-    await tester.tap(find.text('View workout reports'));
-    expect(openedReports, isTrue);
-  });
+      expect(find.text('Latest workout'), findsNothing);
+      expect(
+        find.text('Most recent completed session this week'),
+        findsNothing,
+      );
+      expect(find.text('View workout reports'), findsNothing);
+      expect(find.text('Consistency'), findsOneWidget);
+      expect(find.text('Body & recovery'), findsOneWidget);
+      expect(find.text('Edit'), findsNWidgets(2));
+      expect(tester.takeException(), isNull);
+    },
+  );
 
   testWidgets('latest workout stays hidden without a completed session', (
     tester,
@@ -182,7 +176,6 @@ void main() {
               summary: _summary(includedSessions: const []),
               loading: false,
               onRefresh: () async {},
-              onViewWorkoutReports: () {},
             ),
           ),
         ),
@@ -192,40 +185,6 @@ void main() {
     expect(find.text('Latest workout'), findsNothing);
     expect(find.text('Completed workouts'), findsNothing);
     expect(find.text('Body & recovery'), findsOneWidget);
-  });
-
-  testWidgets('latest workout uses a clear label for a generic session', (
-    tester,
-  ) async {
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: SingleChildScrollView(
-            child: WeeklyTrainingSummarySection(
-              summary: _summary(
-                includedSessions: [
-                  IncludedTrainingSession(
-                    id: 'generic-session',
-                    date: DateTime(2026, 9, 8),
-                    type: 'other',
-                    durationMinutes: 1,
-                    memberEntered: false,
-                    correctionId: null,
-                  ),
-                ],
-              ),
-              loading: false,
-              onRefresh: () async {},
-              onViewWorkoutReports: () {},
-            ),
-          ),
-        ),
-      ),
-    );
-
-    expect(find.text('Workout'), findsOneWidget);
-    expect(find.text('Not specified'), findsNothing);
-    expect(find.text('Tuesday · 1 min'), findsOneWidget);
   });
 }
 
