@@ -29,6 +29,7 @@ import 'notifications_screen.dart';
 import 'body_composition_reports_screen.dart';
 import 'exercise_library_screen.dart';
 import 'update_health_hub_screen.dart';
+import 'workout_reports_screen.dart';
 import '../models/plan_models.dart';
 import '../models/body_composition_report.dart';
 import '../models/demo_health_metrics.dart';
@@ -4128,6 +4129,11 @@ class DashboardScreenState extends State<DashboardScreen>
                       summary: _weeklyTraining,
                       loading: _isSyncing,
                       onRefresh: () => _fetchRealData(forceSync: true),
+                      onViewWorkoutReports: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const WorkoutReportsScreen(),
+                        ),
+                      ),
                     ),
                   ),
 

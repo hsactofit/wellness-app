@@ -29,11 +29,13 @@ class WeeklyTrainingSummarySection extends StatelessWidget {
     required this.summary,
     required this.loading,
     required this.onRefresh,
+    required this.onViewWorkoutReports,
   });
 
   final WeeklyTrainingSummary? summary;
   final bool loading;
   final Future<void> Function() onRefresh;
+  final VoidCallback onViewWorkoutReports;
 
   @override
   Widget build(BuildContext context) {
@@ -74,8 +76,13 @@ class WeeklyTrainingSummarySection extends StatelessWidget {
       child: Column(
         children: [
           _ConsistencyCard(summary: data, onRefresh: onRefresh),
-          const SizedBox(height: 12),
-          _TrainingTypeCard(summary: data, onRefresh: onRefresh),
+          if (data.includedSessions.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            _LatestWorkoutCard(
+              sessions: data.includedSessions,
+              onViewWorkoutReports: onViewWorkoutReports,
+            ),
+          ],
           const SizedBox(height: 12),
           _RecoveryCard(summary: data, onRefresh: onRefresh),
         ],
@@ -199,104 +206,120 @@ class _DayTile extends StatelessWidget {
   }
 }
 
-class _TrainingTypeCard extends StatelessWidget {
-  const _TrainingTypeCard({required this.summary, required this.onRefresh});
+class _LatestWorkoutCard extends StatelessWidget {
+  const _LatestWorkoutCard({
+    required this.sessions,
+    required this.onViewWorkoutReports,
+  });
 
-  final WeeklyTrainingSummary summary;
-  final Future<void> Function() onRefresh;
+  final List<IncludedTrainingSession> sessions;
+  final VoidCallback onViewWorkoutReports;
 
   @override
   Widget build(BuildContext context) {
-    final largest = summary.trainingTypes.fold<int>(
-      1,
-      (max, item) => item.count > max ? item.count : max,
+    final latest = sessions.reduce(
+      (current, session) =>
+          session.date.isBefore(current.date) ? current : session,
     );
-    final workoutCount = summary.totalIncludedSessions;
-    final hasUnspecifiedType = summary.trainingTypes.any(
-      (item) => item.type == 'other',
-    );
+    final duration = latest.durationMinutes;
+    final detail = duration == null
+        ? '${_weekdayLabel(latest.date)} · Duration not recorded'
+        : '${_weekdayLabel(latest.date)} · $duration min';
+
     return GlassCard(
       margin: EdgeInsets.zero,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _CardHeading(
-            title: 'Completed workouts',
-            subtitle: 'This week, grouped by workout type',
-            onEdit: () => _showWorkoutEditor(context, summary, onRefresh),
+          const Text(
+            'Latest workout',
+            style: TextStyle(fontSize: 21, fontWeight: FontWeight.w800),
           ),
-          if (summary.trainingTypes.isEmpty)
-            const Padding(
-              padding: EdgeInsets.only(top: 8),
-              child: Text('No completed sessions yet this week.'),
-            )
-          else ...[
-            Padding(
-              padding: const EdgeInsets.only(top: 10),
-              child: Text(
-                '$workoutCount ${workoutCount == 1 ? 'workout' : 'workouts'} completed this week',
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.primary,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
+          const SizedBox(height: 3),
+          Text(
+            'Most recent completed session this week',
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
-            ...summary.trainingTypes.map(
-              (item) => Padding(
-                padding: const EdgeInsets.only(top: 13),
-                child: Row(
-                  children: [
-                    SizedBox(
-                      width: 96,
-                      child: Text(
-                        _trainingTypeLabel(item.type),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    Expanded(
-                      child: Semantics(
-                        label:
-                            '${_trainingTypeLabel(item.type)}, ${item.count} ${item.count == 1 ? 'workout' : 'workouts'}',
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: LinearProgressIndicator(
-                            value: item.count / largest,
-                            minHeight: 13,
-                            backgroundColor: Theme.of(
-                              context,
-                            ).colorScheme.surfaceContainerHighest,
-                          ),
+          ),
+          const SizedBox(height: 14),
+          Container(
+            padding: const EdgeInsets.all(13),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.primary.withValues(alpha: 0.12),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.fitness_center_rounded,
+                    color: Theme.of(context).colorScheme.primary,
+                    size: 23,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _trainingTypeLabel(latest.type),
+                        style: const TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w800,
                         ),
                       ),
-                    ),
-                    SizedBox(
-                      width: 30,
-                      child: Text(
-                        '${item.count}',
-                        textAlign: TextAlign.end,
-                        style: const TextStyle(fontWeight: FontWeight.w800),
+                      const SizedBox(height: 2),
+                      Text(
+                        detail,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
                       ),
-                    ),
-                  ],
+                      if (latest.memberEntered) ...[
+                        const SizedBox(height: 6),
+                        const _MemberEnteredBadge(),
+                      ],
+                    ],
+                  ),
                 ),
-              ),
+              ],
             ),
-          ],
-          if (hasUnspecifiedType)
-            Padding(
-              padding: const EdgeInsets.only(top: 12),
-              child: Text(
-                'Not specified means the workout was recorded without a workout type.',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-              ),
+          ),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton.icon(
+              onPressed: onViewWorkoutReports,
+              icon: const Icon(Icons.description_outlined, size: 19),
+              label: const Text('View workout reports'),
             ),
+          ),
         ],
       ),
     );
   }
+}
+
+String _weekdayLabel(DateTime date) {
+  const weekdays = [
+    'Monday',
+    'Tuesday',
+    'Wednesday',
+    'Thursday',
+    'Friday',
+    'Saturday',
+    'Sunday',
+  ];
+  return weekdays[date.weekday - 1];
 }
 
 String _trainingTypeLabel(String type) =>
