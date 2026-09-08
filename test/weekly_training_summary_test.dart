@@ -193,6 +193,40 @@ void main() {
     expect(find.text('Completed workouts'), findsNothing);
     expect(find.text('Body & recovery'), findsOneWidget);
   });
+
+  testWidgets('latest workout uses a clear label for a generic session', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: WeeklyTrainingSummarySection(
+              summary: _summary(
+                includedSessions: [
+                  IncludedTrainingSession(
+                    id: 'generic-session',
+                    date: DateTime(2026, 9, 8),
+                    type: 'other',
+                    durationMinutes: 1,
+                    memberEntered: false,
+                    correctionId: null,
+                  ),
+                ],
+              ),
+              loading: false,
+              onRefresh: () async {},
+              onViewWorkoutReports: () {},
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('Workout'), findsOneWidget);
+    expect(find.text('Not specified'), findsNothing);
+    expect(find.text('Tuesday · 1 min'), findsOneWidget);
+  });
 }
 
 WeeklyTrainingSummary _summary({

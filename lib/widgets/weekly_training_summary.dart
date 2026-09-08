@@ -323,7 +323,7 @@ String _weekdayLabel(DateTime date) {
 }
 
 String _trainingTypeLabel(String type) =>
-    type == 'other' ? 'Not specified' : _title(type);
+    type == 'other' ? 'Workout' : _title(type);
 
 class _RecoveryCard extends StatelessWidget {
   const _RecoveryCard({required this.summary, required this.onRefresh});
