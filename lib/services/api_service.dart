@@ -5,6 +5,7 @@ import 'auth_service.dart';
 import '../screens/challenges_screen.dart';
 import '../models/meal_analysis.dart';
 import '../models/body_composition_report.dart';
+import '../models/mood_checkin.dart';
 
 class ApiService {
   ApiService._privateConstructor();
@@ -801,14 +802,14 @@ class ApiService {
 
   // ── Mental Wellness API ────────────────────────────────────────
 
-  /// POST /api/mind/checkin
-  Future<Map<String, dynamic>> submitMoodCheckin({
+  /// POST /api/v1/mind/checkin
+  Future<MoodCheckin> submitMoodCheckin({
     required int moodScore,
     required int stressScore,
     required bool anonymous,
   }) async {
     final response = await _post(
-      '/api/mind/checkin',
+      '/api/v1/mind/checkin',
       body: {
         'mood_score': moodScore,
         'stress_score': stressScore,
@@ -816,11 +817,36 @@ class ApiService {
       },
     );
     if (response.statusCode == 200 || response.statusCode == 201) {
-      return Map<String, dynamic>.from(jsonDecode(response.body));
+      return MoodCheckin.fromJson(
+        Map<String, dynamic>.from(jsonDecode(response.body) as Map),
+      );
     }
     throw Exception(
       "Failed to submit mood check-in: ${response.statusCode} - ${response.body}",
     );
+  }
+
+  /// GET /api/v1/mind/checkins — signed-in member's newest records first.
+  Future<List<MoodCheckin>> fetchMoodCheckins({int limit = 50}) async {
+    final response = await _get(
+      '/api/v1/mind/checkins',
+      queryParams: {'limit': '$limit'},
+    );
+    if (response.statusCode != 200) {
+      throw Exception(
+        'Failed to load mood check-ins: ${response.statusCode} - ${response.body}',
+      );
+    }
+    final decoded = jsonDecode(response.body);
+    if (decoded is! List) {
+      throw Exception('Unexpected mood check-in response format');
+    }
+    return decoded
+        .map(
+          (item) =>
+              MoodCheckin.fromJson(Map<String, dynamic>.from(item as Map)),
+        )
+        .toList();
   }
 
   // ── SOS & Emergency API ────────────────────────────────────────
