@@ -350,11 +350,9 @@ class _BodyCompositionReportsScreenState
   }
 
   Future<void> _editComparison(BodyCompositionComparison comparison) async {
-    final updated = await Navigator.of(context).push<BodyCompositionComparison>(
-      MaterialPageRoute(
-        builder: (_) =>
-            BodyCompositionComparisonScreen(existingComparison: comparison),
-      ),
+    final updated = await editBodyCompositionComparisonReports(
+      context,
+      comparison,
     );
     if (updated == null || !mounted) return;
     await _refresh();

@@ -5,11 +5,109 @@ import '../models/body_composition_report.dart';
 import '../services/api_service.dart';
 import '../services/body_composition_comparison_presentation.dart';
 import '../services/body_composition_pdf_service.dart';
+import 'body_composition_report_review_screen.dart';
+
+Future<BodyCompositionComparison?> editBodyCompositionComparisonReports(
+  BuildContext context,
+  BodyCompositionComparison comparison,
+) async {
+  final report = await showModalBottomSheet<BodyCompositionReport>(
+    context: context,
+    showDragHandle: true,
+    builder: (sheetContext) => SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'Edit comparison reports',
+              style: Theme.of(
+                sheetContext,
+              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Comparison values come from these two saved health reports. Choose the report whose measurements you want to correct.',
+            ),
+            const SizedBox(height: 16),
+            _comparisonReportChoice(
+              context: sheetContext,
+              label: 'Earlier report',
+              report: comparison.olderReport,
+            ),
+            const SizedBox(height: 10),
+            _comparisonReportChoice(
+              context: sheetContext,
+              label: 'Latest report',
+              report: comparison.newerReport,
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+  if (report == null || !context.mounted) return null;
+
+  final updatedReport = await Navigator.of(context).push<BodyCompositionReport>(
+    MaterialPageRoute(
+      builder: (_) => BodyCompositionReportReviewScreen(
+        draft: BodyCompositionDraft(
+          clientSubmissionId: report.clientSubmissionId,
+          measuredAt: report.measuredAt,
+          ocrTranscript: report.ocrTranscript,
+          measurements: report.measurements,
+          inputMethod: report.inputMethod,
+        ),
+        existingReport: report,
+      ),
+    ),
+  );
+  if (updatedReport == null || !context.mounted) return null;
+
+  try {
+    return await ApiService.instance.updateBodyCompositionComparison(
+      comparisonId: comparison.id,
+      olderReportId: comparison.olderReportId,
+      newerReportId: comparison.newerReportId,
+    );
+  } catch (error) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'The health report was updated, but the comparison could not be refreshed: $error',
+          ),
+        ),
+      );
+    }
+    return null;
+  }
+}
+
+Widget _comparisonReportChoice({
+  required BuildContext context,
+  required String label,
+  required BodyCompositionReport report,
+}) {
+  final date =
+      '${report.measuredAt.day.toString().padLeft(2, '0')}/${report.measuredAt.month.toString().padLeft(2, '0')}/${report.measuredAt.year}';
+  return Card(
+    margin: EdgeInsets.zero,
+    child: ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      leading: const CircleAvatar(child: Icon(Icons.description_outlined)),
+      title: Text(label, style: const TextStyle(fontWeight: FontWeight.w800)),
+      subtitle: Text(date),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: () => Navigator.of(context).pop(report),
+    ),
+  );
+}
 
 class BodyCompositionComparisonScreen extends StatefulWidget {
-  const BodyCompositionComparisonScreen({super.key, this.existingComparison});
-
-  final BodyCompositionComparison? existingComparison;
+  const BodyCompositionComparisonScreen({super.key});
 
   @override
   State<BodyCompositionComparisonScreen> createState() =>
@@ -26,8 +124,6 @@ class _BodyCompositionComparisonScreenState
   @override
   void initState() {
     super.initState();
-    _olderId = widget.existingComparison?.olderReportId;
-    _newerId = widget.existingComparison?.newerReportId;
     _reportsFuture = ApiService.instance.fetchBodyCompositionReports();
   }
 
@@ -35,23 +131,13 @@ class _BodyCompositionComparisonScreenState
     if (_olderId == null || _newerId == null || _olderId == _newerId) return;
     setState(() => _submitting = true);
     try {
-      final existing = widget.existingComparison;
-      final comparison = existing == null
-          ? await ApiService.instance.createBodyCompositionComparison(
-              olderReportId: _olderId!,
-              newerReportId: _newerId!,
-              clientSubmissionId: const Uuid().v4(),
-            )
-          : await ApiService.instance.updateBodyCompositionComparison(
-              comparisonId: existing.id,
-              olderReportId: _olderId!,
-              newerReportId: _newerId!,
-            );
+      final comparison = await ApiService.instance
+          .createBodyCompositionComparison(
+            olderReportId: _olderId!,
+            newerReportId: _newerId!,
+            clientSubmissionId: const Uuid().v4(),
+          );
       if (!mounted) return;
-      if (existing != null) {
-        Navigator.of(context).pop(comparison);
-        return;
-      }
       await Navigator.of(context).push(
         MaterialPageRoute(
           builder: (_) =>
@@ -61,13 +147,7 @@ class _BodyCompositionComparisonScreenState
     } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              widget.existingComparison == null
-                  ? 'Could not compare reports: $error'
-                  : 'Could not update comparison: $error',
-            ),
-          ),
+          SnackBar(content: Text('Could not compare reports: $error')),
         );
       }
     } finally {
@@ -78,13 +158,7 @@ class _BodyCompositionComparisonScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          widget.existingComparison == null
-              ? 'Compare Reports'
-              : 'Edit comparison',
-        ),
-      ),
+      appBar: AppBar(title: const Text('Compare Reports')),
       body: FutureBuilder<List<BodyCompositionReport>>(
         future: _reportsFuture,
         builder: (context, snapshot) {
@@ -140,11 +214,7 @@ class _BodyCompositionComparisonScreenState
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Icon(Icons.compare_arrows_outlined),
-                label: Text(
-                  widget.existingComparison == null
-                      ? 'Compare Reports'
-                      : 'Save comparison',
-                ),
+                label: Text('Compare Reports'),
               ),
             ],
           );
@@ -212,11 +282,9 @@ class _BodyCompositionComparisonDetailScreenState
   }
 
   Future<void> _edit() async {
-    final updated = await Navigator.of(context).push<BodyCompositionComparison>(
-      MaterialPageRoute(
-        builder: (_) =>
-            BodyCompositionComparisonScreen(existingComparison: _comparison),
-      ),
+    final updated = await editBodyCompositionComparisonReports(
+      context,
+      _comparison,
     );
     if (updated == null || !mounted) return;
     setState(() => _comparison = updated);
