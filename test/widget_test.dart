@@ -18,7 +18,7 @@ void main() {
 
     expect(logo.height, 108);
     expect(logo.elevated, isTrue);
-    expect(AppBrand.logoAssetPath, 'assets/app_logo.png');
+    expect(AppBrand.logoAssetPath, 'assets/branding/medifit/logo.png');
     expect(image.image, AssetImage(AppBrand.logoAssetPath));
     expect(AppBrand.logoAspectRatio, 1.0);
   });

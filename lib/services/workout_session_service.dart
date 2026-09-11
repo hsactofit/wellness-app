@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 
+import '../app_brand.dart';
 import 'auth_service.dart';
 import 'background_workout_service.dart';
 import 'facility_rating_service.dart';
@@ -632,7 +633,8 @@ class WorkoutSessionService {
             distanceFilter: 50,
             foregroundNotificationConfig: ForegroundNotificationConfig(
               notificationTitle: 'Workout in progress',
-              notificationText: 'Medifit is monitoring your active workout.',
+              notificationText:
+                  '${AppBrand.name} is monitoring your active workout.',
               enableWakeLock: true,
               enableWifiLock: true,
             ),

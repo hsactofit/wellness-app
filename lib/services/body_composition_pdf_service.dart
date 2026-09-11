@@ -4,6 +4,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 
+import '../app_brand.dart';
 import '../models/body_composition_report.dart';
 import 'body_composition_comparison_presentation.dart';
 
@@ -13,8 +14,9 @@ class BodyCompositionPdfService {
   static Future<void> shareReport(BodyCompositionReport report) async {
     await Printing.sharePdf(
       bytes: await buildReportPdf(report),
-      filename: 'medifit-health-report-${_date(report.measuredAt)}.pdf',
-      subject: 'Medifit health report',
+      filename:
+          '${AppBrand.selectedBrand}-health-report-${_date(report.measuredAt)}.pdf',
+      subject: '${AppBrand.name} health report',
     );
   }
 
@@ -24,8 +26,8 @@ class BodyCompositionPdfService {
     await Printing.sharePdf(
       bytes: await buildComparisonPdf(comparison),
       filename:
-          'medifit-report-comparison-${_date(comparison.newerReport.measuredAt)}.pdf',
-      subject: 'Medifit report comparison',
+          '${AppBrand.selectedBrand}-report-comparison-${_date(comparison.newerReport.measuredAt)}.pdf',
+      subject: '${AppBrand.name} report comparison',
     );
   }
 
@@ -198,7 +200,7 @@ class BodyCompositionPdfService {
       mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
       children: [
         pw.Text(
-          'Medifit Wellness360',
+          '${AppBrand.name} Wellness360',
           style: pw.TextStyle(
             color: PdfColors.blue700,
             fontWeight: pw.FontWeight.bold,

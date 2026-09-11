@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
+import '../app_brand.dart';
 import 'health_service.dart';
 import '../models/gender.dart';
 
@@ -16,6 +17,19 @@ class AuthService {
   static final AuthService instance = AuthService._privateConstructor();
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
+
+  Future<void> _verifyProductApi() async {
+    final response = await http.get(apiUrl('/api/v1/product'));
+    if (response.statusCode != 200) {
+      throw AuthException('Could not verify the ${AppBrand.name} server.');
+    }
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    if (data['brand'] != AppBrand.apiBrand) {
+      throw AuthException(
+        '${AppBrand.name} is connected to the wrong product server.',
+      );
+    }
+  }
 
   /// Gets the currently authenticated user, if any.
   User? get currentUser => _auth.currentUser;
@@ -212,6 +226,7 @@ class AuthService {
     String password,
   ) async {
     try {
+      await _verifyProductApi();
       final response = await http.post(
         apiUrl('/api/auth/signup'),
         headers: {'Content-Type': 'application/json'},
@@ -247,6 +262,7 @@ class AuthService {
     String password,
   ) async {
     try {
+      await _verifyProductApi();
       final response = await http.post(
         apiUrl('/api/auth/login'),
         headers: {'Content-Type': 'application/json'},
@@ -274,6 +290,7 @@ class AuthService {
   // Passwordless login, step 1: emails a one-time code.
   Future<String> requestLoginCode(String email) async {
     try {
+      await _verifyProductApi();
       final response = await http.post(
         apiUrl('/api/auth/login-code/request'),
         headers: {'Content-Type': 'application/json'},
@@ -296,6 +313,7 @@ class AuthService {
   // response shape as loginWithEmail.
   Future<Map<String, dynamic>> loginWithCode(String email, String otp) async {
     try {
+      await _verifyProductApi();
       final response = await http.post(
         apiUrl('/api/auth/login-code/verify'),
         headers: {'Content-Type': 'application/json'},

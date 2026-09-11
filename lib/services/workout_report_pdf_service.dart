@@ -5,6 +5,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 
+import '../app_brand.dart';
 import 'facility_booking_service.dart';
 import 'workout_report_presentation.dart';
 
@@ -19,8 +20,8 @@ class WorkoutReportPdfService {
     await Printing.sharePdf(
       bytes: bytes,
       filename: _filename(report),
-      subject: 'Workout report - Medifit',
-      body: 'Your completed Medifit workout report.',
+      subject: 'Workout report - ${AppBrand.name}',
+      body: 'Your completed ${AppBrand.name} workout report.',
     );
   }
 
@@ -295,7 +296,7 @@ class WorkoutReportPdfService {
       mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
       children: [
         pw.Text(
-          'Medifit Wellness360',
+          '${AppBrand.name} Wellness360',
           style: pw.TextStyle(
             color: PdfColors.blue700,
             fontWeight: pw.FontWeight.bold,
@@ -318,7 +319,7 @@ class WorkoutReportPdfService {
       mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
       children: [
         pw.Text(
-          'For the signed-in Medifit member',
+          'For the signed-in ${AppBrand.name} member',
           style: const pw.TextStyle(color: PdfColors.grey600, fontSize: 8),
         ),
         pw.Text(
@@ -406,7 +407,7 @@ class WorkoutReportPdfService {
     final date = day == null
         ? 'workout'
         : '${day.year.toString().padLeft(4, '0')}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}';
-    return 'medifit-workout-report-$date.pdf';
+    return '${AppBrand.selectedBrand}-workout-report-$date.pdf';
   }
 
   static String _date(DateTime? value) {

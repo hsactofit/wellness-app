@@ -77,6 +77,7 @@ dev_dependencies:
 
 # The following section is specific to Flutter packages.
 flutter:
+  default-flavor: medifit
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
@@ -85,8 +86,8 @@ flutter:
 
   assets:
     - assets/
-    - assets/branding/mednovations_logo.png
-    - assets/branding/mednovations_launcher.png
+    - assets/branding/medifit/
+    - assets/branding/mednovations/
     - assets/workouts/anatomy_body_map_neutral_v2.png
 
   # An image asset can refer to one or more resolution-specific "variants", see

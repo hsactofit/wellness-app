@@ -6,8 +6,6 @@ plugins {
     id("com.google.gms.google-services")
 }
 
-val selectedBrand = providers.gradleProperty("appBrand").orElse("medifit").get()
-val isMednovationsBrand = selectedBrand.equals("mednovations", ignoreCase = true)
 val releaseStoreFilePath = providers.environmentVariable("WELLNESS_ANDROID_KEYSTORE_FILE").orNull
 val releaseStorePassword = providers.environmentVariable("WELLNESS_ANDROID_KEYSTORE_PASSWORD").orNull
 val releaseKeyAlias = providers.environmentVariable("WELLNESS_ANDROID_KEY_ALIAS").orNull
@@ -42,15 +40,23 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
-        manifestPlaceholders["appLabel"] = if (isMednovationsBrand) {
-            "Mednovations Wellness"
-        } else {
-            "Medifit Wellness"
+        manifestPlaceholders["appLabel"] = "Medifit Wellness"
+        manifestPlaceholders["appIcon"] = "@mipmap/ic_launcher"
+    }
+
+    flavorDimensions += "brand"
+    productFlavors {
+        create("medifit") {
+            dimension = "brand"
+            applicationId = "com.actofit.arhamsecure"
+            manifestPlaceholders["appLabel"] = "Medifit Wellness"
+            manifestPlaceholders["appIcon"] = "@mipmap/ic_launcher"
         }
-        manifestPlaceholders["appIcon"] = if (isMednovationsBrand) {
-            "@mipmap/ic_launcher_mednovations"
-        } else {
-            "@mipmap/ic_launcher"
+        create("mednovations") {
+            dimension = "brand"
+            applicationId = "com.mednovations.wellness"
+            manifestPlaceholders["appLabel"] = "Mednovations Wellness"
+            manifestPlaceholders["appIcon"] = "@mipmap/ic_launcher_mednovations"
         }
     }
 

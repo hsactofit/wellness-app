@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Wellnessconnect</string>
+	<string>$(APP_DISPLAY_NAME)</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -37,7 +37,7 @@
 			<string>Editor</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>medifit</string>
+				<string>$(URL_SCHEME)</string>
 			</array>
 		</dict>
 	</array>
@@ -46,7 +46,7 @@
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>
-	<string>Allow camera access to scan Medifit facility QR codes and gym body-composition reports.</string>
+	<string>Allow camera access to scan $(APP_DISPLAY_NAME) facility QR codes and gym body-composition reports.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Allow photo access to choose a screenshot of your gym body-composition report.</string>
 	<key>NSHealthShareUsageDescription</key>
@@ -54,11 +54,15 @@
 	<key>NSHealthUpdateUsageDescription</key>
 	<string>Allow access to write health data to log hydration intake details directly.</string>
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>Allow local network access so this debug build can reach the Medifit API running on your computer.</string>
+	<string>Allow local network access so this debug build can reach the $(APP_DISPLAY_NAME) API running on your computer.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Allow location access to help confirm when you have left a Medifit facility and remind you to complete your workout session. Location is also used if you trigger SOS.</string>
+	<string>Allow location access to help confirm when you have left a $(APP_DISPLAY_NAME) facility and remind you to complete your workout session. Location is also used if you trigger SOS.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>Allow location access during an active workout so Medifit can remind you when you leave the facility area. Coordinates are not uploaded or retained.</string>
+	<string>Allow location access during an active workout so $(APP_DISPLAY_NAME) can remind you when you leave the facility area. Coordinates are not uploaded or retained.</string>
+	<key>ProductBrand</key>
+	<string>$(PRODUCT_BRAND)</string>
+	<key>ProductURLScheme</key>
+	<string>$(URL_SCHEME)</string>
 	<key>NSSupportsLiveActivities</key>
 	<true/>
 	<key>UIBackgroundModes</key>

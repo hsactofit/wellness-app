@@ -6,6 +6,9 @@ import UserNotifications
 
 @main
 @objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate, CLLocationManagerDelegate {
+  private var productURLScheme: String {
+    Bundle.main.object(forInfoDictionaryKey: "ProductURLScheme") as? String ?? "medifit"
+  }
   private static let channelName = "com.medifit/workout_background"
   private static let hourlyNotificationCategory = "MEDIFIT_WORKOUT_HOURLY_PROMPT"
   private static let departureNotificationCategory = "MEDIFIT_WORKOUT_DEPARTURE_PROMPT"
@@ -57,7 +60,7 @@ import UserNotifications
   /// Shared by UIApplication and the scene delegate because current Flutter
   /// iOS apps route warm URL opens through UISceneDelegate.
   func handleWorkoutURL(_ url: URL) -> Bool {
-    guard url.scheme == "medifit", url.host == "workout", url.path == "/checkout" else {
+    guard url.scheme == productURLScheme, url.host == "workout", url.path == "/checkout" else {
       return false
     }
     emitToFlutter("checkoutRequested")

@@ -7,6 +7,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../app_brand.dart';
 import '../services/camera_permission_gate.dart';
 import '../services/background_workout_service.dart';
 import '../services/facility_access_helpers.dart';
@@ -980,7 +981,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
         _showSnack('Workout started. Your timer is running.');
         if (!scannerOriginArmed) {
           _showSnack(
-            'Workout started. Turn on Location and allow it for Medifit to receive the automatic 2 km checkout reminder.',
+            'Workout started. Turn on Location and allow it for ${AppBrand.name} to receive the automatic 2 km checkout reminder.',
             isError: true,
           );
         }

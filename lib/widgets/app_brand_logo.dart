@@ -45,7 +45,7 @@ class AppBrandLogo extends StatelessWidget {
       elevated = true;
 
   /// Default Medifit logo kept as a constant for existing callers.
-  static const String assetPath = 'assets/app_logo.png';
+  static const String assetPath = 'assets/branding/medifit/logo.png';
 
   static String get selectedAssetPath => AppBrand.logoAssetPath;
 

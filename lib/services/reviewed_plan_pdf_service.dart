@@ -4,6 +4,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 
+import '../app_brand.dart';
 import '../models/plan_models.dart';
 
 /// Creates a member-owned copy of an approved reviewed plan.
@@ -22,8 +23,8 @@ class ReviewedPlanPdfService {
     await Printing.sharePdf(
       bytes: bytes,
       filename: _filename(kind, plan),
-      subject: '${_planLabel(kind)} - Medifit',
-      body: 'Your specialist-approved Medifit plan.',
+      subject: '${_planLabel(kind)} - ${AppBrand.name}',
+      body: 'Your specialist-approved ${AppBrand.name} plan.',
     );
   }
 
@@ -58,7 +59,7 @@ class ReviewedPlanPdfService {
             mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
             children: [
               pw.Text(
-                'Medifit Wellness360',
+                '${AppBrand.name} Wellness360',
                 style: pw.TextStyle(
                   color: accent,
                   fontWeight: pw.FontWeight.bold,
@@ -84,7 +85,7 @@ class ReviewedPlanPdfService {
             mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
             children: [
               pw.Text(
-                'For the signed-in Medifit member',
+                'For the signed-in ${AppBrand.name} member',
                 style: const pw.TextStyle(
                   color: PdfColors.grey600,
                   fontSize: 8,
@@ -428,7 +429,7 @@ class ReviewedPlanPdfService {
     final slug = rawTitle
         .replaceAll(RegExp(r'[^a-z0-9]+'), '-')
         .replaceAll(RegExp(r'^-+|-+$'), '');
-    return 'medifit-${slug.isEmpty ? type : slug}-report.pdf';
+    return '${AppBrand.selectedBrand}-${slug.isEmpty ? type : slug}-report.pdf';
   }
 
   static String _formatDate(dynamic value) {

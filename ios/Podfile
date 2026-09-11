@@ -6,8 +6,14 @@ ENV['COCOAPODS_DISABLE_STATS'] = 'true'
 
 project 'Runner', {
   'Debug' => :debug,
+  'Debug-medifit' => :debug,
+  'Debug-mednovations' => :debug,
   'Profile' => :release,
+  'Profile-medifit' => :release,
+  'Profile-mednovations' => :release,
   'Release' => :release,
+  'Release-medifit' => :release,
+  'Release-mednovations' => :release,
 }
 
 def flutter_root

@@ -4,6 +4,11 @@ import WidgetKit
 
 @available(iOS 16.1, *)
 struct WorkoutLiveActivityWidget: Widget {
+  private var checkoutURL: URL {
+    let scheme = Bundle.main.object(forInfoDictionaryKey: "ProductURLScheme") as? String ?? "medifit"
+    return URL(string: "\(scheme)://workout/checkout")!
+  }
+
   var body: some WidgetConfiguration {
     ActivityConfiguration(for: WorkoutLiveActivityAttributes.self) { context in
       HStack(spacing: 12) {
@@ -21,7 +26,7 @@ struct WorkoutLiveActivityWidget: Widget {
         VStack(alignment: .trailing, spacing: 6) {
           Text(context.state.checkInAt, style: .timer)
             .monospacedDigit()
-          Link(destination: URL(string: "medifit://workout/checkout")!) {
+          Link(destination: checkoutURL) {
             Text("Checkout")
               .font(.caption.weight(.bold))
               .foregroundStyle(.white)
@@ -33,7 +38,7 @@ struct WorkoutLiveActivityWidget: Widget {
         }
       }
       .padding(.horizontal)
-      .widgetURL(URL(string: "medifit://workout/checkout"))
+      .widgetURL(checkoutURL)
     } dynamicIsland: { context in
       DynamicIsland {
         DynamicIslandExpandedRegion(.leading) {
@@ -49,7 +54,7 @@ struct WorkoutLiveActivityWidget: Widget {
           }
         }
         DynamicIslandExpandedRegion(.bottom) {
-          Link(destination: URL(string: "medifit://workout/checkout")!) {
+          Link(destination: checkoutURL) {
             Label("Checkout", systemImage: "rectangle.portrait.and.arrow.right")
               .frame(maxWidth: .infinity)
               .foregroundStyle(.red)
@@ -63,7 +68,7 @@ struct WorkoutLiveActivityWidget: Widget {
       } minimal: {
         Image(systemName: "figure.strengthtraining.traditional")
       }
-      .widgetURL(URL(string: "medifit://workout/checkout"))
+      .widgetURL(checkoutURL)
     }
   }
 }

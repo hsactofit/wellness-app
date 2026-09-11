@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../app_brand.dart';
 import 'app_typography.dart';
 
 /// App-wide light / dark themes with consistent typography & color.
@@ -28,6 +29,10 @@ class AppTheme {
   static const Color lightDanger = Color(0xFFB42318);
   static const Color lightGold = Color(0xFFE0CFA8);
   static const Color lightNav = Color(0xFF161616);
+  static const Color mednovationsBlue = Color(0xFF0878A8);
+  static const Color mednovationsGreen = Color(0xFF55A630);
+  static const Color mednovationsSoft = Color(0xFFE1F3F8);
+  static const Color mednovationsInk = Color(0xFF123E58);
 
   static const Color darkBg = Color(0xFF0A0D10);
   static const Color darkSurface = Color(0xFF0F1318);
@@ -37,8 +42,11 @@ class AppTheme {
 
   /// Light CTA / selection color. Dark keeps the previous accent.
   static Color action(bool isDark, {Color? dark}) {
-    if (isDark) return dark ?? _darkActionBlue;
-    return brandPrimary;
+    if (isDark) {
+      return dark ??
+          (AppBrand.isMednovations ? const Color(0xFF38B9DC) : _darkActionBlue);
+    }
+    return AppBrand.isMednovations ? mednovationsBlue : brandPrimary;
   }
 
   static Color actionOf(BuildContext context, {Color? dark}) {
@@ -54,13 +62,17 @@ class AppTheme {
   }
 
   static ThemeData light() {
-    const ink = brandInk;
+    final ink = AppBrand.isMednovations ? mednovationsInk : brandInk;
+    final primary = AppBrand.isMednovations ? mednovationsBlue : brandPrimary;
+    final primarySoft = AppBrand.isMednovations ? mednovationsSoft : brandSoft;
     final colorScheme = ColorScheme.light(
-      primary: brandPrimary,
+      primary: primary,
       onPrimary: Colors.white,
-      primaryContainer: brandSoft,
+      primaryContainer: primarySoft,
       onPrimaryContainer: ink,
-      secondary: const Color(0xFFB89A62),
+      secondary: AppBrand.isMednovations
+          ? mednovationsGreen
+          : const Color(0xFFB89A62),
       onSecondary: Colors.white,
       secondaryContainer: const Color(0xFFF3E8D4),
       onSecondaryContainer: ink,
@@ -108,7 +120,7 @@ class AppTheme {
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: brandPrimary,
+          backgroundColor: primary,
           foregroundColor: Colors.white,
           textStyle: textTheme.labelLarge,
           shape: RoundedRectangleBorder(
@@ -118,7 +130,7 @@ class AppTheme {
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          backgroundColor: brandPrimary,
+          backgroundColor: primary,
           foregroundColor: Colors.white,
           textStyle: textTheme.labelLarge,
           shape: RoundedRectangleBorder(
@@ -128,31 +140,29 @@ class AppTheme {
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: brandPrimary,
+          foregroundColor: primary,
           textStyle: textTheme.labelLarge,
         ),
       ),
-      floatingActionButtonTheme: const FloatingActionButtonThemeData(
-        backgroundColor: brandPrimary,
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: primary,
         foregroundColor: Colors.white,
       ),
-      progressIndicatorTheme: const ProgressIndicatorThemeData(
-        color: brandPrimary,
-      ),
+      progressIndicatorTheme: ProgressIndicatorThemeData(color: primary),
       checkboxTheme: CheckboxThemeData(
         fillColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.selected)) return brandPrimary;
+          if (states.contains(WidgetState.selected)) return primary;
           return null;
         }),
       ),
       switchTheme: SwitchThemeData(
         thumbColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.selected)) return brandPrimary;
+          if (states.contains(WidgetState.selected)) return primary;
           return null;
         }),
         trackColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return brandPrimary.withValues(alpha: 0.35);
+            return primary.withValues(alpha: 0.35);
           }
           return null;
         }),
@@ -162,14 +172,12 @@ class AppTheme {
         hintStyle: textTheme.bodyMedium?.copyWith(
           color: const Color(0xFF9AA3B2),
         ),
-        floatingLabelStyle: textTheme.labelMedium?.copyWith(
-          color: brandPrimary,
-        ),
+        floatingLabelStyle: textTheme.labelMedium?.copyWith(color: primary),
       ),
       chipTheme: ChipThemeData(
         labelStyle: textTheme.labelMedium,
         secondaryLabelStyle: textTheme.labelMedium,
-        selectedColor: brandSoft,
+        selectedColor: primarySoft,
       ),
       dividerTheme: DividerThemeData(
         color: ink.withValues(alpha: 0.08),
@@ -179,11 +187,16 @@ class AppTheme {
   }
 
   static ThemeData dark() {
+    final darkPrimary = AppBrand.isMednovations
+        ? const Color(0xFF38B9DC)
+        : darkBrandPrimary;
     final colorScheme = ColorScheme.fromSeed(
-      seedColor: darkBrandPrimary,
+      seedColor: darkPrimary,
       brightness: Brightness.dark,
-      primary: darkBrandPrimary,
-      secondary: brandSecondary,
+      primary: darkPrimary,
+      secondary: AppBrand.isMednovations
+          ? const Color(0xFF76CF55)
+          : brandSecondary,
       surface: darkSurface,
     );
 
