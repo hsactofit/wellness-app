@@ -12,6 +12,7 @@ import '../theme/app_theme.dart';
 import '../services/background_workout_service.dart';
 import '../services/push_service.dart';
 import '../services/workout_session_service.dart';
+import '../app_brand.dart';
 
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
@@ -33,40 +34,42 @@ class MainShellState extends State<MainShell> with WidgetsBindingObserver {
     // the one place that reliably runs for every signed-in user without
     // duplicating the call across every login path (email, code, social).
     PushService.instance.initialize();
-    WorkoutSessionService.instance.configurePromptHandler(
-      _showWorkoutCompletionPrompt,
-    );
-    BackgroundWorkoutService.instance.checkoutRequestedSignal.addListener(
-      _openCheckoutFromNotification,
-    );
-    BackgroundWorkoutService.instance.departureCheckoutRequiredSignal
-        .addListener(_showNativeDeparturePrompt);
-    BackgroundWorkoutService.instance.continueRequestedSignal.addListener(
-      _continueFromNotification,
-    );
-    BackgroundWorkoutService.instance.slotEndContinueRequestedSignal
-        .addListener(_continueSlotEndFromNotification);
-    // Native checkout actions may arrive during a cold launch. Flush them only
-    // after these listeners are installed so the request cannot be lost.
-    unawaited(BackgroundWorkoutService.instance.markUiReady());
-    WorkoutSessionService.instance.startMonitoring();
-    _ensureIosLiveActivity();
+    if (!AppBrand.isMednovations) {
+      WorkoutSessionService.instance.configurePromptHandler(
+        _showWorkoutCompletionPrompt,
+      );
+      BackgroundWorkoutService.instance.checkoutRequestedSignal.addListener(
+        _openCheckoutFromNotification,
+      );
+      BackgroundWorkoutService.instance.departureCheckoutRequiredSignal
+          .addListener(_showNativeDeparturePrompt);
+      BackgroundWorkoutService.instance.continueRequestedSignal.addListener(
+        _continueFromNotification,
+      );
+      BackgroundWorkoutService.instance.slotEndContinueRequestedSignal
+          .addListener(_continueSlotEndFromNotification);
+      unawaited(BackgroundWorkoutService.instance.markUiReady());
+      WorkoutSessionService.instance.startMonitoring();
+      _ensureIosLiveActivity();
+    }
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    BackgroundWorkoutService.instance.checkoutRequestedSignal.removeListener(
-      _openCheckoutFromNotification,
-    );
-    BackgroundWorkoutService.instance.departureCheckoutRequiredSignal
-        .removeListener(_showNativeDeparturePrompt);
-    BackgroundWorkoutService.instance.continueRequestedSignal.removeListener(
-      _continueFromNotification,
-    );
-    BackgroundWorkoutService.instance.slotEndContinueRequestedSignal
-        .removeListener(_continueSlotEndFromNotification);
-    WorkoutSessionService.instance.configurePromptHandler(null);
+    if (!AppBrand.isMednovations) {
+      BackgroundWorkoutService.instance.checkoutRequestedSignal.removeListener(
+        _openCheckoutFromNotification,
+      );
+      BackgroundWorkoutService.instance.departureCheckoutRequiredSignal
+          .removeListener(_showNativeDeparturePrompt);
+      BackgroundWorkoutService.instance.continueRequestedSignal.removeListener(
+        _continueFromNotification,
+      );
+      BackgroundWorkoutService.instance.slotEndContinueRequestedSignal
+          .removeListener(_continueSlotEndFromNotification);
+      WorkoutSessionService.instance.configurePromptHandler(null);
+    }
     super.dispose();
   }
 
@@ -129,7 +132,7 @@ class MainShellState extends State<MainShell> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
+    if (state == AppLifecycleState.resumed && !AppBrand.isMednovations) {
       // Timers can be paused by iOS/Android. Re-evaluating on return makes
       // the next overdue hourly question appear instead of silently keeping
       // an abandoned workout active.

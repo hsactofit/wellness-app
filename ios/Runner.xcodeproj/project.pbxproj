@@ -280,6 +280,7 @@
 				BC54136E038AC3A4B55662C2 /* Select Firebase Configuration */,
 				9705A1C41CF9048500538489 /* Embed Frameworks */,
 				F1000030A000000000000001 /* Embed App Extensions */,
+				C4E8B2A1D9F0000000000001 /* Remove Workout Live Activity for Mednovations */,
 				3B06AD1E1E4923F5004D2608 /* Thin Binary */,
 				18C74B5FBACBA1CC21495BA6 /* [CP] Embed Pods Frameworks */,
 				DC2FF8A0C884B50944FC4DBC /* [CP] Copy Pods Resources */,
@@ -486,6 +487,18 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "set -e\nif [ \"${PRODUCT_BRAND}\" = \"mednovations\" ]; then\n  FIREBASE_PLIST=\"${PROJECT_DIR}/config/mednovations/GoogleService-Info.plist\"\nelse\n  FIREBASE_PLIST=\"${PROJECT_DIR}/Runner/GoogleService-Info.plist\"\nfi\nif [ ! -r \"${FIREBASE_PLIST}\" ]; then\n  echo \"error: Missing ${PRODUCT_BRAND} Firebase configuration: ${FIREBASE_PLIST}\"\n  exit 1\nfi\ncp \"${FIREBASE_PLIST}\" \"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/GoogleService-Info.plist\"\n";
+		};
+		C4E8B2A1D9F0000000000001 /* Remove Workout Live Activity for Mednovations */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = ();
+			inputPaths = ();
+			name = "Remove Workout Live Activity for";
+			outputPaths = ();
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -e\nif [ \"${PRODUCT_BRAND}\" = \"mednovations\" ]; then\n  rm -rf \"${TARGET_BUILD_DIR}/${WRAPPER_NAME}/PlugIns/WorkoutLiveActivity.appex\"\nfi\n";
 		};
 		D130626F2A415E83B87679E1 /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;

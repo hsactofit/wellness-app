@@ -37,6 +37,10 @@ import '../models/weekly_training.dart';
 import '../widgets/water/wave_painter.dart';
 import '../widgets/weekly_training_summary.dart';
 import '../theme/app_theme.dart';
+import '../app_brand.dart';
+import '../models/care_program.dart';
+import '../services/care_program_service.dart';
+import 'care_programs_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key, this.onOpenChallenges});
@@ -106,6 +110,7 @@ class DashboardScreenState extends State<DashboardScreen>
   Duration _gymElapsed = Duration.zero;
   // ignore: unused_field
   bool _gymDoneToday = false;
+  CareProgramSummary? _careProgramSummary;
 
   // Active challenges
   List<Challenge> _activeChallenges = [];
@@ -186,14 +191,20 @@ class DashboardScreenState extends State<DashboardScreen>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _loadSetupState();
-    _loadGymState();
+    if (AppBrand.isMednovations) {
+      _loadCareProgramSummary();
+    } else {
+      _loadGymState();
+    }
     _loadUnreadNotifications();
     PushService.instance.notificationRefreshSignal.addListener(
       _handleNotificationRefresh,
     );
-    WorkoutSessionService.instance.sessionRefreshSignal.addListener(
-      _handleSessionRefresh,
-    );
+    if (!AppBrand.isMednovations) {
+      WorkoutSessionService.instance.sessionRefreshSignal.addListener(
+        _handleSessionRefresh,
+      );
+    }
     // Do not read HealthKit/Health Connect until this member has connected
     // it. In particular, a fresh SSO session on iOS has no HealthKit grant
     // yet, and eager reads produce platform errors while the dashboard opens.
@@ -223,9 +234,11 @@ class DashboardScreenState extends State<DashboardScreen>
     PushService.instance.notificationRefreshSignal.removeListener(
       _handleNotificationRefresh,
     );
-    WorkoutSessionService.instance.sessionRefreshSignal.removeListener(
-      _handleSessionRefresh,
-    );
+    if (!AppBrand.isMednovations) {
+      WorkoutSessionService.instance.sessionRefreshSignal.removeListener(
+        _handleSessionRefresh,
+      );
+    }
     _gymTimer?.cancel();
     _activeGoalsScrollTimer?.cancel();
     _activeGoalsScrollController?.dispose();
@@ -318,6 +331,15 @@ class DashboardScreenState extends State<DashboardScreen>
       _gymTimer?.cancel();
     }
     _updateAutoScrollState();
+  }
+
+  Future<void> _loadCareProgramSummary() async {
+    try {
+      final summary = await CareProgramService.instance.fetchMine();
+      if (mounted) setState(() => _careProgramSummary = summary);
+    } catch (error) {
+      debugPrint('Unable to refresh Care Programs: $error');
+    }
   }
 
   void _startGymTimer() {
@@ -465,7 +487,11 @@ class DashboardScreenState extends State<DashboardScreen>
     if (mounted) {
       _checkStatusAndSync();
       _fetchActiveChallenges();
-      _loadGymState();
+      if (AppBrand.isMednovations) {
+        _loadCareProgramSummary();
+      } else {
+        _loadGymState();
+      }
     }
   }
 
@@ -4012,7 +4038,8 @@ class DashboardScreenState extends State<DashboardScreen>
                   // 1. Header (Greeting, Profile, Notification Icon)
                   _buildHeader(theme, isDark),
 
-                  // 2. Top priority: SOS + Gym Check-in
+                  // 2. Top priority: Care Program + SOS for Mednovations,
+                  // SOS + Gym Check-in for Medifit.
                   SliverToBoxAdapter(
                     child: _buildTopPriorityActions(theme, isDark),
                   ),
@@ -5144,7 +5171,7 @@ class DashboardScreenState extends State<DashboardScreen>
     );
   }
 
-  /// Top-of-dashboard priority actions: SOS + Gym Check-in.
+  /// Top-of-dashboard priority actions: SOS plus the product's care entry.
   Widget _buildTopPriorityActions(ThemeData theme, bool isDark) {
     final textColor = isDark ? Colors.white : Colors.black87;
     final secondary = isDark ? Colors.white60 : Colors.black54;
@@ -5154,58 +5181,147 @@ class DashboardScreenState extends State<DashboardScreen>
       child: Row(
         children: [
           Expanded(
-            child: _buildTopActionCard(
-              isDark: isDark,
-              textColor: textColor,
-              secondary: secondary,
-              accent: const Color(0xFFFF3B30),
-              icon: Icons.shield_outlined,
-              badge: 'SOS',
-              title: 'Emergency',
-              subtitle: 'Alert contacts',
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const SosScreen()),
-                );
-              },
-            ),
+            child: AppBrand.isMednovations
+                ? _buildTopActionCard(
+                    isDark: isDark,
+                    textColor: textColor,
+                    secondary: secondary,
+                    accent: const Color(0xFF168B72),
+                    icon: Icons.favorite_outline_rounded,
+                    badge: _careProgramBadge,
+                    title: _careProgramTitle,
+                    subtitle: _careProgramSubtitle,
+                    live: _careProgramSummary?.current?.status == 'active',
+                    onTap: () async {
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const CareProgramsScreen(),
+                        ),
+                      );
+                      _loadCareProgramSummary();
+                    },
+                  )
+                : _buildTopActionCard(
+                    isDark: isDark,
+                    textColor: textColor,
+                    secondary: secondary,
+                    accent: const Color(0xFFFF3B30),
+                    icon: Icons.shield_outlined,
+                    badge: 'SOS',
+                    title: 'Emergency',
+                    subtitle: 'Alert contacts',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const SosScreen()),
+                      );
+                    },
+                  ),
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: _buildTopActionCard(
-              isDark: isDark,
-              textColor: textColor,
-              secondary: secondary,
-              accent: Colors.indigoAccent,
-              icon: _gymCheckedIn
-                  ? Icons.fitness_center_rounded
-                  : Icons.qr_code_scanner_rounded,
-              badge: _gymCheckedIn ? 'GYM ACTIVE' : 'GYM',
-              title: _gymCheckedIn ? (_gymName ?? 'Workout') : 'Gym Check-in',
-              subtitle: _gymCheckedIn
-                  ? _formatDuration(_gymElapsed)
-                  : 'Scan & start',
-              live: _gymCheckedIn,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => GymCheckinScreen(
-                      onStatusChanged: () {
-                        _loadGymState();
-                        _fetchActiveChallenges();
-                      },
-                    ),
+            child: AppBrand.isMednovations
+                ? _buildTopActionCard(
+                    isDark: isDark,
+                    textColor: textColor,
+                    secondary: secondary,
+                    accent: const Color(0xFFFF3B30),
+                    icon: Icons.shield_outlined,
+                    badge: 'SOS',
+                    title: 'Emergency',
+                    subtitle: 'Alert contacts',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const SosScreen()),
+                      );
+                    },
+                  )
+                : _buildTopActionCard(
+                    isDark: isDark,
+                    textColor: textColor,
+                    secondary: secondary,
+                    accent: Colors.indigoAccent,
+                    icon: _gymCheckedIn
+                        ? Icons.fitness_center_rounded
+                        : Icons.qr_code_scanner_rounded,
+                    badge: _gymCheckedIn ? 'GYM ACTIVE' : 'GYM',
+                    title: _gymCheckedIn
+                        ? (_gymName ?? 'Workout')
+                        : 'Gym Check-in',
+                    subtitle: _gymCheckedIn
+                        ? _formatDuration(_gymElapsed)
+                        : 'Scan & start',
+                    live: _gymCheckedIn,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => GymCheckinScreen(
+                            onStatusChanged: () {
+                              _loadGymState();
+                              _fetchActiveChallenges();
+                            },
+                          ),
+                        ),
+                      );
+                    },
                   ),
-                );
-              },
-            ),
           ),
         ],
       ),
     );
   }
+
+  String get _careProgramBadge {
+    final current = _careDisplayProgram;
+    if (current == null) {
+      return _careProgramSummary?.reviewRequested == true
+          ? 'IN REVIEW'
+          : 'CARE';
+    }
+    return current.status.toUpperCase();
+  }
+
+  String get _careProgramTitle =>
+      _careDisplayProgram?.title ?? 'My Care Program';
+
+  String get _careProgramSubtitle {
+    final current = _careDisplayProgram;
+    if (current == null) {
+      return _careProgramSummary?.reviewRequested == true
+          ? 'View request status'
+          : 'Request a review';
+    }
+    if (current.status == 'offered') return 'Review program';
+    if (current.status == 'paused') return 'View pause details';
+    if (current.status == 'completed') {
+      return current.completedAt == null
+          ? 'View completion summary'
+          : 'Completed ${_careDate(current.completedAt!)}';
+    }
+    if (current.status == 'active') {
+      return current.actions.isEmpty
+          ? 'View my program'
+          : 'Next: ${current.actions.first.title}';
+    }
+    return 'View program';
+  }
+
+  CareProgram? get _careDisplayProgram {
+    final summary = _careProgramSummary;
+    if (summary == null) return null;
+    if (summary.offer != null) return summary.offer;
+    if (summary.current != null) return summary.current;
+    for (final program in summary.history) {
+      if (program.status == 'completed') return program;
+    }
+    return null;
+  }
+
+  String _careDate(DateTime value) =>
+      '${value.day.toString().padLeft(2, '0')}/${value.month.toString().padLeft(2, '0')}/${value.year}';
 
   Widget _buildTopActionCard({
     required bool isDark,
