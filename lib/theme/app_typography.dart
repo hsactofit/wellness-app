@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../app_brand.dart';
 
 /// Medifit wellness typography scale.
 ///
@@ -13,13 +14,21 @@ class AppTypography {
   /// Full Material 3 [TextTheme] for the given brightness.
   static TextTheme textTheme(Brightness brightness) {
     final isDark = brightness == Brightness.dark;
-    final primary = isDark ? Colors.white : const Color(0xFF161616);
+    final primary = isDark
+        ? Colors.white
+        : (AppBrand.isMednovations
+              ? const Color(0xFF123E58)
+              : const Color(0xFF161616));
     final secondary = isDark
         ? Colors.white.withValues(alpha: 0.72)
-        : const Color(0xFF6F675C);
+        : (AppBrand.isMednovations
+              ? const Color(0xFF607988)
+              : const Color(0xFF6F675C));
     final muted = isDark
         ? Colors.white.withValues(alpha: 0.52)
-        : const Color(0xFF8C8274);
+        : (AppBrand.isMednovations
+              ? const Color(0xFF7A909C)
+              : const Color(0xFF8C8274));
 
     TextStyle base({
       double size = 14,

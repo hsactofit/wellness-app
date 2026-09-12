@@ -304,7 +304,7 @@ class MainShellState extends State<MainShell> with WidgetsBindingObserver {
                   decoration: BoxDecoration(
                     color: isDark
                         ? const Color(0xFF16161C).withValues(alpha: 0.75)
-                        : AppTheme.lightNav,
+                        : AppTheme.lightNavColor,
                     borderRadius: BorderRadius.circular(28),
                     border: Border.all(
                       color: isDark
@@ -365,8 +365,16 @@ class MainShellState extends State<MainShell> with WidgetsBindingObserver {
     final isSelected = _currentIndex == index;
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final activeColor = isDark ? theme.colorScheme.primary : AppTheme.lightGold;
-    final idleColor = isDark ? Colors.white54 : const Color(0xFF9A958C);
+    final activeColor = isDark
+        ? theme.colorScheme.primary
+        : (AppBrand.isMednovations
+              ? AppTheme.mednovationsBlue
+              : AppTheme.lightGold);
+    final idleColor = isDark
+        ? Colors.white54
+        : (AppBrand.isMednovations
+              ? const Color(0xFFB9CED7)
+              : const Color(0xFF9A958C));
 
     return Expanded(
       child: GestureDetector(
@@ -415,7 +423,11 @@ class MainShellState extends State<MainShell> with WidgetsBindingObserver {
   Widget _buildCenterAINavItem(int index) {
     final isSelected = _currentIndex == index;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final glow = isDark ? const Color(0xFFFF6D55) : AppTheme.lightGold;
+    final glow = isDark
+        ? (AppBrand.isMednovations
+              ? const Color(0xFF38B9DC)
+              : const Color(0xFFFF6D55))
+        : AppTheme.lightAccent;
 
     return Semantics(
       button: true,
@@ -433,9 +445,13 @@ class MainShellState extends State<MainShell> with WidgetsBindingObserver {
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             gradient: LinearGradient(
-              colors: isDark
-                  ? const [Color(0xFFFF8A4C), Color(0xFFEF5D51)]
-                  : const [Color(0xFFE8D5A8), Color(0xFFD4B98A)],
+              colors: AppBrand.isMednovations
+                  ? (isDark
+                        ? const [Color(0xFF38B9DC), Color(0xFF55A630)]
+                        : const [Color(0xFF0878A8), Color(0xFF55A630)])
+                  : (isDark
+                        ? const [Color(0xFFFF8A4C), Color(0xFFEF5D51)]
+                        : const [Color(0xFFE8D5A8), Color(0xFFD4B98A)]),
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
@@ -456,7 +472,9 @@ class MainShellState extends State<MainShell> with WidgetsBindingObserver {
           ),
           child: Icon(
             Icons.fitness_center_rounded,
-            color: isDark ? Colors.white : AppTheme.brandInk,
+            color: AppBrand.isMednovations
+                ? Colors.white
+                : (isDark ? Colors.white : AppTheme.brandInk),
             size: 22,
           ),
         ),

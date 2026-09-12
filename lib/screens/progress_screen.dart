@@ -285,7 +285,7 @@ class ProgressScreenState extends State<ProgressScreen>
           // Background
           Positioned.fill(
             child: Container(
-              color: isDark ? const Color(0xFF0F0F12) : AppTheme.lightBg,
+              color: isDark ? const Color(0xFF0F0F12) : AppTheme.lightCanvas,
             ),
           ),
           Positioned(

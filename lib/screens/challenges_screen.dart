@@ -295,7 +295,7 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
     if (_errorMessage != null) {
       return Scaffold(
         body: Container(
-          color: isDark ? const Color(0xFF0F0F12) : AppTheme.lightBg,
+          color: isDark ? const Color(0xFF0F0F12) : AppTheme.lightCanvas,
           child: Center(
             child: Padding(
               padding: const EdgeInsets.all(24),
@@ -334,7 +334,7 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
     if (_isLoading) {
       return Scaffold(
         body: Container(
-          color: isDark ? const Color(0xFF0F0F12) : AppTheme.lightBg,
+          color: isDark ? const Color(0xFF0F0F12) : AppTheme.lightCanvas,
           child: Center(
             child: CircularProgressIndicator(color: AppTheme.actionOf(context)),
           ),
@@ -347,7 +347,7 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
         children: [
           Positioned.fill(
             child: Container(
-              color: isDark ? const Color(0xFF0F0F12) : AppTheme.lightBg,
+              color: isDark ? const Color(0xFF0F0F12) : AppTheme.lightCanvas,
             ),
           ),
           Positioned(

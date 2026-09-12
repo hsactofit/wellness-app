@@ -26,9 +26,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
   static const Color _violet = Color(0xFF8F6BFF);
   static const Color _sky = Color(0xFF5B8CFF);
 
-  Color _accentOf(bool isDark) => isDark ? _accent : AppTheme.brandPrimary;
-  Color _mintOf(bool isDark) => isDark ? _mint : const Color(0xFFB89A62);
-  Color _violetOf(bool isDark) => isDark ? _violet : AppTheme.brandInk;
+  Color _accentOf(bool isDark) =>
+      isDark ? _accent : Theme.of(context).colorScheme.primary;
+  Color _mintOf(bool isDark) =>
+      isDark ? _mint : Theme.of(context).colorScheme.secondary;
+  Color _violetOf(bool isDark) =>
+      isDark ? _violet : Theme.of(context).colorScheme.onSurface;
   Color _skyOf(bool isDark) => isDark ? _sky : const Color(0xFF5E7380);
 
   String _name = "User";
@@ -554,7 +557,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           children: [
             Positioned.fill(
               child: Container(
-                color: isDark ? const Color(0xFF0F0F12) : AppTheme.lightBg,
+                color: isDark ? const Color(0xFF0F0F12) : AppTheme.lightCanvas,
               ),
             ),
             Center(
@@ -578,7 +581,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           // Morph background
           Positioned.fill(
             child: Container(
-              color: isDark ? const Color(0xFF0F0F12) : AppTheme.lightBg,
+              color: isDark ? const Color(0xFF0F0F12) : AppTheme.lightCanvas,
             ),
           ),
           Positioned(

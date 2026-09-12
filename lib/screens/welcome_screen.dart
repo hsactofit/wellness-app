@@ -83,7 +83,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
           // 1. Dynamic background mesh
           Positioned.fill(
             child: Container(
-              color: isDark ? const Color(0xFF0C0D11) : AppTheme.lightBg,
+              color: isDark ? const Color(0xFF0C0D11) : AppTheme.lightCanvas,
             ),
           ),
 
@@ -128,7 +128,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                             colors: [
                               isDark
                                   ? Colors.purple.withValues(alpha: 0.18)
-                                  : AppTheme.brandInk.withValues(alpha: 0.06),
+                                  : AppTheme.lightInk.withValues(alpha: 0.06),
                               Colors.purple.withValues(alpha: 0.0),
                             ],
                           ),

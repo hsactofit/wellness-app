@@ -33,6 +33,26 @@ class AppTheme {
   static const Color mednovationsGreen = Color(0xFF55A630);
   static const Color mednovationsSoft = Color(0xFFE1F3F8);
   static const Color mednovationsInk = Color(0xFF123E58);
+  static const Color mednovationsBg = Color(0xFFF4F9FB);
+  static const Color mednovationsMuted = Color(0xFF607988);
+  static const Color mednovationsBorder = Color(0xFFD8E8EE);
+  static const Color mednovationsNav = Color(0xFF123E58);
+  static const Color mednovationsGreenSoft = Color(0xFFEAF6E6);
+
+  /// Brand-aware light colors for screens and shared components that need a
+  /// concrete paint value outside [ColorScheme]. Medifit values are unchanged.
+  static Color get lightCanvas =>
+      AppBrand.isMednovations ? mednovationsBg : lightBg;
+  static Color get lightInk =>
+      AppBrand.isMednovations ? mednovationsInk : brandInk;
+  static Color get lightMutedColor =>
+      AppBrand.isMednovations ? mednovationsMuted : lightMuted;
+  static Color get lightBorderColor =>
+      AppBrand.isMednovations ? mednovationsBorder : lightBorder;
+  static Color get lightNavColor =>
+      AppBrand.isMednovations ? mednovationsNav : lightNav;
+  static Color get lightAccent =>
+      AppBrand.isMednovations ? mednovationsGreen : lightGold;
 
   static const Color darkBg = Color(0xFF0A0D10);
   static const Color darkSurface = Color(0xFF0F1318);
@@ -65,6 +85,9 @@ class AppTheme {
     final ink = AppBrand.isMednovations ? mednovationsInk : brandInk;
     final primary = AppBrand.isMednovations ? mednovationsBlue : brandPrimary;
     final primarySoft = AppBrand.isMednovations ? mednovationsSoft : brandSoft;
+    final canvas = AppBrand.isMednovations ? mednovationsBg : lightBg;
+    final muted = AppBrand.isMednovations ? mednovationsMuted : lightMuted;
+    final border = AppBrand.isMednovations ? mednovationsBorder : lightBorder;
     final colorScheme = ColorScheme.light(
       primary: primary,
       onPrimary: Colors.white,
@@ -74,21 +97,29 @@ class AppTheme {
           ? mednovationsGreen
           : const Color(0xFFB89A62),
       onSecondary: Colors.white,
-      secondaryContainer: const Color(0xFFF3E8D4),
+      secondaryContainer: AppBrand.isMednovations
+          ? mednovationsGreenSoft
+          : const Color(0xFFF3E8D4),
       onSecondaryContainer: ink,
       tertiary: brandAccent,
       onTertiary: Colors.white,
       surface: Colors.white,
       onSurface: ink,
-      onSurfaceVariant: lightMuted,
-      outline: lightBorder,
-      outlineVariant: const Color(0xFFEFE6D6),
+      onSurfaceVariant: muted,
+      outline: border,
+      outlineVariant: AppBrand.isMednovations
+          ? const Color(0xFFE7F0F3)
+          : const Color(0xFFEFE6D6),
       error: lightDanger,
       onError: Colors.white,
       surfaceContainerLowest: Colors.white,
-      surfaceContainerLow: const Color(0xFFF8F3E8),
-      surfaceContainer: lightBg,
-      surfaceContainerHigh: const Color(0xFFE9DFCC),
+      surfaceContainerLow: AppBrand.isMednovations
+          ? const Color(0xFFF8FCFD)
+          : const Color(0xFFF8F3E8),
+      surfaceContainer: canvas,
+      surfaceContainerHigh: AppBrand.isMednovations
+          ? const Color(0xFFE6F1F5)
+          : const Color(0xFFE9DFCC),
     );
 
     final textTheme = AppTypography.textTheme(Brightness.light);
@@ -97,7 +128,7 @@ class AppTheme {
       useMaterial3: true,
       brightness: Brightness.light,
       colorScheme: colorScheme,
-      scaffoldBackgroundColor: lightBg,
+      scaffoldBackgroundColor: canvas,
       fontFamily: AppTypography.fontFamily,
       textTheme: textTheme,
       primaryTextTheme: textTheme,

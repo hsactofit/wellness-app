@@ -66,9 +66,13 @@ class _PlanScreenState extends State<PlanScreen> with WidgetsBindingObserver {
   Color get _accent {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     if (_isWorkoutKind) {
-      return isDark ? const Color(0xFF5B8CFF) : AppTheme.brandPrimary;
+      return isDark
+          ? const Color(0xFF5B8CFF)
+          : Theme.of(context).colorScheme.primary;
     }
-    return isDark ? const Color(0xFFFF9F43) : const Color(0xFFB89A62);
+    return isDark
+        ? const Color(0xFFFF9F43)
+        : Theme.of(context).colorScheme.secondary;
   }
 
   String get _title => _isWorkoutKind ? 'Workout Plan' : 'Nutrition Plan';
@@ -285,7 +289,7 @@ class _PlanScreenState extends State<PlanScreen> with WidgetsBindingObserver {
         children: [
           Positioned.fill(
             child: Container(
-              color: isDark ? const Color(0xFF0F0F12) : AppTheme.lightBg,
+              color: isDark ? const Color(0xFF0F0F12) : AppTheme.lightCanvas,
             ),
           ),
           Positioned(

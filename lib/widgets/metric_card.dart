@@ -127,12 +127,12 @@ class MetricCard extends StatelessWidget {
     final mockDataset = _getMockDataForType();
     final iconWell = isDark
         ? color.withValues(alpha: 0.12)
-        : const Color(0xFFF0E6D4);
+        : Theme.of(context).colorScheme.primaryContainer;
     final valueColor = isDark ? Colors.white : theme.colorScheme.onSurface;
     final labelColor = isDark
         ? Colors.white60
         : theme.colorScheme.onSurfaceVariant;
-    final sparkColor = isDark ? color : const Color(0xFFB89A62);
+    final sparkColor = isDark ? color : Theme.of(context).colorScheme.secondary;
 
     final card = GlassCard(
       padding: const EdgeInsets.all(12),

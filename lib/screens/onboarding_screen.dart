@@ -401,7 +401,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
           // Dynamic Mesh Background
           Positioned.fill(
             child: Container(
-              color: isDark ? const Color(0xFF0C0D11) : AppTheme.lightBg,
+              color: isDark ? const Color(0xFF0C0D11) : AppTheme.lightCanvas,
             ),
           ),
           // Glowing Background Blobs
@@ -447,7 +447,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                             colors: [
                               isDark
                                   ? Colors.purple.withValues(alpha: 0.12)
-                                  : AppTheme.brandInk.withValues(alpha: 0.06),
+                                  : AppTheme.lightInk.withValues(alpha: 0.06),
                               Colors.purple.withValues(alpha: 0.0),
                             ],
                           ),

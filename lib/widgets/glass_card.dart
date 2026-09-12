@@ -1,5 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import '../app_brand.dart';
+import '../theme/app_theme.dart';
 
 class GlassCard extends StatelessWidget {
   final Widget child;
@@ -27,12 +29,14 @@ class GlassCard extends StatelessWidget {
 
     final defaultBgColor = isDark
         ? Colors.black.withValues(alpha: 0.35)
-        : const Color(0xFFFFFEFB);
+        : (AppBrand.isMednovations
+              ? const Color(0xFFFCFEFF)
+              : const Color(0xFFFFFEFB));
 
     final defaultBorder = Border.all(
       color: isDark
           ? Colors.white.withValues(alpha: 0.12)
-          : const Color(0xFFE6DCCB),
+          : AppTheme.lightBorderColor,
       width: isDark ? 1.3 : 1.0,
     );
 
@@ -54,7 +58,7 @@ class GlassCard extends StatelessWidget {
           BoxShadow(
             color: isDark
                 ? Colors.black.withValues(alpha: 0.25)
-                : const Color(0xFF161616).withValues(alpha: 0.05),
+                : AppTheme.lightInk.withValues(alpha: 0.05),
             blurRadius: isDark ? 24 : 18,
             spreadRadius: -6,
             offset: const Offset(0, 10),

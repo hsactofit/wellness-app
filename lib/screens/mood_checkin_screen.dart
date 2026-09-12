@@ -122,7 +122,7 @@ class _MoodCheckinScreenState extends State<MoodCheckinScreen> {
     final secondaryText = isDark ? Colors.white60 : Colors.black54;
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0F0F12) : AppTheme.lightBg,
+      backgroundColor: isDark ? const Color(0xFF0F0F12) : AppTheme.lightCanvas,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,

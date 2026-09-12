@@ -273,7 +273,7 @@ class _AuthScreenState extends State<AuthScreen>
           // 1. Dynamic Mesh Background
           Positioned.fill(
             child: Container(
-              color: isDark ? const Color(0xFF0C0D11) : AppTheme.lightBg,
+              color: isDark ? const Color(0xFF0C0D11) : AppTheme.lightCanvas,
             ),
           ),
           // Animated Glow Blobs
@@ -319,7 +319,7 @@ class _AuthScreenState extends State<AuthScreen>
                             colors: [
                               isDark
                                   ? Colors.purple.withValues(alpha: 0.18)
-                                  : AppTheme.brandInk.withValues(alpha: 0.06),
+                                  : AppTheme.lightInk.withValues(alpha: 0.06),
                               Colors.purple.withValues(alpha: 0.0),
                             ],
                           ),

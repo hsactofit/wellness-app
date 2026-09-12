@@ -614,7 +614,7 @@ class _AIScreenState extends State<AIScreen> {
         children: [
           Positioned.fill(
             child: Container(
-              color: isDark ? const Color(0xFF0B1010) : AppTheme.lightBg,
+              color: isDark ? const Color(0xFF0B1010) : AppTheme.lightCanvas,
             ),
           ),
           Positioned(
@@ -648,7 +648,7 @@ class _AIScreenState extends State<AIScreen> {
                   colors: [
                     isDark
                         ? const Color(0xFFFF8A4C).withValues(alpha: 0.07)
-                        : AppTheme.brandInk.withValues(alpha: 0.05),
+                        : AppTheme.lightInk.withValues(alpha: 0.05),
                     Colors.transparent,
                   ],
                 ),

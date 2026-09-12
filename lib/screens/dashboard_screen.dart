@@ -3960,7 +3960,7 @@ class DashboardScreenState extends State<DashboardScreen>
           // 1. Sleek Glowing Morphic Background Blobs
           Positioned.fill(
             child: Container(
-              color: isDark ? const Color(0xFF0F0F12) : AppTheme.lightBg,
+              color: isDark ? const Color(0xFF0F0F12) : AppTheme.lightCanvas,
             ),
           ),
           // Glow Blob 1 (Top Right)
@@ -3976,7 +3976,9 @@ class DashboardScreenState extends State<DashboardScreen>
                   colors: [
                     isDark
                         ? Colors.purple.withValues(alpha: 0.22)
-                        : AppTheme.brandPrimary.withValues(alpha: 0.10),
+                        : Theme.of(
+                            context,
+                          ).colorScheme.primary.withValues(alpha: 0.10),
                     Colors.transparent,
                   ],
                 ),
@@ -3996,7 +3998,7 @@ class DashboardScreenState extends State<DashboardScreen>
                   colors: [
                     isDark
                         ? Colors.blue.withValues(alpha: 0.22)
-                        : AppTheme.brandInk.withValues(alpha: 0.06),
+                        : AppTheme.lightInk.withValues(alpha: 0.06),
                     Colors.transparent,
                   ],
                 ),
@@ -4016,7 +4018,13 @@ class DashboardScreenState extends State<DashboardScreen>
                   colors: [
                     isDark
                         ? Colors.green.withValues(alpha: 0.18)
-                        : const Color(0xFFE0CFA8).withValues(alpha: 0.45),
+                        : (AppBrand.isMednovations
+                              ? Theme.of(
+                                  context,
+                                ).colorScheme.secondary.withValues(alpha: 0.16)
+                              : const Color(
+                                  0xFFE0CFA8,
+                                ).withValues(alpha: 0.45)),
                     Colors.transparent,
                   ],
                 ),
@@ -4328,7 +4336,7 @@ class DashboardScreenState extends State<DashboardScreen>
                   secondary: labelColor,
                   accent: isDark
                       ? const Color(0xFF5B8CFF)
-                      : AppTheme.brandPrimary,
+                      : Theme.of(context).colorScheme.primary,
                   icon: Icons.fitness_center_rounded,
                   kindLabel: 'WORKOUT',
                   snap: _todayWorkoutSnap,
@@ -4359,7 +4367,7 @@ class DashboardScreenState extends State<DashboardScreen>
                   secondary: labelColor,
                   accent: isDark
                       ? const Color(0xFFFF9F43)
-                      : const Color(0xFFB89A62),
+                      : Theme.of(context).colorScheme.secondary,
                   icon: Icons.restaurant_menu_rounded,
                   kindLabel: 'NUTRITION',
                   snap: _todayNutritionSnap,
@@ -5806,7 +5814,7 @@ class GoogleFitSetupGuideScreen extends StatelessWidget {
         children: [
           Positioned.fill(
             child: Container(
-              color: isDark ? const Color(0xFF0F0F12) : AppTheme.lightBg,
+              color: isDark ? const Color(0xFF0F0F12) : AppTheme.lightCanvas,
             ),
           ),
           SafeArea(
