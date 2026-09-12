@@ -128,9 +128,12 @@ class CareProgramSummary {
     required this.history,
     required this.expectedActions,
     required this.completedActions,
+    required this.weeklyExpectedActions,
+    required this.weeklyCompletedActions,
     required this.measurementChanges,
     this.current,
     this.offer,
+    this.nextAction,
   });
 
   final CareProgram? current;
@@ -139,6 +142,9 @@ class CareProgramSummary {
   final List<CareProgram> history;
   final int expectedActions;
   final int completedActions;
+  final int weeklyExpectedActions;
+  final int weeklyCompletedActions;
+  final CareProgramNextAction? nextAction;
   final List<CareMetricChange> measurementChanges;
 
   factory CareProgramSummary.fromJson(
@@ -163,6 +169,17 @@ class CareProgramSummary {
         ((json['progress'] as Map?)?['expected_actions'] as int?) ?? 0,
     completedActions:
         ((json['progress'] as Map?)?['completed_actions'] as int?) ?? 0,
+    weeklyExpectedActions:
+        ((json['progress'] as Map?)?['weekly_expected_actions'] as int?) ?? 0,
+    weeklyCompletedActions:
+        ((json['progress'] as Map?)?['weekly_completed_actions'] as int?) ?? 0,
+    nextAction: ((json['progress'] as Map?)?['next_action'] is Map)
+        ? CareProgramNextAction.fromJson(
+            Map<String, dynamic>.from(
+              (json['progress'] as Map)['next_action'] as Map,
+            ),
+          )
+        : null,
     measurementChanges:
         ((((json['progress'] as Map?)?['measurement_changes'] as Map?)?['items']
                     as List?) ??
@@ -174,6 +191,25 @@ class CareProgramSummary {
             )
             .toList(),
   );
+}
+
+class CareProgramNextAction {
+  const CareProgramNextAction({
+    required this.key,
+    required this.title,
+    required this.occurrenceDate,
+  });
+
+  final String key;
+  final String title;
+  final DateTime occurrenceDate;
+
+  factory CareProgramNextAction.fromJson(Map<String, dynamic> json) =>
+      CareProgramNextAction(
+        key: json['key'] as String,
+        title: json['title'] as String,
+        occurrenceDate: DateTime.parse(json['occurrence_date'] as String),
+      );
 }
 
 class CareMetricChange {

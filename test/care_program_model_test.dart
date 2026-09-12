@@ -24,6 +24,15 @@ void main() {
         'guidance': <Object>[],
         'review_due': false,
       },
+      'progress': {
+        'weekly_expected_actions': 7,
+        'weekly_completed_actions': 3,
+        'next_action': {
+          'key': 'water',
+          'title': 'Record hydration',
+          'occurrence_date': '2026-09-12',
+        },
+      },
       'history': <Object>[],
     });
 
@@ -33,6 +42,9 @@ void main() {
       summary.current?.objectives.single,
       'Build a sustainable daily routine',
     );
+    expect(summary.weeklyExpectedActions, 7);
+    expect(summary.weeklyCompletedActions, 3);
+    expect(summary.nextAction?.title, 'Record hydration');
   });
 
   test('keeps no-program review state separate from history', () {

@@ -36,6 +36,7 @@ import '../models/demo_health_metrics.dart';
 import '../models/weekly_training.dart';
 import '../widgets/water/wave_painter.dart';
 import '../widgets/weekly_training_summary.dart';
+import '../widgets/weekly_care_progress.dart';
 import '../theme/app_theme.dart';
 import '../app_brand.dart';
 import '../models/care_program.dart';
@@ -111,6 +112,8 @@ class DashboardScreenState extends State<DashboardScreen>
   // ignore: unused_field
   bool _gymDoneToday = false;
   CareProgramSummary? _careProgramSummary;
+  bool _careProgramLoading = AppBrand.isMednovations;
+  bool _careProgramLoadFailed = false;
 
   // Active challenges
   List<Challenge> _activeChallenges = [];
@@ -334,12 +337,35 @@ class DashboardScreenState extends State<DashboardScreen>
   }
 
   Future<void> _loadCareProgramSummary() async {
+    if (!AppBrand.isMednovations) return;
+    if (mounted) {
+      setState(() {
+        _careProgramLoading = true;
+        _careProgramLoadFailed = false;
+      });
+    }
     try {
       final summary = await CareProgramService.instance.fetchMine();
-      if (mounted) setState(() => _careProgramSummary = summary);
+      if (mounted) {
+        setState(() {
+          _careProgramSummary = summary;
+          _careProgramLoadFailed = false;
+        });
+      }
     } catch (error) {
       debugPrint('Unable to refresh Care Programs: $error');
+      if (mounted) setState(() => _careProgramLoadFailed = true);
+    } finally {
+      if (mounted) setState(() => _careProgramLoading = false);
     }
+  }
+
+  Future<void> _openCarePrograms() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const CareProgramsScreen()),
+    );
+    await _loadCareProgramSummary();
   }
 
   void _startGymTimer() {
@@ -4205,12 +4231,20 @@ class DashboardScreenState extends State<DashboardScreen>
 
                   // Plan-aware weekly training summary
                   SliverToBoxAdapter(
-                    child: WeeklyTrainingSummarySection(
-                      summary: _weeklyTraining,
-                      recentActivity: _recentActivity,
-                      loading: _isSyncing,
-                      onRefresh: () => _fetchRealData(forceSync: true),
-                    ),
+                    child: AppBrand.isMednovations
+                        ? WeeklyCareProgressSection(
+                            summary: _careProgramSummary,
+                            loading: _careProgramLoading,
+                            loadFailed: _careProgramLoadFailed,
+                            onOpenProgram: _openCarePrograms,
+                            onRefresh: _loadCareProgramSummary,
+                          )
+                        : WeeklyTrainingSummarySection(
+                            summary: _weeklyTraining,
+                            recentActivity: _recentActivity,
+                            loading: _isSyncing,
+                            onRefresh: () => _fetchRealData(forceSync: true),
+                          ),
                   ),
 
                   // Bottom padding
@@ -5200,15 +5234,7 @@ class DashboardScreenState extends State<DashboardScreen>
                     title: _careProgramTitle,
                     subtitle: _careProgramSubtitle,
                     live: _careProgramSummary?.current?.status == 'active',
-                    onTap: () async {
-                      await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const CareProgramsScreen(),
-                        ),
-                      );
-                      _loadCareProgramSummary();
-                    },
+                    onTap: _openCarePrograms,
                   )
                 : _buildTopActionCard(
                     isDark: isDark,
