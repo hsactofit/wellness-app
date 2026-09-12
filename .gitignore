@@ -50,3 +50,7 @@ app.*.map.json
 # Local distribution artifacts and machine-specific signing helpers
 /release/
 /tool/build_branded_android_apk.zsh
+
+# Product-specific Firebase files are local credentials and must never be committed.
+/ios/config/mednovations/GoogleService-Info.plist
+/android/app/src/mednovations/google-services.json
