@@ -700,15 +700,18 @@ class _SignupStepState extends State<SignupStep> {
                         color: isDark ? Colors.white30 : Colors.black38,
                       ),
                       const SizedBox(width: 6),
-                      Text(
-                        _isLogin
-                            ? "SECURE, HIPAA COMPLIANT PORTAL"
-                            : "2026 ${AppBrand.wellnessName}. Secure HIPAA compliant registration.",
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color: isDark ? Colors.white30 : Colors.black38,
-                          letterSpacing: _isLogin ? 0.5 : 0.0,
+                      Flexible(
+                        child: Text(
+                          _isLogin
+                              ? "SECURE, HIPAA COMPLIANT PORTAL"
+                              : "2026 ${AppBrand.wellnessName}. Secure HIPAA compliant registration.",
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: isDark ? Colors.white30 : Colors.black38,
+                            letterSpacing: _isLogin ? 0.5 : 0.0,
+                          ),
                         ),
                       ),
                     ],
