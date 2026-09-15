@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import '../services/auth_service.dart';
 import '../widgets/glass_card.dart';
 import '../theme/app_theme.dart';
+import '../l10n/app_text.dart';
 
 class GoalsConfigurationScreen extends StatefulWidget {
   const GoalsConfigurationScreen({super.key});
@@ -160,7 +161,7 @@ class _GoalsConfigurationScreenState extends State<GoalsConfigurationScreen>
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(
+        content: AppText(
           syncFailed
               ? "Goals saved on this device, but couldn't sync to the server."
               : "Goals saved successfully!",
@@ -267,7 +268,7 @@ class _GoalsConfigurationScreenState extends State<GoalsConfigurationScreen>
                         onPressed: () => Navigator.pop(context),
                       ),
                       const SizedBox(width: 8),
-                      Text(
+                      AppText(
                         "Set Wellness Goals 🎯",
                         style: theme.textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.w900,
@@ -289,7 +290,7 @@ class _GoalsConfigurationScreenState extends State<GoalsConfigurationScreen>
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         const SizedBox(height: 10),
-                        Text(
+                        AppText(
                           "Configure daily health targets below. Your custom goals directly update the Wellness Meter calculations and recommendations.",
                           style: TextStyle(
                             fontSize: 13,
@@ -400,7 +401,7 @@ class _GoalsConfigurationScreenState extends State<GoalsConfigurationScreen>
                             padding: const EdgeInsets.symmetric(vertical: 16),
                           ),
                           onPressed: _saveGoals,
-                          child: const Text(
+                          child: const AppText(
                             "Save Changes",
                             style: TextStyle(
                               fontSize: 15,
@@ -441,7 +442,7 @@ class _GoalsConfigurationScreenState extends State<GoalsConfigurationScreen>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
+              AppText(
                 title,
                 style: TextStyle(
                   fontSize: 14,
@@ -449,7 +450,7 @@ class _GoalsConfigurationScreenState extends State<GoalsConfigurationScreen>
                   color: titleColor,
                 ),
               ),
-              Text(
+              AppText(
                 "${value.round()} $unit",
                 style: TextStyle(
                   fontSize: 16,

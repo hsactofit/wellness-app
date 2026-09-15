@@ -5,6 +5,7 @@ import '../widgets/glass_card.dart';
 import '../widgets/concentric_rings_chart.dart';
 import '../services/auth_service.dart';
 import '../theme/app_theme.dart';
+import '../l10n/app_text.dart';
 
 class Challenge {
   final String id;
@@ -253,7 +254,7 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text("Joined ${challenge.name} challenge!"),
+            content: AppText("Joined ${challenge.name} challenge!"),
             backgroundColor: challenge.color,
           ),
         );
@@ -262,7 +263,7 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
+            content: AppText(
               detail ?? "Failed to join challenge: ${response.statusCode}",
             ),
             backgroundColor: Colors.redAccent,
@@ -274,7 +275,7 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("Network error: $e"),
+          content: AppText("Network error: $e"),
           backgroundColor: Colors.redAccent,
         ),
       );
@@ -302,9 +303,9 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text("⚠️", style: TextStyle(fontSize: 48)),
+                  const AppText("⚠️", style: TextStyle(fontSize: 48)),
                   const SizedBox(height: 16),
-                  Text(
+                  AppText(
                     _errorMessage!,
                     textAlign: TextAlign.center,
                     style: TextStyle(
@@ -321,7 +322,7 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
                     ),
                     onPressed: _loadData,
                     icon: const Icon(Icons.refresh),
-                    label: const Text("Retry"),
+                    label: const AppText("Retry"),
                   ),
                 ],
               ),
@@ -391,14 +392,14 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
+                            AppText(
                               "Challenges 🏆",
                               style: theme.textTheme.headlineMedium?.copyWith(
                                 fontWeight: FontWeight.w900,
                                 color: textColor,
                               ),
                             ),
-                            Text(
+                            AppText(
                               "Join company challenges and follow verified scores",
                               style: TextStyle(
                                 color: secondaryTextColor,
@@ -421,8 +422,11 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
                           ),
                           child: Row(
                             children: [
-                              const Text("🪙 ", style: TextStyle(fontSize: 14)),
-                              Text(
+                              const AppText(
+                                "🪙 ",
+                                style: TextStyle(fontSize: 14),
+                              ),
+                              AppText(
                                 "$_userPoints Pts",
                                 style: const TextStyle(
                                   fontWeight: FontWeight.bold,
@@ -440,7 +444,7 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
                     _buildProgressCard(isDark),
                     const SizedBox(height: 24),
 
-                    Text(
+                    AppText(
                       "Active Challenges",
                       style: TextStyle(
                         fontSize: 16,
@@ -459,12 +463,12 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
                         child: Center(
                           child: Column(
                             children: [
-                              const Text(
+                              const AppText(
                                 "🧗‍♂️",
                                 style: TextStyle(fontSize: 36),
                               ),
                               const SizedBox(height: 12),
-                              Text(
+                              AppText(
                                 "No Active Challenges",
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
@@ -473,7 +477,7 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
                                 ),
                               ),
                               const SizedBox(height: 6),
-                              Text(
+                              AppText(
                                 "Join a challenge below to start tracking your progress & earning rewards!",
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
@@ -500,7 +504,7 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
 
                     const SizedBox(height: 12),
 
-                    Text(
+                    AppText(
                       "Explore New Challenges",
                       style: TextStyle(
                         fontSize: 16,
@@ -519,9 +523,12 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
                         child: Center(
                           child: Column(
                             children: [
-                              const Text("🎉", style: TextStyle(fontSize: 32)),
+                              const AppText(
+                                "🎉",
+                                style: TextStyle(fontSize: 32),
+                              ),
                               const SizedBox(height: 8),
-                              Text(
+                              AppText(
                                 "You have joined all challenges!",
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
@@ -530,7 +537,7 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
                                 ),
                               ),
                               const SizedBox(height: 4),
-                              Text(
+                              AppText(
                                 "Stay tuned for new events.",
                                 style: TextStyle(
                                   color: secondaryTextColor,
@@ -589,7 +596,7 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
+              AppText(
                 "CHALLENGES OVERVIEW",
                 style: TextStyle(
                   fontSize: 11,
@@ -623,7 +630,7 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
                       ),
                     ),
                     const SizedBox(width: 6),
-                    Text(
+                    AppText(
                       "${activeChallenges.length} ACTIVE",
                       style: TextStyle(
                         fontSize: 9,
@@ -659,7 +666,7 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
                         crossAxisAlignment: CrossAxisAlignment.baseline,
                         textBaseline: TextBaseline.alphabetic,
                         children: [
-                          Text(
+                          AppText(
                             "$_userPoints",
                             style: TextStyle(
                               fontSize: 38,
@@ -669,7 +676,7 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
                             ),
                           ),
                           const SizedBox(width: 2),
-                          Text(
+                          AppText(
                             "pts",
                             style: TextStyle(
                               fontSize: 12,
@@ -680,7 +687,7 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
                         ],
                       ),
                       const SizedBox(height: 2),
-                      Text(
+                      AppText(
                         "Total Points",
                         style: TextStyle(
                           fontSize: 10.5,
@@ -728,7 +735,7 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
           decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
         const SizedBox(width: 6),
-        Text(
+        AppText(
           label,
           style: TextStyle(
             fontSize: 11,
@@ -757,7 +764,7 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Expanded(
-                child: Text(
+                child: AppText(
                   challenge.name,
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
@@ -772,7 +779,7 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
                   color: color.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Text(
+                child: AppText(
                   challenge.timeLeft,
                   style: TextStyle(
                     color: color,
@@ -784,7 +791,7 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
             ],
           ),
           const SizedBox(height: 8),
-          Text(
+          AppText(
             challenge.hasAutoTracking
                 ? "${challenge.type} · Goal: ${challenge.metricLabel}"
                 : challenge.type,
@@ -796,7 +803,7 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
           ),
           if (challenge.score != null || challenge.rank != null) ...[
             const SizedBox(height: 7),
-            Text(
+            AppText(
               [
                 if (challenge.score != null) challenge.verifiedScoreLabel,
                 if (challenge.rank != null) 'Rank #${challenge.rank}',
@@ -814,8 +821,8 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
             children: [
               Row(
                 children: [
-                  const Text("👥 ", style: TextStyle(fontSize: 12)),
-                  Text(
+                  const AppText("👥 ", style: TextStyle(fontSize: 12)),
+                  AppText(
                     "${challenge.participantCount} participants",
                     style: TextStyle(
                       color: color,
@@ -828,8 +835,8 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
               if (challenge.prize.isNotEmpty)
                 Row(
                   children: [
-                    const Text("🏆 ", style: TextStyle(fontSize: 12)),
-                    Text(
+                    const AppText("🏆 ", style: TextStyle(fontSize: 12)),
+                    AppText(
                       challenge.prize,
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
@@ -850,7 +857,7 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
                 color: Colors.amber.withValues(alpha: 0.14),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Text(
+              child: const AppText(
                 '🏆 You are the final winner. Your organization will contact you about the prize.',
                 style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700),
               ),
@@ -864,7 +871,7 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
                 color: color.withValues(alpha: 0.10),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Text(
+              child: AppText(
                 'You are currently leading. The winner is decided after the timeline and sync grace period.',
                 style: const TextStyle(
                   fontSize: 11.5,
@@ -880,7 +887,7 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
                 color: AppTheme.actionOf(context).withValues(alpha: 0.10),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Text(
+              child: const AppText(
                 'Challenge ended — calculating verified results during the sync grace period.',
                 style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700),
               ),
@@ -901,11 +908,11 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
+                AppText(
                   isCompleted ? "Verified target reached" : "Verified progress",
                   style: TextStyle(color: secondaryTextColor, fontSize: 11),
                 ),
-                Text(
+                AppText(
                   "${(progressVal * 100).round()}%",
                   style: TextStyle(
                     color: color,
@@ -916,7 +923,7 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
               ],
             ),
           ] else
-            Text(
+            AppText(
               "Verified progress will appear after your activity syncs.",
               style: TextStyle(color: secondaryTextColor, fontSize: 11.5),
             ),
@@ -942,7 +949,7 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Expanded(
-                child: Text(
+                child: AppText(
                   challenge.name,
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
@@ -951,7 +958,7 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
                   ),
                 ),
               ),
-              Text(
+              AppText(
                 challenge.timeLeft,
                 style: const TextStyle(
                   color: Colors.grey,
@@ -962,7 +969,7 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
             ],
           ),
           const SizedBox(height: 8),
-          Text(
+          AppText(
             challenge.hasAutoTracking
                 ? "${challenge.type} · Goal: ${challenge.metricLabel}"
                 : challenge.type,
@@ -974,7 +981,7 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
           ),
           if (challenge.resultStatus == 'calculating') ...[
             const SizedBox(height: 8),
-            const Text(
+            const AppText(
               'Challenge ended — results are calculating.',
               style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700),
             ),
@@ -985,8 +992,8 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
             children: [
               Row(
                 children: [
-                  const Text("👥 ", style: TextStyle(fontSize: 12)),
-                  Text(
+                  const AppText("👥 ", style: TextStyle(fontSize: 12)),
+                  AppText(
                     "${challenge.participantCount} joined",
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
@@ -996,8 +1003,8 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
                   ),
                   if (challenge.prize.isNotEmpty) ...[
                     const SizedBox(width: 10),
-                    const Text("🏆 ", style: TextStyle(fontSize: 12)),
-                    Text(
+                    const AppText("🏆 ", style: TextStyle(fontSize: 12)),
+                    AppText(
                       challenge.prize,
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
@@ -1026,7 +1033,7 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
                   elevation: 0,
                 ),
                 onPressed: canJoin ? () => _joinChallenge(challenge) : null,
-                child: Text(
+                child: AppText(
                   canJoin ? "Join Challenge" : challenge.timeLeft,
                   style: const TextStyle(
                     fontSize: 11,

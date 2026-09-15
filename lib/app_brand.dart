@@ -22,6 +22,9 @@ class AppBrand {
 
   static bool get isMednovations => selectedBrand == 'mednovations';
 
+  static List<String> get supportedLanguageCodes =>
+      isMednovations ? const ['en', 'hi', 'kn'] : const ['en'];
+
   static String get name => isMednovations ? 'Mednovations' : 'Medifit';
 
   static String get wellnessName => '$name Wellness';

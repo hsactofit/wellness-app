@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../app_brand.dart';
 import 'fade_slide_transition.dart';
 import '../../theme/app_theme.dart';
+import '../../l10n/app_text.dart';
 
 class ConsentStep extends StatelessWidget {
   final Map<String, bool>
@@ -93,7 +94,7 @@ class ConsentStep extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        const Text(
+                        const AppText(
                           "Consent & Authorization",
                           textAlign: TextAlign.center,
                           style: TextStyle(
@@ -104,7 +105,7 @@ class ConsentStep extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 8),
-                        Text(
+                        AppText(
                           consentInstruction,
                           textAlign: TextAlign.center,
                           style: TextStyle(
@@ -168,7 +169,7 @@ class ConsentStep extends StatelessWidget {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(
+                                    AppText(
                                       clause['title']!,
                                       style: TextStyle(
                                         fontWeight: FontWeight.bold,
@@ -179,7 +180,7 @@ class ConsentStep extends StatelessWidget {
                                       ),
                                     ),
                                     const SizedBox(height: 2),
-                                    Text(
+                                    AppText(
                                       _requirementLabel(key),
                                       style: TextStyle(
                                         color:
@@ -197,7 +198,7 @@ class ConsentStep extends StatelessWidget {
                                       ),
                                     ),
                                     const SizedBox(height: 4),
-                                    Text(
+                                    AppText(
                                       clause['body']!,
                                       style: TextStyle(
                                         fontSize: 12,
@@ -217,7 +218,7 @@ class ConsentStep extends StatelessWidget {
                     );
                   }),
                   const SizedBox(height: 8),
-                  Text(
+                  AppText(
                     "Type your full name as your electronic signature",
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
@@ -232,7 +233,7 @@ class ConsentStep extends StatelessWidget {
                     controller: signatureController,
                     textCapitalization: TextCapitalization.words,
                     decoration: InputDecoration(
-                      hintText: "Full legal name",
+                      hintText: "Full legal name".localized(context),
                       filled: true,
                       fillColor: isDark
                           ? Colors.white.withValues(alpha: 0.04)
@@ -282,7 +283,7 @@ class ConsentStep extends StatelessWidget {
                       ),
                     ),
                     onPressed: onBack,
-                    child: const Text(
+                    child: const AppText(
                       "PREVIOUS",
                       style: TextStyle(
                         color: AppTheme.brandInk,
@@ -316,7 +317,7 @@ class ConsentStep extends StatelessWidget {
                         : () {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: const Text(
+                                content: const AppText(
                                   'Please agree to the required consents and sign your name',
                                 ),
                                 backgroundColor: Colors.orange,
@@ -326,7 +327,7 @@ class ConsentStep extends StatelessWidget {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: const [
-                        Text(
+                        AppText(
                           "AGREE & ACTIVATE",
                           style: TextStyle(
                             color: Colors.white,

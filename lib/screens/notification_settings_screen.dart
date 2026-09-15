@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../services/api_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/glass_card.dart';
+import '../l10n/app_text.dart';
 
 class NotificationSettingsScreen extends StatefulWidget {
   const NotificationSettingsScreen({super.key});
@@ -147,7 +148,7 @@ class _NotificationSettingsScreenState
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text("Failed to update settings: $e"),
+            content: AppText("Failed to update settings: $e"),
             backgroundColor: Colors.redAccent,
           ),
         );
@@ -165,7 +166,7 @@ class _NotificationSettingsScreenState
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
+        title: const AppText(
           "Notification Settings",
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
@@ -221,7 +222,7 @@ class _NotificationSettingsScreenState
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        const Text(
+                        const AppText(
                           "Configure which alerts you would like to receive. These settings are synchronized across your devices.",
                           style: TextStyle(
                             fontSize: 13,
@@ -231,7 +232,7 @@ class _NotificationSettingsScreenState
                         ),
                         const SizedBox(height: 20),
 
-                        Text(
+                        AppText(
                           "HEALTH & WELLNESS",
                           style: TextStyle(
                             fontSize: 11,
@@ -287,7 +288,7 @@ class _NotificationSettingsScreenState
 
                         const SizedBox(height: 24),
 
-                        Text(
+                        AppText(
                           "REWARDS & CHALLENGES",
                           style: TextStyle(
                             fontSize: 11,
@@ -325,7 +326,7 @@ class _NotificationSettingsScreenState
 
                         const SizedBox(height: 24),
 
-                        Text(
+                        AppText(
                           "DAILY DIGEST",
                           style: TextStyle(
                             fontSize: 11,
@@ -375,7 +376,7 @@ class _NotificationSettingsScreenState
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                AppText(
                   title,
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
@@ -384,7 +385,7 @@ class _NotificationSettingsScreenState
                   ),
                 ),
                 const SizedBox(height: 2),
-                Text(
+                AppText(
                   subtitle,
                   style: TextStyle(fontSize: 11, color: secondaryTextColor),
                 ),

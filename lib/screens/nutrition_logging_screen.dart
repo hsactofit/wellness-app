@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../models/meal_analysis.dart';
 import '../services/api_service.dart';
 import '../widgets/glass_card.dart';
+import '../l10n/app_text.dart';
 
 class NutritionLoggingScreen extends StatefulWidget {
   final VoidCallback? onFoodLogged;
@@ -78,7 +79,7 @@ class _NutritionLoggingScreenState extends State<NutritionLoggingScreen> {
   }
 
   void _showError(String message) => ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(content: Text(message.replaceFirst('Exception: ', ''))),
+    SnackBar(content: AppText(message.replaceFirst('Exception: ', ''))),
   );
 
   Future<void> _estimate() async {
@@ -138,7 +139,7 @@ class _NutritionLoggingScreenState extends State<NutritionLoggingScreen> {
       messenger.hideCurrentSnackBar();
       final snackBar = messenger.showSnackBar(
         SnackBar(
-          content: const Text('Meal added to today’s tracker.'),
+          content: const AppText('Meal added to today’s tracker.'),
           duration: const Duration(seconds: 6),
           action: logId == null
               ? null
@@ -174,7 +175,7 @@ class _NutritionLoggingScreenState extends State<NutritionLoggingScreen> {
           ? const Color(0xFF0F1015)
           : const Color(0xFFF7F8FC),
       appBar: AppBar(
-        title: const Text(
+        title: const AppText(
           'Meal Tracker',
           style: TextStyle(fontWeight: FontWeight.w800),
         ),
@@ -228,7 +229,7 @@ class _NutritionLoggingScreenState extends State<NutritionLoggingScreen> {
               borderRadius: BorderRadius.circular(16),
             ),
             child: const Center(
-              child: Text('🍽️', style: TextStyle(fontSize: 24)),
+              child: AppText('🍽️', style: TextStyle(fontSize: 24)),
             ),
           ),
           const SizedBox(width: 14),
@@ -236,7 +237,7 @@ class _NutritionLoggingScreenState extends State<NutritionLoggingScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                AppText(
                   'Today’s intake',
                   style: TextStyle(
                     color: foreground,
@@ -245,7 +246,7 @@ class _NutritionLoggingScreenState extends State<NutritionLoggingScreen> {
                   ),
                 ),
                 const SizedBox(height: 3),
-                Text(
+                AppText(
                   '${today['meal_count'] ?? 0} meals tracked',
                   style: TextStyle(
                     color: isDark ? Colors.white60 : Colors.black54,
@@ -270,7 +271,7 @@ class _NutritionLoggingScreenState extends State<NutritionLoggingScreen> {
   Widget _summaryMetric(String value, String label, Color color) => Column(
     crossAxisAlignment: CrossAxisAlignment.end,
     children: [
-      Text(
+      AppText(
         value,
         style: TextStyle(
           color: color,
@@ -278,7 +279,7 @@ class _NutritionLoggingScreenState extends State<NutritionLoggingScreen> {
           fontWeight: FontWeight.w900,
         ),
       ),
-      Text(
+      AppText(
         label,
         style: const TextStyle(
           color: Colors.grey,
@@ -294,7 +295,7 @@ class _NutritionLoggingScreenState extends State<NutritionLoggingScreen> {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
+        AppText(
           'Describe your meal',
           style: TextStyle(
             color: foreground,
@@ -303,7 +304,7 @@ class _NutritionLoggingScreenState extends State<NutritionLoggingScreen> {
           ),
         ),
         const SizedBox(height: 4),
-        Text(
+        AppText(
           'Include food and quantity for a better estimate.',
           style: TextStyle(
             color: isDark ? Colors.white60 : Colors.black54,
@@ -321,7 +322,7 @@ class _NutritionLoggingScreenState extends State<NutritionLoggingScreen> {
           onSubmitted: (_) => _descriptionFocus.unfocus(),
           onTapOutside: (_) => _descriptionFocus.unfocus(),
           decoration: InputDecoration(
-            hintText: 'e.g., 3 bananas and 1 cup of yogurt',
+            hintText: 'e.g., 3 bananas and 1 cup of yogurt'.localized(context),
             filled: true,
             fillColor: isDark
                 ? Colors.white.withValues(alpha: .06)
@@ -333,7 +334,7 @@ class _NutritionLoggingScreenState extends State<NutritionLoggingScreen> {
           ),
         ),
         const SizedBox(height: 10),
-        Text(
+        AppText(
           'We estimate nutrition from the food and portion you describe.',
           style: TextStyle(
             color: isDark ? Colors.white38 : Colors.black45,
@@ -355,7 +356,7 @@ class _NutritionLoggingScreenState extends State<NutritionLoggingScreen> {
                     ),
                   )
                 : const Icon(Icons.auto_awesome_rounded),
-            label: Text(
+            label: AppText(
               _estimating ? 'Estimating your meal…' : 'Estimate nutrition',
             ),
             style: FilledButton.styleFrom(
@@ -377,7 +378,7 @@ class _NutritionLoggingScreenState extends State<NutritionLoggingScreen> {
             const Icon(Icons.help_outline_rounded, color: Color(0xFFFFA726)),
             const SizedBox(width: 12),
             Expanded(
-              child: Text(
+              child: AppText(
                 analysis.clarificationQuestion ??
                     'Please add the food and quantity you ate.',
                 style: TextStyle(
@@ -399,7 +400,7 @@ class _NutritionLoggingScreenState extends State<NutritionLoggingScreen> {
           Row(
             children: [
               Expanded(
-                child: Text(
+                child: AppText(
                   analysis.mealName ?? 'Your meal',
                   style: TextStyle(
                     color: foreground,
@@ -441,7 +442,7 @@ class _NutritionLoggingScreenState extends State<NutritionLoggingScreen> {
           ),
           if (analysis.items.isNotEmpty) ...[
             const SizedBox(height: 14),
-            Text(
+            AppText(
               analysis.items
                   .map((item) => '${item['quantity']} ${item['name']}')
                   .join(' · '),
@@ -453,7 +454,7 @@ class _NutritionLoggingScreenState extends State<NutritionLoggingScreen> {
           ],
           if (analysis.assumptions.isNotEmpty) ...[
             const SizedBox(height: 10),
-            Text(
+            AppText(
               'Assumes: ${analysis.assumptions.join(' · ')}',
               style: TextStyle(
                 color: isDark ? Colors.white38 : Colors.black45,
@@ -468,14 +469,14 @@ class _NutritionLoggingScreenState extends State<NutritionLoggingScreen> {
                 Expanded(
                   child: OutlinedButton(
                     onPressed: _descriptionFocus.requestFocus,
-                    child: const Text('Edit details'),
+                    child: const AppText('Edit details'),
                   ),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: FilledButton(
                     onPressed: _committing ? null : _commit,
-                    child: Text(_committing ? 'Adding…' : 'Add to tracker'),
+                    child: AppText(_committing ? 'Adding…' : 'Add to tracker'),
                   ),
                 ),
               ],
@@ -492,7 +493,7 @@ class _NutritionLoggingScreenState extends State<NutritionLoggingScreen> {
       color: const Color(0xFF7C6CFF).withValues(alpha: .14),
       borderRadius: BorderRadius.circular(20),
     ),
-    child: Text(
+    child: AppText(
       label,
       style: const TextStyle(
         color: Color(0xFF7C6CFF),
@@ -511,7 +512,7 @@ class _NutritionLoggingScreenState extends State<NutritionLoggingScreen> {
       ),
       child: Column(
         children: [
-          Text(
+          AppText(
             value,
             style: TextStyle(
               color: color,
@@ -519,7 +520,10 @@ class _NutritionLoggingScreenState extends State<NutritionLoggingScreen> {
               fontWeight: FontWeight.w900,
             ),
           ),
-          Text(label, style: const TextStyle(color: Colors.grey, fontSize: 10)),
+          AppText(
+            label,
+            style: const TextStyle(color: Colors.grey, fontSize: 10),
+          ),
         ],
       ),
     ),
@@ -535,7 +539,7 @@ class _NutritionLoggingScreenState extends State<NutritionLoggingScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
+        AppText(
           'Quick start',
           style: TextStyle(
             color: foreground,
@@ -550,7 +554,7 @@ class _NutritionLoggingScreenState extends State<NutritionLoggingScreen> {
           children: meals
               .map(
                 (meal) => ActionChip(
-                  label: Text(meal),
+                  label: AppText(meal),
                   onPressed: () {
                     setState(() {
                       _descriptionController.text = meal;
@@ -574,7 +578,7 @@ class _NutritionLoggingScreenState extends State<NutritionLoggingScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
+        AppText(
           'Today’s meals',
           style: TextStyle(
             color: foreground,
@@ -587,7 +591,7 @@ class _NutritionLoggingScreenState extends State<NutritionLoggingScreen> {
           GlassCard(
             padding: const EdgeInsets.all(24),
             child: Center(
-              child: Text(
+              child: AppText(
                 'Your first meal will appear here.',
                 style: TextStyle(
                   color: isDark ? Colors.white54 : Colors.black54,
@@ -612,27 +616,27 @@ class _NutritionLoggingScreenState extends State<NutritionLoggingScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         child: Row(
           children: [
-            const Text('🍲', style: TextStyle(fontSize: 20)),
+            const AppText('🍲', style: TextStyle(fontSize: 20)),
             const SizedBox(width: 10),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  AppText(
                     log['food']?.toString() ?? 'Meal',
                     style: TextStyle(
                       color: foreground,
                       fontWeight: FontWeight.w800,
                     ),
                   ),
-                  Text(
+                  AppText(
                     '${(macros['protein'] as num?)?.toStringAsFixed(0) ?? 0}g protein',
                     style: const TextStyle(color: Colors.grey, fontSize: 11),
                   ),
                 ],
               ),
             ),
-            Text(
+            AppText(
               '${log['calories'] ?? 0} kcal',
               style: const TextStyle(
                 color: Color(0xFFFF8A65),
@@ -654,7 +658,7 @@ class _NutritionLoggingScreenState extends State<NutritionLoggingScreen> {
       children: [
         Row(
           children: [
-            Text(
+            AppText(
               'Your trend',
               style: TextStyle(
                 color: foreground,
@@ -664,7 +668,7 @@ class _NutritionLoggingScreenState extends State<NutritionLoggingScreen> {
             ),
             const Spacer(),
             ChoiceChip(
-              label: const Text('7 days'),
+              label: const AppText('7 days'),
               selected: _trendDays == 7,
               onSelected: (_) async {
                 setState(() => _trendDays = 7);
@@ -673,7 +677,7 @@ class _NutritionLoggingScreenState extends State<NutritionLoggingScreen> {
             ),
             const SizedBox(width: 6),
             ChoiceChip(
-              label: const Text('30 days'),
+              label: const AppText('30 days'),
               selected: _trendDays == 30,
               onSelected: (_) async {
                 setState(() => _trendDays = 30);
@@ -688,7 +692,7 @@ class _NutritionLoggingScreenState extends State<NutritionLoggingScreen> {
           child: loggedDays.isEmpty
               ? const Padding(
                   padding: EdgeInsets.all(10),
-                  child: Text(
+                  child: AppText(
                     'Log meals to see your trend.',
                     style: TextStyle(color: Colors.grey),
                   ),
@@ -714,7 +718,7 @@ class _NutritionLoggingScreenState extends State<NutritionLoggingScreen> {
       children: [
         SizedBox(
           width: 76,
-          child: Text(
+          child: AppText(
             day['date']?.toString().substring(5) ?? '',
             style: const TextStyle(color: Colors.grey, fontSize: 12),
           ),
@@ -732,7 +736,7 @@ class _NutritionLoggingScreenState extends State<NutritionLoggingScreen> {
           ),
         ),
         const SizedBox(width: 10),
-        Text(
+        AppText(
           '${day['calories'] ?? 0} kcal · ${((day['protein_g'] as num?) ?? 0).round()}g P',
           style: TextStyle(
             color: foreground,

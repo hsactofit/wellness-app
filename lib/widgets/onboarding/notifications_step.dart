@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../glass_card.dart';
 import 'fade_slide_transition.dart';
 import '../../theme/app_theme.dart';
+import '../../l10n/app_text.dart';
 
 class NotificationsStep extends StatefulWidget {
   final bool notifDaily;
@@ -103,7 +104,7 @@ class _NotificationsStepState extends State<NotificationsStep>
                             angle: _rotationAnimation.value,
                             child: ScaleTransition(
                               scale: _scaleAnimation,
-                              child: const Text(
+                              child: const AppText(
                                 "🔔",
                                 style: TextStyle(fontSize: 60),
                               ),
@@ -116,7 +117,7 @@ class _NotificationsStepState extends State<NotificationsStep>
                   const SizedBox(height: 16),
                   const FadeSlideTransition(
                     delay: Duration(milliseconds: 150),
-                    child: Text(
+                    child: AppText(
                       "Notifications",
                       textAlign: TextAlign.center,
                       style: TextStyle(
@@ -129,7 +130,7 @@ class _NotificationsStepState extends State<NotificationsStep>
                   const SizedBox(height: 6),
                   FadeSlideTransition(
                     delay: const Duration(milliseconds: 250),
-                    child: Text(
+                    child: AppText(
                       "Stay motivated with smart wellness alerts",
                       textAlign: TextAlign.center,
                       style: TextStyle(
@@ -223,7 +224,7 @@ class _NotificationsStepState extends State<NotificationsStep>
                       ),
                     ),
                     onPressed: widget.onBack,
-                    child: Text(
+                    child: AppText(
                       "Back",
                       style: TextStyle(
                         color: isDark ? Colors.white70 : Colors.black87,
@@ -247,7 +248,7 @@ class _NotificationsStepState extends State<NotificationsStep>
                       elevation: 4,
                     ),
                     onPressed: widget.onNext,
-                    child: const Text(
+                    child: const AppText(
                       "Allow & Finish",
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
@@ -286,11 +287,11 @@ class _NotificationsStepState extends State<NotificationsStep>
           ),
         ),
         child: SwitchListTile(
-          title: Text(
+          title: AppText(
             title,
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
           ),
-          subtitle: Text(
+          subtitle: AppText(
             subtitle,
             style: TextStyle(
               fontSize: 11,

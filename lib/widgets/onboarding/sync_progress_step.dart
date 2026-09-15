@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../glass_card.dart';
 import 'fade_slide_transition.dart';
 import '../../theme/app_theme.dart';
+import '../../l10n/app_text.dart';
 
 class SyncProgressStep extends StatefulWidget {
   final double progress;
@@ -99,7 +100,7 @@ class _SyncProgressStepState extends State<SyncProgressStep>
                                 : Colors.black.withValues(alpha: 0.05),
                           ),
                         ),
-                        Text(
+                        AppText(
                           "${(widget.progress * 100).round()}%",
                           style: const TextStyle(
                             fontSize: 22,
@@ -115,7 +116,7 @@ class _SyncProgressStepState extends State<SyncProgressStep>
               const SizedBox(height: 40),
               const FadeSlideTransition(
                 delay: Duration(milliseconds: 150),
-                child: Text(
+                child: AppText(
                   "Personalizing Experience",
                   textAlign: TextAlign.center,
                   style: TextStyle(
@@ -128,7 +129,7 @@ class _SyncProgressStepState extends State<SyncProgressStep>
               const SizedBox(height: 12),
               FadeSlideTransition(
                 delay: const Duration(milliseconds: 250),
-                child: Text(
+                child: AppText(
                   widget.statusText,
                   textAlign: TextAlign.center,
                   style: TextStyle(

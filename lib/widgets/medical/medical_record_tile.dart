@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../services/health_service.dart';
 import 'medical_record_detail_dialog.dart';
+import '../../l10n/app_text.dart';
 
 class MedicalRecordTile extends StatelessWidget {
   final MedicalRecord record;
@@ -34,7 +35,7 @@ class MedicalRecordTile extends StatelessWidget {
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Center(
-                child: Text(
+                child: AppText(
                   record.category == "Immunization"
                       ? "💉"
                       : record.category == "Cardiology"
@@ -49,7 +50,7 @@ class MedicalRecordTile extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  AppText(
                     record.title,
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
@@ -59,7 +60,7 @@ class MedicalRecordTile extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 4),
-                  Text(
+                  AppText(
                     "${record.category} • ${record.provider}",
                     style: const TextStyle(color: Colors.grey, fontSize: 11),
                   ),
@@ -81,7 +82,7 @@ class MedicalRecordTile extends StatelessWidget {
                     ),
                     borderRadius: BorderRadius.circular(6),
                   ),
-                  child: Text(
+                  child: AppText(
                     status,
                     style: TextStyle(
                       color: isAlert ? Colors.redAccent : Colors.green,
@@ -91,7 +92,7 @@ class MedicalRecordTile extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 4),
-                Text(
+                AppText(
                   "${record.date.month}/${record.date.day}/${record.date.year}",
                   style: const TextStyle(color: Colors.grey, fontSize: 10),
                 ),

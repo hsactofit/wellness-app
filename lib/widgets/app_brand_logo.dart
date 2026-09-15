@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../app_brand.dart';
 import '../theme/app_theme.dart';
+import '../l10n/app_text.dart';
 
 /// Renders the logo selected for the current build.
 class AppBrandLogo extends StatelessWidget {
@@ -132,7 +133,7 @@ class AppBrandLogo extends StatelessWidget {
         alignment: Alignment.center,
         filterQuality: FilterQuality.high,
         errorBuilder: (_, __, ___) => Center(
-          child: Text(
+          child: AppText(
             AppBrand.name,
             style: TextStyle(
               color: isMednovations

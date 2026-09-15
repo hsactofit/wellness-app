@@ -6,6 +6,7 @@ import '../services/api_service.dart';
 import '../services/body_composition_comparison_presentation.dart';
 import '../services/body_composition_pdf_service.dart';
 import 'body_composition_report_review_screen.dart';
+import '../l10n/app_text.dart';
 
 Future<BodyCompositionComparison?> editBodyCompositionComparisonReports(
   BuildContext context,
@@ -21,14 +22,14 @@ Future<BodyCompositionComparison?> editBodyCompositionComparisonReports(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
+            AppText(
               'Edit comparison reports',
               style: Theme.of(
                 sheetContext,
               ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
             ),
             const SizedBox(height: 8),
-            const Text(
+            const AppText(
               'Comparison values come from these two saved health reports. Choose the report whose measurements you want to correct.',
             ),
             const SizedBox(height: 16),
@@ -76,7 +77,7 @@ Future<BodyCompositionComparison?> editBodyCompositionComparisonReports(
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
+          content: AppText(
             'The health report was updated, but the comparison could not be refreshed: $error',
           ),
         ),
@@ -98,8 +99,11 @@ Widget _comparisonReportChoice({
     child: ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       leading: const CircleAvatar(child: Icon(Icons.description_outlined)),
-      title: Text(label, style: const TextStyle(fontWeight: FontWeight.w800)),
-      subtitle: Text(date),
+      title: AppText(
+        label,
+        style: const TextStyle(fontWeight: FontWeight.w800),
+      ),
+      subtitle: AppText(date),
       trailing: const Icon(Icons.chevron_right),
       onTap: () => Navigator.of(context).pop(report),
     ),
@@ -147,7 +151,7 @@ class _BodyCompositionComparisonScreenState
     } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not compare reports: $error')),
+          SnackBar(content: AppText('Could not compare reports: $error')),
         );
       }
     } finally {
@@ -158,7 +162,7 @@ class _BodyCompositionComparisonScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Compare Reports')),
+      appBar: AppBar(title: const AppText('Compare Reports')),
       body: FutureBuilder<List<BodyCompositionReport>>(
         future: _reportsFuture,
         builder: (context, snapshot) {
@@ -167,7 +171,7 @@ class _BodyCompositionComparisonScreenState
           }
           if (snapshot.hasError) {
             return Center(
-              child: Text('Could not load reports: ${snapshot.error}'),
+              child: AppText('Could not load reports: ${snapshot.error}'),
             );
           }
           final reports = snapshot.data ?? [];
@@ -175,7 +179,7 @@ class _BodyCompositionComparisonScreenState
             return const Center(
               child: Padding(
                 padding: EdgeInsets.all(30),
-                child: Text(
+                child: AppText(
                   'Save at least two health reports to compare them.',
                   textAlign: TextAlign.center,
                 ),
@@ -187,7 +191,7 @@ class _BodyCompositionComparisonScreenState
           return ListView(
             padding: const EdgeInsets.all(20),
             children: [
-              const Text(
+              const AppText(
                 'Choose any two distinct saved reports. Reports from the same date are allowed.',
               ),
               const SizedBox(height: 18),
@@ -214,7 +218,7 @@ class _BodyCompositionComparisonScreenState
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Icon(Icons.compare_arrows_outlined),
-                label: Text('Compare Reports'),
+                label: AppText('Compare Reports'),
               ),
             ],
           );
@@ -239,7 +243,9 @@ class _BodyCompositionComparisonScreenState
           .map(
             (report) => DropdownMenuItem(
               value: report.id,
-              child: Text('${_date(report.measuredAt)} · ${_summary(report)}'),
+              child: AppText(
+                '${_date(report.measuredAt)} · ${_summary(report)}',
+              ),
             ),
           )
           .toList(),
@@ -290,25 +296,25 @@ class _BodyCompositionComparisonDetailScreenState
     setState(() => _comparison = updated);
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(const SnackBar(content: Text('Comparison updated.')));
+    ).showSnackBar(const SnackBar(content: AppText('Comparison updated.')));
   }
 
   Future<void> _delete() async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Delete comparison?'),
-        content: const Text(
+        title: const AppText('Delete comparison?'),
+        content: const AppText(
           'This permanently deletes the saved comparison. Your health reports will not be deleted.',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Cancel'),
+            child: const AppText('Cancel'),
           ),
           FilledButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Delete'),
+            child: const AppText('Delete'),
           ),
         ],
       ),
@@ -321,7 +327,7 @@ class _BodyCompositionComparisonDetailScreenState
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not delete the comparison: $error')),
+        SnackBar(content: AppText('Could not delete the comparison: $error')),
       );
     }
   }
@@ -343,27 +349,27 @@ class _BodyCompositionComparisonDetailScreenState
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Report Comparison'),
+        title: const AppText('Report Comparison'),
         actions: [
           IconButton(
-            tooltip: 'Edit comparison',
+            tooltip: 'Edit comparison'.localized(context),
             onPressed: _edit,
             icon: const Icon(Icons.edit_outlined),
           ),
           IconButton(
-            tooltip: 'Delete comparison',
+            tooltip: 'Delete comparison'.localized(context),
             onPressed: _delete,
             icon: const Icon(Icons.delete_outline),
           ),
           IconButton(
-            tooltip: 'Download PDF',
+            tooltip: 'Download PDF'.localized(context),
             onPressed: () async {
               try {
                 await BodyCompositionPdfService.shareComparison(comparison);
               } catch (error) {
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Could not create PDF: $error')),
+                    SnackBar(content: AppText('Could not create PDF: $error')),
                   );
                 }
               }
@@ -421,7 +427,7 @@ class _BodyCompositionComparisonDetailScreenState
             ),
           ],
           const SizedBox(height: 8),
-          Text(
+          AppText(
             'This comparison describes recorded changes only. It does not assess what is healthy or unhealthy for you.',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -442,21 +448,21 @@ class _BodyCompositionComparisonDetailScreenState
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
+            AppText(
               'Comparison period',
               style: Theme.of(
                 context,
               ).textTheme.labelLarge?.copyWith(color: scheme.primary),
             ),
             const SizedBox(height: 6),
-            Text(
+            AppText(
               '$olderDate → $newerDate',
               style: Theme.of(
                 context,
               ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 4),
-            Text(
+            AppText(
               '${_comparison.elapsedDays} ${_comparison.elapsedDays == 1 ? 'day' : 'days'} between measurements',
               style: Theme.of(
                 context,
@@ -475,7 +481,7 @@ class _BodyCompositionComparisonDetailScreenState
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
+            AppText(
               'At a glance',
               style: Theme.of(
                 context,
@@ -526,7 +532,7 @@ class _BodyCompositionComparisonDetailScreenState
         color: scheme.secondaryContainer,
         borderRadius: BorderRadius.circular(999),
       ),
-      child: Text(
+      child: AppText(
         label,
         style: Theme.of(
           context,
@@ -547,14 +553,14 @@ class _BodyCompositionComparisonDetailScreenState
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
+            AppText(
               'BMI context',
               style: Theme.of(
                 context,
               ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 4),
-            Text(
+            AppText(
               'Reported and app-calculated BMI are shown separately so their sources stay clear.',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: scheme.onSurfaceVariant,
@@ -601,7 +607,7 @@ class _BodyCompositionComparisonDetailScreenState
   }) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      Text(
+      AppText(
         label,
         style: Theme.of(
           context,
@@ -624,14 +630,14 @@ class _BodyCompositionComparisonDetailScreenState
       Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
+          AppText(
             title,
             style: Theme.of(
               context,
             ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 3),
-          Text(
+          AppText(
             detail,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -670,7 +676,7 @@ class _BodyCompositionComparisonDetailScreenState
                 ),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: Text(
+                  child: AppText(
                     metric.label,
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.w800,
@@ -678,7 +684,7 @@ class _BodyCompositionComparisonDetailScreenState
                   ),
                 ),
                 if (metric.unit.trim().isNotEmpty)
-                  Text(
+                  AppText(
                     metric.unit,
                     style: Theme.of(context).textTheme.labelMedium?.copyWith(
                       color: scheme.onSurfaceVariant,
@@ -729,14 +735,14 @@ class _BodyCompositionComparisonDetailScreenState
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  AppText(
                     comparable ? 'Change from earlier' : 'Comparison status',
                     style: Theme.of(context).textTheme.labelMedium?.copyWith(
                       color: scheme.onSurfaceVariant,
                     ),
                   ),
                   const SizedBox(height: 3),
-                  Text(
+                  AppText(
                     BodyCompositionComparisonPresentation.changeDescription(
                       metric,
                     ),
@@ -746,7 +752,7 @@ class _BodyCompositionComparisonDetailScreenState
                   ),
                   if (relative != null) ...[
                     const SizedBox(height: 2),
-                    Text(
+                    AppText(
                       relative,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: scheme.onSurfaceVariant,
@@ -766,7 +772,7 @@ class _BodyCompositionComparisonDetailScreenState
       Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
+          AppText(
             label,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -775,7 +781,7 @@ class _BodyCompositionComparisonDetailScreenState
             ),
           ),
           const SizedBox(height: 3),
-          Text(
+          AppText(
             value,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,

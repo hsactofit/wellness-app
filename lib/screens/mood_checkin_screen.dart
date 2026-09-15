@@ -4,6 +4,7 @@ import '../models/mood_checkin.dart';
 import '../services/api_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/glass_card.dart';
+import '../l10n/app_text.dart';
 
 typedef MoodCheckinLoader = Future<List<MoodCheckin>> Function();
 typedef MoodCheckinSubmitter =
@@ -107,7 +108,7 @@ class _MoodCheckinScreenState extends State<MoodCheckinScreen> {
       setState(() => _isSubmitting = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(e.toString().replaceFirst('Exception: ', '')),
+          content: AppText(e.toString().replaceFirst('Exception: ', '')),
           backgroundColor: Colors.redAccent,
         ),
       );
@@ -134,7 +135,7 @@ class _MoodCheckinScreenState extends State<MoodCheckinScreen> {
           ),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text(
+        title: AppText(
           'Mood Check-in',
           style: TextStyle(
             fontWeight: FontWeight.bold,
@@ -177,7 +178,7 @@ class _MoodCheckinScreenState extends State<MoodCheckinScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                Text(
+                AppText(
                   'Check-in logged',
                   style: TextStyle(
                     fontWeight: FontWeight.w900,
@@ -186,7 +187,7 @@ class _MoodCheckinScreenState extends State<MoodCheckinScreen> {
                   ),
                 ),
                 const SizedBox(height: 8),
-                Text(
+                AppText(
                   'Thanks for sharing how you\'re doing today.',
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 13, color: secondaryText),
@@ -205,7 +206,7 @@ class _MoodCheckinScreenState extends State<MoodCheckinScreen> {
                       borderRadius: BorderRadius.circular(14),
                     ),
                   ),
-                  child: const Text(
+                  child: const AppText(
                     'Done',
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),
@@ -226,7 +227,7 @@ class _MoodCheckinScreenState extends State<MoodCheckinScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
+          AppText(
             'How are you feeling today?',
             style: TextStyle(
               fontWeight: FontWeight.w900,
@@ -235,7 +236,7 @@ class _MoodCheckinScreenState extends State<MoodCheckinScreen> {
             ),
           ),
           const SizedBox(height: 6),
-          Text(
+          AppText(
             'A quick, private check-in — takes 10 seconds.',
             style: TextStyle(fontSize: 13, color: secondaryText),
           ),
@@ -248,14 +249,14 @@ class _MoodCheckinScreenState extends State<MoodCheckinScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
+                    AppText(
                       'Mood',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         color: textColor,
                       ),
                     ),
-                    Text(
+                    AppText(
                       _labelFor(_mood),
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
@@ -276,14 +277,14 @@ class _MoodCheckinScreenState extends State<MoodCheckinScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
+                    AppText(
                       'Stress level',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         color: textColor,
                       ),
                     ),
-                    Text(
+                    AppText(
                       '${_stress.round()}/10',
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
@@ -312,14 +313,14 @@ class _MoodCheckinScreenState extends State<MoodCheckinScreen> {
                 contentPadding: EdgeInsets.zero,
                 value: _anonymous,
                 activeThumbColor: _accent,
-                title: Text(
+                title: AppText(
                   'Submit anonymously',
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
                     color: textColor,
                   ),
                 ),
-                subtitle: Text(
+                subtitle: AppText(
                   'Your name is hidden from the wellness team; only trends are shared.',
                   style: TextStyle(fontSize: 12, color: secondaryText),
                 ),
@@ -347,7 +348,7 @@ class _MoodCheckinScreenState extends State<MoodCheckinScreen> {
                       color: Colors.white,
                     ),
                   )
-                : const Text(
+                : const AppText(
                     'Submit Check-in',
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                   ),
@@ -367,7 +368,7 @@ class _MoodCheckinScreenState extends State<MoodCheckinScreen> {
         Row(
           children: [
             Expanded(
-              child: Text(
+              child: AppText(
                 'Recent check-ins',
                 style: TextStyle(
                   fontWeight: FontWeight.w900,
@@ -378,13 +379,13 @@ class _MoodCheckinScreenState extends State<MoodCheckinScreen> {
             ),
             if (checkins != null)
               IconButton(
-                tooltip: 'Refresh check-in history',
+                tooltip: 'Refresh check-in history'.localized(context),
                 onPressed: _loadHistory,
                 icon: Icon(Icons.refresh_rounded, color: secondaryText),
               ),
           ],
         ),
-        Text(
+        AppText(
           'Your personal check-in history is visible only in your account.',
           style: TextStyle(fontSize: 12, color: secondaryText),
         ),
@@ -401,7 +402,7 @@ class _MoodCheckinScreenState extends State<MoodCheckinScreen> {
               children: [
                 Icon(Icons.insights_rounded, color: secondaryText, size: 32),
                 const SizedBox(height: 10),
-                Text(
+                AppText(
                   _historyError ?? 'Your first check-in will appear here.',
                   textAlign: TextAlign.center,
                   style: TextStyle(color: secondaryText),
@@ -410,7 +411,7 @@ class _MoodCheckinScreenState extends State<MoodCheckinScreen> {
                   const SizedBox(height: 8),
                   TextButton(
                     onPressed: _loadHistory,
-                    child: const Text('Try again'),
+                    child: const AppText('Try again'),
                   ),
                 ],
               ],
@@ -430,7 +431,7 @@ class _MoodCheckinScreenState extends State<MoodCheckinScreen> {
                       shape: BoxShape.circle,
                       color: _accent.withValues(alpha: 0.12),
                     ),
-                    child: Text(
+                    child: AppText(
                       '${checkin.moodScore}',
                       style: const TextStyle(
                         color: _accent,
@@ -444,7 +445,7 @@ class _MoodCheckinScreenState extends State<MoodCheckinScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
+                        AppText(
                           'Mood ${checkin.moodScore}/10 · ${_labelFor(checkin.moodScore.toDouble())}',
                           style: TextStyle(
                             color: textColor,
@@ -452,12 +453,12 @@ class _MoodCheckinScreenState extends State<MoodCheckinScreen> {
                           ),
                         ),
                         const SizedBox(height: 4),
-                        Text(
+                        AppText(
                           'Stress ${checkin.stressScore}/10 · ${_formatCheckedAt(checkin.checkedAt)}',
                           style: TextStyle(fontSize: 12, color: secondaryText),
                         ),
                         const SizedBox(height: 3),
-                        Text(
+                        AppText(
                           checkin.anonymous
                               ? 'Submitted anonymously'
                               : 'Shared with the wellness team',

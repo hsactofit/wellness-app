@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/workout_muscles.dart';
 import '../theme/app_theme.dart';
 import 'glass_card.dart';
+import '../l10n/app_text.dart';
 
 const Color _lightTargetMuscleColor = Color(0xFFE5483A);
 const Color _darkTargetMuscleColor = Color(0xFFFF6D55);
@@ -81,7 +82,7 @@ class _WorkoutMuscleMapCardState extends State<WorkoutMuscleMapCard> {
               _FullBodyCallout(colorScheme: scheme)
             else ...[
               Text(
-                'Tap a target to locate it on the body map.',
+                'Tap a target to locate it on the body map.'.localized(context),
                 style: Theme.of(
                   context,
                 ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
@@ -156,16 +157,17 @@ class _MapHeader extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Today\'s muscle focus',
+                'Today\'s muscle focus'.localized(context),
                 style: Theme.of(
                   context,
                 ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
               ),
               const SizedBox(height: 1),
               Text(
-                isFullBody
-                    ? 'A balanced full-body session'
-                    : '$targetCount targeted ${targetCount == 1 ? 'area' : 'areas'}',
+                (isFullBody
+                        ? 'A balanced full-body session'
+                        : '$targetCount targeted ${targetCount == 1 ? 'area' : 'areas'}')
+                    .localized(context),
                 style: Theme.of(
                   context,
                 ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
@@ -202,7 +204,7 @@ class _FullBodyCallout extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Full-body training',
+                  'Full-body training'.localized(context),
                   style: Theme.of(context).textTheme.labelLarge?.copyWith(
                     fontWeight: FontWeight.w800,
                     color: colorScheme.onSurface,
@@ -210,7 +212,8 @@ class _FullBodyCallout extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Today\'s exercises work the upper body, core and lower body.',
+                  'Today\'s exercises work the upper body, core and lower body.'
+                      .localized(context),
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: colorScheme.onSurfaceVariant,
                   ),
@@ -261,7 +264,7 @@ class _TargetMuscleChip extends StatelessWidget {
             shape: BoxShape.circle,
           ),
         ),
-        label: Text(label),
+        label: Text(label.localized(context)),
       ),
     );
   }
@@ -289,7 +292,9 @@ class _FocusCaption extends StatelessWidget {
           const SizedBox(width: 7),
           Expanded(
             child: Text(
-              '${workoutTargetMuscleLabel(muscle)} · $location',
+              '${workoutTargetMuscleLabel(muscle)} · $location'.localized(
+                context,
+              ),
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: scheme.onSurface,
                 fontWeight: FontWeight.w700,
@@ -490,7 +495,7 @@ class _AnatomyViewOption extends StatelessWidget {
                 const SizedBox(width: 6),
                 Flexible(
                   child: Text(
-                    label,
+                    label.localized(context),
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.labelMedium?.copyWith(
                       color: color,
@@ -796,7 +801,7 @@ class _BodyView extends StatelessWidget {
     return Column(
       children: [
         Text(
-          label,
+          label.localized(context),
           style: Theme.of(context).textTheme.labelMedium?.copyWith(
             color: scheme.onSurfaceVariant,
             fontWeight: FontWeight.w800,
@@ -839,7 +844,8 @@ class _MapKey extends StatelessWidget {
         ),
         const SizedBox(width: 6),
         Text(
-          isFullBody ? 'All major muscle groups' : 'Selected training areas',
+          (isFullBody ? 'All major muscle groups' : 'Selected training areas')
+              .localized(context),
           style: Theme.of(
             context,
           ).textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant),

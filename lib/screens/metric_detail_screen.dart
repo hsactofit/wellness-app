@@ -4,6 +4,7 @@ import '../models/demo_health_metrics.dart';
 import '../services/api_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/glass_card.dart';
+import '../l10n/app_text.dart';
 
 class MetricDetailScreen extends StatefulWidget {
   final String
@@ -48,10 +49,10 @@ class _MetricDetailScreenState extends State<MetricDetailScreen>
         height: 30,
         fit: BoxFit.contain,
         errorBuilder: (_, __, ___) =>
-            Text(icon, style: const TextStyle(fontSize: 28)),
+            AppText(icon, style: const TextStyle(fontSize: 28)),
       );
     }
-    return Text(icon, style: const TextStyle(fontSize: 28));
+    return AppText(icon, style: const TextStyle(fontSize: 28));
   }
 
   @override
@@ -273,7 +274,7 @@ class _MetricDetailScreenState extends State<MetricDetailScreen>
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
+                              AppText(
                                 widget.title,
                                 style: theme.textTheme.headlineSmall?.copyWith(
                                   fontWeight: FontWeight.bold,
@@ -281,7 +282,7 @@ class _MetricDetailScreenState extends State<MetricDetailScreen>
                                   color: isDark ? Colors.white : Colors.black87,
                                 ),
                               ),
-                              Text(
+                              AppText(
                                 "Historical analysis & health insights",
                                 style: theme.textTheme.bodySmall?.copyWith(
                                   color: isDark
@@ -315,9 +316,9 @@ class _MetricDetailScreenState extends State<MetricDetailScreen>
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Text("⚠️", style: TextStyle(fontSize: 48)),
+                            const AppText("⚠️", style: TextStyle(fontSize: 48)),
                             const SizedBox(height: 16),
-                            Text(
+                            AppText(
                               _errorMessage!,
                               textAlign: TextAlign.center,
                               style: const TextStyle(
@@ -340,7 +341,7 @@ class _MetricDetailScreenState extends State<MetricDetailScreen>
                                 ),
                               ),
                               onPressed: _fetchGraphData,
-                              child: Text(
+                              child: AppText(
                                 "Retry Connection",
                                 style: TextStyle(
                                   color: widget.color,
@@ -380,7 +381,7 @@ class _MetricDetailScreenState extends State<MetricDetailScreen>
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text(
+                                AppText(
                                   "Activity Trend 📊",
                                   style: TextStyle(
                                     fontSize: 14,
@@ -561,7 +562,7 @@ class _MetricDetailScreenState extends State<MetricDetailScreen>
                     ),
                     const SizedBox(width: 4),
                     Expanded(
-                      child: Text(
+                      child: AppText(
                         title.toUpperCase(),
                         style: TextStyle(
                           fontSize: 9,
@@ -579,7 +580,7 @@ class _MetricDetailScreenState extends State<MetricDetailScreen>
                 FittedBox(
                   fit: BoxFit.scaleDown,
                   alignment: Alignment.centerLeft,
-                  child: Text(
+                  child: AppText(
                     value,
                     style: TextStyle(
                       fontSize: 17,
@@ -590,7 +591,7 @@ class _MetricDetailScreenState extends State<MetricDetailScreen>
                   ),
                 ),
                 const SizedBox(height: 3),
-                Text(
+                AppText(
                   description,
                   style: TextStyle(
                     fontSize: 8,
@@ -620,7 +621,7 @@ class _MetricDetailScreenState extends State<MetricDetailScreen>
                     color: displayColor,
                   ),
                   child: Center(
-                    child: Text(
+                    child: AppText(
                       "${(currentProgress * 100).round()}%",
                       style: TextStyle(
                         fontSize: 7.5,
@@ -657,7 +658,7 @@ class _MetricDetailScreenState extends State<MetricDetailScreen>
           color: isSelected ? widget.color : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
         ),
-        child: Text(
+        child: AppText(
           label,
           style: TextStyle(
             fontSize: 10.5,
@@ -682,7 +683,7 @@ class _MetricDetailScreenState extends State<MetricDetailScreen>
           borderRadius: BorderRadius.circular(14),
         ),
         child: const Center(
-          child: Text(
+          child: AppText(
             "No historical logs available for this range",
             style: TextStyle(color: Colors.grey, fontSize: 12),
           ),
@@ -711,7 +712,7 @@ class _MetricDetailScreenState extends State<MetricDetailScreen>
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Text(
+                  AppText(
                     _formatAxisLabel(maxVal),
                     style: const TextStyle(
                       fontSize: 8,
@@ -719,7 +720,7 @@ class _MetricDetailScreenState extends State<MetricDetailScreen>
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  Text(
+                  AppText(
                     _formatAxisLabel(maxVal * 0.75),
                     style: const TextStyle(
                       fontSize: 8,
@@ -727,7 +728,7 @@ class _MetricDetailScreenState extends State<MetricDetailScreen>
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  Text(
+                  AppText(
                     _formatAxisLabel(maxVal * 0.5),
                     style: const TextStyle(
                       fontSize: 8,
@@ -735,7 +736,7 @@ class _MetricDetailScreenState extends State<MetricDetailScreen>
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  Text(
+                  AppText(
                     _formatAxisLabel(maxVal * 0.25),
                     style: const TextStyle(
                       fontSize: 8,
@@ -743,7 +744,7 @@ class _MetricDetailScreenState extends State<MetricDetailScreen>
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const Text(
+                  const AppText(
                     "0",
                     style: TextStyle(
                       fontSize: 8,
@@ -874,7 +875,7 @@ class _MetricDetailScreenState extends State<MetricDetailScreen>
           crossAxisAlignment: CrossAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
+            AppText(
               formattedDate,
               style: TextStyle(
                 fontSize: 8,
@@ -883,7 +884,7 @@ class _MetricDetailScreenState extends State<MetricDetailScreen>
               ),
             ),
             const SizedBox(height: 2),
-            Text(
+            AppText(
               formattedValue,
               style: TextStyle(
                 fontSize: 10,
@@ -950,7 +951,7 @@ class _MetricDetailScreenState extends State<MetricDetailScreen>
               children: [
                 Padding(
                   padding: const EdgeInsets.only(left: 4, bottom: 8, top: 12),
-                  child: Text(
+                  child: AppText(
                     "DETAILED RECORD HISTORY",
                     style: TextStyle(
                       fontSize: 10,
@@ -967,7 +968,7 @@ class _MetricDetailScreenState extends State<MetricDetailScreen>
                         _historyExpanded = !_historyExpanded;
                       });
                     },
-                    child: Text(
+                    child: AppText(
                       _historyExpanded ? "Collapse" : "View All",
                       style: TextStyle(
                         fontSize: 11,
@@ -1080,7 +1081,7 @@ class _MetricDetailScreenState extends State<MetricDetailScreen>
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
+                            AppText(
                               displayDate,
                               style: TextStyle(
                                 fontSize: 13,
@@ -1089,7 +1090,7 @@ class _MetricDetailScreenState extends State<MetricDetailScreen>
                               ),
                             ),
                             const SizedBox(height: 2),
-                            Text(
+                            AppText(
                               displayWeekday,
                               style: TextStyle(
                                 fontSize: 10,
@@ -1103,7 +1104,7 @@ class _MetricDetailScreenState extends State<MetricDetailScreen>
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          Text(
+                          AppText(
                             displayValue,
                             style: TextStyle(
                               fontSize: 13,
@@ -1112,7 +1113,7 @@ class _MetricDetailScreenState extends State<MetricDetailScreen>
                             ),
                           ),
                           const SizedBox(height: 2),
-                          Text(
+                          AppText(
                             isGoalHit ? "ACTIVE GOAL HIT" : "BELOW TARGET",
                             style: TextStyle(
                               fontSize: 8,
@@ -1248,7 +1249,7 @@ class _MetricDetailScreenState extends State<MetricDetailScreen>
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
+                                AppText(
                                   displayDate,
                                   style: TextStyle(
                                     fontSize: 14,
@@ -1259,7 +1260,7 @@ class _MetricDetailScreenState extends State<MetricDetailScreen>
                                   ),
                                 ),
                                 const SizedBox(height: 3),
-                                Text(
+                                AppText(
                                   displayWeekday,
                                   style: TextStyle(
                                     fontSize: 11,
@@ -1275,7 +1276,7 @@ class _MetricDetailScreenState extends State<MetricDetailScreen>
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
-                              Text(
+                              AppText(
                                 displayValue,
                                 style: TextStyle(
                                   fontSize: 14,
@@ -1284,7 +1285,7 @@ class _MetricDetailScreenState extends State<MetricDetailScreen>
                                 ),
                               ),
                               const SizedBox(height: 3),
-                              Text(
+                              AppText(
                                 isGoalHit ? "ACTIVE GOAL HIT" : "BELOW TARGET",
                                 style: TextStyle(
                                   fontSize: 8,
@@ -1339,7 +1340,7 @@ class _MetricDetailScreenState extends State<MetricDetailScreen>
                                       color: widget.color,
                                     ),
                                     child: Center(
-                                      child: Text(
+                                      child: AppText(
                                         "${(progress * 100).round()}%",
                                         style: TextStyle(
                                           fontSize: 10,
@@ -1358,7 +1359,7 @@ class _MetricDetailScreenState extends State<MetricDetailScreen>
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      Text(
+                                      AppText(
                                         "${widget.title.toUpperCase()} PROGRESS",
                                         style: TextStyle(
                                           fontSize: 9,
@@ -1370,7 +1371,7 @@ class _MetricDetailScreenState extends State<MetricDetailScreen>
                                         ),
                                       ),
                                       const SizedBox(height: 4),
-                                      Text(
+                                      AppText(
                                         isGoalHit
                                             ? "Fantastic effort! You've achieved your goal."
                                             : "Keep going, you are close to hitting your goal!",
@@ -1428,7 +1429,7 @@ class _MetricDetailScreenState extends State<MetricDetailScreen>
                                         crossAxisAlignment:
                                             CrossAxisAlignment.start,
                                         children: [
-                                          const Text(
+                                          const AppText(
                                             "EST. CALORIES BURNED",
                                             style: TextStyle(
                                               fontSize: 8.5,
@@ -1438,7 +1439,7 @@ class _MetricDetailScreenState extends State<MetricDetailScreen>
                                             ),
                                           ),
                                           const SizedBox(height: 1),
-                                          Text(
+                                          AppText(
                                             "${calories.toStringAsFixed(1)} kcal burned",
                                             style: TextStyle(
                                               fontSize: 13,
@@ -1549,7 +1550,7 @@ class _MetricDetailScreenState extends State<MetricDetailScreen>
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
+                      AppText(
                         displayDate,
                         style: TextStyle(
                           fontSize: 18,
@@ -1558,7 +1559,7 @@ class _MetricDetailScreenState extends State<MetricDetailScreen>
                         ),
                       ),
                       const SizedBox(height: 2),
-                      Text(
+                      AppText(
                         displayWeekday,
                         style: TextStyle(
                           fontSize: 12,
@@ -1579,7 +1580,7 @@ class _MetricDetailScreenState extends State<MetricDetailScreen>
                           : const Color(0xFFFF3B30).withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: Text(
+                    child: AppText(
                       isGoalHit ? "GOAL ACHIEVED" : "BELOW TARGET",
                       style: TextStyle(
                         fontSize: 9,
@@ -1619,7 +1620,7 @@ class _MetricDetailScreenState extends State<MetricDetailScreen>
                           color: widget.color,
                         ),
                         child: Center(
-                          child: Text(
+                          child: AppText(
                             "${(progress * 100).round()}%",
                             style: TextStyle(
                               fontSize: 11,
@@ -1635,7 +1636,7 @@ class _MetricDetailScreenState extends State<MetricDetailScreen>
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
+                          AppText(
                             widget.title.toUpperCase(),
                             style: TextStyle(
                               fontSize: 10,
@@ -1647,7 +1648,7 @@ class _MetricDetailScreenState extends State<MetricDetailScreen>
                           const SizedBox(height: 4),
                           FittedBox(
                             fit: BoxFit.scaleDown,
-                            child: Text(
+                            child: AppText(
                               displayValue,
                               style: TextStyle(
                                 fontSize: 24,
@@ -1693,7 +1694,7 @@ class _MetricDetailScreenState extends State<MetricDetailScreen>
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
+                            const AppText(
                               "EST. CALORIES BURNED",
                               style: TextStyle(
                                 fontSize: 9,
@@ -1703,7 +1704,7 @@ class _MetricDetailScreenState extends State<MetricDetailScreen>
                               ),
                             ),
                             const SizedBox(height: 2),
-                            Text(
+                            AppText(
                               "${calories.toStringAsFixed(1)} kcal",
                               style: TextStyle(
                                 fontSize: 16,
@@ -1733,7 +1734,7 @@ class _MetricDetailScreenState extends State<MetricDetailScreen>
                   ),
                   padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
-                child: Text(
+                child: AppText(
                   "Done",
                   style: TextStyle(
                     color: widget.color,
@@ -1807,7 +1808,7 @@ class _MetricDetailScreenState extends State<MetricDetailScreen>
               Positioned(
                 left: i * stepX - 20, // Center the label text roughly
                 width: 40,
-                child: Text(
+                child: AppText(
                   displayLabel,
                   textAlign: TextAlign.center,
                   style: TextStyle(
@@ -1863,7 +1864,7 @@ class _MetricDetailScreenState extends State<MetricDetailScreen>
                           shape: BoxShape.circle,
                         ),
                         child: Center(
-                          child: Text(
+                          child: AppText(
                             "✨",
                             style: TextStyle(fontSize: 14, color: widget.color),
                           ),
@@ -1873,7 +1874,7 @@ class _MetricDetailScreenState extends State<MetricDetailScreen>
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
+                          AppText(
                             "AI Wellness Buddy",
                             style: TextStyle(
                               fontSize: 13,
@@ -1881,7 +1882,7 @@ class _MetricDetailScreenState extends State<MetricDetailScreen>
                               color: isDark ? Colors.white : Colors.black87,
                             ),
                           ),
-                          Text(
+                          AppText(
                             "Personal health advisor",
                             style: TextStyle(
                               fontSize: 9,
@@ -1930,7 +1931,7 @@ class _MetricDetailScreenState extends State<MetricDetailScreen>
                           ),
                         ),
                         const SizedBox(width: 4),
-                        Text(
+                        AppText(
                           "ANALYSIS LIVE",
                           style: TextStyle(
                             fontSize: 7.5,
@@ -1964,7 +1965,7 @@ class _MetricDetailScreenState extends State<MetricDetailScreen>
                         : Colors.black.withValues(alpha: 0.02),
                   ),
                 ),
-                child: Text(
+                child: AppText(
                   feedbackText,
                   style: TextStyle(
                     fontSize: 12,

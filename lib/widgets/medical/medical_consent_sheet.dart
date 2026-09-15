@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../l10n/app_text.dart';
 
 class MedicalConsentSheet extends StatefulWidget {
   final Future<void> Function() onAuthorize;
@@ -40,7 +41,7 @@ class _MedicalConsentSheetState extends State<MedicalConsentSheet> {
         children: [
           Icon(Icons.security, size: 48, color: theme.colorScheme.primary),
           const SizedBox(height: 16),
-          Text(
+          AppText(
             "Consent Form: Medical Records Sync",
             style: theme.textTheme.titleLarge?.copyWith(
               fontWeight: FontWeight.bold,
@@ -48,7 +49,7 @@ class _MedicalConsentSheetState extends State<MedicalConsentSheet> {
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 16),
-          const Text(
+          const AppText(
             "By enabling Medical & Health Records synchronization, you explicitly consent and authorize the application to:",
             style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
           ),
@@ -65,7 +66,7 @@ class _MedicalConsentSheetState extends State<MedicalConsentSheet> {
           const SizedBox(height: 20),
           CheckboxListTile(
             contentPadding: EdgeInsets.zero,
-            title: const Text(
+            title: const AppText(
               "I explicitly consent to allow wellnessconnect to access my secure medical records.",
               style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
             ),
@@ -83,7 +84,7 @@ class _MedicalConsentSheetState extends State<MedicalConsentSheet> {
               Expanded(
                 child: TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text("Decline"),
+                  child: const AppText("Decline"),
                 ),
               ),
               const SizedBox(width: 12),
@@ -102,7 +103,7 @@ class _MedicalConsentSheetState extends State<MedicalConsentSheet> {
                           Navigator.pop(context);
                           await widget.onAuthorize();
                         },
-                  child: const Text(
+                  child: const AppText(
                     "Agree & Authorize",
                     style: TextStyle(
                       color: Colors.white,
@@ -124,7 +125,7 @@ class _MedicalConsentSheetState extends State<MedicalConsentSheet> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
+          AppText(
             "• ",
             style: TextStyle(
               fontWeight: FontWeight.bold,
@@ -132,7 +133,7 @@ class _MedicalConsentSheetState extends State<MedicalConsentSheet> {
             ),
           ),
           Expanded(
-            child: Text(
+            child: AppText(
               text,
               style: const TextStyle(
                 fontSize: 12,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'fade_slide_transition.dart';
 import '../../theme/app_theme.dart';
+import '../../l10n/app_text.dart';
 
 class MedicalStep extends StatefulWidget {
   final List<String> selectedConditions;
@@ -84,7 +85,7 @@ class _MedicalStepState extends State<MedicalStep> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
-          title: const Text(
+          title: const AppText(
             "Add Custom Condition",
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
@@ -92,7 +93,7 @@ class _MedicalStepState extends State<MedicalStep> {
             controller: _customConditionController,
             textCapitalization: TextCapitalization.sentences,
             decoration: InputDecoration(
-              hintText: "Enter condition name",
+              hintText: "Enter condition name".localized(context),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -111,7 +112,10 @@ class _MedicalStepState extends State<MedicalStep> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text("Cancel", style: TextStyle(color: Colors.grey)),
+              child: const AppText(
+                "Cancel",
+                style: TextStyle(color: Colors.grey),
+              ),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
@@ -135,7 +139,7 @@ class _MedicalStepState extends State<MedicalStep> {
                 }
                 Navigator.pop(context);
               },
-              child: const Text(
+              child: const AppText(
                 "Add",
                 style: TextStyle(
                   color: Colors.white,
@@ -201,7 +205,7 @@ class _MedicalStepState extends State<MedicalStep> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        const Text(
+                        const AppText(
                           "Medical Health Profile",
                           textAlign: TextAlign.center,
                           style: TextStyle(
@@ -212,7 +216,7 @@ class _MedicalStepState extends State<MedicalStep> {
                           ),
                         ),
                         const SizedBox(height: 8),
-                        Text(
+                        AppText(
                           "Select any conditions that apply to you. This helps us tailor your wellness insights.",
                           textAlign: TextAlign.center,
                           style: TextStyle(
@@ -310,7 +314,7 @@ class _MedicalStepState extends State<MedicalStep> {
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      Text(
+                                      AppText(
                                         title,
                                         style: TextStyle(
                                           fontWeight: FontWeight.bold,
@@ -321,7 +325,7 @@ class _MedicalStepState extends State<MedicalStep> {
                                         ),
                                       ),
                                       const SizedBox(height: 2),
-                                      Text(
+                                      AppText(
                                         subtitle,
                                         style: TextStyle(
                                           fontSize: 13,
@@ -392,7 +396,7 @@ class _MedicalStepState extends State<MedicalStep> {
                                   size: 20,
                                 ),
                                 const SizedBox(width: 8),
-                                Text(
+                                AppText(
                                   "ADD OTHER CONDITION",
                                   style: TextStyle(
                                     fontWeight: FontWeight.bold,
@@ -454,7 +458,7 @@ class _MedicalStepState extends State<MedicalStep> {
                               ),
                               const SizedBox(width: 12),
                               Expanded(
-                                child: Text(
+                                child: AppText(
                                   "I don't have any of these conditions",
                                   style: TextStyle(
                                     fontSize: 14,
@@ -497,7 +501,7 @@ class _MedicalStepState extends State<MedicalStep> {
                           ),
                           const SizedBox(width: 12),
                           Expanded(
-                            child: Text(
+                            child: AppText(
                               "Your medical data is encrypted and only used to personalize your wellness experience. We never share your data with third parties.",
                               style: TextStyle(
                                 fontSize: 13,
@@ -536,7 +540,7 @@ class _MedicalStepState extends State<MedicalStep> {
                       ),
                     ),
                     onPressed: widget.onBack,
-                    child: const Text(
+                    child: const AppText(
                       "PREVIOUS",
                       style: TextStyle(
                         color: AppTheme.brandInk,
@@ -570,7 +574,7 @@ class _MedicalStepState extends State<MedicalStep> {
                           widget.selectedConditions.isEmpty) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
-                            content: Text(
+                            content: AppText(
                               "Please select a condition or check the box below",
                             ),
                             backgroundColor: Colors.orange,
@@ -583,7 +587,7 @@ class _MedicalStepState extends State<MedicalStep> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Text(
+                        const AppText(
                           "CONTINUE",
                           style: TextStyle(
                             color: Colors.white,

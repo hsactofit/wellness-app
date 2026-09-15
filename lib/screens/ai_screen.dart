@@ -5,6 +5,7 @@ import 'nutrition_logging_screen.dart';
 import '../services/api_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/glass_card.dart';
+import '../l10n/app_text.dart';
 
 /// Real chat backed by /api/ai/chat — plain Q&A only, deliberately no
 /// function-calling/action-logging (that would double the API cost per
@@ -243,7 +244,7 @@ class _AIScreenState extends State<AIScreen> {
                       content = Center(
                         child: Padding(
                           padding: const EdgeInsets.all(24),
-                          child: Text(
+                          child: AppText(
                             'Could not load your chat history. Please try again.',
                             textAlign: TextAlign.center,
                             style: TextStyle(
@@ -265,7 +266,7 @@ class _AIScreenState extends State<AIScreen> {
                           .toList();
                       content = conversations.isEmpty
                           ? Center(
-                              child: Text(
+                              child: AppText(
                                 'Your previous chats will appear here.',
                                 style: TextStyle(
                                   color: sheetIsDark
@@ -320,7 +321,7 @@ class _AIScreenState extends State<AIScreen> {
                                                 ? Colors.white60
                                                 : Colors.black54),
                                     ),
-                                    title: Text(
+                                    title: AppText(
                                       displayTitle,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
@@ -331,7 +332,7 @@ class _AIScreenState extends State<AIScreen> {
                                             : FontWeight.w600,
                                       ),
                                     ),
-                                    subtitle: Text(
+                                    subtitle: AppText(
                                       preview.isEmpty
                                           ? _formatConversationDate(
                                               conversation['started_at']
@@ -369,7 +370,9 @@ class _AIScreenState extends State<AIScreen> {
                                           )
                                         else
                                           IconButton(
-                                            tooltip: 'Delete chat',
+                                            tooltip: 'Delete chat'.localized(
+                                              context,
+                                            ),
                                             icon: Icon(
                                               Icons.delete_outline_rounded,
                                               color: sheetIsDark
@@ -381,10 +384,10 @@ class _AIScreenState extends State<AIScreen> {
                                                 context: sheetContext,
                                                 builder: (dialogContext) =>
                                                     AlertDialog(
-                                                      title: const Text(
+                                                      title: const AppText(
                                                         'Delete chat?',
                                                       ),
-                                                      content: Text(
+                                                      content: AppText(
                                                         'Delete “$displayTitle” and all of its messages? This cannot be undone.',
                                                       ),
                                                       actions: [
@@ -393,7 +396,7 @@ class _AIScreenState extends State<AIScreen> {
                                                               Navigator.of(
                                                                 dialogContext,
                                                               ).pop(false),
-                                                          child: const Text(
+                                                          child: const AppText(
                                                             'Cancel',
                                                           ),
                                                         ),
@@ -407,7 +410,7 @@ class _AIScreenState extends State<AIScreen> {
                                                                 foregroundColor:
                                                                     Colors.red,
                                                               ),
-                                                          child: const Text(
+                                                          child: const AppText(
                                                             'Delete',
                                                           ),
                                                         ),
@@ -444,7 +447,7 @@ class _AIScreenState extends State<AIScreen> {
                                                   ..hideCurrentSnackBar()
                                                   ..showSnackBar(
                                                     const SnackBar(
-                                                      content: Text(
+                                                      content: AppText(
                                                         'Chat deleted.',
                                                       ),
                                                     ),
@@ -463,7 +466,7 @@ class _AIScreenState extends State<AIScreen> {
                                                   ..hideCurrentSnackBar()
                                                   ..showSnackBar(
                                                     SnackBar(
-                                                      content: Text(
+                                                      content: AppText(
                                                         error
                                                             .toString()
                                                             .replaceFirst(
@@ -496,7 +499,7 @@ class _AIScreenState extends State<AIScreen> {
                           child: Row(
                             children: [
                               Expanded(
-                                child: Text(
+                                child: AppText(
                                   'Chat history',
                                   style: sheetTheme.textTheme.titleLarge
                                       ?.copyWith(
@@ -506,7 +509,7 @@ class _AIScreenState extends State<AIScreen> {
                                 ),
                               ),
                               IconButton(
-                                tooltip: 'Close',
+                                tooltip: 'Close'.localized(context),
                                 onPressed: () =>
                                     Navigator.of(sheetContext).pop(),
                                 icon: Icon(
@@ -553,7 +556,7 @@ class _AIScreenState extends State<AIScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(error.toString().replaceFirst('Exception: ', '')),
+            content: AppText(error.toString().replaceFirst('Exception: ', '')),
           ),
         );
       }
@@ -713,7 +716,7 @@ class _AIScreenState extends State<AIScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
+                              AppText(
                                 "Your Fitness Coach",
                                 style: theme.textTheme.titleMedium?.copyWith(
                                   fontWeight: FontWeight.w800,
@@ -733,7 +736,7 @@ class _AIScreenState extends State<AIScreen> {
                                     ),
                                   ),
                                   const SizedBox(width: 6),
-                                  Text(
+                                  AppText(
                                     "Ready for your next rep",
                                     style: TextStyle(
                                       fontSize: 11,
@@ -749,7 +752,7 @@ class _AIScreenState extends State<AIScreen> {
                           ),
                         ),
                         IconButton(
-                          tooltip: 'Chat history',
+                          tooltip: 'Chat history'.localized(context),
                           onPressed: _isSending || _isLoadingHistory
                               ? null
                               : _openConversationHistory,
@@ -765,7 +768,7 @@ class _AIScreenState extends State<AIScreen> {
                             Icons.add_comment_outlined,
                             size: 17,
                           ),
-                          label: const Text('New'),
+                          label: const AppText('New'),
                           style: TextButton.styleFrom(
                             foregroundColor: const Color(0xFFFF7A53),
                             minimumSize: const Size(0, 40),
@@ -847,7 +850,7 @@ class _AIScreenState extends State<AIScreen> {
                               size: 14,
                               color: const Color(0xFFFF8A4C),
                             ),
-                            label: Text(
+                            label: AppText(
                               text,
                               style: TextStyle(
                                 color: isDark ? Colors.white70 : Colors.black87,
@@ -885,7 +888,8 @@ class _AIScreenState extends State<AIScreen> {
                             onSubmitted: (v) => _sendMessage(v),
                             decoration: InputDecoration(
                               hintText:
-                                  "Ask your coach about your next workout…",
+                                  "Ask your coach about your next workout…"
+                                      .localized(context),
                               hintStyle: TextStyle(
                                 color: isDark ? Colors.white30 : Colors.black38,
                                 fontSize: 13,
@@ -988,7 +992,7 @@ class _AIScreenState extends State<AIScreen> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  Text(
+                  AppText(
                     text,
                     style: TextStyle(
                       color: isDark ? Colors.white70 : Colors.black54,
@@ -1002,7 +1006,7 @@ class _AIScreenState extends State<AIScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
+                  AppText(
                     text,
                     style: TextStyle(
                       color: isUser
@@ -1036,13 +1040,13 @@ class _AIScreenState extends State<AIScreen> {
         _messages[index]['mealAnalysis'] = updated;
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Meal added to your tracker.')),
+        const SnackBar(content: AppText('Meal added to your tracker.')),
       );
     } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(error.toString().replaceFirst('Exception: ', '')),
+            content: AppText(error.toString().replaceFirst('Exception: ', '')),
           ),
         );
       }
@@ -1067,7 +1071,7 @@ class _AIScreenState extends State<AIScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
+          AppText(
             analysis.needsClarification
                 ? 'Tell me a little more'
                 : 'AI meal estimate',
@@ -1079,7 +1083,7 @@ class _AIScreenState extends State<AIScreen> {
           ),
           if (!analysis.needsClarification) ...[
             const SizedBox(height: 4),
-            Text(
+            AppText(
               '${analysis.calories ?? 0} kcal · ${(analysis.proteinG ?? 0).toStringAsFixed(1)}g protein',
               style: TextStyle(
                 color: isDark ? Colors.white : Colors.black87,
@@ -1101,7 +1105,7 @@ class _AIScreenState extends State<AIScreen> {
                       ),
                     );
                   },
-                  child: Text(
+                  child: AppText(
                     analysis.needsClarification ? 'Edit details' : 'Review',
                   ),
                 ),
@@ -1111,13 +1115,13 @@ class _AIScreenState extends State<AIScreen> {
                 Expanded(
                   child: FilledButton(
                     onPressed: onCommit,
-                    child: const Text('Add to tracker'),
+                    child: const AppText('Add to tracker'),
                   ),
                 ),
               ],
               if (saved)
                 const Expanded(
-                  child: Text(
+                  child: AppText(
                     'Tracked',
                     textAlign: TextAlign.center,
                     style: TextStyle(

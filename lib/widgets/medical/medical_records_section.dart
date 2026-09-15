@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../services/health_service.dart';
 import '../glass_card.dart';
 import 'medical_record_tile.dart';
+import '../../l10n/app_text.dart';
 
 class MedicalRecordsSection extends StatelessWidget {
   final HealthData healthData;
@@ -46,14 +47,14 @@ class MedicalRecordsSection extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
+                      AppText(
                         "Medical & Clinical Records",
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 18,
                         ),
                       ),
-                      Text(
+                      AppText(
                         "Explicit consent required to access clinical reports.",
                         style: TextStyle(color: Colors.grey, fontSize: 12),
                       ),
@@ -63,7 +64,7 @@ class MedicalRecordsSection extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 16),
-            Text(
+            AppText(
               "Your medical files, vaccinations, and lab results are protected under HIPAA/GDPR standards. "
               "We process clinical records locally on your device. Access is disabled until you provide explicit authorization.",
               style: TextStyle(
@@ -82,7 +83,7 @@ class MedicalRecordsSection extends StatelessWidget {
                 ),
               ),
               icon: const Icon(Icons.assignment_ind, color: Colors.white),
-              label: const Text(
+              label: const AppText(
                 "Provide Explicit Consent",
                 style: TextStyle(
                   color: Colors.white,
@@ -123,14 +124,14 @@ class MedicalRecordsSection extends StatelessWidget {
                   const Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
+                      AppText(
                         "Medical Records",
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 18,
                         ),
                       ),
-                      Text(
+                      AppText(
                         "Synced securely with explicit consent",
                         style: TextStyle(color: Colors.grey, fontSize: 12),
                       ),
@@ -140,7 +141,7 @@ class MedicalRecordsSection extends StatelessWidget {
               ),
               IconButton(
                 icon: const Icon(Icons.lock_open, color: Colors.green),
-                tooltip: "Consent Active - Tap to Revoke",
+                tooltip: "Consent Active - Tap to Revoke".localized(context),
                 onPressed: onRevokeConsentPressed,
               ),
             ],
@@ -149,7 +150,7 @@ class MedicalRecordsSection extends StatelessWidget {
           if (healthData.medicalRecords.isEmpty)
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 16),
-              child: Text(
+              child: AppText(
                 "No medical records found in device database.",
                 style: TextStyle(
                   color: Colors.grey,
@@ -176,7 +177,7 @@ class MedicalRecordsSection extends StatelessWidget {
               padding: const EdgeInsets.symmetric(vertical: 12),
             ),
             icon: const Icon(Icons.no_accounts),
-            label: const Text(
+            label: const AppText(
               "Revoke Explicit Consent",
               style: TextStyle(fontWeight: FontWeight.bold),
             ),

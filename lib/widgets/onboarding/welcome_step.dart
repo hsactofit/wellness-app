@@ -3,6 +3,7 @@ import '../../app_brand.dart';
 import '../glass_card.dart';
 import 'fade_slide_transition.dart';
 import '../../theme/app_theme.dart';
+import '../../l10n/app_text.dart';
 
 class WelcomeStep extends StatefulWidget {
   final String? emoji;
@@ -111,7 +112,7 @@ class _WelcomeStepState extends State<WelcomeStep>
                                   fit: BoxFit.contain,
                                 ),
                               )
-                            : Text(
+                            : AppText(
                                 widget.emoji ?? "🌟",
                                 style: const TextStyle(fontSize: 84),
                               ),
@@ -120,7 +121,7 @@ class _WelcomeStepState extends State<WelcomeStep>
                     const SizedBox(height: 28),
                     FadeSlideTransition(
                       delay: const Duration(milliseconds: 150),
-                      child: Text(
+                      child: AppText(
                         widget.title,
                         textAlign: TextAlign.center,
                         style: const TextStyle(
@@ -133,7 +134,7 @@ class _WelcomeStepState extends State<WelcomeStep>
                     const SizedBox(height: 16),
                     FadeSlideTransition(
                       delay: const Duration(milliseconds: 300),
-                      child: Text(
+                      child: AppText(
                         widget.description,
                         textAlign: TextAlign.center,
                         style: TextStyle(
@@ -163,7 +164,7 @@ class _WelcomeStepState extends State<WelcomeStep>
                     elevation: 4,
                   ),
                   onPressed: widget.onAction,
-                  child: Text(
+                  child: AppText(
                     widget.actionLabel,
                     style: const TextStyle(
                       fontSize: 16,
@@ -178,7 +179,7 @@ class _WelcomeStepState extends State<WelcomeStep>
                   delay: const Duration(milliseconds: 550),
                   child: TextButton(
                     onPressed: widget.onBack,
-                    child: Text(
+                    child: AppText(
                       "Back",
                       style: TextStyle(
                         color: isDark ? Colors.white60 : Colors.black54,

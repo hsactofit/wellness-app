@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'fade_slide_transition.dart';
 import '../../theme/app_theme.dart';
+import '../../l10n/app_text.dart';
 
 class GoalsStep extends StatelessWidget {
   final List<String> selectedGoals;
@@ -73,7 +74,7 @@ class GoalsStep extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        const Text(
+                        const AppText(
                           "Lifestyle & Goals",
                           textAlign: TextAlign.center,
                           style: TextStyle(
@@ -84,7 +85,7 @@ class GoalsStep extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 8),
-                        Text(
+                        AppText(
                           "Tell us about your current lifestyle and what you're looking to achieve with Vitality.",
                           textAlign: TextAlign.center,
                           style: TextStyle(
@@ -112,7 +113,7 @@ class GoalsStep extends StatelessWidget {
                           size: 20,
                         ),
                         SizedBox(width: 8),
-                        Text(
+                        AppText(
                           "Your Activity Level",
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
@@ -168,7 +169,7 @@ class GoalsStep extends StatelessWidget {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
+                                AppText(
                                   title,
                                   style: TextStyle(
                                     fontWeight: FontWeight.bold,
@@ -179,7 +180,7 @@ class GoalsStep extends StatelessWidget {
                                   ),
                                 ),
                                 const SizedBox(height: 4),
-                                Text(
+                                AppText(
                                   desc,
                                   style: TextStyle(
                                     fontSize: 13,
@@ -213,7 +214,7 @@ class GoalsStep extends StatelessWidget {
                           size: 20,
                         ),
                         SizedBox(width: 8),
-                        Text(
+                        AppText(
                           "Primary Health Goals",
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
@@ -301,7 +302,7 @@ class GoalsStep extends StatelessWidget {
                                       size: 26,
                                     ),
                                     const SizedBox(height: 10),
-                                    Text(
+                                    AppText(
                                       title,
                                       textAlign: TextAlign.center,
                                       style: TextStyle(
@@ -376,7 +377,7 @@ class GoalsStep extends StatelessWidget {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Text(
+                      const AppText(
                         "Next",
                         style: TextStyle(
                           color: Colors.white,
@@ -398,7 +399,7 @@ class GoalsStep extends StatelessWidget {
                 Center(
                   child: TextButton(
                     onPressed: onBack,
-                    child: const Text(
+                    child: const AppText(
                       "Back to Personal Info",
                       style: TextStyle(
                         color: Color(0xFF64748B),

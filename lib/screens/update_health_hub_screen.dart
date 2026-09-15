@@ -7,6 +7,7 @@ import 'body_composition_reports_screen.dart';
 import 'body_composition_report_review_screen.dart';
 import 'body_composition_comparison_screen.dart';
 import 'update_health_camera_screen.dart';
+import '../l10n/app_text.dart';
 
 /// The single entry point for report updates. Every source ends at the same
 /// member review screen before anything is saved.
@@ -31,7 +32,7 @@ class _UpdateHealthHubScreenState extends State<UpdateHealthHubScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text(
+          content: AppText(
             'Camera access is required to scan a body-composition report.',
           ),
         ),
@@ -64,7 +65,7 @@ class _UpdateHealthHubScreenState extends State<UpdateHealthHubScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(error.toString())));
+      ).showSnackBar(SnackBar(content: AppText(error.toString())));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -93,10 +94,10 @@ class _UpdateHealthHubScreenState extends State<UpdateHealthHubScreen> {
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Update Your Health'),
+        title: const AppText('Update Your Health'),
         actions: [
           IconButton(
-            tooltip: 'Report Library',
+            tooltip: 'Report Library'.localized(context),
             icon: const Icon(Icons.folder_copy_outlined),
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute(
@@ -110,14 +111,14 @@ class _UpdateHealthHubScreenState extends State<UpdateHealthHubScreen> {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(20, 18, 20, 30),
           children: [
-            Text(
+            AppText(
               'Choose how you want to add a body-composition report.',
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w700,
               ),
             ),
             const SizedBox(height: 8),
-            Text(
+            AppText(
               'Text is read securely on this device. You can edit every value before approving and saving it.',
               style: theme.textTheme.bodyMedium,
             ),
@@ -180,10 +181,13 @@ class _Option extends StatelessWidget {
           vertical: 10,
         ),
         leading: CircleAvatar(child: Icon(icon)),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
+        title: AppText(
+          title,
+          style: const TextStyle(fontWeight: FontWeight.w800),
+        ),
         subtitle: Padding(
           padding: const EdgeInsets.only(top: 4),
-          child: Text(subtitle),
+          child: AppText(subtitle),
         ),
         trailing: const Icon(Icons.chevron_right),
         onTap: onTap,

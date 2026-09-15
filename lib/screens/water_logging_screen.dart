@@ -7,6 +7,7 @@ import '../services/api_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/water/wave_painter.dart';
+import '../l10n/app_text.dart';
 
 /// Matches wellness-server's WaterLogRead: id (UUID string), amount_ml
 /// (int), logged_at (date-time). `amount`/`timestamp` fallbacks kept for
@@ -344,7 +345,7 @@ class _WaterLoggingScreenState extends State<WaterLoggingScreen>
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("Logged +$amount ml of water!"),
+          content: AppText("Logged +$amount ml of water!"),
           backgroundColor: Colors.blueAccent,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
@@ -358,7 +359,7 @@ class _WaterLoggingScreenState extends State<WaterLoggingScreen>
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
+          content: AppText(
             "Failed to sync water log: ${e.toString().replaceFirst('Exception: ', '')}",
           ),
           backgroundColor: Colors.redAccent,
@@ -400,7 +401,7 @@ class _WaterLoggingScreenState extends State<WaterLoggingScreen>
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text("Log deleted successfully"),
+          content: AppText("Log deleted successfully"),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -410,7 +411,7 @@ class _WaterLoggingScreenState extends State<WaterLoggingScreen>
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
+          content: AppText(
             "Failed to delete: ${e.toString().replaceFirst('Exception: ', '')}",
           ),
           backgroundColor: Colors.redAccent,
@@ -434,7 +435,7 @@ class _WaterLoggingScreenState extends State<WaterLoggingScreen>
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
-          title: const Text(
+          title: const AppText(
             "Edit Water Log",
             style: TextStyle(fontWeight: FontWeight.w900),
           ),
@@ -443,7 +444,7 @@ class _WaterLoggingScreenState extends State<WaterLoggingScreen>
             keyboardType: TextInputType.number,
             autofocus: true,
             decoration: InputDecoration(
-              hintText: "Enter amount (ml)",
+              hintText: "Enter amount (ml)".localized(context),
               prefixIcon: const Icon(
                 Icons.water_drop,
                 color: Colors.blueAccent,
@@ -461,7 +462,7 @@ class _WaterLoggingScreenState extends State<WaterLoggingScreen>
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text("Cancel"),
+              child: const AppText("Cancel"),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
@@ -478,7 +479,7 @@ class _WaterLoggingScreenState extends State<WaterLoggingScreen>
                   _updateLog(log, amount);
                 }
               },
-              child: const Text("Save"),
+              child: const AppText("Save"),
             ),
           ],
         );
@@ -542,7 +543,7 @@ class _WaterLoggingScreenState extends State<WaterLoggingScreen>
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text("Log updated successfully"),
+          content: AppText("Log updated successfully"),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -552,7 +553,7 @@ class _WaterLoggingScreenState extends State<WaterLoggingScreen>
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
+          content: AppText(
             "Failed to update: ${e.toString().replaceFirst('Exception: ', '')}",
           ),
           backgroundColor: Colors.redAccent,
@@ -641,19 +642,19 @@ class _WaterLoggingScreenState extends State<WaterLoggingScreen>
                           onPressed: () => Navigator.pop(context),
                         ),
                         const SizedBox(width: 4),
-                        const Text("💧", style: TextStyle(fontSize: 28)),
+                        const AppText("💧", style: TextStyle(fontSize: 28)),
                         const SizedBox(width: 10),
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
+                            AppText(
                               "Hydration Tracker",
                               style: theme.textTheme.headlineSmall?.copyWith(
                                 fontWeight: FontWeight.bold,
                                 letterSpacing: -0.5,
                               ),
                             ),
-                            Text(
+                            AppText(
                               "Log water & watch the waves rise",
                               style: theme.textTheme.bodySmall?.copyWith(
                                 color: isDark
@@ -761,7 +762,7 @@ class _WaterLoggingScreenState extends State<WaterLoggingScreen>
                     Center(
                       child: Column(
                         children: [
-                          Text(
+                          AppText(
                             "${_currentIntake.round()} ml / ${_waterGoal.round()} ml",
                             style: theme.textTheme.headlineSmall?.copyWith(
                               fontWeight: FontWeight.w800,
@@ -770,7 +771,7 @@ class _WaterLoggingScreenState extends State<WaterLoggingScreen>
                             ),
                           ),
                           const SizedBox(height: 4),
-                          Text(
+                          AppText(
                             "Daily Progress: ${(_targetIntakeProgress * 100).round()}%",
                             style: theme.textTheme.bodyMedium?.copyWith(
                               color: isDark
@@ -785,7 +786,7 @@ class _WaterLoggingScreenState extends State<WaterLoggingScreen>
                     const SizedBox(height: 24),
 
                     // Quick logging preset cards with assets
-                    Text(
+                    AppText(
                       "Quick Logging",
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
@@ -818,7 +819,7 @@ class _WaterLoggingScreenState extends State<WaterLoggingScreen>
                     const SizedBox(height: 24),
 
                     // Custom Logger Input
-                    Text(
+                    AppText(
                       "Custom Amount",
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
@@ -848,7 +849,9 @@ class _WaterLoggingScreenState extends State<WaterLoggingScreen>
                                 fontWeight: FontWeight.bold,
                               ),
                               decoration: InputDecoration(
-                                hintText: "Enter volume (ml)",
+                                hintText: "Enter volume (ml)".localized(
+                                  context,
+                                ),
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(16),
                                   borderSide: BorderSide(
@@ -916,14 +919,14 @@ class _WaterLoggingScreenState extends State<WaterLoggingScreen>
                                   } else {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       const SnackBar(
-                                        content: Text(
+                                        content: AppText(
                                           "Please enter a valid volume amount",
                                         ),
                                       ),
                                     );
                                   }
                                 },
-                          child: const Text(
+                          child: const AppText(
                             "Log",
                             style: TextStyle(
                               color: Colors.white,
@@ -956,7 +959,7 @@ class _WaterLoggingScreenState extends State<WaterLoggingScreen>
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(
+        AppText(
           label,
           style: TextStyle(
             color: (isDark ? Colors.white30 : Colors.black38),
@@ -995,10 +998,10 @@ class _WaterLoggingScreenState extends State<WaterLoggingScreen>
                   height: 48,
                   fit: BoxFit.contain,
                   errorBuilder: (context, error, stackTrace) =>
-                      Text(label[0], style: const TextStyle(fontSize: 24)),
+                      AppText(label[0], style: const TextStyle(fontSize: 24)),
                 ),
                 const SizedBox(height: 8),
-                Text(
+                AppText(
                   label,
                   style: TextStyle(
                     fontSize: 12,
@@ -1007,7 +1010,7 @@ class _WaterLoggingScreenState extends State<WaterLoggingScreen>
                   ),
                 ),
                 const SizedBox(height: 4),
-                Text(
+                AppText(
                   "+$amount ml",
                   style: const TextStyle(
                     fontWeight: FontWeight.w800,
@@ -1035,7 +1038,7 @@ class _WaterLoggingScreenState extends State<WaterLoggingScreen>
           Row(
             children: [
               Expanded(
-                child: Text(
+                child: AppText(
                   "Hydration Trends",
                   style: TextStyle(
                     fontWeight: FontWeight.w900,
@@ -1046,7 +1049,7 @@ class _WaterLoggingScreenState extends State<WaterLoggingScreen>
               ),
               IconButton(
                 visualDensity: VisualDensity.compact,
-                tooltip: 'Refresh graph',
+                tooltip: 'Refresh graph'.localized(context),
                 icon: Icon(Icons.refresh_rounded, size: 18, color: muted),
                 onPressed: _isLoadingGraph ? null : _fetchGraphData,
               ),
@@ -1067,7 +1070,7 @@ class _WaterLoggingScreenState extends State<WaterLoggingScreen>
             ],
           ),
           const SizedBox(height: 8),
-          Text(
+          AppText(
             "Period: day · week · month",
             style: TextStyle(
               fontSize: 11,
@@ -1092,7 +1095,7 @@ class _WaterLoggingScreenState extends State<WaterLoggingScreen>
                   children: [
                     Icon(Icons.wifi_off_rounded, color: muted, size: 28),
                     const SizedBox(height: 8),
-                    Text(
+                    AppText(
                       'Could not load graph',
                       style: TextStyle(
                         fontWeight: FontWeight.w800,
@@ -1102,7 +1105,7 @@ class _WaterLoggingScreenState extends State<WaterLoggingScreen>
                     const SizedBox(height: 4),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 12),
-                      child: Text(
+                      child: AppText(
                         _graphError!,
                         textAlign: TextAlign.center,
                         maxLines: 2,
@@ -1112,7 +1115,7 @@ class _WaterLoggingScreenState extends State<WaterLoggingScreen>
                     ),
                     TextButton(
                       onPressed: _fetchGraphData,
-                      child: const Text('Retry'),
+                      child: const AppText('Retry'),
                     ),
                   ],
                 ),
@@ -1122,7 +1125,7 @@ class _WaterLoggingScreenState extends State<WaterLoggingScreen>
             SizedBox(
               height: 170,
               child: Center(
-                child: Text(
+                child: AppText(
                   "No hydration data for this period yet.\nLog some water to see trends.",
                   textAlign: TextAlign.center,
                   style: TextStyle(color: muted, fontSize: 13, height: 1.35),
@@ -1151,7 +1154,7 @@ class _WaterLoggingScreenState extends State<WaterLoggingScreen>
           color: isSelected ? Colors.blueAccent : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
         ),
-        child: Text(
+        child: AppText(
           label,
           style: TextStyle(
             fontSize: 11,
@@ -1207,7 +1210,7 @@ class _WaterLoggingScreenState extends State<WaterLoggingScreen>
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
                             for (final t in [1.0, 0.75, 0.5, 0.25, 0.0])
-                              Text(
+                              AppText(
                                 t == 0 ? "0" : "${(maxAmount * t).round()}",
                                 style: const TextStyle(
                                   fontSize: 8,
@@ -1294,7 +1297,7 @@ class _WaterLoggingScreenState extends State<WaterLoggingScreen>
         if (dense)
           Padding(
             padding: const EdgeInsets.only(top: 8),
-            child: Text(
+            child: AppText(
               "Swipe chart to see all ${values.length} points",
               style: TextStyle(
                 fontSize: 10,
@@ -1304,7 +1307,7 @@ class _WaterLoggingScreenState extends State<WaterLoggingScreen>
             ),
           ),
         const SizedBox(height: 4),
-        Text(
+        AppText(
           _graphSummaryLine(values),
           style: TextStyle(
             fontSize: 11,
@@ -1341,7 +1344,7 @@ class _WaterLoggingScreenState extends State<WaterLoggingScreen>
         Positioned(
           left: left,
           width: 44,
-          child: Text(
+          child: AppText(
             displayLabel,
             style: TextStyle(
               fontSize: dense ? 8.5 : 9,
@@ -1424,7 +1427,7 @@ class _WaterLoggingScreenState extends State<WaterLoggingScreen>
           children: [
             const Icon(Icons.error_outline, color: Colors.redAccent),
             const SizedBox(height: 8),
-            Text(
+            AppText(
               "Could not load water logs",
               style: TextStyle(
                 fontWeight: FontWeight.w800,
@@ -1432,12 +1435,12 @@ class _WaterLoggingScreenState extends State<WaterLoggingScreen>
               ),
             ),
             const SizedBox(height: 4),
-            Text(
+            AppText(
               _logsError!,
               textAlign: TextAlign.center,
               style: const TextStyle(color: Colors.grey, fontSize: 12),
             ),
-            TextButton(onPressed: _fetchLogs, child: const Text("Retry")),
+            TextButton(onPressed: _fetchLogs, child: const AppText("Retry")),
           ],
         ),
       );
@@ -1447,7 +1450,7 @@ class _WaterLoggingScreenState extends State<WaterLoggingScreen>
       return const Center(
         child: Padding(
           padding: EdgeInsets.all(24.0),
-          child: Text(
+          child: AppText(
             "No logs recorded yet. Tap a quick amount to start.",
             style: TextStyle(color: Colors.grey, fontSize: 13),
             textAlign: TextAlign.center,
@@ -1464,7 +1467,7 @@ class _WaterLoggingScreenState extends State<WaterLoggingScreen>
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
+            AppText(
               "Water Logs History",
               style: TextStyle(
                 fontWeight: FontWeight.bold,
@@ -1479,7 +1482,7 @@ class _WaterLoggingScreenState extends State<WaterLoggingScreen>
                     _logsExpanded = !_logsExpanded;
                   });
                 },
-                child: Text(
+                child: AppText(
                   _logsExpanded ? "Collapse" : "View All",
                   style: const TextStyle(
                     color: Colors.blueAccent,
@@ -1518,7 +1521,7 @@ class _WaterLoggingScreenState extends State<WaterLoggingScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                AppText(
                   "${log.amount} ml logged",
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
@@ -1526,7 +1529,7 @@ class _WaterLoggingScreenState extends State<WaterLoggingScreen>
                   ),
                 ),
                 const SizedBox(height: 2),
-                Text(
+                AppText(
                   _formatTime(log.timestamp),
                   style: const TextStyle(color: Colors.grey, fontSize: 11),
                 ),
@@ -1605,7 +1608,7 @@ class _WaterLoggingScreenState extends State<WaterLoggingScreen>
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
+                            AppText(
                               "${log.amount} ml logged",
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
@@ -1613,7 +1616,7 @@ class _WaterLoggingScreenState extends State<WaterLoggingScreen>
                               ),
                             ),
                             const SizedBox(height: 2),
-                            Text(
+                            AppText(
                               _formatTime(log.timestamp),
                               style: const TextStyle(
                                 color: Colors.grey,
@@ -1674,7 +1677,7 @@ class _WaterLoggingScreenState extends State<WaterLoggingScreen>
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
+                          AppText(
                             "${log.amount} ml logged",
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
@@ -1682,7 +1685,7 @@ class _WaterLoggingScreenState extends State<WaterLoggingScreen>
                             ),
                           ),
                           const SizedBox(height: 2),
-                          Text(
+                          AppText(
                             _formatTime(log.timestamp),
                             style: const TextStyle(
                               color: Colors.grey,

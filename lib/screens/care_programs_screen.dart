@@ -7,6 +7,7 @@ import '../theme/app_theme.dart';
 import 'nutrition_logging_screen.dart';
 import 'update_health_hub_screen.dart';
 import 'water_logging_screen.dart';
+import '../l10n/app_text.dart';
 
 class CareProgramsScreen extends StatefulWidget {
   const CareProgramsScreen({super.key});
@@ -57,11 +58,11 @@ class _CareProgramsScreenState extends State<CareProgramsScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Withdraw from this program?'),
+        title: const AppText('Withdraw from this program?'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
+            const AppText(
               'Your care team will retain the program history. You can request another review later.',
             ),
             const SizedBox(height: 14),
@@ -75,11 +76,11 @@ class _CareProgramsScreenState extends State<CareProgramsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Keep program'),
+            child: const AppText('Keep program'),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('Withdraw'),
+            child: const AppText('Withdraw'),
           ),
         ],
       ),
@@ -120,7 +121,7 @@ class _CareProgramsScreenState extends State<CareProgramsScreen> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(text),
+        content: AppText(text),
         backgroundColor: error ? Colors.redAccent : const Color(0xFF168B72),
       ),
     );
@@ -130,7 +131,7 @@ class _CareProgramsScreenState extends State<CareProgramsScreen> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
-      appBar: AppBar(title: const Text('Care Programs')),
+      appBar: AppBar(title: const AppText('Care Programs')),
       body: FutureBuilder<CareProgramSummary>(
         future: _summary,
         builder: (context, snapshot) {
@@ -237,7 +238,7 @@ class _ProgramHero extends StatelessWidget {
                 color: Colors.white.withValues(alpha: .13),
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: Text(
+              child: AppText(
                 program.status.toUpperCase(),
                 style: const TextStyle(
                   color: Colors.white,
@@ -248,7 +249,7 @@ class _ProgramHero extends StatelessWidget {
             ),
             if (program.reviewDue) ...[
               const SizedBox(width: 8),
-              const Text(
+              const AppText(
                 'Review due',
                 style: TextStyle(
                   color: Color(0xFF86EFAC),
@@ -259,7 +260,7 @@ class _ProgramHero extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 14),
-        Text(
+        AppText(
           program.title,
           style: const TextStyle(
             color: Colors.white,
@@ -269,7 +270,7 @@ class _ProgramHero extends StatelessWidget {
         ),
         if (program.summary.isNotEmpty) ...[
           const SizedBox(height: 7),
-          Text(
+          AppText(
             program.summary,
             style: const TextStyle(color: Colors.white70, height: 1.4),
           ),
@@ -321,14 +322,14 @@ class _Overview extends StatelessWidget {
             Expanded(
               child: OutlinedButton(
                 onPressed: () => onRespond(program, false),
-                child: const Text('Decline'),
+                child: const AppText('Decline'),
               ),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: FilledButton(
                 onPressed: () => onRespond(program, true),
-                child: const Text('Accept program'),
+                child: const AppText('Accept program'),
               ),
             ),
           ],
@@ -348,7 +349,7 @@ class _Overview extends StatelessWidget {
         const SizedBox(height: 24),
         TextButton(
           onPressed: () => onWithdraw(program),
-          child: const Text('Withdraw from this program'),
+          child: const AppText('Withdraw from this program'),
         ),
       ],
     ],
@@ -375,7 +376,7 @@ class _Actions extends StatelessWidget {
       return const Center(
         child: Padding(
           padding: EdgeInsets.all(32),
-          child: Text('Actions begin when the program is active.'),
+          child: AppText('Actions begin when the program is active.'),
         ),
       );
     }
@@ -398,7 +399,7 @@ class _Actions extends StatelessWidget {
         if (actions.isEmpty)
           const Padding(
             padding: EdgeInsets.only(top: 12),
-            child: Text(
+            child: AppText(
               'No actions are scheduled today.',
               style: TextStyle(color: Colors.grey),
             ),
@@ -412,8 +413,8 @@ class _Actions extends StatelessWidget {
                 direct ? Icons.check_circle_outline : Icons.open_in_new,
                 color: const Color(0xFF168B72),
               ),
-              title: Text(action.title),
-              subtitle: Text(
+              title: AppText(action.title),
+              subtitle: AppText(
                 '${_label(action.type)} · ${_label(action.recurrence)}',
               ),
               trailing: saving.contains(action.key)
@@ -425,7 +426,7 @@ class _Actions extends StatelessWidget {
                       onPressed: () => direct
                           ? onComplete(program, action)
                           : onOpenTracker(action),
-                      child: Text(direct ? 'Complete' : 'Open tracker'),
+                      child: AppText(direct ? 'Complete' : 'Open tracker'),
                     ),
             ),
           );
@@ -457,7 +458,7 @@ class _CareTeam extends StatelessWidget {
       const SizedBox(height: 18),
       const _Heading('Published guidance'),
       if (program.guidance.isEmpty)
-        const Text(
+        const AppText(
           'No new guidance has been published.',
           style: TextStyle(color: Colors.grey),
         ),
@@ -499,7 +500,7 @@ class _Progress extends StatelessWidget {
           borderRadius: BorderRadius.circular(9),
         ),
         const SizedBox(height: 8),
-        Text(
+        AppText(
           '${(elapsed.clamp(0, 1) * 100).round()}%',
           style: const TextStyle(color: Colors.grey),
         ),
@@ -544,7 +545,7 @@ class _Progress extends StatelessWidget {
             }
           },
           icon: const Icon(Icons.picture_as_pdf_outlined),
-          label: const Text('Download progress PDF'),
+          label: const AppText('Download progress PDF'),
         ),
       ],
     );
@@ -560,7 +561,7 @@ class _History extends StatelessWidget {
     children: [
       const _Heading('Program history'),
       if (items.isEmpty)
-        const Text(
+        const AppText(
           'No previous programs yet.',
           style: TextStyle(color: Colors.grey),
         ),
@@ -617,7 +618,7 @@ class _EmptyState extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 20),
-            Text(
+            AppText(
               completed != null
                   ? 'Your care program is complete'
                   : reviewRequested
@@ -627,7 +628,7 @@ class _EmptyState extends StatelessWidget {
               style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 10),
-            Text(
+            AppText(
               completed != null
                   ? completed.completionSummary ??
                         'Your completion summary remains available here.'
@@ -642,7 +643,7 @@ class _EmptyState extends StatelessWidget {
               FilledButton.icon(
                 onPressed: onRequest,
                 icon: const Icon(Icons.send_outlined),
-                label: const Text('Request a review'),
+                label: const AppText('Request a review'),
               ),
             if (completed != null) ...[
               const SizedBox(height: 12),
@@ -661,7 +662,7 @@ class _EmptyState extends StatelessWidget {
                   }
                 },
                 icon: const Icon(Icons.picture_as_pdf_outlined),
-                label: const Text('Download completion summary'),
+                label: const AppText('Download completion summary'),
               ),
             ],
             if (history.isNotEmpty) ...[
@@ -693,8 +694,8 @@ class _ErrorState extends StatelessWidget {
       children: [
         const Icon(Icons.cloud_off_outlined, size: 42, color: Colors.grey),
         const SizedBox(height: 12),
-        const Text('Care Programs could not be loaded.'),
-        TextButton(onPressed: onRetry, child: const Text('Try again')),
+        const AppText('Care Programs could not be loaded.'),
+        TextButton(onPressed: onRetry, child: const AppText('Try again')),
       ],
     ),
   );
@@ -706,7 +707,7 @@ class _Heading extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.only(bottom: 10),
-    child: Text(
+    child: AppText(
       text,
       style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
     ),
@@ -737,10 +738,13 @@ class _InfoTile extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
+              AppText(
+                title,
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
               if (subtitle != null) ...[
                 const SizedBox(height: 3),
-                Text(
+                AppText(
                   subtitle!,
                   style: const TextStyle(
                     fontSize: 12,

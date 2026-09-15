@@ -12,6 +12,7 @@ import '../widgets/onboarding/sync_progress_step.dart';
 import '../widgets/app_brand_logo.dart';
 import 'auth_screen.dart';
 import 'main_shell.dart';
+import '../l10n/app_text.dart';
 
 class OnboardingScreen extends StatefulWidget {
   final int initialPage;
@@ -350,7 +351,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
         });
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text(
+            content: AppText(
               "Your enrolment needs a quick medical clearance review by our staff before your dashboard unlocks. We'll notify you once it's approved.",
             ),
             backgroundColor: Colors.orange,
@@ -374,7 +375,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
+          content: AppText(
             "Failed to submit enrolment to server: ${e.toString().replaceAll('Exception: ', '')}",
           ),
           backgroundColor: Colors.redAccent,

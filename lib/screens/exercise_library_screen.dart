@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../services/exercise_video_service.dart';
 import 'exercise_video_screen.dart';
+import '../l10n/app_text.dart';
 
 typedef ExerciseVideoLibraryLoader =
     Future<List<ExerciseVideoLibraryItem>> Function();
@@ -135,10 +136,10 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
     final results = _filteredVideos;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Exercise Library'),
+        title: const AppText('Exercise Library'),
         actions: [
           IconButton(
-            tooltip: 'Refresh library',
+            tooltip: 'Refresh library'.localized(context),
             onPressed: _isRefreshing ? null : _loadLibrary,
             icon: const Icon(Icons.refresh),
           ),
@@ -160,7 +161,7 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
                         suffixIcon: _searchController.text.isEmpty
                             ? null
                             : IconButton(
-                                tooltip: 'Clear search',
+                                tooltip: 'Clear search'.localized(context),
                                 onPressed: _searchController.clear,
                                 icon: const Icon(Icons.clear),
                               ),
@@ -178,7 +179,7 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
                           Padding(
                             padding: const EdgeInsets.only(right: 8),
                             child: ChoiceChip(
-                              label: const Text('All topics'),
+                              label: const AppText('All topics'),
                               selected: _selectedTopic == null,
                               onSelected: (_) =>
                                   setState(() => _selectedTopic = null),
@@ -188,7 +189,7 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
                             (topic) => Padding(
                               padding: const EdgeInsets.only(right: 8),
                               child: ChoiceChip(
-                                label: Text(topic),
+                                label: AppText(topic),
                                 selected: _selectedTopic == topic,
                                 onSelected: (_) => setState(
                                   () => _selectedTopic = _selectedTopic == topic
@@ -210,7 +211,7 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
                     padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
                     child: Row(
                       children: [
-                        Text(
+                        AppText(
                           '${results.length} ${results.length == 1 ? 'video' : 'videos'}',
                           style: Theme.of(context).textTheme.labelLarge,
                         ),
@@ -258,8 +259,8 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
           children: [
             const Icon(Icons.cloud_off_outlined, size: 18),
             const SizedBox(width: 8),
-            Expanded(child: Text(text)),
-            TextButton(onPressed: _loadLibrary, child: const Text('Retry')),
+            Expanded(child: AppText(text)),
+            TextButton(onPressed: _loadLibrary, child: const AppText('Retry')),
           ],
         ),
       ),
@@ -282,7 +283,7 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
               size: 48,
             ),
             const SizedBox(height: 12),
-            Text(
+            AppText(
               queryOrFilterApplied
                   ? 'No videos match your search.'
                   : (_error ?? 'No exercise videos are available yet.'),
@@ -295,11 +296,14 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
                   _searchController.clear();
                   _selectedTopic = null;
                 }),
-                child: const Text('Clear filters'),
+                child: const AppText('Clear filters'),
               ),
             ] else if (_error != null) ...[
               const SizedBox(height: 12),
-              FilledButton(onPressed: _loadLibrary, child: const Text('Retry')),
+              FilledButton(
+                onPressed: _loadLibrary,
+                child: const AppText('Retry'),
+              ),
             ],
           ],
         ),
@@ -314,7 +318,7 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
         onTap: () => _openVideo(video),
         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         leading: CircleAvatar(child: const Icon(Icons.play_arrow_rounded)),
-        title: Text(
+        title: AppText(
           video.title,
           style: const TextStyle(fontWeight: FontWeight.w700),
         ),
@@ -329,7 +333,7 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
                 children: video.topics
                     .map(
                       (topic) => Chip(
-                        label: Text(topic),
+                        label: AppText(topic),
                         visualDensity: VisualDensity.compact,
                         padding: EdgeInsets.zero,
                       ),
@@ -339,7 +343,7 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
             ],
             if (duration.isNotEmpty) ...[
               const SizedBox(height: 6),
-              Text(duration),
+              AppText(duration),
             ],
           ],
         ),

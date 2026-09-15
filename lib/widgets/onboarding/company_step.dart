@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'fade_slide_transition.dart';
 import '../../theme/app_theme.dart';
+import '../../l10n/app_text.dart';
 
 class CompanyOption {
   final String id;
@@ -68,7 +69,7 @@ class CompanyStep extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        const Text(
+                        const AppText(
                           "Your Employer",
                           textAlign: TextAlign.center,
                           style: TextStyle(
@@ -79,7 +80,7 @@ class CompanyStep extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 8),
-                        Text(
+                        AppText(
                           "Select the company that enrolled you and the facility you'll check in at.",
                           textAlign: TextAlign.center,
                           style: TextStyle(
@@ -115,7 +116,7 @@ class CompanyStep extends StatelessWidget {
                             color: Colors.grey[400],
                           ),
                           const SizedBox(height: 12),
-                          Text(
+                          AppText(
                             loadError!,
                             textAlign: TextAlign.center,
                             style: TextStyle(
@@ -126,7 +127,7 @@ class CompanyStep extends StatelessWidget {
                           const SizedBox(height: 16),
                           OutlinedButton(
                             onPressed: onRetry,
-                            child: const Text("Retry"),
+                            child: const AppText("Retry"),
                           ),
                         ],
                       ),
@@ -183,7 +184,7 @@ class CompanyStep extends StatelessWidget {
                       ),
                     ),
                     onPressed: onBack,
-                    child: const Text(
+                    child: const AppText(
                       "PREVIOUS",
                       style: TextStyle(
                         color: AppTheme.brandInk,
@@ -217,7 +218,7 @@ class CompanyStep extends StatelessWidget {
                         : () {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
-                                content: Text(
+                                content: AppText(
                                   "Please select your company and home facility",
                                 ),
                                 backgroundColor: Colors.orange,
@@ -227,7 +228,7 @@ class CompanyStep extends StatelessWidget {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Text(
+                        const AppText(
                           "CONTINUE",
                           style: TextStyle(
                             color: Colors.white,
@@ -263,7 +264,7 @@ class CompanyStep extends StatelessWidget {
           size: 20,
         ),
         const SizedBox(width: 8),
-        Text(
+        AppText(
           text,
           style: const TextStyle(
             fontWeight: FontWeight.bold,
@@ -317,7 +318,7 @@ class CompanyStep extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    AppText(
                       title,
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
@@ -326,7 +327,7 @@ class CompanyStep extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 2),
-                    Text(
+                    AppText(
                       subtitle,
                       style: TextStyle(
                         fontSize: 12,

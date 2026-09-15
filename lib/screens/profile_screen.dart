@@ -9,9 +9,11 @@ import '../services/facility_booking_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/glass_card.dart';
 import '../main.dart';
+import '../l10n/locale_controller.dart';
 import 'welcome_screen.dart';
 import 'goals_configuration_screen.dart';
 import 'notification_settings_screen.dart';
+import '../l10n/app_text.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -256,6 +258,98 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  String _languageLabel() {
+    switch (LocaleController.instance.value.languageCode) {
+      case 'hi':
+        return 'हिन्दी (Hindi)';
+      case 'kn':
+        return 'ಕನ್ನಡ (Kannada)';
+      default:
+        return 'English';
+    }
+  }
+
+  Future<void> _showLanguageSelectionDialog() async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final selected = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withValues(alpha: 0.45),
+      builder: (ctx) {
+        final current = LocaleController.instance.value.languageCode;
+        return ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          child: Container(
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF16161C) : Colors.white,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(28),
+              ),
+            ),
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: isDark ? Colors.white24 : Colors.black12,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                AppText(
+                  'Choose language',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900,
+                    color: textColor,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                for (final option in const [
+                  ('en', 'English'),
+                  ('hi', 'हिन्दी (Hindi)'),
+                  ('kn', 'ಕನ್ನಡ (Kannada)'),
+                ])
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: AppText(
+                      option.$2,
+                      style: TextStyle(color: textColor),
+                    ),
+                    trailing: current == option.$1
+                        ? Icon(
+                            Icons.check_circle_rounded,
+                            color: _mintOf(isDark),
+                          )
+                        : null,
+                    onTap: () => Navigator.pop(ctx, option.$1),
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+    if (selected == null || !mounted) return;
+    try {
+      await LocaleController.instance.select(selected);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: AppText('Could not save your language. Please try again.'),
+        ),
+      );
+    }
+  }
+
   Future<void> _showEditProfileDialog() async {
     final selectedGender = (_gender == "Not set" || _gender.isEmpty)
         ? "Male"
@@ -309,7 +403,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text("Profile updated successfully"),
+            content: const AppText("Profile updated successfully"),
             backgroundColor: _mint,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
@@ -324,7 +418,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text("Failed to update profile: $e"),
+            content: AppText("Failed to update profile: $e"),
             backgroundColor: Colors.redAccent,
             behavior: SnackBarBehavior.floating,
           ),
@@ -379,7 +473,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  Text(
+                  AppText(
                     'Appearance',
                     style: TextStyle(
                       fontSize: 20,
@@ -389,7 +483,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ),
                   const SizedBox(height: 6),
-                  Text(
+                  AppText(
                     'Choose how ${AppBrand.name} looks on this device',
                     style: TextStyle(
                       fontSize: 13,
@@ -486,7 +580,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ),
                   const SizedBox(height: 14),
-                  Text(
+                  AppText(
                     'Sign out?',
                     style: TextStyle(
                       fontSize: 18,
@@ -495,7 +589,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  Text(
+                  AppText(
                     'You can sign back in anytime with the same account.',
                     textAlign: TextAlign.center,
                     style: TextStyle(
@@ -663,7 +757,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
+                              AppText(
                                 'Profile',
                                 style: theme.textTheme.headlineMedium?.copyWith(
                                   fontWeight: FontWeight.w900,
@@ -671,7 +765,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   color: textColor,
                                 ),
                               ),
-                              Text(
+                              AppText(
                                 'Your health identity & preferences',
                                 style: theme.textTheme.bodySmall?.copyWith(
                                   color: secondary,
@@ -883,6 +977,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ),
                             onTap: _showThemeSelectionDialog,
                           ),
+                          if (AppBrand.isMednovations) ...[
+                            _divider(isDark),
+                            _settingTile(
+                              isDark: isDark,
+                              textColor: textColor,
+                              secondary: secondary,
+                              icon: Icons.language_rounded,
+                              color: _skyOf(isDark),
+                              title: 'Language',
+                              subtitle: _languageLabel(),
+                              trailing: Icon(
+                                Icons.chevron_right_rounded,
+                                color: secondary,
+                                size: 22,
+                              ),
+                              onTap: _showLanguageSelectionDialog,
+                            ),
+                          ],
                           _divider(isDark),
                           _settingTile(
                             isDark: isDark,
@@ -916,7 +1028,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     const SizedBox(height: 12),
                     Center(
-                      child: Text(
+                      child: AppText(
                         '${AppBrand.wellnessName} · #Wellness360',
                         style: TextStyle(
                           fontSize: 11,
@@ -958,8 +1070,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final action = await showDialog<String>(
         context: context,
         builder: (dialogContext) => AlertDialog(
-          title: const Text('Facility workout-data sharing'),
-          content: Text(
+          title: const AppText('Facility workout-data sharing'),
+          content: AppText(
             current.active
                 ? 'Sharing is active. Qualifying facility managers can access your member-approved body-composition reports, saved comparisons, and workout results for their own facility only. Raw OCR transcripts, medical records, diagnoses, clinical notes, unrelated vitals, and workouts from other facilities are excluded.'
                 : 'Sharing is not active. Booking and check-in cannot continue until you approve the facility workflow disclosure again.',
@@ -967,12 +1079,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('Close'),
+              child: const AppText('Close'),
             ),
             if (current.active)
               FilledButton(
                 onPressed: () => Navigator.pop(dialogContext, 'withdraw'),
-                child: const Text('Withdraw access'),
+                child: const AppText('Withdraw access'),
               ),
           ],
         ),
@@ -984,7 +1096,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text(
+              content: AppText(
                 'Facility workout-data sharing withdrawn. Manager access ends now, and new bookings and check-ins are blocked until you approve again.',
               ),
             ),
@@ -994,7 +1106,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not load privacy settings: $error')),
+          SnackBar(content: AppText('Could not load privacy settings: $error')),
         );
       }
     }
@@ -1060,7 +1172,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       color: isDark ? const Color(0xFF16161C) : Colors.white,
                     ),
                     child: Center(
-                      child: Text(
+                      child: AppText(
                         initial,
                         style: TextStyle(
                           fontSize: 30,
@@ -1076,7 +1188,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
+                      AppText(
                         _name,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -1088,7 +1200,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                       ),
                       const SizedBox(height: 4),
-                      Text(
+                      AppText(
                         _email.isEmpty ? 'No email on file' : _email,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -1113,7 +1225,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             borderRadius: BorderRadius.circular(20),
                             color: _mintOf(isDark).withValues(alpha: 0.14),
                           ),
-                          child: Text(
+                          child: AppText(
                             '$age yrs · $_gender',
                             style: TextStyle(
                               fontSize: 11,
@@ -1156,7 +1268,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     children: [
                       Icon(Icons.edit_rounded, color: Colors.white, size: 18),
                       SizedBox(width: 8),
-                      Text(
+                      AppText(
                         'Edit profile',
                         style: TextStyle(
                           color: Colors.white,
@@ -1201,7 +1313,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
+                AppText(
                   'MEMBER OF',
                   style: TextStyle(
                     fontSize: 8.5,
@@ -1211,7 +1323,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ),
                 const SizedBox(height: 1),
-                Text(
+                AppText(
                   companyName,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -1245,7 +1357,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         borderRadius: BorderRadius.circular(8),
         gradient: LinearGradient(colors: [_violetOf(isDark), _skyOf(isDark)]),
       ),
-      child: Text(
+      child: AppText(
         initials.isEmpty ? 'C' : initials,
         style: const TextStyle(
           color: Colors.white,
@@ -1306,7 +1418,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: Icon(icon, size: 18, color: color),
           ),
           const SizedBox(height: 12),
-          Text(
+          AppText(
             label,
             style: TextStyle(
               fontSize: 9.5,
@@ -1316,7 +1428,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
           const SizedBox(height: 2),
-          Text(
+          AppText(
             value,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -1328,7 +1440,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
           if (unit.isNotEmpty)
-            Text(
+            AppText(
               unit,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -1344,7 +1456,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _sectionLabel(String title, ThemeData theme) {
-    return Text(
+    return AppText(
       title,
       style: TextStyle(
         fontSize: 11,
@@ -1392,7 +1504,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                AppText(
                   title,
                   style: TextStyle(
                     fontSize: 11.5,
@@ -1401,7 +1513,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ),
                 const SizedBox(height: 2),
-                Text(
+                AppText(
                   value,
                   style: TextStyle(
                     fontSize: 14,
@@ -1452,7 +1564,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    AppText(
                       title,
                       style: TextStyle(
                         fontWeight: FontWeight.w800,
@@ -1462,7 +1574,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                     ),
                     const SizedBox(height: 2),
-                    Text(
+                    AppText(
                       subtitle,
                       style: TextStyle(
                         fontSize: 11.5,
@@ -1582,7 +1694,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 const SizedBox(width: 8),
               ],
-              Text(
+              AppText(
                 label,
                 style: TextStyle(
                   fontWeight: FontWeight.w800,
@@ -1659,14 +1771,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    AppText(
                       title,
                       style: TextStyle(
                         fontWeight: FontWeight.w800,
                         color: textColor,
                       ),
                     ),
-                    Text(
+                    AppText(
                       subtitle,
                       style: TextStyle(
                         fontSize: 12,
@@ -1747,7 +1859,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             borderSide: BorderSide.none,
           ),
         ),
-        child: Text(
+        child: AppText(
           value,
           style: TextStyle(
             fontWeight: FontWeight.w600,
@@ -1785,7 +1897,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
       ),
       items: items
-          .map((g) => DropdownMenuItem(value: g, child: Text(g)))
+          .map((g) => DropdownMenuItem(value: g, child: AppText(g)))
           .toList(),
       onChanged: onChanged,
     );
@@ -1911,7 +2023,7 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
                     ),
                   ),
                   const SizedBox(height: 18),
-                  Text(
+                  AppText(
                     'Edit Profile',
                     style: TextStyle(
                       fontSize: 20,
@@ -1921,7 +2033,7 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
                     ),
                   ),
                   const SizedBox(height: 6),
-                  Text(
+                  AppText(
                     'Update how you show up in ${AppBrand.name}',
                     style: TextStyle(
                       fontSize: 13,
@@ -1955,7 +2067,7 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
                         label: 'Date of birth',
                         icon: Icons.cake_outlined,
                       ),
-                      child: Text(
+                      child: AppText(
                         '${_selectedDob.year}-${_selectedDob.month.toString().padLeft(2, '0')}-${_selectedDob.day.toString().padLeft(2, '0')}',
                         style: TextStyle(
                           fontWeight: FontWeight.w600,
@@ -1973,7 +2085,9 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
                       icon: Icons.wc_rounded,
                     ),
                     items: const ['Male', 'Female', 'Non-binary', 'Other']
-                        .map((g) => DropdownMenuItem(value: g, child: Text(g)))
+                        .map(
+                          (g) => DropdownMenuItem(value: g, child: AppText(g)),
+                        )
                         .toList(),
                     onChanged: (val) {
                       if (val != null) setState(() => _selectedGender = val);
@@ -2116,7 +2230,7 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
             ),
           ),
           child: Center(
-            child: Text(
+            child: AppText(
               label,
               style: TextStyle(
                 fontWeight: FontWeight.w800,

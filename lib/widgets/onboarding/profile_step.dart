@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'fade_slide_transition.dart';
 import '../../theme/app_theme.dart';
+import '../../l10n/app_text.dart';
 
 class ProfileStep extends StatelessWidget {
   final GlobalKey<FormState> formKey;
@@ -50,7 +51,7 @@ class ProfileStep extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(
+              AppText(
                 "Select Gender",
                 style: TextStyle(
                   fontSize: 18,
@@ -78,7 +79,7 @@ class ProfileStep extends StatelessWidget {
                             )
                           : Colors.grey,
                     ),
-                    title: Text(
+                    title: AppText(
                       g,
                       style: TextStyle(
                         fontWeight: isSelected
@@ -145,7 +146,7 @@ class ProfileStep extends StatelessWidget {
                     : Colors.transparent,
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Text(
+              child: AppText(
                 opt,
                 style: TextStyle(
                   fontSize: 11,
@@ -225,7 +226,7 @@ class ProfileStep extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
+          AppText(
             labelText,
             style: TextStyle(
               fontWeight: FontWeight.bold,
@@ -260,7 +261,7 @@ class ProfileStep extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    const AppText(
                       "Tell Us About Yourself",
                       style: TextStyle(
                         fontSize: 28,
@@ -270,7 +271,7 @@ class ProfileStep extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    Text(
+                    AppText(
                       "We use this data to calculate your personalized wellness scores and recovery goals.",
                       style: TextStyle(
                         color: isDark ? Colors.grey[400] : Colors.grey[600],
@@ -303,7 +304,7 @@ class ProfileStep extends StatelessWidget {
                           FocusScope.of(context).nextFocus(),
                       decoration: _inputDecoration(
                         context: context,
-                        hintText: "John Doe",
+                        hintText: "John Doe".localized(context),
                         prefixIcon: Icons.person_outline_rounded,
                         isDark: isDark,
                       ),
@@ -332,7 +333,7 @@ class ProfileStep extends StatelessWidget {
                       ),
                       decoration: _inputDecoration(
                         context: context,
-                        hintText: "dd-mm-yyyy",
+                        hintText: "dd-mm-yyyy".localized(context),
                         prefixIcon: Icons.calendar_today_outlined,
                         suffixIcon: const Icon(
                           Icons.calendar_month_outlined,
@@ -557,7 +558,7 @@ class ProfileStep extends StatelessWidget {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Text(
+                      const AppText(
                         "Next",
                         style: TextStyle(
                           fontWeight: FontWeight.w800,
@@ -583,7 +584,7 @@ class ProfileStep extends StatelessWidget {
                   child: Center(
                     child: TextButton(
                       onPressed: onBack,
-                      child: const Text(
+                      child: const AppText(
                         "Back to sign in",
                         style: TextStyle(
                           color: Color(0xFF64748B),
@@ -604,7 +605,7 @@ class ProfileStep extends StatelessWidget {
                 child: Center(
                   child: Padding(
                     padding: const EdgeInsets.only(bottom: 12.0),
-                    child: Text.rich(
+                    child: AppText.rich(
                       TextSpan(
                         text: "By continuing, you agree to our ",
                         style: TextStyle(

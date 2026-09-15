@@ -7,6 +7,7 @@ import 'auth_screen.dart';
 import 'main_shell.dart';
 import 'onboarding_screen.dart';
 import 'welcome_screen.dart';
+import '../l10n/app_text.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -236,7 +237,7 @@ class _SplashScreenState extends State<SplashScreen>
                   const SizedBox(height: 20),
 
                   // Tagline only — brand name is already in the logo art
-                  Text(
+                  AppText(
                     "Optimize. Sync. Thrive.",
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
                       color: isDark
@@ -279,7 +280,7 @@ class _SplashScreenState extends State<SplashScreen>
                   color: isDark ? Colors.white30 : Colors.black38,
                 ),
                 const SizedBox(width: 6),
-                Text(
+                AppText(
                   "SECURE HIPAA COMPLIANT PORTAL",
                   style: TextStyle(
                     fontSize: 10,

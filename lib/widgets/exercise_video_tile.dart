@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/app_text.dart';
 
 class ExerciseVideoTile extends StatelessWidget {
   const ExerciseVideoTile({
@@ -17,8 +18,11 @@ class ExerciseVideoTile extends StatelessWidget {
     return Card(
       child: ListTile(
         onTap: onOpen,
-        title: Text(name, style: const TextStyle(fontWeight: FontWeight.w700)),
-        subtitle: details.isEmpty ? null : Text(details),
+        title: AppText(
+          name,
+          style: const TextStyle(fontWeight: FontWeight.w700),
+        ),
+        subtitle: details.isEmpty ? null : AppText(details),
         trailing: const Icon(Icons.play_circle_outline),
       ),
     );

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import '../services/auth_service.dart';
 import '../widgets/glass_card.dart';
 import '../theme/app_theme.dart';
+import '../l10n/app_text.dart';
 
 class SsoAuthScreen extends StatefulWidget {
   final bool isLogin;
@@ -101,7 +102,7 @@ class _SsoAuthScreenState extends State<SsoAuthScreen> {
     if (_selectedCorporateId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Please choose your organization.'),
+          content: AppText('Please choose your organization.'),
           backgroundColor: Colors.orange,
         ),
       );
@@ -140,7 +141,7 @@ class _SsoAuthScreenState extends State<SsoAuthScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(e is AuthException ? e.message : e.toString()),
+          content: AppText(e is AuthException ? e.message : e.toString()),
           backgroundColor: Colors.redAccent,
         ),
       );
@@ -170,7 +171,7 @@ class _SsoAuthScreenState extends State<SsoAuthScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         foregroundColor: isDark ? Colors.white : const Color(0xFF0F172A),
-        title: Text(
+        title: AppText(
           title,
           style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
         ),
@@ -185,7 +186,7 @@ class _SsoAuthScreenState extends State<SsoAuthScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text(
+                  AppText(
                     'Use your company work email. We will send a one-time code to finish.',
                     style: TextStyle(
                       color: isDark ? Colors.white70 : Colors.black54,
@@ -193,7 +194,7 @@ class _SsoAuthScreenState extends State<SsoAuthScreen> {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  const Text(
+                  const AppText(
                     'WORK EMAIL',
                     style: TextStyle(
                       fontSize: 11,
@@ -212,7 +213,7 @@ class _SsoAuthScreenState extends State<SsoAuthScreen> {
                         : null,
                   ),
                   const SizedBox(height: 16),
-                  const Text(
+                  const AppText(
                     'PASSWORD',
                     style: TextStyle(
                       fontSize: 11,
@@ -243,7 +244,7 @@ class _SsoAuthScreenState extends State<SsoAuthScreen> {
                         : null,
                   ),
                   const SizedBox(height: 16),
-                  const Text(
+                  const AppText(
                     'ORGANIZATION',
                     style: TextStyle(
                       fontSize: 11,
@@ -261,13 +262,13 @@ class _SsoAuthScreenState extends State<SsoAuthScreen> {
                   else if (_orgError != null)
                     Column(
                       children: [
-                        Text(
+                        AppText(
                           _orgError!,
                           style: const TextStyle(color: Colors.redAccent),
                         ),
                         TextButton(
                           onPressed: _loadOrganizations,
-                          child: const Text('Retry'),
+                          child: const AppText('Retry'),
                         ),
                       ],
                     )
@@ -282,7 +283,7 @@ class _SsoAuthScreenState extends State<SsoAuthScreen> {
                         final city = org['city'] as String? ?? '';
                         return DropdownMenuItem(
                           value: id,
-                          child: Text(
+                          child: AppText(
                             '$name · $city',
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -315,7 +316,7 @@ class _SsoAuthScreenState extends State<SsoAuthScreen> {
                               color: Colors.white,
                             ),
                           )
-                        : const Text(
+                        : const AppText(
                             'Continue',
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
@@ -351,7 +352,7 @@ class _SsoOtpDialogState extends State<_SsoOtpDialog> {
   InputDecoration _decoration(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return InputDecoration(
-      hintText: '6-digit code',
+      hintText: '6-digit code'.localized(context),
       hintStyle: TextStyle(
         color: isDark ? Colors.white30 : Colors.black38,
         fontSize: 14,
@@ -393,12 +394,12 @@ class _SsoOtpDialogState extends State<_SsoOtpDialog> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return AlertDialog(
-      title: const Text('Work email verification'),
+      title: const AppText('Work email verification'),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(widget.message),
+          AppText(widget.message),
           const SizedBox(height: 16),
           TextField(
             controller: _otpController,
@@ -413,11 +414,11 @@ class _SsoOtpDialogState extends State<_SsoOtpDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: const AppText('Cancel'),
         ),
         ElevatedButton(
           onPressed: () => Navigator.pop(context, _otpController.text.trim()),
-          child: const Text('Verify'),
+          child: const AppText('Verify'),
         ),
       ],
     );

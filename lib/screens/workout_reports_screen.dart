@@ -8,6 +8,7 @@ import '../services/workout_report_pdf_service.dart';
 import '../services/workout_report_presentation.dart';
 import '../widgets/glass_card.dart';
 import 'workout_report_edit_screen.dart';
+import '../l10n/app_text.dart';
 
 class WorkoutReportsScreen extends StatefulWidget {
   const WorkoutReportsScreen({super.key, this.loadReports});
@@ -88,7 +89,7 @@ class _WorkoutReportsScreenState extends State<WorkoutReportsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Workout Reports')),
+      appBar: AppBar(title: const AppText('Workout Reports')),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
@@ -107,13 +108,13 @@ class _WorkoutReportsScreenState extends State<WorkoutReportsScreen> {
       SizedBox(height: 90),
       Icon(Icons.insights_outlined, size: 54),
       SizedBox(height: 16),
-      Text(
+      AppText(
         'No workout reports yet',
         textAlign: TextAlign.center,
         style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
       ),
       SizedBox(height: 8),
-      Text(
+      AppText(
         'Complete a Gym Access workout to see your checklist, session facts, and estimated workout insights here.',
         textAlign: TextAlign.center,
       ),
@@ -128,12 +129,12 @@ class _WorkoutReportsScreenState extends State<WorkoutReportsScreen> {
         children: [
           const Icon(Icons.cloud_off_outlined, size: 48),
           const SizedBox(height: 12),
-          const Text(
+          const AppText(
             'Could not load workout reports',
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 8),
-          const Text(
+          const AppText(
             'Check your connection and try again.',
             textAlign: TextAlign.center,
           ),
@@ -141,7 +142,7 @@ class _WorkoutReportsScreenState extends State<WorkoutReportsScreen> {
           FilledButton.icon(
             onPressed: _refresh,
             icon: const Icon(Icons.refresh),
-            label: const Text('Try again'),
+            label: const AppText('Try again'),
           ),
         ],
       ),
@@ -179,13 +180,13 @@ class _WorkoutReportsScreenState extends State<WorkoutReportsScreen> {
               ready ? Icons.insights_outlined : Icons.hourglass_top_outlined,
             ),
           ),
-          title: Text(
+          title: AppText(
             report.facilityName,
             style: const TextStyle(fontWeight: FontWeight.w800),
           ),
           subtitle: Padding(
             padding: const EdgeInsets.only(top: 4),
-            child: Text(
+            child: AppText(
               '${_date(report.checkOutAt ?? report.checkInAt ?? report.generatedAt)} - ${_duration(report.durationMin)}\n${ready ? _readySummary(report, facts) : WorkoutReportPresentation.statusDescription(report)}',
             ),
           ),
@@ -193,7 +194,7 @@ class _WorkoutReportsScreenState extends State<WorkoutReportsScreen> {
           trailing: ready && !report.aiStale
               ? const Icon(Icons.chevron_right)
               : Chip(
-                  label: Text(WorkoutReportPresentation.statusLabel(report)),
+                  label: AppText(WorkoutReportPresentation.statusLabel(report)),
                   labelStyle: TextStyle(
                     color: statusColor,
                     fontWeight: FontWeight.w700,
@@ -262,8 +263,8 @@ class _WorkoutReportDetailScreenState extends State<WorkoutReportDetailScreen> {
     final facts = WorkoutReportPresentation.factsFor(report);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Workout Report'),
-        actions: [TextButton(onPressed: _edit, child: const Text('Edit'))],
+        title: const AppText('Workout Report'),
+        actions: [TextButton(onPressed: _edit, child: const AppText('Edit'))],
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 30),
@@ -286,7 +287,7 @@ class _WorkoutReportDetailScreenState extends State<WorkoutReportDetailScreen> {
             const Card(
               child: Padding(
                 padding: EdgeInsets.all(16),
-                child: Text(
+                child: AppText(
                   'No workout checklist was assigned for this session.',
                 ),
               ),
@@ -303,8 +304,8 @@ class _WorkoutReportDetailScreenState extends State<WorkoutReportDetailScreen> {
                   (item) => Card(
                     child: ListTile(
                       leading: const Icon(Icons.add_circle_outline),
-                      title: Text(item.name),
-                      subtitle: Text(
+                      title: AppText(item.name),
+                      subtitle: AppText(
                         '${item.extraCompletedIndexes.length}/${item.extraSetCount} extra sets',
                       ),
                     ),
@@ -319,8 +320,8 @@ class _WorkoutReportDetailScreenState extends State<WorkoutReportDetailScreen> {
                         : Icons.radio_button_unchecked,
                     color: item.exerciseCompleted ? Colors.green : Colors.grey,
                   ),
-                  title: Text(item.name),
-                  subtitle: Text(
+                  title: AppText(item.name),
+                  subtitle: AppText(
                     item.sets > 0
                         ? '${item.completedSetIndexes.length}/${item.sets} sets${item.reps == null || item.reps!.isEmpty ? '' : ' · ${item.reps} reps'}'
                         : item.exerciseCompleted
@@ -349,7 +350,7 @@ class _WorkoutReportDetailScreenState extends State<WorkoutReportDetailScreen> {
             _selfFeedback(context),
           ],
           const SizedBox(height: 18),
-          const Text(
+          const AppText(
             'Estimated calories, intensity, summary, and recovery guidance are AI-generated estimates from this session\'s duration and workout plan. They are not medical advice.',
             style: TextStyle(color: Colors.grey, fontSize: 12, height: 1.35),
           ),
@@ -357,7 +358,7 @@ class _WorkoutReportDetailScreenState extends State<WorkoutReportDetailScreen> {
           FilledButton.icon(
             onPressed: () => _download(context),
             icon: const Icon(Icons.picture_as_pdf_outlined),
-            label: const Text('Download PDF'),
+            label: const AppText('Download PDF'),
           ),
         ],
       ),
@@ -380,23 +381,23 @@ class _WorkoutReportDetailScreenState extends State<WorkoutReportDetailScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Workout quality: ${feedback.workoutQuality ?? '—'} / 5'),
+            AppText('Workout quality: ${feedback.workoutQuality ?? '—'} / 5'),
             const SizedBox(height: 4),
-            Text('Feeling: $feeling · Progress: $progress'),
+            AppText('Feeling: $feeling · Progress: $progress'),
             if (feedback.painPresent == true) ...[
               const SizedBox(height: 8),
-              Text(
+              AppText(
                 'Pain: ${feedback.painSeverity ?? '—'} / 10${feedback.painBodyAreas.isEmpty ? '' : ' · ${feedback.painBodyAreas.join(', ')}'}',
                 style: const TextStyle(fontWeight: FontWeight.w700),
               ),
               if (_hasText(feedback.painNote)) ...[
                 const SizedBox(height: 4),
-                Text(feedback.painNote!),
+                AppText(feedback.painNote!),
               ],
             ],
             if (_hasText(feedback.note)) ...[
               const SizedBox(height: 8),
-              Text(feedback.note!),
+              AppText(feedback.note!),
             ],
           ],
         ),
@@ -409,7 +410,7 @@ class _WorkoutReportDetailScreenState extends State<WorkoutReportDetailScreen> {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
+        AppText(
           report.memberEdited ? 'EDITED BY MEMBER' : 'COMPLETED WORKOUT',
           style: Theme.of(context).textTheme.labelSmall?.copyWith(
             letterSpacing: 1.2,
@@ -417,14 +418,14 @@ class _WorkoutReportDetailScreenState extends State<WorkoutReportDetailScreen> {
           ),
         ),
         const SizedBox(height: 6),
-        Text(
+        AppText(
           report.facilityName,
           style: Theme.of(
             context,
           ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w900),
         ),
         const SizedBox(height: 6),
-        Text(
+        AppText(
           '${_date(report.checkOutAt ?? report.checkInAt ?? report.generatedAt)} - ${_duration(report.durationMin)}',
           style: const TextStyle(color: Colors.grey),
         ),
@@ -484,14 +485,14 @@ class _WorkoutReportDetailScreenState extends State<WorkoutReportDetailScreen> {
           children: [
             Icon(icon, size: 20, color: Theme.of(context).colorScheme.primary),
             const SizedBox(height: 12),
-            Text(
+            AppText(
               label,
               style: Theme.of(
                 context,
               ).textTheme.labelMedium?.copyWith(color: Colors.grey),
             ),
             const SizedBox(height: 3),
-            Text(value, style: const TextStyle(fontWeight: FontWeight.w800)),
+            AppText(value, style: const TextStyle(fontWeight: FontWeight.w800)),
           ],
         ),
       ),
@@ -516,14 +517,14 @@ class _WorkoutReportDetailScreenState extends State<WorkoutReportDetailScreen> {
                 Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
+                    AppText(
                       '${facts.completionPct!.round()}%',
                       style: const TextStyle(
                         fontSize: 23,
                         fontWeight: FontWeight.w900,
                       ),
                     ),
-                    const Text(
+                    const AppText(
                       'complete',
                       style: TextStyle(fontSize: 12, color: Colors.grey),
                     ),
@@ -537,7 +538,7 @@ class _WorkoutReportDetailScreenState extends State<WorkoutReportDetailScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                AppText(
                   facts.prescribedSetCount == 0
                       ? '${facts.completedCount} of ${facts.items.length} exercises completed'
                       : '${facts.completedSetCount} of ${facts.prescribedSetCount} assigned sets completed',
@@ -607,7 +608,10 @@ class _WorkoutReportDetailScreenState extends State<WorkoutReportDetailScreen> {
             ),
           ),
           const SizedBox(width: 6),
-          Text('$label: $count', style: Theme.of(context).textTheme.bodySmall),
+          AppText(
+            '$label: $count',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
         ],
       );
 
@@ -620,13 +624,13 @@ class _WorkoutReportDetailScreenState extends State<WorkoutReportDetailScreen> {
         item.completed ? Icons.check_circle : Icons.radio_button_unchecked,
         color: item.completed ? Colors.green : Colors.grey,
       ),
-      title: Text(
+      title: AppText(
         item.name,
         style: const TextStyle(fontWeight: FontWeight.w700),
       ),
       subtitle: item.details.isEmpty
-          ? Text(item.setSummary)
-          : Text('${item.setSummary} - ${item.details}'),
+          ? AppText(item.setSummary)
+          : AppText('${item.setSummary} - ${item.details}'),
     ),
   );
 
@@ -639,15 +643,15 @@ class _WorkoutReportDetailScreenState extends State<WorkoutReportDetailScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: const TextStyle(fontWeight: FontWeight.w800)),
+          AppText(label, style: const TextStyle(fontWeight: FontWeight.w800)),
           const SizedBox(height: 5),
-          Text(value, style: const TextStyle(height: 1.35)),
+          AppText(value, style: const TextStyle(height: 1.35)),
         ],
       ),
     ),
   );
 
-  Widget _sectionTitle(BuildContext context, String title) => Text(
+  Widget _sectionTitle(BuildContext context, String title) => AppText(
     title,
     style: Theme.of(
       context,
@@ -669,9 +673,9 @@ class _WorkoutReportDetailScreenState extends State<WorkoutReportDetailScreen> {
       await WorkoutReportPdfService.shareReport(report);
     } catch (error) {
       if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Could not create PDF: $error')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: AppText('Could not create PDF: $error')),
+        );
       }
     }
   }

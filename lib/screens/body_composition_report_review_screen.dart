@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/body_composition_report.dart';
 import '../services/api_service.dart';
+import '../l10n/app_text.dart';
 
 class BodyCompositionReportReviewScreen extends StatefulWidget {
   const BodyCompositionReportReviewScreen({
@@ -166,14 +167,14 @@ class _BodyCompositionReportReviewScreenState
     if (error != null) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(error)));
+      ).showSnackBar(SnackBar(content: AppText(error)));
       return;
     }
     final measurements = _measurements();
     if (!_hasMeasurement(measurements)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text(
+          content: AppText(
             'Add at least one health measurement before uploading.',
           ),
         ),
@@ -206,7 +207,7 @@ class _BodyCompositionReportReviewScreenState
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
+          content: AppText(
             widget.existingReport == null
                 ? 'Could not upload the report: $error'
                 : 'Could not update the report: $error',
@@ -222,7 +223,7 @@ class _BodyCompositionReportReviewScreenState
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: Text(
+        title: AppText(
           widget.existingReport == null
               ? 'Your health report'
               : 'Edit health report',
@@ -249,7 +250,7 @@ class _BodyCompositionReportReviewScreenState
                         Icon(Icons.verified_user_outlined),
                         SizedBox(width: 12),
                         Expanded(
-                          child: Text(
+                          child: AppText(
                             'The source is not uploaded or retained. Review the extracted values before approving and saving this report.',
                           ),
                         ),
@@ -260,7 +261,7 @@ class _BodyCompositionReportReviewScreenState
                   _sectionTitle('MEASUREMENT DATE'),
                   ListTile(
                     contentPadding: EdgeInsets.zero,
-                    title: Text(_dateLabel(_measuredAt)),
+                    title: AppText(_dateLabel(_measuredAt)),
                     trailing: _editing
                         ? const Icon(Icons.edit_calendar_outlined)
                         : null,
@@ -282,7 +283,7 @@ class _BodyCompositionReportReviewScreenState
                           _wasEdited = true;
                         }),
                         icon: const Icon(Icons.add),
-                        label: const Text('Add measurement'),
+                        label: const AppText('Add measurement'),
                       ),
                   ],
                   const SizedBox(height: 20),
@@ -294,7 +295,7 @@ class _BodyCompositionReportReviewScreenState
                           .withValues(alpha: 0.45),
                       borderRadius: BorderRadius.circular(14),
                     ),
-                    child: Text(
+                    child: AppText(
                       widget.draft.ocrTranscript,
                       style: const TextStyle(fontSize: 12, height: 1.4),
                     ),
@@ -319,7 +320,7 @@ class _BodyCompositionReportReviewScreenState
                           icon: Icon(
                             _editing ? Icons.check : Icons.edit_outlined,
                           ),
-                          label: Text(
+                          label: AppText(
                             _editing ? 'Done Editing' : 'Make Changes',
                           ),
                         ),
@@ -342,7 +343,7 @@ class _BodyCompositionReportReviewScreenState
                                     ? Icons.cloud_upload_outlined
                                     : Icons.save_outlined,
                               ),
-                        label: Text(
+                        label: AppText(
                           widget.existingReport == null
                               ? 'Approve & Save'
                               : 'Save changes',
@@ -379,8 +380,8 @@ class _BodyCompositionReportReviewScreenState
     if (value.isEmpty) return const SizedBox.shrink();
     return ListTile(
       contentPadding: EdgeInsets.zero,
-      title: Text(field.label),
-      trailing: Text(
+      title: AppText(field.label),
+      trailing: AppText(
         '$value${field.unit.isEmpty ? '' : ' ${field.unit}'}',
         style: const TextStyle(fontWeight: FontWeight.w700),
       ),
@@ -391,8 +392,8 @@ class _BodyCompositionReportReviewScreenState
     if (!_editing) {
       return ListTile(
         contentPadding: EdgeInsets.zero,
-        title: Text(row.label.text),
-        trailing: Text(
+        title: AppText(row.label.text),
+        trailing: AppText(
           '${row.value.text} ${row.unit.text}'.trim(),
           style: const TextStyle(fontWeight: FontWeight.w700),
         ),
@@ -446,7 +447,7 @@ class _BodyCompositionReportReviewScreenState
               _wasEdited = true;
             }),
             icon: const Icon(Icons.remove_circle_outline),
-            tooltip: 'Remove measurement',
+            tooltip: 'Remove measurement'.localized(context),
           ),
         ],
       ),
@@ -455,7 +456,7 @@ class _BodyCompositionReportReviewScreenState
 
   Widget _sectionTitle(String value) => Padding(
     padding: const EdgeInsets.only(bottom: 4),
-    child: Text(
+    child: AppText(
       value,
       style: TextStyle(
         fontSize: 11,

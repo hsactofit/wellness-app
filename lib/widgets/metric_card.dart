@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'glass_card.dart';
+import '../l10n/app_text.dart';
 
 class SparklinePainter extends CustomPainter {
   final List<double> data;
@@ -158,14 +159,16 @@ class MetricCard extends StatelessWidget {
                           width: 18,
                           height: 18,
                           fit: BoxFit.contain,
-                          errorBuilder: (_, __, ___) =>
-                              const Text('•', style: TextStyle(fontSize: 16)),
+                          errorBuilder: (_, __, ___) => const AppText(
+                            '•',
+                            style: TextStyle(fontSize: 16),
+                          ),
                         )
-                      : Text(icon, style: const TextStyle(fontSize: 16)),
+                      : AppText(icon, style: const TextStyle(fontSize: 16)),
                 ),
               ),
               Expanded(
-                child: Text(
+                child: AppText(
                   subtitle,
                   textAlign: TextAlign.end,
                   style: TextStyle(
@@ -184,7 +187,7 @@ class MetricCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.baseline,
             textBaseline: TextBaseline.alphabetic,
             children: [
-              Text(
+              AppText(
                 value,
                 style: TextStyle(
                   fontSize: 20,
@@ -195,7 +198,7 @@ class MetricCard extends StatelessWidget {
               ),
               const SizedBox(width: 4),
               Expanded(
-                child: Text(
+                child: AppText(
                   title,
                   style: TextStyle(
                     fontSize: 10,

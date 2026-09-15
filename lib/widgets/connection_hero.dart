@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:health/health.dart';
 import 'glass_card.dart';
+import '../l10n/app_text.dart';
 
 class ConnectionHero extends StatelessWidget {
   final bool isConnected;
@@ -49,7 +50,7 @@ class ConnectionHero extends StatelessWidget {
                     shape: BoxShape.circle,
                   ),
                   child: const Center(
-                    child: Text(
+                    child: AppText(
                       "✓",
                       style: TextStyle(
                         color: Colors.green,
@@ -64,7 +65,7 @@ class ConnectionHero extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
+                      AppText(
                         isDemoMode
                             ? "Simulated Demo Active"
                             : "Connected to Health Services",
@@ -74,7 +75,7 @@ class ConnectionHero extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 4),
-                      Text(
+                      AppText(
                         isDemoMode
                             ? "Displaying static mockup info."
                             : "Wellness data is synced automatically.",
@@ -110,7 +111,7 @@ class ConnectionHero extends StatelessWidget {
                               strokeWidth: 2,
                             ),
                           )
-                        : const Text(
+                        : const AppText(
                             "Sync Now",
                             style: TextStyle(
                               color: Colors.white,
@@ -133,7 +134,7 @@ class ConnectionHero extends StatelessWidget {
                       ),
                     ),
                     onPressed: onDisconnect,
-                    child: Text(
+                    child: AppText(
                       "Disconnect",
                       style: TextStyle(
                         color: isDark ? Colors.white : Colors.black,
@@ -146,7 +147,7 @@ class ConnectionHero extends StatelessWidget {
             ),
             if (lastSynced != null) ...[
               const SizedBox(height: 10),
-              Text(
+              AppText(
                 "Last sync: ${lastSynced!.hour.toString().padLeft(2, '0')}:${lastSynced!.minute.toString().padLeft(2, '0')}:${lastSynced!.second.toString().padLeft(2, '0')}",
                 style: const TextStyle(
                   color: Colors.grey,
@@ -165,14 +166,14 @@ class ConnectionHero extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
+          AppText(
             "Sync Your Health Data",
             style: theme.textTheme.titleLarge?.copyWith(
               fontWeight: FontWeight.bold,
             ),
           ),
           const SizedBox(height: 10),
-          Text(
+          AppText(
             "Connect to import steps, heart rate, sleep metrics, active calories, body weight, blood pressure, hydration, and nutrition directly from ${Platform.isIOS ? 'Apple HealthKit' : 'Google Health Connect'}.",
             style: const TextStyle(
               color: Colors.grey,
@@ -200,10 +201,10 @@ class ConnectionHero extends StatelessWidget {
                   ),
                   child: const Row(
                     children: [
-                      Text("⚠️", style: TextStyle(fontSize: 20)),
+                      AppText("⚠️", style: TextStyle(fontSize: 20)),
                       SizedBox(width: 8),
                       Expanded(
-                        child: Text(
+                        child: AppText(
                           "Health Connect app is not installed on this device.",
                           style: TextStyle(
                             color: Colors.red,
@@ -225,7 +226,7 @@ class ConnectionHero extends StatelessWidget {
                     ),
                   ),
                   onPressed: onShowDownloadRationale,
-                  child: const Text(
+                  child: const AppText(
                     "Download Health Connect",
                     style: TextStyle(
                       color: Colors.white,
@@ -245,7 +246,7 @@ class ConnectionHero extends StatelessWidget {
                 ),
               ),
               onPressed: onConnect,
-              child: const Text(
+              child: const AppText(
                 "Connect Health Services",
                 style: TextStyle(
                   color: Colors.white,
@@ -263,7 +264,7 @@ class ConnectionHero extends StatelessWidget {
                 side: const BorderSide(color: Colors.blue, width: 1.2),
               ),
               onPressed: onDemo,
-              child: const Text(
+              child: const AppText(
                 "Try Demo Mode",
                 style: TextStyle(
                   color: Colors.blue,

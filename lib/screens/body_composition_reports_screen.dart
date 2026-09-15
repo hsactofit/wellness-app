@@ -5,6 +5,7 @@ import '../services/api_service.dart';
 import '../services/body_composition_pdf_service.dart';
 import 'body_composition_comparison_screen.dart';
 import 'body_composition_report_review_screen.dart';
+import '../l10n/app_text.dart';
 
 /// Report Library: member-approved reports and persistent comparisons are
 /// deliberately separate tabs so the source transcript is never confused
@@ -44,7 +45,7 @@ class _BodyCompositionReportsScreenState
       length: 2,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Report Library'),
+          title: const AppText('Report Library'),
           bottom: const TabBar(
             tabs: [
               Tab(text: 'Health Reports'),
@@ -114,14 +115,14 @@ class _BodyCompositionReportsScreenState
                 leading: const CircleAvatar(
                   child: Icon(Icons.compare_arrows_outlined),
                 ),
-                title: Text(
+                title: AppText(
                   '${_date(comparison.olderReport.measuredAt)} → ${_date(comparison.newerReport.measuredAt)}',
                 ),
-                subtitle: Text(
+                subtitle: AppText(
                   '${comparison.metrics.length} metrics · ${comparison.elapsedDays} days elapsed',
                 ),
                 trailing: PopupMenuButton<_ComparisonAction>(
-                  tooltip: 'Comparison actions',
+                  tooltip: 'Comparison actions'.localized(context),
                   onSelected: (action) {
                     switch (action) {
                       case _ComparisonAction.edit:
@@ -136,7 +137,7 @@ class _BodyCompositionReportsScreenState
                       child: ListTile(
                         contentPadding: EdgeInsets.zero,
                         leading: Icon(Icons.edit_outlined),
-                        title: Text('Edit comparison'),
+                        title: AppText('Edit comparison'),
                       ),
                     ),
                     PopupMenuItem(
@@ -144,7 +145,7 @@ class _BodyCompositionReportsScreenState
                       child: ListTile(
                         contentPadding: EdgeInsets.zero,
                         leading: Icon(Icons.delete_outline),
-                        title: Text('Delete comparison'),
+                        title: AppText('Delete comparison'),
                       ),
                     ),
                   ],
@@ -172,8 +173,8 @@ class _BodyCompositionReportsScreenState
     return Card(
       child: ListTile(
         leading: const CircleAvatar(child: Icon(Icons.description_outlined)),
-        title: Text(_date(report.measuredAt)),
-        subtitle: Text(
+        title: AppText(_date(report.measuredAt)),
+        subtitle: AppText(
           [
             _source(report.inputMethod),
             if (weight != null) '${_number(weight)} kg',
@@ -186,7 +187,7 @@ class _BodyCompositionReportsScreenState
           mainAxisSize: MainAxisSize.min,
           children: [
             IconButton(
-              tooltip: 'Download PDF',
+              tooltip: 'Download PDF'.localized(context),
               onPressed: () async {
                 final messenger = ScaffoldMessenger.of(context);
                 try {
@@ -194,7 +195,7 @@ class _BodyCompositionReportsScreenState
                 } catch (error) {
                   if (!mounted) return;
                   messenger.showSnackBar(
-                    SnackBar(content: Text('Could not create PDF: $error')),
+                    SnackBar(content: AppText('Could not create PDF: $error')),
                   );
                 }
               },
@@ -225,7 +226,7 @@ class _BodyCompositionReportsScreenState
               Row(
                 children: [
                   Expanded(
-                    child: Text(
+                    child: AppText(
                       'Health report · ${_date(report.measuredAt)}',
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.w900,
@@ -233,39 +234,39 @@ class _BodyCompositionReportsScreenState
                     ),
                   ),
                   IconButton(
-                    tooltip: 'Edit report',
+                    tooltip: 'Edit report'.localized(context),
                     onPressed: () => _editReport(context, report),
                     icon: const Icon(Icons.edit_outlined),
                   ),
                   IconButton(
-                    tooltip: 'Delete report',
+                    tooltip: 'Delete report'.localized(context),
                     onPressed: () => _deleteReport(context, report),
                     icon: const Icon(Icons.delete_outline),
                   ),
                   IconButton(
-                    tooltip: 'Download PDF',
+                    tooltip: 'Download PDF'.localized(context),
                     onPressed: () =>
                         BodyCompositionPdfService.shareReport(report),
                     icon: const Icon(Icons.picture_as_pdf_outlined),
                   ),
                 ],
               ),
-              Text(
+              AppText(
                 'Source: ${_source(report.inputMethod)}${report.memberCorrected ? ' · Values corrected before saving' : ''}',
               ),
               const SizedBox(height: 16),
               ..._metrics(report).map(
                 (entry) => ListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: Text(entry.$1),
-                  trailing: Text(
+                  title: AppText(entry.$1),
+                  trailing: AppText(
                     entry.$2,
                     style: const TextStyle(fontWeight: FontWeight.w700),
                   ),
                 ),
               ),
               const Divider(height: 32),
-              const Text(
+              const AppText(
                 'OCR transcript',
                 style: TextStyle(fontWeight: FontWeight.w800),
               ),
@@ -305,7 +306,7 @@ class _BodyCompositionReportsScreenState
     if (!mounted) return;
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(const SnackBar(content: Text('Health report updated.')));
+    ).showSnackBar(const SnackBar(content: AppText('Health report updated.')));
   }
 
   Future<void> _deleteReport(
@@ -315,18 +316,18 @@ class _BodyCompositionReportsScreenState
     final confirmed = await showDialog<bool>(
       context: sheetContext,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Delete health report?'),
-        content: const Text(
+        title: const AppText('Delete health report?'),
+        content: const AppText(
           'This permanently deletes the report and any comparisons that use it.',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Cancel'),
+            child: const AppText('Cancel'),
           ),
           FilledButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Delete'),
+            child: const AppText('Delete'),
           ),
         ],
       ),
@@ -338,13 +339,13 @@ class _BodyCompositionReportsScreenState
       Navigator.of(sheetContext).pop();
       await _refresh();
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Health report deleted.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: AppText('Health report deleted.')),
+      );
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not delete the report: $error')),
+        SnackBar(content: AppText('Could not delete the report: $error')),
       );
     }
   }
@@ -359,25 +360,25 @@ class _BodyCompositionReportsScreenState
     if (!mounted) return;
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(const SnackBar(content: Text('Comparison updated.')));
+    ).showSnackBar(const SnackBar(content: AppText('Comparison updated.')));
   }
 
   Future<void> _deleteComparison(BodyCompositionComparison comparison) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Delete comparison?'),
-        content: const Text(
+        title: const AppText('Delete comparison?'),
+        content: const AppText(
           'This permanently deletes the saved comparison. Your health reports will not be deleted.',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Cancel'),
+            child: const AppText('Cancel'),
           ),
           FilledButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Delete'),
+            child: const AppText('Delete'),
           ),
         ],
       ),
@@ -390,11 +391,11 @@ class _BodyCompositionReportsScreenState
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Comparison deleted.')));
+      ).showSnackBar(const SnackBar(content: AppText('Comparison deleted.')));
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not delete the comparison: $error')),
+        SnackBar(content: AppText('Could not delete the comparison: $error')),
       );
     }
   }
@@ -441,10 +442,10 @@ class _BodyCompositionReportsScreenState
         children: [
           const Icon(Icons.monitor_weight_outlined, size: 52),
           const SizedBox(height: 14),
-          Text(text, textAlign: TextAlign.center),
+          AppText(text, textAlign: TextAlign.center),
           if (action != null) ...[
             const SizedBox(height: 16),
-            FilledButton(onPressed: action, child: const Text('Try Again')),
+            FilledButton(onPressed: action, child: const AppText('Try Again')),
           ],
         ],
       ),

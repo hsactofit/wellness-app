@@ -4,6 +4,7 @@ import '../models/demo_health_metrics.dart';
 import '../services/api_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/glass_card.dart';
+import '../l10n/app_text.dart';
 
 class ProgressScreen extends StatefulWidget {
   const ProgressScreen({super.key});
@@ -315,7 +316,7 @@ class ProgressScreenState extends State<ProgressScreen>
                 // Header
                 Padding(
                   padding: const EdgeInsets.fromLTRB(20, 16, 20, 4),
-                  child: Text(
+                  child: AppText(
                     "Progress & Trends",
                     style: TextStyle(
                       fontSize: 28,
@@ -360,9 +361,12 @@ class ProgressScreenState extends State<ProgressScreen>
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const Text("⚠️", style: TextStyle(fontSize: 48)),
+                              const AppText(
+                                "⚠️",
+                                style: TextStyle(fontSize: 48),
+                              ),
                               const SizedBox(height: 16),
-                              Text(
+                              AppText(
                                 "Failed to load trends",
                                 style: TextStyle(
                                   fontSize: 14,
@@ -375,7 +379,7 @@ class ProgressScreenState extends State<ProgressScreen>
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 24,
                                 ),
-                                child: Text(
+                                child: AppText(
                                   "${snapshot.error}",
                                   textAlign: TextAlign.center,
                                   style: const TextStyle(
@@ -395,7 +399,7 @@ class ProgressScreenState extends State<ProgressScreen>
                                   backgroundColor: AppTheme.actionOf(context),
                                   foregroundColor: Colors.white,
                                 ),
-                                child: const Text("Retry"),
+                                child: const AppText("Retry"),
                               ),
                             ],
                           ),
@@ -542,7 +546,7 @@ class ProgressScreenState extends State<ProgressScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(
+          AppText(
             card.title,
             style: TextStyle(
               fontWeight: FontWeight.bold,
@@ -551,7 +555,7 @@ class ProgressScreenState extends State<ProgressScreen>
             ),
           ),
           const SizedBox(height: 4),
-          Text(
+          AppText(
             card.value,
             style: TextStyle(
               fontWeight: FontWeight.w900,
@@ -571,7 +575,7 @@ class ProgressScreenState extends State<ProgressScreen>
             ),
           ),
           const SizedBox(height: 4),
-          Text(
+          AppText(
             card.subtitle,
             style: TextStyle(fontSize: 10, color: card.color),
           ),
@@ -633,7 +637,7 @@ class ProgressScreenState extends State<ProgressScreen>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
+        AppText(
           "Trends Graph",
           style: TextStyle(
             fontSize: 16,
@@ -672,7 +676,7 @@ class ProgressScreenState extends State<ProgressScreen>
                         width: 1.5,
                       ),
                     ),
-                    child: Text(
+                    child: AppText(
                       label,
                       style: TextStyle(
                         fontSize: 11,
@@ -734,7 +738,7 @@ class ProgressScreenState extends State<ProgressScreen>
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
+          AppText(
             headerText,
             style: TextStyle(
               fontSize: 16,
@@ -746,7 +750,7 @@ class ProgressScreenState extends State<ProgressScreen>
           Padding(
             padding: const EdgeInsets.all(32.0),
             child: Center(
-              child: Text(
+              child: AppText(
                 "No sync logs available yet",
                 style: TextStyle(color: secondaryTextColor),
               ),
@@ -771,7 +775,7 @@ class ProgressScreenState extends State<ProgressScreen>
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Expanded(
-                child: Text(
+                child: AppText(
                   headerText,
                   style: TextStyle(
                     fontSize: 16,
@@ -800,7 +804,7 @@ class ProgressScreenState extends State<ProgressScreen>
                         color: AppTheme.actionOf(context),
                       ),
                       const SizedBox(width: 4),
-                      Text(
+                      AppText(
                         "Close",
                         style: TextStyle(
                           fontSize: 12,
@@ -834,7 +838,7 @@ class ProgressScreenState extends State<ProgressScreen>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
+        AppText(
           headerText,
           style: TextStyle(
             fontSize: 16,
@@ -903,7 +907,7 @@ class ProgressScreenState extends State<ProgressScreen>
           Center(
             child: Padding(
               padding: const EdgeInsets.only(top: 12),
-              child: Text(
+              child: AppText(
                 "Tap to expand ${dailyData.length} entries",
                 style: TextStyle(
                   fontSize: 12,
@@ -940,7 +944,7 @@ class ProgressScreenState extends State<ProgressScreen>
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Text(
+        AppText(
           _formatDate(dateStr),
           style: TextStyle(
             fontWeight: FontWeight.bold,
@@ -952,19 +956,19 @@ class ProgressScreenState extends State<ProgressScreen>
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
+            AppText(
               "🚶 $steps",
               style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
             ),
-            Text(
+            AppText(
               "🔥 $calories",
               style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
             ),
-            Text(
+            AppText(
               "🌙 ${sleep.toStringAsFixed(1)}h",
               style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
             ),
-            Text(
+            AppText(
               "💧 ${water}ml",
               style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
             ),
@@ -1000,7 +1004,7 @@ class ProgressScreenState extends State<ProgressScreen>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
+              AppText(
                 _formatDate(dateStr),
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
@@ -1054,7 +1058,7 @@ class ProgressScreenState extends State<ProgressScreen>
             ? AppTheme.actionOf(context)
             : (isDark ? Colors.white10 : Colors.black12),
       ),
-      label: Text(
+      label: AppText(
         label,
         style: TextStyle(
           color: isSelected
@@ -1083,7 +1087,7 @@ class ProgressScreenState extends State<ProgressScreen>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
+        AppText(
           value,
           style: TextStyle(
             fontWeight: FontWeight.bold,
@@ -1091,7 +1095,10 @@ class ProgressScreenState extends State<ProgressScreen>
             color: completed ? Colors.green : null,
           ),
         ),
-        Text(label, style: const TextStyle(color: Colors.grey, fontSize: 10)),
+        AppText(
+          label,
+          style: const TextStyle(color: Colors.grey, fontSize: 10),
+        ),
       ],
     );
   }

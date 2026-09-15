@@ -42,6 +42,7 @@ import '../app_brand.dart';
 import '../models/care_program.dart';
 import '../services/care_program_service.dart';
 import 'care_programs_screen.dart';
+import '../l10n/app_text.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key, this.onOpenChallenges});
@@ -615,7 +616,7 @@ class DashboardScreenState extends State<DashboardScreen>
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text("Log $metric Manually"),
+        title: AppText("Log $metric Manually"),
         content: TextField(
           controller: controller,
           keyboardType: TextInputType.number,
@@ -631,7 +632,7 @@ class DashboardScreenState extends State<DashboardScreen>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel"),
+            child: const AppText("Cancel"),
           ),
           ElevatedButton(
             onPressed: () {
@@ -662,11 +663,11 @@ class DashboardScreenState extends State<DashboardScreen>
                 });
                 Navigator.pop(context);
                 messenger.showSnackBar(
-                  SnackBar(content: Text("$metric logged successfully!")),
+                  SnackBar(content: AppText("$metric logged successfully!")),
                 );
               }
             },
-            child: const Text("Save"),
+            child: const AppText("Save"),
           ),
         ],
       ),
@@ -766,27 +767,27 @@ class DashboardScreenState extends State<DashboardScreen>
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Text(
+                const AppText(
                   'Link Apple or Google first',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
                 ),
                 const SizedBox(height: 8),
-                const Text(
+                const AppText(
                   'Work-email SSO accounts need Apple or Google signed in before Health data can be read from Apple Health or Health Connect.',
                 ),
                 const SizedBox(height: 16),
                 ElevatedButton(
                   onPressed: () => Navigator.pop(context, 'Google'),
-                  child: const Text('Continue with Google'),
+                  child: const AppText('Continue with Google'),
                 ),
                 const SizedBox(height: 8),
                 OutlinedButton(
                   onPressed: () => Navigator.pop(context, 'Apple'),
-                  child: const Text('Continue with Apple'),
+                  child: const AppText('Continue with Apple'),
                 ),
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('Not now'),
+                  child: const AppText('Not now'),
                 ),
               ],
             ),
@@ -815,7 +816,7 @@ class DashboardScreenState extends State<DashboardScreen>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(e is AuthException ? e.message : e.toString()),
+            content: AppText(e is AuthException ? e.message : e.toString()),
             backgroundColor: Colors.redAccent,
           ),
         );
@@ -875,7 +876,7 @@ class DashboardScreenState extends State<DashboardScreen>
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text(
+            content: AppText(
               "Health services connected. Your data will appear shortly.",
             ),
             backgroundColor: Colors.green,
@@ -884,7 +885,7 @@ class DashboardScreenState extends State<DashboardScreen>
       } else if (showSnackbarOnFailure) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text(
+            content: AppText(
               "Failed to grant health permissions. Please enable them to sync data.",
             ),
             backgroundColor: Colors.orange,
@@ -896,7 +897,7 @@ class DashboardScreenState extends State<DashboardScreen>
       if (mounted && showSnackbarOnFailure) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text(
+            content: AppText(
               "We could not connect to HealthKit. Please try again.",
             ),
             backgroundColor: Colors.orange,
@@ -1349,7 +1350,7 @@ class DashboardScreenState extends State<DashboardScreen>
                   content = Center(
                     child: Padding(
                       padding: const EdgeInsets.all(24.0),
-                      child: Text(
+                      child: AppText(
                         "Error loading data: ${snapshot.error}",
                         style: const TextStyle(color: Colors.redAccent),
                       ),
@@ -1402,7 +1403,7 @@ class DashboardScreenState extends State<DashboardScreen>
                             color: Colors.tealAccent,
                           ),
                           SizedBox(width: 8),
-                          Text(
+                          AppText(
                             "Health Sync Debugger",
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
@@ -1431,7 +1432,7 @@ class DashboardScreenState extends State<DashboardScreen>
                           size: 16,
                           color: Colors.tealAccent,
                         ),
-                        label: const Text(
+                        label: const AppText(
                           "Copy JSON",
                           style: TextStyle(color: Colors.tealAccent),
                         ),
@@ -1445,7 +1446,7 @@ class DashboardScreenState extends State<DashboardScreen>
                           );
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
-                              content: Text(
+                              content: AppText(
                                 "JSON payload copied to clipboard!",
                               ),
                               duration: Duration(seconds: 2),
@@ -1461,7 +1462,7 @@ class DashboardScreenState extends State<DashboardScreen>
                         ),
                       ),
                       onPressed: () => Navigator.pop(context),
-                      child: const Text(
+                      child: const AppText(
                         "Close",
                         style: TextStyle(color: Colors.white),
                       ),
@@ -1487,14 +1488,14 @@ class DashboardScreenState extends State<DashboardScreen>
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text("No Onboarding Data"),
-          content: const Text(
+          title: const AppText("No Onboarding Data"),
+          content: const AppText(
             "No local onboarding data has been saved yet. Complete onboarding or save a profile first.",
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text("OK"),
+              child: const AppText("OK"),
             ),
           ],
         ),
@@ -1527,7 +1528,7 @@ class DashboardScreenState extends State<DashboardScreen>
                       color: AppTheme.actionOf(context),
                     ),
                     const SizedBox(width: 8),
-                    const Text(
+                    const AppText(
                       "Onboarding Data",
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
@@ -1599,7 +1600,7 @@ class DashboardScreenState extends State<DashboardScreen>
                               ], isDark),
                               const SizedBox(height: 12),
                               _buildDataSection("Wellness Goals", [
-                                Text(
+                                AppText(
                                   ((data['goals'] as List?)?.join(', ') ??
                                       'None selected'),
                                   style: const TextStyle(
@@ -1685,21 +1686,21 @@ class DashboardScreenState extends State<DashboardScreen>
                   final confirm = await showDialog<bool>(
                     context: context,
                     builder: (context) => AlertDialog(
-                      title: const Text("Reset App?"),
-                      content: const Text(
+                      title: const AppText("Reset App?"),
+                      content: const AppText(
                         "This will clear all onboarding and local cache data, returning you to the onboarding wizard. Proceed?",
                       ),
                       actions: [
                         TextButton(
                           onPressed: () => Navigator.pop(context, false),
-                          child: const Text("Cancel"),
+                          child: const AppText("Cancel"),
                         ),
                         ElevatedButton(
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.redAccent,
                           ),
                           onPressed: () => Navigator.pop(context, true),
-                          child: const Text(
+                          child: const AppText(
                             "Reset",
                             style: TextStyle(color: Colors.white),
                           ),
@@ -1720,7 +1721,7 @@ class DashboardScreenState extends State<DashboardScreen>
                     );
                   }
                 },
-                child: const Text("Reset Onboarding"),
+                child: const AppText("Reset Onboarding"),
               ),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
@@ -1730,7 +1731,7 @@ class DashboardScreenState extends State<DashboardScreen>
                   ),
                 ),
                 onPressed: () => Navigator.pop(context),
-                child: const Text(
+                child: const AppText(
                   "Close",
                   style: TextStyle(color: Colors.white),
                 ),
@@ -1755,7 +1756,7 @@ class DashboardScreenState extends State<DashboardScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
+          AppText(
             title,
             style: TextStyle(
               fontWeight: FontWeight.bold,
@@ -1776,8 +1777,11 @@ class DashboardScreenState extends State<DashboardScreen>
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(color: Colors.grey, fontSize: 13)),
-          Text(
+          AppText(
+            label,
+            style: const TextStyle(color: Colors.grey, fontSize: 13),
+          ),
+          AppText(
             value,
             style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
           ),
@@ -1794,7 +1798,7 @@ class DashboardScreenState extends State<DashboardScreen>
 
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(const SnackBar(content: Text("Health database synced!")));
+    ).showSnackBar(const SnackBar(content: AppText("Health database synced!")));
   }
 
   void _showDownloadRationaleDialog() {
@@ -1805,24 +1809,24 @@ class DashboardScreenState extends State<DashboardScreen>
           children: [
             Icon(Icons.download, color: Colors.blue),
             SizedBox(width: 8),
-            Text("Health Connect Required"),
+            AppText("Health Connect Required"),
           ],
         ),
-        content: const Text(
+        content: const AppText(
           "Google Health Connect is required to securely aggregate and sync your health records. "
           "You will be redirected to the Play Store to download the app.",
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel"),
+            child: const AppText("Cancel"),
           ),
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
               HealthService.instance.installHealthConnect();
             },
-            child: const Text("Download"),
+            child: const AppText("Download"),
           ),
         ],
       ),
@@ -1868,7 +1872,7 @@ class DashboardScreenState extends State<DashboardScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  AppText(
                     dateHeaderString,
                     style: TextStyle(
                       fontSize: 11,
@@ -1878,7 +1882,7 @@ class DashboardScreenState extends State<DashboardScreen>
                     ),
                   ),
                   const SizedBox(height: 2),
-                  Text(
+                  AppText(
                     _getTimeBasedGreeting(),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -1972,7 +1976,7 @@ class DashboardScreenState extends State<DashboardScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  AppText(
                     "Connect Health Connect",
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
@@ -1981,7 +1985,7 @@ class DashboardScreenState extends State<DashboardScreen>
                     ),
                   ),
                   const SizedBox(height: 2),
-                  Text(
+                  AppText(
                     "Sync your steps, sleep, and heart rate automatically.",
                     style: TextStyle(
                       color: isDark ? Colors.grey[400] : Colors.grey[600],
@@ -2008,7 +2012,7 @@ class DashboardScreenState extends State<DashboardScreen>
                 _setConnectRequested(true);
                 _connectHealthServices();
               },
-              child: const Text(
+              child: const AppText(
                 "Connect",
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
               ),
@@ -2037,7 +2041,7 @@ class DashboardScreenState extends State<DashboardScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  AppText(
                     "Permissions Required",
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
@@ -2046,7 +2050,7 @@ class DashboardScreenState extends State<DashboardScreen>
                     ),
                   ),
                   const SizedBox(height: 2),
-                  Text(
+                  AppText(
                     "Allow sync permissions to enable tracking.",
                     style: TextStyle(
                       color: isDark ? Colors.grey[400] : Colors.grey[600],
@@ -2070,7 +2074,7 @@ class DashboardScreenState extends State<DashboardScreen>
                 ),
               ),
               onPressed: _connectHealthServices,
-              child: const Text(
+              child: const AppText(
                 "Grant",
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
               ),
@@ -2143,7 +2147,7 @@ class DashboardScreenState extends State<DashboardScreen>
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
+                            AppText(
                               "Google Fit Setup Guide",
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
@@ -2152,7 +2156,7 @@ class DashboardScreenState extends State<DashboardScreen>
                               ),
                             ),
                             const SizedBox(height: 2),
-                            Text(
+                            AppText(
                               "Tap to view step-by-step sync setup",
                               style: TextStyle(
                                 fontSize: 11,
@@ -2228,7 +2232,7 @@ class DashboardScreenState extends State<DashboardScreen>
             size: 18,
           ),
           const SizedBox(width: 8),
-          Text(
+          AppText(
             text,
             style: TextStyle(
               fontSize: 13,
@@ -2256,7 +2260,7 @@ class DashboardScreenState extends State<DashboardScreen>
               color: AppTheme.actionOf(context),
               shape: BoxShape.circle,
             ),
-            child: Text(
+            child: AppText(
               step,
               style: const TextStyle(
                 color: Colors.white,
@@ -2267,7 +2271,7 @@ class DashboardScreenState extends State<DashboardScreen>
           ),
           const SizedBox(width: 10),
           Expanded(
-            child: Text(
+            child: AppText(
               text,
               style: const TextStyle(fontSize: 13, height: 1.4),
             ),
@@ -2295,7 +2299,7 @@ class DashboardScreenState extends State<DashboardScreen>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
+              AppText(
                 title,
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
@@ -2303,11 +2307,11 @@ class DashboardScreenState extends State<DashboardScreen>
                   color: textColor,
                 ),
               ),
-              Text(emoji, style: const TextStyle(fontSize: 20)),
+              AppText(emoji, style: const TextStyle(fontSize: 20)),
             ],
           ),
           const SizedBox(height: 8),
-          Text(
+          AppText(
             placeholder,
             style: TextStyle(
               color: Colors.amber[700],
@@ -2316,7 +2320,7 @@ class DashboardScreenState extends State<DashboardScreen>
             ),
           ),
           const SizedBox(height: 4),
-          const Text(
+          const AppText(
             "Sync pending",
             style: TextStyle(color: Colors.grey, fontSize: 10),
           ),
@@ -2336,7 +2340,7 @@ class DashboardScreenState extends State<DashboardScreen>
           decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
         const SizedBox(width: 5),
-        Text(
+        AppText(
           label,
           style: TextStyle(
             fontSize: 10.5,
@@ -2393,7 +2397,7 @@ class DashboardScreenState extends State<DashboardScreen>
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
+                AppText(
                   "DAILY WELLNESS",
                   style: TextStyle(
                     fontSize: 11,
@@ -2427,7 +2431,7 @@ class DashboardScreenState extends State<DashboardScreen>
                         ),
                       ),
                       const SizedBox(width: 6),
-                      Text(
+                      AppText(
                         evaluation.toUpperCase(),
                         style: TextStyle(
                           fontSize: 9,
@@ -2465,7 +2469,7 @@ class DashboardScreenState extends State<DashboardScreen>
                           crossAxisAlignment: CrossAxisAlignment.baseline,
                           textBaseline: TextBaseline.alphabetic,
                           children: [
-                            Text(
+                            AppText(
                               "$score",
                               style: TextStyle(
                                 fontSize: 38,
@@ -2475,7 +2479,7 @@ class DashboardScreenState extends State<DashboardScreen>
                               ),
                             ),
                             const SizedBox(width: 2),
-                            Text(
+                            AppText(
                               "/100",
                               style: TextStyle(
                                 fontSize: 12,
@@ -2486,7 +2490,7 @@ class DashboardScreenState extends State<DashboardScreen>
                           ],
                         ),
                         const SizedBox(height: 2),
-                        Text(
+                        AppText(
                           "Wellness Score",
                           style: TextStyle(
                             fontSize: 10.5,
@@ -2563,7 +2567,7 @@ class DashboardScreenState extends State<DashboardScreen>
               children: [
                 Image.asset('assets/ai_buddy.png', width: 24, height: 24),
                 const SizedBox(width: 8),
-                Text(
+                AppText(
                   "AI Wellness Advisor",
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
@@ -2573,7 +2577,7 @@ class DashboardScreenState extends State<DashboardScreen>
               ],
             ),
             const SizedBox(height: 12),
-            Text(
+            AppText(
               recommendationText,
               style: TextStyle(
                 fontSize: 13,
@@ -2601,9 +2605,9 @@ class DashboardScreenState extends State<DashboardScreen>
               children: [
                 Row(
                   children: [
-                    const Text("🏆", style: TextStyle(fontSize: 24)),
+                    const AppText("🏆", style: TextStyle(fontSize: 24)),
                     const SizedBox(width: 8),
-                    Text(
+                    AppText(
                       "Active Challenge",
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
@@ -2621,7 +2625,7 @@ class DashboardScreenState extends State<DashboardScreen>
                     color: AppTheme.actionOf(context).withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Text(
+                  child: AppText(
                     "3 days left",
                     style: TextStyle(
                       color: AppTheme.actionOf(context),
@@ -2633,12 +2637,12 @@ class DashboardScreenState extends State<DashboardScreen>
               ],
             ),
             const SizedBox(height: 12),
-            const Text(
+            const AppText(
               "Weekly Hydration Champion",
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
             ),
             const SizedBox(height: 4),
-            Text(
+            AppText(
               "Log at least 2000 ml of water daily for 7 consecutive days.",
               style: TextStyle(
                 color: isDark ? Colors.grey[400] : Colors.grey[600],
@@ -2649,7 +2653,7 @@ class DashboardScreenState extends State<DashboardScreen>
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
+                AppText(
                   "Progress: 5/7 days completed",
                   style: TextStyle(
                     color: AppTheme.actionOf(context),
@@ -2657,7 +2661,7 @@ class DashboardScreenState extends State<DashboardScreen>
                     fontSize: 12,
                   ),
                 ),
-                Text(
+                AppText(
                   "71%",
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
@@ -2702,19 +2706,19 @@ class DashboardScreenState extends State<DashboardScreen>
               children: [
                 Row(
                   children: [
-                    const Text("🎁", style: TextStyle(fontSize: 28)),
+                    const AppText("🎁", style: TextStyle(fontSize: 28)),
                     const SizedBox(width: 12),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
+                        AppText(
                           "Your Rewards",
                           style: theme.textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.bold,
                             color: isDark ? Colors.white : Colors.black87,
                           ),
                         ),
-                        Text(
+                        AppText(
                           tier,
                           style: TextStyle(
                             color: isDark
@@ -2731,7 +2735,7 @@ class DashboardScreenState extends State<DashboardScreen>
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Text(
+                    AppText(
                       "$points pts",
                       style: const TextStyle(
                         fontWeight: FontWeight.w900,
@@ -2739,7 +2743,7 @@ class DashboardScreenState extends State<DashboardScreen>
                         color: Colors.amber,
                       ),
                     ),
-                    Text(
+                    AppText(
                       "of $target pts",
                       style: TextStyle(
                         color: isDark ? Colors.white60 : Colors.black54,
@@ -2778,7 +2782,7 @@ class DashboardScreenState extends State<DashboardScreen>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
+            AppText(
               "Manual Logging",
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.bold,
@@ -2786,7 +2790,7 @@ class DashboardScreenState extends State<DashboardScreen>
               ),
             ),
             const SizedBox(height: 4),
-            Text(
+            AppText(
               "No health services connected. You can log your metrics manually below:",
               style: TextStyle(
                 fontSize: 12,
@@ -2846,7 +2850,7 @@ class DashboardScreenState extends State<DashboardScreen>
         ),
       ),
       onPressed: onPressed,
-      child: Text(
+      child: AppText(
         label,
         style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
       ),
@@ -2871,20 +2875,20 @@ class DashboardScreenState extends State<DashboardScreen>
                   Expanded(
                     child: Row(
                       children: [
-                        const Text("💧", style: TextStyle(fontSize: 28)),
+                        const AppText("💧", style: TextStyle(fontSize: 28)),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text(
+                              const AppText(
                                 "Water Intake",
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 18,
                                 ),
                               ),
-                              Text(
+                              AppText(
                                 "Stay hydrated throughout the day",
                                 style: TextStyle(
                                   color: Colors.grey[500],
@@ -2900,7 +2904,7 @@ class DashboardScreenState extends State<DashboardScreen>
                     ),
                   ),
                   const SizedBox(width: 8),
-                  Text(
+                  AppText(
                     "${currentWater.round()} / ${targetWater.round()} ml",
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
@@ -2995,7 +2999,7 @@ class DashboardScreenState extends State<DashboardScreen>
                                         ],
                                       ),
                                       const SizedBox(width: 6),
-                                      Text(
+                                      AppText(
                                         "${(progress * 100).round()}% Target Met",
                                         style: const TextStyle(
                                           color: Colors.white,
@@ -3013,7 +3017,7 @@ class DashboardScreenState extends State<DashboardScreen>
                                     ],
                                   ),
                                   const SizedBox(height: 4),
-                                  const Text(
+                                  const AppText(
                                     "Tap anywhere to log water intake",
                                     style: TextStyle(
                                       color: Colors.white70,
@@ -3082,14 +3086,14 @@ class DashboardScreenState extends State<DashboardScreen>
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
+                          AppText(
                             "Meal Tracker",
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 18,
                             ),
                           ),
-                          Text(
+                          AppText(
                             "Today’s calories and protein",
                             style: TextStyle(color: Colors.grey, fontSize: 12),
                           ),
@@ -3102,11 +3106,11 @@ class DashboardScreenState extends State<DashboardScreen>
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
+                    const AppText(
                       "Calories today",
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
-                    Text(
+                    AppText(
                       "${(_apiNutritionCalories ?? 0).round()} kcal",
                       style: const TextStyle(fontWeight: FontWeight.w600),
                     ),
@@ -3134,7 +3138,7 @@ class DashboardScreenState extends State<DashboardScreen>
                 ),
                 const SizedBox(height: 12),
                 Center(
-                  child: Text(
+                  child: AppText(
                     "Log a meal ›",
                     style: TextStyle(
                       fontSize: 12,
@@ -3156,7 +3160,7 @@ class DashboardScreenState extends State<DashboardScreen>
     return SliverToBoxAdapter(
       child: Padding(
         padding: const EdgeInsets.only(left: 20, right: 20, top: 16, bottom: 8),
-        child: Text(
+        child: AppText(
           "Vitals & Heart",
           style: theme.textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.bold,
@@ -3252,7 +3256,7 @@ class DashboardScreenState extends State<DashboardScreen>
     return SliverToBoxAdapter(
       child: Padding(
         padding: const EdgeInsets.only(left: 20, right: 20, top: 16, bottom: 8),
-        child: Text(
+        child: AppText(
           "Sleep & Body composition",
           style: theme.textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.bold,
@@ -3363,7 +3367,7 @@ class DashboardScreenState extends State<DashboardScreen>
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(e.toString().replaceFirst('Exception: ', '')),
+          content: AppText(e.toString().replaceFirst('Exception: ', '')),
           backgroundColor: Colors.redAccent,
         ),
       );
@@ -3460,7 +3464,7 @@ class DashboardScreenState extends State<DashboardScreen>
                   children: [
                     _metricAssetIcon('assets/steps.png', size: 22),
                     const SizedBox(width: 8),
-                    Text(
+                    AppText(
                       "STEPS",
                       style: TextStyle(
                         fontSize: 11.5,
@@ -3515,7 +3519,7 @@ class DashboardScreenState extends State<DashboardScreen>
                       ),
                     ),
                     const SizedBox(width: 10),
-                    Text(
+                    AppText(
                       "${(progress * 100).round()}%",
                       style: TextStyle(
                         fontSize: 11.5,
@@ -3541,7 +3545,7 @@ class DashboardScreenState extends State<DashboardScreen>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
+        AppText(
           label,
           style: TextStyle(
             fontSize: 10,
@@ -3550,7 +3554,7 @@ class DashboardScreenState extends State<DashboardScreen>
           ),
         ),
         const SizedBox(height: 2),
-        Text(
+        AppText(
           value == null ? '--' : _formatWithCommas(value.round()),
           style: TextStyle(
             fontSize: 21,
@@ -3632,7 +3636,7 @@ class DashboardScreenState extends State<DashboardScreen>
                             children: [
                               _metricAssetIcon('assets/heart.png', size: 26),
                               const SizedBox(height: 4),
-                              Text(
+                              AppText(
                                 bpm > 0 ? bpm.round().toString() : "--",
                                 style: TextStyle(
                                   fontSize: 32,
@@ -3641,7 +3645,7 @@ class DashboardScreenState extends State<DashboardScreen>
                                   height: 1.1,
                                 ),
                               ),
-                              const Text(
+                              const AppText(
                                 "bpm",
                                 style: TextStyle(
                                   fontSize: 11,
@@ -3684,7 +3688,7 @@ class DashboardScreenState extends State<DashboardScreen>
                             ),
                           ],
                         ),
-                        child: Text(
+                        child: AppText(
                           "Resting: ${restingBpm > 0 ? restingBpm.round() : '--'}${status != null && status.isNotEmpty ? ' • $status' : ''}",
                           style: const TextStyle(
                             fontSize: 9.5,
@@ -3757,7 +3761,7 @@ class DashboardScreenState extends State<DashboardScreen>
                   children: [
                     _metricAssetIcon('assets/calories_burn.png', size: 24),
                     const SizedBox(width: 8),
-                    Text(
+                    AppText(
                       "Calories",
                       style: TextStyle(
                         fontSize: 11.5,
@@ -3773,7 +3777,7 @@ class DashboardScreenState extends State<DashboardScreen>
                   crossAxisAlignment: CrossAxisAlignment.baseline,
                   textBaseline: TextBaseline.alphabetic,
                   children: [
-                    Text(
+                    AppText(
                       calories.round().toString(),
                       style: TextStyle(
                         fontSize: 28,
@@ -3782,7 +3786,7 @@ class DashboardScreenState extends State<DashboardScreen>
                       ),
                     ),
                     const SizedBox(width: 4),
-                    const Text(
+                    const AppText(
                       "kcal",
                       style: TextStyle(
                         fontSize: 12,
@@ -3796,7 +3800,7 @@ class DashboardScreenState extends State<DashboardScreen>
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Flexible(
-                      child: Text(
+                      child: AppText(
                         "Goal: ${goal.round()}",
                         style: const TextStyle(
                           fontSize: 12,
@@ -3808,7 +3812,7 @@ class DashboardScreenState extends State<DashboardScreen>
                     ),
                     if (status != null && status.isNotEmpty)
                       Flexible(
-                        child: Text(
+                        child: AppText(
                           status,
                           style: TextStyle(
                             fontSize: 10.5,
@@ -3885,7 +3889,7 @@ class DashboardScreenState extends State<DashboardScreen>
                         children: [
                           _metricAssetIcon('assets/sleep.png', size: 22),
                           const SizedBox(width: 7),
-                          const Text(
+                          const AppText(
                             "SLEEP",
                             style: TextStyle(
                               fontSize: 11,
@@ -3899,7 +3903,7 @@ class DashboardScreenState extends State<DashboardScreen>
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
+                          AppText(
                             "${sleepHours.toInt()}h",
                             style: TextStyle(
                               fontSize: 22,
@@ -3908,7 +3912,7 @@ class DashboardScreenState extends State<DashboardScreen>
                               height: 1.05,
                             ),
                           ),
-                          Text(
+                          AppText(
                             "${((sleepHours - sleepHours.toInt()) * 60).round()}m",
                             style: TextStyle(
                               fontSize: 22,
@@ -3922,7 +3926,7 @@ class DashboardScreenState extends State<DashboardScreen>
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
+                          AppText(
                             "Goal: ${goal.round()}h",
                             style: TextStyle(
                               fontSize: 11,
@@ -3933,7 +3937,7 @@ class DashboardScreenState extends State<DashboardScreen>
                           if (status != null && status.isNotEmpty) ...[
                             const SizedBox(width: 4),
                             Expanded(
-                              child: Text(
+                              child: AppText(
                                 status,
                                 style: TextStyle(
                                   fontSize: 10.5,
@@ -4282,12 +4286,12 @@ class DashboardScreenState extends State<DashboardScreen>
         ),
         child: Column(
           children: [
-            Text(
+            AppText(
               label,
               style: const TextStyle(fontSize: 12, color: Colors.grey),
             ),
             const SizedBox(height: 4),
-            Text(
+            AppText(
               value,
               style: TextStyle(
                 fontWeight: FontWeight.bold,
@@ -4311,7 +4315,7 @@ class DashboardScreenState extends State<DashboardScreen>
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text("Failed to grant medical access permissions."),
+          content: AppText("Failed to grant medical access permissions."),
           backgroundColor: Colors.orange,
         ),
       );
@@ -4320,7 +4324,7 @@ class DashboardScreenState extends State<DashboardScreen>
     setState(() => _isSyncing = false);
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text("Medical records access authorized!"),
+        content: AppText("Medical records access authorized!"),
         backgroundColor: Colors.green,
       ),
     );
@@ -4339,7 +4343,7 @@ class DashboardScreenState extends State<DashboardScreen>
             padding: const EdgeInsets.only(left: 4, bottom: 10, right: 4),
             child: Row(
               children: [
-                Text(
+                AppText(
                   "TODAY'S PLANS",
                   style: TextStyle(
                     fontSize: 11,
@@ -4508,7 +4512,7 @@ class DashboardScreenState extends State<DashboardScreen>
                         borderRadius: BorderRadius.circular(20),
                         color: statusColor.withValues(alpha: 0.14),
                       ),
-                      child: Text(
+                      child: AppText(
                         statusLabel,
                         style: TextStyle(
                           fontSize: 9,
@@ -4521,7 +4525,7 @@ class DashboardScreenState extends State<DashboardScreen>
                   ],
                 ),
                 const SizedBox(height: 12),
-                Text(
+                AppText(
                   kindLabel,
                   style: TextStyle(
                     fontSize: 9.5,
@@ -4531,7 +4535,7 @@ class DashboardScreenState extends State<DashboardScreen>
                   ),
                 ),
                 const SizedBox(height: 4),
-                Text(
+                AppText(
                   hasPlan ? snap.title : emptyTitle,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
@@ -4544,7 +4548,7 @@ class DashboardScreenState extends State<DashboardScreen>
                   ),
                 ),
                 const SizedBox(height: 4),
-                Text(
+                AppText(
                   hasPlan ? snap.preview : emptySubtitle,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
@@ -4558,7 +4562,7 @@ class DashboardScreenState extends State<DashboardScreen>
                 const SizedBox(height: 10),
                 Row(
                   children: [
-                    Text(
+                    AppText(
                       hasPlan ? 'Open today' : 'Start',
                       style: TextStyle(
                         fontSize: 11.5,
@@ -4591,8 +4595,8 @@ class DashboardScreenState extends State<DashboardScreen>
       context: context,
       builder: (dialogContext) => AlertDialog(
         icon: const Icon(Icons.health_and_safety_outlined, color: Colors.green),
-        title: const Text('Health report uploaded'),
-        content: Text(
+        title: const AppText('Health report uploaded'),
+        content: AppText(
           report.calculatedBmi == null
               ? 'Your report is saved. Add your height in Profile to calculate app BMI.'
               : 'Your report is saved. Your current app BMI is ${report.calculatedBmi!.toStringAsFixed(1)}.',
@@ -4600,7 +4604,7 @@ class DashboardScreenState extends State<DashboardScreen>
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('Done'),
+            child: const AppText('Done'),
           ),
           FilledButton(
             onPressed: () {
@@ -4611,7 +4615,7 @@ class DashboardScreenState extends State<DashboardScreen>
                 ),
               );
             },
-            child: const Text('View Reports'),
+            child: const AppText('View Reports'),
           ),
         ],
       ),
@@ -4667,7 +4671,7 @@ class DashboardScreenState extends State<DashboardScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  AppText(
                     'Update Your Health',
                     style: TextStyle(
                       fontSize: 16,
@@ -4676,7 +4680,7 @@ class DashboardScreenState extends State<DashboardScreen>
                     ),
                   ),
                   const SizedBox(height: 3),
-                  Text(
+                  AppText(
                     'Scan your gym BMI or body-composition report.',
                     style: TextStyle(fontSize: 11, color: secondaryTextColor),
                   ),
@@ -4686,7 +4690,7 @@ class DashboardScreenState extends State<DashboardScreen>
                     child: FilledButton.icon(
                       onPressed: _openUpdateYourHealth,
                       icon: const Icon(Icons.add_chart_outlined, size: 18),
-                      label: const Text('Update Your Health'),
+                      label: const AppText('Update Your Health'),
                     ),
                   ),
                 ],
@@ -4712,7 +4716,7 @@ class DashboardScreenState extends State<DashboardScreen>
             top: 16,
             bottom: 8,
           ),
-          child: Text(
+          child: AppText(
             "TODAY'S PLAN",
             style: TextStyle(
               fontSize: 11,
@@ -4773,9 +4777,9 @@ class DashboardScreenState extends State<DashboardScreen>
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Row(
       children: [
-        Text(emoji, style: const TextStyle(fontSize: 18)),
+        AppText(emoji, style: const TextStyle(fontSize: 18)),
         const SizedBox(width: 12),
-        Text(
+        AppText(
           time,
           style: TextStyle(
             fontSize: 11,
@@ -4785,7 +4789,7 @@ class DashboardScreenState extends State<DashboardScreen>
         ),
         const SizedBox(width: 12),
         Expanded(
-          child: Text(
+          child: AppText(
             title,
             style: TextStyle(
               fontSize: 13,
@@ -4805,7 +4809,7 @@ class DashboardScreenState extends State<DashboardScreen>
             color: badgeColor.withValues(alpha: 0.12),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Text(
+          child: AppText(
             badge,
             style: TextStyle(
               color: badgeColor,
@@ -4831,7 +4835,7 @@ class DashboardScreenState extends State<DashboardScreen>
             top: 16,
             bottom: 8,
           ),
-          child: Text(
+          child: AppText(
             "QUICK ACCESS",
             style: TextStyle(
               fontSize: 11,
@@ -4992,7 +4996,7 @@ class DashboardScreenState extends State<DashboardScreen>
             child: Icon(icon, size: 26, color: color),
           ),
           const SizedBox(height: 6),
-          Text(
+          AppText(
             title,
             textAlign: TextAlign.center,
             style: TextStyle(
@@ -5044,7 +5048,7 @@ class DashboardScreenState extends State<DashboardScreen>
                 top: 16,
                 bottom: 8,
               ),
-              child: Text(
+              child: AppText(
                 "YOUR LAST 7 DAYS",
                 style: TextStyle(
                   fontSize: 11,
@@ -5139,7 +5143,7 @@ class DashboardScreenState extends State<DashboardScreen>
                             ),
                             const SizedBox(height: 6),
                             // Weekday Label
-                            Text(
+                            AppText(
                               weekdayStr,
                               style: TextStyle(
                                 fontSize: 9.5,
@@ -5175,17 +5179,17 @@ class DashboardScreenState extends State<DashboardScreen>
           children: [
             Icon(Icons.warning_amber_rounded, color: Colors.redAccent),
             SizedBox(width: 8),
-            Text("Revoke Medical Consent?"),
+            AppText("Revoke Medical Consent?"),
           ],
         ),
-        content: const Text(
+        content: const AppText(
           "Wiping medical consent will immediately remove all clinical records, vaccinations, and ECG reports from your view. "
           "You will need to provide explicit consent again to re-sync them.",
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: const Text("Cancel"),
+            child: const AppText("Cancel"),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
@@ -5199,14 +5203,17 @@ class DashboardScreenState extends State<DashboardScreen>
               setState(() => _isSyncing = false);
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                  content: Text(
+                  content: AppText(
                     "Medical records consent revoked and data cleared.",
                   ),
                   backgroundColor: Colors.blueGrey,
                 ),
               );
             },
-            child: const Text("Revoke", style: TextStyle(color: Colors.white)),
+            child: const AppText(
+              "Revoke",
+              style: TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),
@@ -5407,7 +5414,7 @@ class DashboardScreenState extends State<DashboardScreen>
                       Row(
                         children: [
                           Flexible(
-                            child: Text(
+                            child: AppText(
                               badge,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -5433,7 +5440,7 @@ class DashboardScreenState extends State<DashboardScreen>
                         ],
                       ),
                       const SizedBox(height: 2),
-                      Text(
+                      AppText(
                         title,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -5444,7 +5451,7 @@ class DashboardScreenState extends State<DashboardScreen>
                           color: textColor,
                         ),
                       ),
-                      Text(
+                      AppText(
                         subtitle,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -5554,7 +5561,7 @@ class DashboardScreenState extends State<DashboardScreen>
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
+          AppText(
             "ACTIVE GOALS",
             style: TextStyle(
               fontSize: 10.5,
@@ -5650,7 +5657,7 @@ class DashboardScreenState extends State<DashboardScreen>
                     children: [
                       Row(
                         children: [
-                          Text(
+                          AppText(
                             _gymCheckedIn ? "GYM ACTIVE" : "GYM CHECK-IN",
                             style: const TextStyle(
                               fontSize: 9,
@@ -5673,7 +5680,7 @@ class DashboardScreenState extends State<DashboardScreen>
                         ],
                       ),
                       const SizedBox(height: 2),
-                      Text(
+                      AppText(
                         _gymCheckedIn
                             ? (_gymName ?? "Workout")
                             : "Check in now",
@@ -5687,7 +5694,7 @@ class DashboardScreenState extends State<DashboardScreen>
                       ),
                       if (_gymCheckedIn) ...[
                         const SizedBox(height: 1),
-                        Text(
+                        AppText(
                           _formatDuration(_gymElapsed),
                           style: const TextStyle(
                             fontSize: 9,
@@ -5783,7 +5790,7 @@ class DashboardScreenState extends State<DashboardScreen>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text(
+                      AppText(
                         challenge.name,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -5794,7 +5801,7 @@ class DashboardScreenState extends State<DashboardScreen>
                         ),
                       ),
                       const SizedBox(height: 2),
-                      Text(
+                      AppText(
                         "$pct% done",
                         style: TextStyle(
                           fontSize: 10,
@@ -5869,7 +5876,7 @@ class GoogleFitSetupGuideScreen extends StatelessWidget {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
+                          AppText(
                             "Sync Guide",
                             style: theme.textTheme.headlineSmall?.copyWith(
                               fontWeight: FontWeight.bold,
@@ -5877,7 +5884,7 @@ class GoogleFitSetupGuideScreen extends StatelessWidget {
                               color: textColor,
                             ),
                           ),
-                          Text(
+                          AppText(
                             "Setup Google Fit synchronization",
                             style: theme.textTheme.bodySmall?.copyWith(
                               color: secondaryTextColor,
@@ -5895,10 +5902,10 @@ class GoogleFitSetupGuideScreen extends StatelessWidget {
                       children: [
                         Row(
                           children: [
-                            const Text("🎉", style: TextStyle(fontSize: 28)),
+                            const AppText("🎉", style: TextStyle(fontSize: 28)),
                             const SizedBox(width: 12),
                             Expanded(
-                              child: Text(
+                              child: AppText(
                                 "Almost Synced!",
                                 style: theme.textTheme.titleMedium?.copyWith(
                                   fontWeight: FontWeight.bold,
@@ -5910,7 +5917,7 @@ class GoogleFitSetupGuideScreen extends StatelessWidget {
                           ],
                         ),
                         const SizedBox(height: 12),
-                        Text(
+                        AppText(
                           "Health Connect is connected. To view health metrics, please ensure a supported fitness app (like Google Fit) is active and syncing with Health Connect.",
                           style: TextStyle(
                             color: secondaryTextColor,
@@ -5927,7 +5934,7 @@ class GoogleFitSetupGuideScreen extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
+                        AppText(
                           "Connection Progress",
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
@@ -5969,7 +5976,7 @@ class GoogleFitSetupGuideScreen extends StatelessWidget {
                               color: AppTheme.actionOf(context),
                             ),
                             const SizedBox(width: 8),
-                            Text(
+                            AppText(
                               "Google Fit Sync Steps",
                               style: theme.textTheme.titleMedium?.copyWith(
                                 fontWeight: FontWeight.bold,
@@ -6028,7 +6035,7 @@ class GoogleFitSetupGuideScreen extends StatelessWidget {
                       onRefresh();
                       Navigator.pop(context);
                     },
-                    child: const Text(
+                    child: const AppText(
                       "Sync & Refresh Dashboard",
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
@@ -6061,7 +6068,7 @@ class GoogleFitSetupGuideScreen extends StatelessWidget {
             size: 18,
           ),
           const SizedBox(width: 10),
-          Text(
+          AppText(
             label,
             style: TextStyle(
               fontSize: 12.5,
@@ -6095,7 +6102,7 @@ class GoogleFitSetupGuideScreen extends StatelessWidget {
               shape: BoxShape.circle,
             ),
             child: Center(
-              child: Text(
+              child: AppText(
                 step,
                 style: TextStyle(
                   fontSize: 10,
@@ -6107,7 +6114,7 @@ class GoogleFitSetupGuideScreen extends StatelessWidget {
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: Text(
+            child: AppText(
               text,
               style: TextStyle(
                 fontSize: 12.5,

@@ -13,6 +13,7 @@ import '../services/background_workout_service.dart';
 import '../services/push_service.dart';
 import '../services/workout_session_service.dart';
 import '../app_brand.dart';
+import '../l10n/app_text.dart';
 
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
@@ -156,14 +157,14 @@ class MainShellState extends State<MainShell> with WidgetsBindingObserver {
           leftFacility ? Icons.location_off_outlined : Icons.timer_outlined,
           color: Theme.of(dialogContext).colorScheme.primary,
         ),
-        title: Text(
+        title: AppText(
           leftFacility
               ? 'Have you left ${session.facilityName}?'
               : slotEnded
               ? 'Your booked slot has ended'
               : 'Is your workout complete?',
         ),
-        content: Text(
+        content: AppText(
           leftFacility
               ? 'Your phone is now at least 2 km from the exact place where you scanned into this workout. Open checkout to finish the active session.'
               : slotEnded
@@ -174,11 +175,13 @@ class MainShellState extends State<MainShell> with WidgetsBindingObserver {
           if (!leftFacility)
             TextButton(
               onPressed: () => Navigator.pop(dialogContext, false),
-              child: const Text('Still working out'),
+              child: const AppText('Still working out'),
             ),
           FilledButton(
             onPressed: () => Navigator.pop(dialogContext, true),
-            child: Text(leftFacility ? 'Yes, open checkout' : 'Open checkout'),
+            child: AppText(
+              leftFacility ? 'Yes, open checkout' : 'Open checkout',
+            ),
           ),
         ],
       ),
@@ -218,20 +221,23 @@ class MainShellState extends State<MainShell> with WidgetsBindingObserver {
       _dashboardKey.currentState?.refreshData();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Workout session completed.'),
+          content: AppText('Workout session completed.'),
           backgroundColor: Colors.green,
         ),
       );
     } on WorkoutSessionException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.message), backgroundColor: Colors.redAccent),
+        SnackBar(
+          content: AppText(e.message),
+          backgroundColor: Colors.redAccent,
+        ),
       );
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text(
+          content: AppText(
             'Could not complete the workout session. Please try again.',
           ),
           backgroundColor: Colors.redAccent,
@@ -405,7 +411,7 @@ class MainShellState extends State<MainShell> with WidgetsBindingObserver {
                 size: 22,
               ),
               const SizedBox(height: 4),
-              Text(
+              AppText(
                 label,
                 style: TextStyle(
                   fontSize: 10,

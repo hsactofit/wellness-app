@@ -8,6 +8,7 @@ import '../widgets/onboarding/signup_step.dart';
 import 'main_shell.dart';
 import 'onboarding_screen.dart';
 import 'sso_auth_screen.dart';
+import '../l10n/app_text.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -93,7 +94,7 @@ class _AuthScreenState extends State<AuthScreen>
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
+          content: AppText(
             "Authentication failed: ${e.toString().replaceAll('Exception: ', '')}",
           ),
           backgroundColor: Colors.redAccent,
@@ -239,7 +240,7 @@ class _AuthScreenState extends State<AuthScreen>
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text("$provider authentication was cancelled."),
+            content: AppText("$provider authentication was cancelled."),
             backgroundColor: Colors.orange,
           ),
         );
@@ -253,7 +254,7 @@ class _AuthScreenState extends State<AuthScreen>
           ? e.message
           : "Failed to authenticate with $provider: ${e.toString().replaceAll('Exception: ', '')}";
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message), backgroundColor: Colors.redAccent),
+        SnackBar(content: AppText(message), backgroundColor: Colors.redAccent),
       );
     } finally {
       if (mounted) {
@@ -369,7 +370,7 @@ class _AuthScreenState extends State<AuthScreen>
                             ),
                           ),
                           const SizedBox(height: 24),
-                          const Text(
+                          const AppText(
                             "Signing in securely...",
                             style: TextStyle(
                               color: Colors.white,

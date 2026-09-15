@@ -5,6 +5,7 @@ import '../app_brand_logo.dart';
 import '../glass_card.dart';
 import 'fade_slide_transition.dart';
 import '../../theme/app_theme.dart';
+import '../../l10n/app_text.dart';
 
 class SignupStep extends StatefulWidget {
   final GlobalKey<FormState> formKey;
@@ -117,7 +118,7 @@ class _SignupStepState extends State<SignupStep> {
                       elevated: true,
                     ),
                     const SizedBox(height: 16),
-                    Text(
+                    AppText(
                       "Welcome Back",
                       style: TextStyle(
                         fontSize: 18,
@@ -137,7 +138,7 @@ class _SignupStepState extends State<SignupStep> {
                   children: [
                     const AppBrandLogo.compact(),
                     const SizedBox(height: 10),
-                    Text(
+                    AppText(
                       "Create your account",
                       style: TextStyle(
                         fontSize: 16,
@@ -171,7 +172,7 @@ class _SignupStepState extends State<SignupStep> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
+                            AppText(
                               "Create Account",
                               style: TextStyle(
                                 fontSize: 24,
@@ -181,7 +182,7 @@ class _SignupStepState extends State<SignupStep> {
                               ),
                             ),
                             const SizedBox(height: 4),
-                            Text(
+                            AppText(
                               "Start your journey to optimized wellness today.",
                               style: TextStyle(
                                 fontSize: 13,
@@ -265,7 +266,7 @@ class _SignupStepState extends State<SignupStep> {
                                 ? GestureDetector(
                                     onTap: () =>
                                         _showForgotPasswordDialog(context),
-                                    child: Text(
+                                    child: AppText(
                                       "Forgot Password?",
                                       style: TextStyle(
                                         color: AppTheme.actionOf(context),
@@ -430,7 +431,7 @@ class _SignupStepState extends State<SignupStep> {
                           if (!_isLogin && !_agreedToTerms) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
-                                content: Text(
+                                content: AppText(
                                   "Please agree to the Terms of Service & Privacy Policy",
                                 ),
                                 backgroundColor: Colors.orange,
@@ -442,7 +443,7 @@ class _SignupStepState extends State<SignupStep> {
                             widget.onEmailSubmit(_isLogin);
                           }
                         },
-                        child: Text(
+                        child: AppText(
                           _isLogin ? "Sign In" : "Get Started",
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
@@ -457,7 +458,7 @@ class _SignupStepState extends State<SignupStep> {
                       Center(
                         child: GestureDetector(
                           onTap: () => _showLoginCodeDialog(context),
-                          child: Text(
+                          child: AppText(
                             "Or sign in with a code instead",
                             style: TextStyle(
                               color: isDark ? Colors.white70 : Colors.black54,
@@ -488,7 +489,7 @@ class _SignupStepState extends State<SignupStep> {
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 16,
                                 ),
-                                child: Text(
+                                child: AppText(
                                   _isLogin
                                       ? "OR CONTINUE WITH"
                                       : "OR SIGN UP WITH",
@@ -545,7 +546,7 @@ class _SignupStepState extends State<SignupStep> {
                                         height: 18,
                                       ),
                                       const SizedBox(width: 10),
-                                      Text(
+                                      AppText(
                                         "Google",
                                         style: TextStyle(
                                           color: isDark
@@ -589,7 +590,7 @@ class _SignupStepState extends State<SignupStep> {
                                         height: 25,
                                       ),
                                       const SizedBox(width: 8),
-                                      Text(
+                                      AppText(
                                         "Apple",
                                         style: TextStyle(
                                           color: isDark
@@ -627,7 +628,7 @@ class _SignupStepState extends State<SignupStep> {
                               ),
                               onPressed: () => widget.onSsoPressed(_isLogin),
                               icon: const Icon(Icons.domain_outlined, size: 18),
-                              label: Text(
+                              label: AppText(
                                 _isLogin
                                     ? 'Login with SSO'
                                     : 'Sign up with SSO',
@@ -701,7 +702,7 @@ class _SignupStepState extends State<SignupStep> {
                       ),
                       const SizedBox(width: 6),
                       Flexible(
-                        child: Text(
+                        child: AppText(
                           _isLogin
                               ? "SECURE, HIPAA COMPLIANT PORTAL"
                               : "2026 ${AppBrand.wellnessName}. Secure HIPAA compliant registration.",
@@ -729,7 +730,7 @@ class _SignupStepState extends State<SignupStep> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
+        AppText(
           labelText,
           style: const TextStyle(
             fontSize: 11,
@@ -778,7 +779,7 @@ class _SignupStepState extends State<SignupStep> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
+                          AppText(
                             currentStep == 0
                                 ? "Reset Password"
                                 : currentStep == 1
@@ -817,7 +818,7 @@ class _SignupStepState extends State<SignupStep> {
                               color: Colors.redAccent.withValues(alpha: 0.3),
                             ),
                           ),
-                          child: Text(
+                          child: AppText(
                             errorMessage,
                             style: const TextStyle(
                               color: Colors.redAccent,
@@ -829,7 +830,7 @@ class _SignupStepState extends State<SignupStep> {
                       ],
 
                       if (currentStep == 0) ...[
-                        Text(
+                        AppText(
                           "Enter your registered email address to receive a 6-digit OTP code.",
                           style: TextStyle(
                             fontSize: 13,
@@ -906,13 +907,13 @@ class _SignupStepState extends State<SignupStep> {
                                     color: Colors.white,
                                   ),
                                 )
-                              : const Text(
+                              : const AppText(
                                   "Send OTP",
                                   style: TextStyle(fontWeight: FontWeight.bold),
                                 ),
                         ),
                       ] else if (currentStep == 1) ...[
-                        Text(
+                        AppText(
                           "Enter the 6-digit code we emailed you. It expires in 15 minutes.",
                           style: TextStyle(
                             fontSize: 13,
@@ -958,7 +959,7 @@ class _SignupStepState extends State<SignupStep> {
                                           errorMessage = '';
                                         });
                                       },
-                                child: Text(
+                                child: AppText(
                                   "Back",
                                   style: TextStyle(
                                     color: isDark
@@ -1032,7 +1033,7 @@ class _SignupStepState extends State<SignupStep> {
                                           color: Colors.white,
                                         ),
                                       )
-                                    : const Text(
+                                    : const AppText(
                                         "Verify OTP",
                                         style: TextStyle(
                                           fontWeight: FontWeight.bold,
@@ -1043,7 +1044,7 @@ class _SignupStepState extends State<SignupStep> {
                           ],
                         ),
                       ] else if (currentStep == 2) ...[
-                        Text(
+                        AppText(
                           "Enter a new password for your account (minimum 6 characters).",
                           style: TextStyle(
                             fontSize: 13,
@@ -1121,7 +1122,7 @@ class _SignupStepState extends State<SignupStep> {
                                     color: Colors.white,
                                   ),
                                 )
-                              : const Text(
+                              : const AppText(
                                   "Reset Password",
                                   style: TextStyle(fontWeight: FontWeight.bold),
                                 ),
@@ -1133,7 +1134,7 @@ class _SignupStepState extends State<SignupStep> {
                           size: 64,
                         ),
                         const SizedBox(height: 16),
-                        Text(
+                        AppText(
                           "Your password has been successfully reset. You can now log in with your new credentials.",
                           textAlign: TextAlign.center,
                           style: TextStyle(
@@ -1157,7 +1158,7 @@ class _SignupStepState extends State<SignupStep> {
                             newPasswordController.dispose();
                             Navigator.of(context).pop();
                           },
-                          child: const Text(
+                          child: const AppText(
                             "Done",
                             style: TextStyle(fontWeight: FontWeight.bold),
                           ),
@@ -1207,7 +1208,7 @@ class _SignupStepState extends State<SignupStep> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
+                          AppText(
                             currentStep == 0
                                 ? "Sign In With a Code"
                                 : "Enter the Code",
@@ -1241,7 +1242,7 @@ class _SignupStepState extends State<SignupStep> {
                               color: Colors.redAccent.withValues(alpha: 0.3),
                             ),
                           ),
-                          child: Text(
+                          child: AppText(
                             errorMessage,
                             style: const TextStyle(
                               color: Colors.redAccent,
@@ -1253,7 +1254,7 @@ class _SignupStepState extends State<SignupStep> {
                       ],
 
                       if (currentStep == 0) ...[
-                        Text(
+                        AppText(
                           "We'll email a one-time code — no password needed.",
                           style: TextStyle(
                             fontSize: 13,
@@ -1329,13 +1330,13 @@ class _SignupStepState extends State<SignupStep> {
                                     color: Colors.white,
                                   ),
                                 )
-                              : const Text(
+                              : const AppText(
                                   "Send Code",
                                   style: TextStyle(fontWeight: FontWeight.bold),
                                 ),
                         ),
                       ] else ...[
-                        Text(
+                        AppText(
                           "Enter the 6-digit code we emailed you. It expires in 15 minutes.",
                           style: TextStyle(
                             fontSize: 13,
@@ -1381,7 +1382,7 @@ class _SignupStepState extends State<SignupStep> {
                                           errorMessage = '';
                                         });
                                       },
-                                child: Text(
+                                child: AppText(
                                   "Back",
                                   style: TextStyle(
                                     color: isDark
@@ -1459,7 +1460,7 @@ class _SignupStepState extends State<SignupStep> {
                                           color: Colors.white,
                                         ),
                                       )
-                                    : const Text(
+                                    : const AppText(
                                         "Sign In",
                                         style: TextStyle(
                                           fontWeight: FontWeight.bold,
@@ -1584,7 +1585,7 @@ class _SignupStepState extends State<SignupStep> {
                       color: strengthColor,
                     ),
                     const SizedBox(width: 6),
-                    const Text(
+                    const AppText(
                       "PASSWORD ADVISOR",
                       style: TextStyle(
                         fontSize: 10,
@@ -1602,7 +1603,7 @@ class _SignupStepState extends State<SignupStep> {
                     fontWeight: FontWeight.bold,
                     color: strengthColor,
                   ),
-                  child: Text(strengthText),
+                  child: AppText(strengthText),
                 ),
               ],
             ),
@@ -1747,7 +1748,7 @@ class _SignupStepState extends State<SignupStep> {
           child: AnimatedDefaultTextStyle(
             duration: const Duration(milliseconds: 300),
             style: textStyle,
-            child: Text(label),
+            child: AppText(label),
           ),
         ),
       ],

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 
 import '../services/exercise_video_service.dart';
+import '../l10n/app_text.dart';
 
 class ExerciseVideoScreen extends StatefulWidget {
   const ExerciseVideoScreen({
@@ -214,10 +215,10 @@ class _ExerciseVideoScreenState extends State<ExerciseVideoScreen> {
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: Text(_title.isEmpty ? widget.exerciseName : _title),
+        title: AppText(_title.isEmpty ? widget.exerciseName : _title),
         actions: [
           IconButton(
-            tooltip: 'Close',
+            tooltip: 'Close'.localized(context),
             onPressed: () => Navigator.of(context).pop(),
             icon: const Icon(Icons.close),
           ),
@@ -241,11 +242,11 @@ class _ExerciseVideoScreenState extends State<ExerciseVideoScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(_error!, textAlign: TextAlign.center),
+            AppText(_error!, textAlign: TextAlign.center),
             const SizedBox(height: 16),
             FilledButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Go back'),
+              child: const AppText('Go back'),
             ),
           ],
         ),
@@ -253,7 +254,7 @@ class _ExerciseVideoScreenState extends State<ExerciseVideoScreen> {
     }
     final controller = _controller;
     if (controller == null || !controller.value.isInitialized) {
-      return const Center(child: Text('Video is not available.'));
+      return const Center(child: AppText('Video is not available.'));
     }
     final value = controller.value;
     final isComplete =
@@ -316,8 +317,8 @@ class _ExerciseVideoScreenState extends State<ExerciseVideoScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(_formatDuration(displayedPosition)),
-            Text(_formatDuration(value.duration)),
+            AppText(_formatDuration(displayedPosition)),
+            AppText(_formatDuration(value.duration)),
           ],
         ),
       ],
@@ -365,7 +366,7 @@ class ExerciseVideoPlaybackControls extends StatelessWidget {
           IconButton(
             color: Colors.white,
             iconSize: 36,
-            tooltip: 'Rewind 10 seconds',
+            tooltip: 'Rewind 10 seconds'.localized(context),
             onPressed: onRewind,
             icon: const Icon(Icons.replay_10_rounded),
           ),
@@ -389,7 +390,7 @@ class ExerciseVideoPlaybackControls extends StatelessWidget {
           IconButton(
             color: Colors.white,
             iconSize: 36,
-            tooltip: 'Forward 10 seconds',
+            tooltip: 'Forward 10 seconds'.localized(context),
             onPressed: onForward,
             icon: const Icon(Icons.forward_10_rounded),
           ),

@@ -1,0 +1,9 @@
+{
+  "@@locale": "en",
+  "language": "Language",
+  "english": "English",
+  "hindi": "Hindi",
+  "kannada": "Kannada",
+  "chooseLanguage": "Choose language",
+  "languageSaveFailed": "Could not save your language. Please try again."
+}

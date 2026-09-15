@@ -23,6 +23,7 @@ import '../widgets/workout_muscle_map.dart';
 import '../models/workout_muscles.dart';
 import 'exercise_video_screen.dart';
 import 'workout_reports_screen.dart';
+import '../l10n/app_text.dart';
 
 /// Member-facing facility access surface.
 ///
@@ -346,7 +347,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
     messenger.hideCurrentSnackBar();
     messenger.showSnackBar(
       SnackBar(
-        content: Text(message),
+        content: AppText(message),
         behavior: SnackBarBehavior.floating,
         duration: Duration(seconds: isError ? 5 : 4),
         backgroundColor: isError ? Colors.redAccent : Colors.green,
@@ -445,8 +446,8 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
       final approved = await showDialog<bool>(
         context: context,
         builder: (dialogContext) => AlertDialog(
-          title: const Text('Facility workout-data sharing'),
-          content: Text(
+          title: const AppText('Facility workout-data sharing'),
+          content: AppText(
             consent.disclosureText.isNotEmpty
                 ? 'To $action, review and approve the following:\n\n${consent.disclosureText}'
                 : 'To $action, approve the required facility workout-data sharing setting.',
@@ -454,11 +455,11 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext, false),
-              child: const Text('Reject'),
+              child: const AppText('Reject'),
             ),
             FilledButton(
               onPressed: () => Navigator.pop(dialogContext, true),
-              child: const Text('Approve'),
+              child: const AppText('Approve'),
             ),
           ],
         ),
@@ -547,12 +548,12 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
     await showDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('This time overlaps another booking'),
-        content: Text(details),
+        title: const AppText('This time overlaps another booking'),
+        content: AppText(details),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('OK'),
+            child: const AppText('OK'),
           ),
         ],
       ),
@@ -564,14 +565,14 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
     await showDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Slot booked'),
-        content: Text(
+        title: const AppText('Slot booked'),
+        content: AppText(
           '${booking.activityLabel} at ${booking.facilityName}\n${_formatSlot(booking.slot)}\n\nScan the facility QR at the door during this hour to start.',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Done'),
+            child: const AppText('Done'),
           ),
         ],
       ),
@@ -613,7 +614,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
           final entry = entries[index];
           return ChoiceChip(
             selected: _selectedActivity == entry.key,
-            label: Text(entry.value),
+            label: AppText(entry.value),
             onSelected: (_) => _selectActivity(entry.key),
           );
         },
@@ -632,14 +633,14 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
+              AppText(
                 facility.name,
                 style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w800,
                 ),
               ),
-              Text(_formatDate(_selectedDay)),
+              AppText(_formatDate(_selectedDay)),
               const SizedBox(height: 12),
               Flexible(
                 child: ListView(
@@ -653,8 +654,8 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
                                 ? Colors.green
                                 : Colors.grey,
                           ),
-                          title: Text(_formatSlot(slot)),
-                          subtitle: Text(
+                          title: AppText(_formatSlot(slot)),
+                          subtitle: AppText(
                             slot.remaining > 0
                                 ? '${slot.remaining} places left'
                                 : 'Full',
@@ -672,7 +673,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
                   width: double.infinity,
                   child: OutlinedButton.icon(
                     icon: const Icon(Icons.add_alert_outlined),
-                    label: const Text('Request a place'),
+                    label: const AppText('Request a place'),
                     onPressed: () {
                       Navigator.pop(sheetContext);
                       _requestCapacity(facility);
@@ -1064,8 +1065,8 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Finish workout?'),
-        content: Text(
+        title: const AppText('Finish workout?'),
+        content: AppText(
           _completedExerciseCount == 0
               ? 'No exercises are fully completed. You can still check out.'
               : '$_completedExerciseCount exercise(s) fully completed. You can still check out if the checklist is incomplete.',
@@ -1073,11 +1074,11 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Keep working'),
+            child: const AppText('Keep working'),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('Check out'),
+            child: const AppText('Check out'),
           ),
         ],
       ),
@@ -1098,7 +1099,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
       },
       child: Scaffold(
         appBar: AppBar(
-          title: Text(_session == null ? 'Gym access' : 'Active workout'),
+          title: AppText(_session == null ? 'Gym access' : 'Active workout'),
           leading: _view == _AccessView.home
               ? null
               : IconButton(
@@ -1149,14 +1150,14 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
+          AppText(
             'Book a facility activity',
             style: Theme.of(
               context,
             ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 8),
-          Text(
+          AppText(
             'Choose Gym, Yoga, Zumba, or another hourly activity, then reserve a slot or check in when you arrive.',
             style: Theme.of(
               context,
@@ -1191,7 +1192,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
           ),
           if (upcomingBookings(_bookings).isNotEmpty) ...[
             const SizedBox(height: 18),
-            Text(
+            AppText(
               'My upcoming bookings',
               style: Theme.of(
                 context,
@@ -1202,7 +1203,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
           ],
           if (previousBookings(_bookings).isNotEmpty) ...[
             const SizedBox(height: 18),
-            Text(
+            AppText(
               'Previous bookings',
               style: Theme.of(
                 context,
@@ -1232,8 +1233,11 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
           foregroundColor: color,
           child: Icon(icon),
         ),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
-        subtitle: Text(subtitle),
+        title: AppText(
+          title,
+          style: const TextStyle(fontWeight: FontWeight.w800),
+        ),
+        subtitle: AppText(subtitle),
         trailing: const Icon(Icons.chevron_right),
         onTap: onTap,
       ),
@@ -1250,7 +1254,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(
+              AppText(
                 instant
                     ? 'Choose a facility for ${facilityActivityLabel(_selectedActivity)}'
                     : 'Choose a facility and ${facilityActivityLabel(_selectedActivity)} slot',
@@ -1273,7 +1277,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
                       final selected = _sameDay(day, _selectedDay);
                       return ChoiceChip(
                         selected: selected,
-                        label: Text(index == 0 ? 'Today' : _shortDate(day)),
+                        label: AppText(index == 0 ? 'Today' : _shortDate(day)),
                         onSelected: (_) => _changeDay(day),
                       );
                     },
@@ -1295,7 +1299,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
               if (multi && !instant)
                 const Padding(
                   padding: EdgeInsets.only(top: 8),
-                  child: Text(
+                  child: AppText(
                     'Facilities are ordered by your preference, recommendations, and visits.',
                   ),
                 ),
@@ -1307,7 +1311,9 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
               ? const Center(child: CircularProgressIndicator())
               : page.items.isEmpty
               ? const Center(
-                  child: Text('No facilities are linked to your organisation.'),
+                  child: AppText(
+                    'No facilities are linked to your organisation.',
+                  ),
                 )
               : ListView.builder(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
@@ -1325,7 +1331,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
+                AppText(
                   'Page ${page.page} of ${(page.total / 10).ceil().clamp(1, 999)}',
                 ),
                 Row(
@@ -1360,10 +1366,10 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
   }) {
     final badges = <Widget>[];
     if (facility.multiFacility && facility.previouslyVisited) {
-      badges.add(const Chip(label: Text('Previously visited')));
+      badges.add(const Chip(label: AppText('Previously visited')));
     }
     if (facility.multiFacility && facility.recommended) {
-      badges.add(const Chip(label: Text('Recommended')));
+      badges.add(const Chip(label: AppText('Recommended')));
     }
     return GlassCard(
       margin: const EdgeInsets.symmetric(vertical: 7),
@@ -1378,7 +1384,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    AppText(
                       facility.name,
                       style: const TextStyle(
                         fontSize: 18,
@@ -1386,7 +1392,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
                       ),
                     ),
                     const SizedBox(height: 3),
-                    Text(
+                    AppText(
                       facility.address ?? '${facility.city} · ${facility.code}',
                       style: const TextStyle(color: Colors.grey),
                     ),
@@ -1406,7 +1412,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
           ],
           if (instant || facility.bookingClosed) ...[
             const SizedBox(height: 10),
-            Text(
+            AppText(
               instant
                   ? 'Check in now. Your facility manager will be notified.'
                   : 'Bookings for today have closed at 10:00 PM. Choose tomorrow to reserve a slot.',
@@ -1430,7 +1436,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
                     ? Icons.calendar_today_outlined
                     : Icons.event_available,
               ),
-              label: Text(
+              label: AppText(
                 instant
                     ? 'Check in now'
                     : facility.bookingClosed
@@ -1448,7 +1454,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
     final historyStatus = bookingHistoryStatus(booking);
     return Card(
       child: ListTile(
-        title: Text(
+        title: AppText(
           '${booking.activityLabel} · ${booking.facilityName}',
           style: const TextStyle(fontWeight: FontWeight.w700),
         ),
@@ -1457,8 +1463,8 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
           runSpacing: 2,
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
-            Text(_formatSlot(booking.slot)),
-            Text(
+            AppText(_formatSlot(booking.slot)),
+            AppText(
               historyStatus?.label ?? booking.status,
               style: TextStyle(
                 color: historyStatus == null
@@ -1511,7 +1517,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
                 : Colors.redAccent,
           ),
           const SizedBox(height: 14),
-          Text(
+          AppText(
             pending
                 ? instant
                       ? 'Preparing instant check-in'
@@ -1527,7 +1533,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
             ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 8),
-          Text(
+          AppText(
             pending
                 ? instant
                       ? 'Please try again in a moment.'
@@ -1545,7 +1551,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
                   ? _startApprovedCapacityCheckin
                   : _openScanner,
               icon: const Icon(Icons.qr_code_scanner),
-              label: Text(
+              label: AppText(
                 request.requestType == 'capacity_override'
                     ? 'Scan granted slot at the facility'
                     : 'Scan facility QR',
@@ -1558,17 +1564,17 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
               FilledButton.icon(
                 onPressed: _acceptSuggestion,
                 icon: const Icon(Icons.event_available),
-                label: const Text('Book suggested slot'),
+                label: const AppText('Book suggested slot'),
               ),
             OutlinedButton.icon(
               onPressed: _openFacilities,
               icon: const Icon(Icons.location_on_outlined),
-              label: const Text('View other facilities'),
+              label: const AppText('View other facilities'),
             ),
             OutlinedButton.icon(
               onPressed: _raiseIssue,
               icon: const Icon(Icons.support_agent),
-              label: const Text('Raise booking issue'),
+              label: const AppText('Raise booking issue'),
             ),
           ],
         ],
@@ -1582,14 +1588,14 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
+          AppText(
             'Scan facility QR',
             style: Theme.of(
               context,
             ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 8),
-          Text(
+          AppText(
             isGymActivity(_selectedActivity)
                 ? 'Use the QR displayed at the facility entrance to begin your workout.'
                 : 'Use the QR displayed at the facility entrance to start ${facilityActivityLabel(_selectedActivity)}.',
@@ -1630,7 +1636,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
                   : const ColoredBox(
                       color: Colors.black,
                       child: Center(
-                        child: Text(
+                        child: AppText(
                           'Camera permission required',
                           style: TextStyle(color: Colors.white),
                         ),
@@ -1640,7 +1646,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
           ),
           const SizedBox(height: 14),
           const Center(
-            child: Text('Can’t scan the sticker? Enter the facility code.'),
+            child: AppText('Can’t scan the sticker? Enter the facility code.'),
           ),
           const SizedBox(height: 8),
           Row(
@@ -1659,7 +1665,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
               const SizedBox(width: 10),
               FilledButton(
                 onPressed: _submitManualCode,
-                child: const Text('Use code'),
+                child: const AppText('Use code'),
               ),
             ],
           ),
@@ -1682,7 +1688,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
             padding: const EdgeInsets.all(22),
             child: Column(
               children: [
-                Text(
+                AppText(
                   session.facilityName,
                   style: const TextStyle(
                     fontSize: 21,
@@ -1691,14 +1697,14 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
                 ),
                 if (session.facilityPlace.isNotEmpty) ...[
                   const SizedBox(height: 4),
-                  Text(
+                  AppText(
                     session.facilityPlace,
                     style: const TextStyle(color: Colors.grey),
                   ),
                 ],
                 const SizedBox(height: 10),
                 Chip(
-                  label: Text(
+                  label: AppText(
                     [
                       facilityActivityLabel(session.activityCode),
                       if (session.instantRequestId != null)
@@ -1715,7 +1721,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
                   ),
                 ),
                 const SizedBox(height: 8),
-                Text(
+                AppText(
                   session.isGymSession
                       ? 'WORKOUT DURATION'
                       : 'SESSION DURATION',
@@ -1726,7 +1732,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
                   ),
                 ),
                 const SizedBox(height: 2),
-                Text(
+                AppText(
                   _formatDuration(_elapsed),
                   style: const TextStyle(
                     fontSize: 42,
@@ -1734,7 +1740,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
                     fontFamily: 'monospace',
                   ),
                 ),
-                Text(
+                AppText(
                   'Started ${_formatTime(session.checkInAt)}',
                   style: const TextStyle(color: Colors.grey),
                 ),
@@ -1749,7 +1755,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
           ],
           const SizedBox(height: 16),
           if (session.isGymSession) ...[
-            Text(
+            AppText(
               "Today's workout plan",
               style: Theme.of(
                 context,
@@ -1760,7 +1766,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
               const Card(
                 child: Padding(
                   padding: EdgeInsets.all(18),
-                  child: Text(
+                  child: AppText(
                     'No workout assigned today. You can still check out when you finish.',
                   ),
                 ),
@@ -1773,7 +1779,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
             ],
             if (videoPlan.isNotEmpty) ...[
               const SizedBox(height: 16),
-              Text(
+              AppText(
                 'Exercise videos',
                 style: Theme.of(
                   context,
@@ -1786,7 +1792,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(18),
-                child: Text(
+                child: AppText(
                   'You are checked in for ${facilityActivityLabel(session.activityCode)}. Check out when the session ends.',
                 ),
               ),
@@ -1796,7 +1802,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
             style: FilledButton.styleFrom(backgroundColor: Colors.redAccent),
             onPressed: _showCheckoutDialog,
             icon: const Icon(Icons.logout),
-            label: const Text('Checkout'),
+            label: const AppText('Checkout'),
           ),
         ],
       ),
@@ -1874,12 +1880,12 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
                         exerciseCompleted: selected == true,
                       ),
                     ),
-              title: Text(
+              title: AppText(
                 name,
                 style: const TextStyle(fontWeight: FontWeight.w700),
               ),
               subtitle: details.isEmpty && targets.isEmpty
-                  ? Text(
+                  ? AppText(
                       prescribed > 0
                           ? 'Tick each set in order. This exercise ticks itself when every set is done'
                           : 'Mark this exercise when it is finished',
@@ -1888,7 +1894,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        if (details.isNotEmpty) Text(details),
+                        if (details.isNotEmpty) AppText(details),
                         if (targets.isNotEmpty) ...[
                           if (details.isNotEmpty) const SizedBox(height: 3),
                           Row(
@@ -1900,7 +1906,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
                               ),
                               const SizedBox(width: 4),
                               Expanded(
-                                child: Text(
+                                child: AppText(
                                   'Targets · $targetSummary',
                                   style: Theme.of(context).textTheme.bodySmall
                                       ?.copyWith(
@@ -1916,7 +1922,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
                         ],
                         if (prescribed > 0) ...[
                           const SizedBox(height: 4),
-                          Text(
+                          AppText(
                             setsDone
                                 ? 'All sets done — exercise complete'
                                 : 'Tick sets in order. The next set stays locked until the previous set is done.',
@@ -1955,7 +1961,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
                                 ),
                               )
                             : null,
-                        title: Text(
+                        title: AppText(
                           repsLabel == null || repsLabel.isEmpty
                               ? 'Set $setIndex'
                               : 'Set $setIndex · $repsLabel reps',
@@ -1997,7 +2003,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
+            AppText(
               'Workout timer unavailable',
               style: TextStyle(
                 fontWeight: FontWeight.w800,
@@ -2005,7 +2011,7 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
               ),
             ),
             const SizedBox(height: 4),
-            Text(
+            AppText(
               message,
               style: TextStyle(
                 color: Theme.of(context).colorScheme.onErrorContainer,
@@ -2018,11 +2024,11 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
                 if (status == PersistentTimerStatus.disabled)
                   OutlinedButton(
                     onPressed: () => openAppSettings(),
-                    child: const Text('Open Settings'),
+                    child: const AppText('Open Settings'),
                   ),
                 OutlinedButton(
                   onPressed: _ensureIosPersistentTimer,
-                  child: const Text('Retry'),
+                  child: const AppText('Retry'),
                 ),
               ],
             ),
@@ -2152,7 +2158,7 @@ class _FacilityRatingDialogState extends State<_FacilityRatingDialog> {
       padding: const EdgeInsets.only(bottom: 4),
       child: Row(
         children: [
-          Expanded(child: Text(label)),
+          Expanded(child: AppText(label)),
           ...List.generate(
             5,
             (index) => IconButton(
@@ -2175,7 +2181,7 @@ class _FacilityRatingDialogState extends State<_FacilityRatingDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text('Rate ${widget.prompt.facilityName}'),
+      title: AppText('Rate ${widget.prompt.facilityName}'),
       content: SizedBox(
         width: 460,
         child: SingleChildScrollView(
@@ -2183,7 +2189,7 @@ class _FacilityRatingDialogState extends State<_FacilityRatingDialog> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
+              AppText(
                 widget.prompt.isMonthly
                     ? 'Your recent visits help your organisation understand how this facility is performing.'
                     : 'Your first completed visit helps your organisation understand the facility experience.',
@@ -2232,7 +2238,10 @@ class _FacilityRatingDialogState extends State<_FacilityRatingDialog> {
               ),
               if (_error != null) ...[
                 const SizedBox(height: 8),
-                Text(_error!, style: const TextStyle(color: Colors.redAccent)),
+                AppText(
+                  _error!,
+                  style: const TextStyle(color: Colors.redAccent),
+                ),
               ],
             ],
           ),
@@ -2241,7 +2250,7 @@ class _FacilityRatingDialogState extends State<_FacilityRatingDialog> {
       actions: [
         TextButton(
           onPressed: _submitting ? null : () => Navigator.pop(context, false),
-          child: const Text('Rate later'),
+          child: const AppText('Rate later'),
         ),
         FilledButton(
           onPressed: _submitting ? null : _submit,
@@ -2251,7 +2260,7 @@ class _FacilityRatingDialogState extends State<_FacilityRatingDialog> {
                   width: 18,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : const Text('Submit rating'),
+              : const AppText('Submit rating'),
         ),
       ],
     );
@@ -2365,7 +2374,7 @@ class _WorkoutSelfFeedbackDialogState
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('How was your workout?'),
+      title: const AppText('How was your workout?'),
       content: SizedBox(
         width: 460,
         child: SingleChildScrollView(
@@ -2373,11 +2382,11 @@ class _WorkoutSelfFeedbackDialogState
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
+              AppText(
                 'Tell us about today’s session at ${widget.prompt.facilityName}.',
               ),
               const SizedBox(height: 14),
-              const Text(
+              const AppText(
                 'Workout quality',
                 style: TextStyle(fontWeight: FontWeight.w700),
               ),
@@ -2391,17 +2400,17 @@ class _WorkoutSelfFeedbackDialogState
                 items: const [
                   DropdownMenuItem(
                     value: 'much_worse',
-                    child: Text('Much worse'),
+                    child: AppText('Much worse'),
                   ),
-                  DropdownMenuItem(value: 'worse', child: Text('Worse')),
+                  DropdownMenuItem(value: 'worse', child: AppText('Worse')),
                   DropdownMenuItem(
                     value: 'same',
-                    child: Text('About the same'),
+                    child: AppText('About the same'),
                   ),
-                  DropdownMenuItem(value: 'better', child: Text('Better')),
+                  DropdownMenuItem(value: 'better', child: AppText('Better')),
                   DropdownMenuItem(
                     value: 'much_better',
-                    child: Text('Much better'),
+                    child: AppText('Much better'),
                   ),
                 ],
                 onChanged: _submitting
@@ -2419,15 +2428,21 @@ class _WorkoutSelfFeedbackDialogState
                   border: OutlineInputBorder(),
                 ),
                 items: const [
-                  DropdownMenuItem(value: 'less', child: Text('Less progress')),
+                  DropdownMenuItem(
+                    value: 'less',
+                    child: AppText('Less progress'),
+                  ),
                   DropdownMenuItem(
                     value: 'same',
-                    child: Text('About the same'),
+                    child: AppText('About the same'),
                   ),
-                  DropdownMenuItem(value: 'more', child: Text('More progress')),
+                  DropdownMenuItem(
+                    value: 'more',
+                    child: AppText('More progress'),
+                  ),
                   DropdownMenuItem(
                     value: 'not_sure',
-                    child: Text('Not sure yet'),
+                    child: AppText('Not sure yet'),
                   ),
                 ],
                 onChanged: _submitting
@@ -2438,14 +2453,14 @@ class _WorkoutSelfFeedbackDialogState
                       }),
               ),
               const SizedBox(height: 12),
-              const Text(
+              const AppText(
                 'Do you feel any pain?',
                 style: TextStyle(fontWeight: FontWeight.w700),
               ),
               Row(
                 children: [
                   ChoiceChip(
-                    label: const Text('No'),
+                    label: const AppText('No'),
                     selected: _hasPain == false,
                     onSelected: _submitting
                         ? null
@@ -2457,7 +2472,7 @@ class _WorkoutSelfFeedbackDialogState
                   ),
                   const SizedBox(width: 8),
                   ChoiceChip(
-                    label: const Text('Yes'),
+                    label: const AppText('Yes'),
                     selected: _hasPain == true,
                     onSelected: _submitting
                         ? null
@@ -2470,7 +2485,7 @@ class _WorkoutSelfFeedbackDialogState
               ),
               if (_hasPain == true) ...[
                 const SizedBox(height: 8),
-                Text('Pain severity: ${_painSeverity.round()} / 10'),
+                AppText('Pain severity: ${_painSeverity.round()} / 10'),
                 Slider(
                   value: _painSeverity,
                   min: 1,
@@ -2481,7 +2496,7 @@ class _WorkoutSelfFeedbackDialogState
                       ? null
                       : (value) => setState(() => _painSeverity = value),
                 ),
-                const Text(
+                const AppText(
                   'Where do you feel it?',
                   style: TextStyle(fontWeight: FontWeight.w700),
                 ),
@@ -2492,7 +2507,7 @@ class _WorkoutSelfFeedbackDialogState
                   children: _painAreaOptions
                       .map(
                         (area) => FilterChip(
-                          label: Text(area),
+                          label: AppText(area),
                           selected: _painAreas.contains(area),
                           onSelected: _submitting
                               ? null
@@ -2535,7 +2550,10 @@ class _WorkoutSelfFeedbackDialogState
               ),
               if (_error != null) ...[
                 const SizedBox(height: 8),
-                Text(_error!, style: const TextStyle(color: Colors.redAccent)),
+                AppText(
+                  _error!,
+                  style: const TextStyle(color: Colors.redAccent),
+                ),
               ],
             ],
           ),
@@ -2544,7 +2562,7 @@ class _WorkoutSelfFeedbackDialogState
       actions: [
         TextButton(
           onPressed: _submitting ? null : () => Navigator.pop(context, false),
-          child: const Text('Finish later'),
+          child: const AppText('Finish later'),
         ),
         FilledButton(
           onPressed: _submitting ? null : _submit,
@@ -2554,7 +2572,7 @@ class _WorkoutSelfFeedbackDialogState
                   width: 18,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : const Text('Submit feedback'),
+              : const AppText('Submit feedback'),
         ),
       ],
     );

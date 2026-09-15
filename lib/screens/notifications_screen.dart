@@ -5,6 +5,7 @@ import '../screens/challenges_screen.dart';
 import '../screens/plan_screen.dart';
 import '../services/api_service.dart';
 import '../theme/app_theme.dart';
+import '../l10n/app_text.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -121,7 +122,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
+        title: const AppText(
           'Notifications',
           style: TextStyle(fontWeight: FontWeight.w800),
         ),
@@ -148,7 +149,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                       : Colors.black26,
                                 ),
                                 const SizedBox(height: 12),
-                                Text(
+                                AppText(
                                   _error ?? 'No notifications yet',
                                   textAlign: TextAlign.center,
                                   style: TextStyle(
@@ -216,7 +217,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      Text(
+                                      AppText(
                                         item['title']?.toString() ??
                                             'Notification',
                                         style: const TextStyle(
@@ -225,7 +226,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                         ),
                                       ),
                                       const SizedBox(height: 4),
-                                      Text(
+                                      AppText(
                                         item['body']?.toString() ?? '',
                                         style: TextStyle(
                                           height: 1.35,
@@ -238,7 +239,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                       const SizedBox(height: 8),
                                       Row(
                                         children: [
-                                          Text(
+                                          AppText(
                                             _formatCreatedAt(
                                               item['created_at'],
                                             ),
@@ -257,7 +258,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                                   ) ==
                                                   true) ...[
                                             const Spacer(),
-                                            Text(
+                                            AppText(
                                               actionLabel ?? 'View details',
                                               style: TextStyle(
                                                 fontSize: 11,

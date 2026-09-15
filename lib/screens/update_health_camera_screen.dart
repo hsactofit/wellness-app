@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import '../models/body_composition_report.dart';
 import '../services/body_composition_ocr_service.dart';
 import '../services/camera_permission_gate.dart';
+import '../l10n/app_text.dart';
 
 enum _CaptureState {
   preparing,
@@ -149,7 +150,7 @@ class _UpdateHealthCameraScreenState extends State<UpdateHealthCameraScreen>
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(error.description ?? 'Could not take the photo.'),
+          content: AppText(error.description ?? 'Could not take the photo.'),
         ),
       );
     }
@@ -218,7 +219,9 @@ class _UpdateHealthCameraScreenState extends State<UpdateHealthCameraScreen>
     } on CameraException catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Flash is not available on this camera.')),
+        const SnackBar(
+          content: AppText('Flash is not available on this camera.'),
+        ),
       );
     }
   }
@@ -257,7 +260,7 @@ class _UpdateHealthCameraScreenState extends State<UpdateHealthCameraScreen>
       appBar: AppBar(
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
-        title: const Text('Scan BMI report'),
+        title: const AppText('Scan BMI report'),
         actions: [
           if (_state == _CaptureState.camera)
             IconButton(
@@ -287,7 +290,7 @@ class _UpdateHealthCameraScreenState extends State<UpdateHealthCameraScreen>
             children: [
               CircularProgressIndicator(color: Colors.white),
               SizedBox(height: 16),
-              Text(
+              AppText(
                 'Reading your report securely on this device',
                 style: TextStyle(color: Colors.white),
               ),
@@ -386,7 +389,7 @@ class _UpdateHealthCameraScreenState extends State<UpdateHealthCameraScreen>
           left: 28,
           right: 28,
           bottom: 120,
-          child: Text(
+          child: AppText(
             'Fit the whole report inside the frame. Tap text to focus; keep labels and numbers sharp and glare-free.',
             textAlign: TextAlign.center,
             style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
@@ -444,7 +447,7 @@ class _UpdateHealthCameraScreenState extends State<UpdateHealthCameraScreen>
           color: const Color(0xFF17171A),
           child: Column(
             children: [
-              const Text(
+              const AppText(
                 'Check that every number is readable.',
                 style: TextStyle(
                   color: Colors.white,
@@ -457,14 +460,14 @@ class _UpdateHealthCameraScreenState extends State<UpdateHealthCameraScreen>
                   Expanded(
                     child: OutlinedButton(
                       onPressed: _retake,
-                      child: const Text('Retake'),
+                      child: const AppText('Retake'),
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: FilledButton(
                       onPressed: _usePhoto,
-                      child: const Text('Use Photo'),
+                      child: const AppText('Use Photo'),
                     ),
                   ),
                 ],
@@ -491,7 +494,7 @@ class _UpdateHealthCameraScreenState extends State<UpdateHealthCameraScreen>
           children: [
             Icon(icon, size: 54, color: Colors.white),
             const SizedBox(height: 18),
-            Text(
+            AppText(
               title,
               textAlign: TextAlign.center,
               style: const TextStyle(
@@ -501,16 +504,16 @@ class _UpdateHealthCameraScreenState extends State<UpdateHealthCameraScreen>
               ),
             ),
             const SizedBox(height: 10),
-            Text(
+            AppText(
               body,
               textAlign: TextAlign.center,
               style: const TextStyle(color: Colors.white70, height: 1.4),
             ),
             const SizedBox(height: 24),
-            FilledButton(onPressed: onPrimary, child: Text(primaryLabel)),
+            FilledButton(onPressed: onPrimary, child: AppText(primaryLabel)),
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
+              child: const AppText('Cancel'),
             ),
           ],
         ),

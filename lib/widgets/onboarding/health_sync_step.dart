@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../glass_card.dart';
 import 'fade_slide_transition.dart';
 import '../../theme/app_theme.dart';
+import '../../l10n/app_text.dart';
 
 class HealthSyncStep extends StatefulWidget {
   final bool isSyncing;
@@ -80,7 +81,7 @@ class _HealthSyncStepState extends State<HealthSyncStep>
                     const SizedBox(height: 24),
                     const FadeSlideTransition(
                       delay: Duration(milliseconds: 150),
-                      child: Text(
+                      child: AppText(
                         "Sync Health Records",
                         textAlign: TextAlign.center,
                         style: TextStyle(
@@ -93,7 +94,7 @@ class _HealthSyncStepState extends State<HealthSyncStep>
                     const SizedBox(height: 12),
                     FadeSlideTransition(
                       delay: const Duration(milliseconds: 300),
-                      child: Text(
+                      child: AppText(
                         "Wellness Sync securely aggregates data from Google Health Connect & Apple HealthKit to populate your activity totals automatically.",
                         textAlign: TextAlign.center,
                         style: TextStyle(
@@ -178,7 +179,7 @@ class _HealthSyncStepState extends State<HealthSyncStep>
                             strokeWidth: 2,
                           ),
                         )
-                      : const Text(
+                      : const AppText(
                           "Connect Health Services",
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
@@ -198,7 +199,7 @@ class _HealthSyncStepState extends State<HealthSyncStep>
                           padding: const EdgeInsets.symmetric(vertical: 16),
                         ),
                         onPressed: widget.onBack,
-                        child: Text(
+                        child: AppText(
                           "Back",
                           style: TextStyle(
                             color: isDark ? Colors.white60 : Colors.black54,
@@ -212,7 +213,7 @@ class _HealthSyncStepState extends State<HealthSyncStep>
                           padding: const EdgeInsets.symmetric(vertical: 16),
                         ),
                         onPressed: widget.onSkip,
-                        child: Text(
+                        child: AppText(
                           "Skip for now",
                           style: TextStyle(
                             color: AppTheme.actionOf(context),
@@ -249,9 +250,9 @@ class _PermissionItem extends StatelessWidget {
       delay: Duration(milliseconds: delayMs),
       child: Row(
         children: [
-          Text(icon, style: const TextStyle(fontSize: 18)),
+          AppText(icon, style: const TextStyle(fontSize: 18)),
           const SizedBox(width: 12),
-          Text(
+          AppText(
             label,
             style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
           ),

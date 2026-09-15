@@ -7,6 +7,7 @@ import '../app_brand.dart';
 import '../services/api_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/glass_card.dart';
+import '../l10n/app_text.dart';
 
 class SosContact {
   final String id;
@@ -119,7 +120,7 @@ class _SosScreenState extends State<SosScreen>
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(
+        content: AppText(
           message,
           style: const TextStyle(fontWeight: FontWeight.w600),
         ),
@@ -185,7 +186,7 @@ class _SosScreenState extends State<SosScreen>
                       ),
                     ),
                     const SizedBox(height: 16),
-                    Text(
+                    AppText(
                       'Trigger SOS?',
                       style: TextStyle(
                         fontSize: 20,
@@ -195,7 +196,7 @@ class _SosScreenState extends State<SosScreen>
                       ),
                     ),
                     const SizedBox(height: 10),
-                    Text(
+                    AppText(
                       "This notifies ${AppBrand.name}'s emergency response team with your live location and current vitals. Only use in a real emergency.",
                       textAlign: TextAlign.center,
                       style: TextStyle(
@@ -331,7 +332,7 @@ class _SosScreenState extends State<SosScreen>
                         ),
                       ),
                       const SizedBox(height: 14),
-                      Text(
+                      AppText(
                         'SOS Triggered',
                         textAlign: TextAlign.center,
                         style: TextStyle(
@@ -342,7 +343,7 @@ class _SosScreenState extends State<SosScreen>
                         ),
                       ),
                       const SizedBox(height: 8),
-                      Text(
+                      AppText(
                         message,
                         textAlign: TextAlign.center,
                         style: TextStyle(
@@ -419,7 +420,7 @@ class _SosScreenState extends State<SosScreen>
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
+                    AppText(
                       'Delete contact?',
                       style: TextStyle(
                         fontSize: 18,
@@ -428,7 +429,7 @@ class _SosScreenState extends State<SosScreen>
                       ),
                     ),
                     const SizedBox(height: 8),
-                    Text(
+                    AppText(
                       'Remove ${contact.name} from emergency contacts?',
                       textAlign: TextAlign.center,
                       style: TextStyle(
@@ -657,7 +658,7 @@ class _SosScreenState extends State<SosScreen>
                             actions: [
                               _MorphIconButton(
                                 icon: Icons.person_add_alt_1_rounded,
-                                tooltip: 'Add contact',
+                                tooltip: 'Add contact'.localized(context),
                                 isDark: isDark,
                                 accent: true,
                                 onTap: () => _showContactSheet(),
@@ -704,7 +705,7 @@ class _SosScreenState extends State<SosScreen>
                                 ),
                                 const SizedBox(width: 12),
                                 Expanded(
-                                  child: Text(
+                                  child: AppText(
                                     'In an emergency, tap SOS to notify contacts, or call services directly from the cards above.',
                                     style: TextStyle(
                                       fontSize: 12.5,
@@ -757,7 +758,7 @@ class _SosScreenState extends State<SosScreen>
             border: Border.all(color: _sosRed.withValues(alpha: 0.18)),
           ),
           child: const Center(
-            child: Text('🛡️', style: TextStyle(fontSize: 22)),
+            child: AppText('🛡️', style: TextStyle(fontSize: 22)),
           ),
         ),
         const SizedBox(width: 12),
@@ -765,7 +766,7 @@ class _SosScreenState extends State<SosScreen>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
+              AppText(
                 'SOS Emergency',
                 style: theme.textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.w900,
@@ -773,7 +774,7 @@ class _SosScreenState extends State<SosScreen>
                   color: textColor,
                 ),
               ),
-              Text(
+              AppText(
                 'Contacts, services & one-tap alert',
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: secondaryText,
@@ -800,7 +801,7 @@ class _SosScreenState extends State<SosScreen>
     return Row(
       children: [
         Expanded(
-          child: Text(
+          child: AppText(
             title,
             style: TextStyle(
               fontSize: 11,
@@ -903,7 +904,7 @@ class _SosScreenState extends State<SosScreen>
                                   size: 46,
                                 ),
                                 SizedBox(height: 2),
-                                Text(
+                                AppText(
                                   'SOS',
                                   style: TextStyle(
                                     color: Colors.white,
@@ -922,7 +923,7 @@ class _SosScreenState extends State<SosScreen>
           },
         ),
         const SizedBox(height: 16),
-        Text(
+        AppText(
           'Tap to alert emergency contacts',
           style: TextStyle(
             fontSize: 13.5,
@@ -959,7 +960,7 @@ class _SosScreenState extends State<SosScreen>
             ),
           ),
           const SizedBox(height: 14),
-          Text(
+          AppText(
             'No emergency contacts yet',
             style: TextStyle(
               fontWeight: FontWeight.w800,
@@ -969,7 +970,7 @@ class _SosScreenState extends State<SosScreen>
             ),
           ),
           const SizedBox(height: 6),
-          Text(
+          AppText(
             'Add people who should be notified when you trigger SOS.',
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 13, height: 1.4, color: secondaryText),
@@ -1010,7 +1011,7 @@ class _SosScreenState extends State<SosScreen>
                 ),
               ),
               const SizedBox(height: 14),
-              Text(
+              AppText(
                 'Could not load SOS data',
                 style: TextStyle(
                   fontWeight: FontWeight.w900,
@@ -1019,7 +1020,7 @@ class _SosScreenState extends State<SosScreen>
                 ),
               ),
               const SizedBox(height: 8),
-              Text(
+              AppText(
                 _error ?? 'Unknown error',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 13, color: secondaryText),
@@ -1113,7 +1114,7 @@ class _MorphButton extends StatelessWidget {
                       color: Colors.white,
                     ),
                   )
-                : Text(
+                : AppText(
                     label,
                     style: TextStyle(
                       fontWeight: FontWeight.w800,
@@ -1240,7 +1241,7 @@ class _EmergencyMorphCard extends StatelessWidget {
               child: Icon(icon, color: color, size: 22),
             ),
             const SizedBox(height: 10),
-            Text(
+            AppText(
               label,
               style: TextStyle(
                 fontSize: 12,
@@ -1250,7 +1251,7 @@ class _EmergencyMorphCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 3),
-            Text(
+            AppText(
               number,
               style: TextStyle(
                 fontSize: 12,
@@ -1270,7 +1271,7 @@ class _EmergencyMorphCard extends StatelessWidget {
                 children: [
                   Icon(Icons.phone_rounded, size: 12, color: color),
                   const SizedBox(width: 4),
-                  Text(
+                  AppText(
                     'Call',
                     style: TextStyle(
                       fontSize: 10.5,
@@ -1329,7 +1330,7 @@ class _ContactMorphCard extends StatelessWidget {
               ),
             ),
             child: Center(
-              child: Text(
+              child: AppText(
                 contact.name.isNotEmpty ? contact.name[0].toUpperCase() : '?',
                 style: const TextStyle(
                   color: Color(0xFFFF3B30),
@@ -1344,7 +1345,7 @@ class _ContactMorphCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                AppText(
                   contact.name,
                   style: TextStyle(
                     fontWeight: FontWeight.w800,
@@ -1354,7 +1355,7 @@ class _ContactMorphCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 2),
-                Text(
+                AppText(
                   contact.phone,
                   style: TextStyle(
                     fontSize: 13,
@@ -1369,12 +1370,12 @@ class _ContactMorphCard extends StatelessWidget {
             icon: Icons.phone_rounded,
             isDark: isDark,
             accent: true,
-            tooltip: 'Call',
+            tooltip: 'Call'.localized(context),
             onTap: onCall,
           ),
           const SizedBox(width: 4),
           PopupMenuButton<String>(
-            tooltip: 'More',
+            tooltip: 'More'.localized(context),
             padding: EdgeInsets.zero,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
@@ -1385,8 +1386,8 @@ class _ContactMorphCard extends StatelessWidget {
               if (value == 'delete') onDelete();
             },
             itemBuilder: (ctx) => const [
-              PopupMenuItem(value: 'edit', child: Text('Edit')),
-              PopupMenuItem(value: 'delete', child: Text('Delete')),
+              PopupMenuItem(value: 'edit', child: AppText('Edit')),
+              PopupMenuItem(value: 'delete', child: AppText('Delete')),
             ],
             child: Container(
               width: 40,
@@ -1473,7 +1474,7 @@ class _SosContactSheetState extends State<_SosContactSheet> {
       setState(() => _saving = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(e.toString().replaceFirst('Exception: ', '')),
+          content: AppText(e.toString().replaceFirst('Exception: ', '')),
           backgroundColor: _sosRed,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
@@ -1529,7 +1530,7 @@ class _SosContactSheetState extends State<_SosContactSheet> {
                     ),
                   ),
                   const SizedBox(height: 18),
-                  Text(
+                  AppText(
                     widget.contact == null
                         ? 'Add Emergency Contact'
                         : 'Edit Contact',
@@ -1541,7 +1542,7 @@ class _SosContactSheetState extends State<_SosContactSheet> {
                     ),
                   ),
                   const SizedBox(height: 6),
-                  Text(
+                  AppText(
                     'People notified when you trigger SOS',
                     style: TextStyle(
                       fontSize: 13,

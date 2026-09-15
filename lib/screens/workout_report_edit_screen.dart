@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import '../services/exercise_video_service.dart';
 import '../services/facility_booking_service.dart';
 import '../services/workout_progress.dart';
+import '../l10n/app_text.dart';
 
 class WorkoutReportEditScreen extends StatefulWidget {
   const WorkoutReportEditScreen({super.key, required this.report});
@@ -98,7 +99,7 @@ class _WorkoutReportEditScreenState extends State<WorkoutReportEditScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Edit workout'),
+        title: const AppText('Edit workout'),
         actions: [
           TextButton(
             onPressed: _saving ? null : _save,
@@ -108,22 +109,22 @@ class _WorkoutReportEditScreenState extends State<WorkoutReportEditScreen> {
                     height: 18,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : const Text('Save'),
+                : const AppText('Save'),
           ),
         ],
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
         children: [
-          const Text(
+          const AppText(
             'Correct missed or extra work from this session. Assigned exercises cannot be removed. Extra work is listed separately and does not raise plan completion.',
           ),
           if (_error != null) ...[
             const SizedBox(height: 12),
-            Text(_error!, style: const TextStyle(color: Colors.redAccent)),
+            AppText(_error!, style: const TextStyle(color: Colors.redAccent)),
           ],
           const SizedBox(height: 16),
-          Text(
+          AppText(
             'Assigned workout',
             style: Theme.of(
               context,
@@ -134,7 +135,7 @@ class _WorkoutReportEditScreenState extends State<WorkoutReportEditScreen> {
             const Card(
               child: Padding(
                 padding: EdgeInsets.all(16),
-                child: Text(
+                child: AppText(
                   'No assigned checklist was stored for this session.',
                 ),
               ),
@@ -145,7 +146,7 @@ class _WorkoutReportEditScreenState extends State<WorkoutReportEditScreen> {
           Row(
             children: [
               Expanded(
-                child: Text(
+                child: AppText(
                   'Extra exercises',
                   style: Theme.of(
                     context,
@@ -155,7 +156,7 @@ class _WorkoutReportEditScreenState extends State<WorkoutReportEditScreen> {
               TextButton.icon(
                 onPressed: _addExercise,
                 icon: const Icon(Icons.add),
-                label: const Text('Add'),
+                label: const AppText('Add'),
               ),
             ],
           ),
@@ -163,7 +164,7 @@ class _WorkoutReportEditScreenState extends State<WorkoutReportEditScreen> {
             const Card(
               child: Padding(
                 padding: EdgeInsets.all(16),
-                child: Text('No extra exercises added.'),
+                child: AppText('No extra exercises added.'),
               ),
             )
           else
@@ -209,11 +210,11 @@ class _WorkoutReportEditScreenState extends State<WorkoutReportEditScreen> {
                         exerciseCompleted: selected == true,
                       ),
                     ),
-              title: Text(
+              title: AppText(
                 name,
                 style: const TextStyle(fontWeight: FontWeight.w700),
               ),
-              subtitle: Text(
+              subtitle: AppText(
                 prescribed > 0
                     ? setsDone
                           ? 'All sets done — exercise complete'
@@ -247,7 +248,7 @@ class _WorkoutReportEditScreenState extends State<WorkoutReportEditScreen> {
                           ),
                         )
                       : null,
-                  title: Text(
+                  title: AppText(
                     reps.isEmpty ? 'Set $number' : 'Set $number · $reps reps',
                   ),
                 );
@@ -273,7 +274,7 @@ class _WorkoutReportEditScreenState extends State<WorkoutReportEditScreen> {
                           ),
                         )
                       : null,
-                  title: Text(
+                  title: AppText(
                     reps.isEmpty
                         ? 'Extra set $number'
                         : 'Extra set $number · $reps reps',
@@ -292,7 +293,7 @@ class _WorkoutReportEditScreenState extends State<WorkoutReportEditScreen> {
                           reps: extra.reps ?? (reps.isEmpty ? null : reps),
                         ),
                       ),
-                child: const Text('Add extra set'),
+                child: const AppText('Add extra set'),
               ),
             ),
             if (extra.count > 0)
@@ -313,7 +314,7 @@ class _WorkoutReportEditScreenState extends State<WorkoutReportEditScreen> {
                       ),
                     );
                   },
-                  child: const Text('Remove last extra set'),
+                  child: const AppText('Remove last extra set'),
                 ),
               ),
           ],
@@ -341,17 +342,17 @@ class _WorkoutReportEditScreenState extends State<WorkoutReportEditScreen> {
                         exerciseCompleted: selected == true,
                       ),
                     ),
-              title: Text(
+              title: AppText(
                 extra.name,
                 style: const TextStyle(fontWeight: FontWeight.w700),
               ),
-              subtitle: Text(
+              subtitle: AppText(
                 extra.source == 'library'
                     ? 'From Exercise Library'
                     : 'Custom exercise',
               ),
               secondary: IconButton(
-                tooltip: 'Remove extra exercise',
+                tooltip: 'Remove extra exercise'.localized(context),
                 onPressed: () {
                   final next = [..._progress.extraExercises]..removeAt(index);
                   setState(
@@ -383,7 +384,7 @@ class _WorkoutReportEditScreenState extends State<WorkoutReportEditScreen> {
                           ),
                         )
                       : null,
-                  title: Text(
+                  title: AppText(
                     extra.reps == null || extra.reps!.isEmpty
                         ? 'Set $number'
                         : 'Set $number · ${extra.reps} reps',
@@ -482,7 +483,7 @@ class _AddExerciseSheetState extends State<_AddExerciseSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
+            AppText(
               'Add extra exercise',
               style: Theme.of(
                 context,
@@ -491,8 +492,8 @@ class _AddExerciseSheetState extends State<_AddExerciseSheet> {
             const SizedBox(height: 12),
             SegmentedButton<bool>(
               segments: const [
-                ButtonSegment(value: false, label: Text('Library')),
-                ButtonSegment(value: true, label: Text('Custom')),
+                ButtonSegment(value: false, label: AppText('Library')),
+                ButtonSegment(value: true, label: AppText('Custom')),
               ],
               selected: {_custom},
               onSelectionChanged: (value) =>
@@ -528,7 +529,7 @@ class _AddExerciseSheetState extends State<_AddExerciseSheet> {
               const SizedBox(height: 12),
               FilledButton(
                 onPressed: () => _submit(),
-                child: const Text('Add custom exercise'),
+                child: const AppText('Add custom exercise'),
               ),
             ] else ...[
               TextField(
@@ -549,16 +550,16 @@ class _AddExerciseSheetState extends State<_AddExerciseSheet> {
                 SizedBox(
                   height: 240,
                   child: filtered.isEmpty
-                      ? const Center(child: Text('No matching exercises.'))
+                      ? const Center(child: AppText('No matching exercises.'))
                       : ListView.builder(
                           itemCount: filtered.length,
                           itemBuilder: (context, index) {
                             final video = filtered[index];
                             return ListTile(
-                              title: Text(video.title),
+                              title: AppText(video.title),
                               subtitle: video.topics.isEmpty
                                   ? null
-                                  : Text(video.topics.join(' · ')),
+                                  : AppText(video.topics.join(' · ')),
                               onTap: () => _submit(video: video),
                             );
                           },

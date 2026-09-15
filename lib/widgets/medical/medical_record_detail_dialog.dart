@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../services/health_service.dart';
+import '../../l10n/app_text.dart';
 
 class MedicalRecordDetailDialog extends StatelessWidget {
   final MedicalRecord record;
@@ -19,7 +20,7 @@ class MedicalRecordDetailDialog extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
+              AppText(
                 record.category,
                 style: const TextStyle(
                   fontSize: 12,
@@ -35,7 +36,7 @@ class MedicalRecordDetailDialog extends StatelessWidget {
                   ),
                   borderRadius: BorderRadius.circular(6),
                 ),
-                child: Text(
+                child: AppText(
                   status,
                   style: TextStyle(
                     color: isAlert ? Colors.redAccent : Colors.green,
@@ -47,7 +48,7 @@ class MedicalRecordDetailDialog extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 4),
-          Text(
+          AppText(
             record.title,
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
           ),
@@ -62,7 +63,7 @@ class MedicalRecordDetailDialog extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              const AppText(
                 "Date:",
                 style: TextStyle(
                   color: Colors.grey,
@@ -70,7 +71,7 @@ class MedicalRecordDetailDialog extends StatelessWidget {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              Text(
+              AppText(
                 "${record.date.month}/${record.date.day}/${record.date.year} ${record.date.hour.toString().padLeft(2, '0')}:${record.date.minute.toString().padLeft(2, '0')}",
                 style: const TextStyle(
                   fontSize: 12,
@@ -83,7 +84,7 @@ class MedicalRecordDetailDialog extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              const AppText(
                 "Provider:",
                 style: TextStyle(
                   color: Colors.grey,
@@ -91,7 +92,7 @@ class MedicalRecordDetailDialog extends StatelessWidget {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              Text(
+              AppText(
                 record.provider,
                 style: const TextStyle(
                   fontSize: 12,
@@ -101,7 +102,7 @@ class MedicalRecordDetailDialog extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          const Text(
+          const AppText(
             "Clinical Details & Telemetry:",
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
           ),
@@ -115,7 +116,7 @@ class MedicalRecordDetailDialog extends StatelessWidget {
               border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
             ),
             child: SingleChildScrollView(
-              child: Text(
+              child: AppText(
                 record.details,
                 style: const TextStyle(
                   fontSize: 12,
@@ -130,7 +131,7 @@ class MedicalRecordDetailDialog extends StatelessWidget {
       actions: [
         ElevatedButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text("Close"),
+          child: const AppText("Close"),
         ),
       ],
     );

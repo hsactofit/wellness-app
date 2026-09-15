@@ -7,6 +7,7 @@ import '../services/api_service.dart';
 import '../services/reviewed_plan_pdf_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/glass_card.dart';
+import '../l10n/app_text.dart';
 
 String reviewedPlanConsentWarning(String planLabel) =>
     'Please confirm AI processing consent before requesting your $planLabel plan.';
@@ -36,7 +37,7 @@ class PlanConsentCheckbox extends StatelessWidget {
       value: value,
       activeColor: accent,
       onChanged: onChanged,
-      title: Text(
+      title: AppText(
         'I consent to AI processing for my $planLabel plan',
         style: TextStyle(
           color: textColor,
@@ -267,7 +268,10 @@ class _PlanScreenState extends State<PlanScreen> with WidgetsBindingObserver {
     final messenger = ScaffoldMessenger.of(context);
     messenger.hideCurrentSnackBar();
     messenger.showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: Colors.orange.shade800),
+      SnackBar(
+        content: AppText(message),
+        backgroundColor: Colors.orange.shade800,
+      ),
     );
   }
 
@@ -334,7 +338,7 @@ class _PlanScreenState extends State<PlanScreen> with WidgetsBindingObserver {
                       ),
                       const SizedBox(width: 8),
                       Expanded(
-                        child: Text(
+                        child: AppText(
                           _title,
                           style: theme.textTheme.titleLarge?.copyWith(
                             fontWeight: FontWeight.w900,
@@ -344,7 +348,7 @@ class _PlanScreenState extends State<PlanScreen> with WidgetsBindingObserver {
                       ),
                       if (hasPlan && !_isLoading)
                         IconButton(
-                          tooltip: "Refresh",
+                          tooltip: "Refresh".localized(context),
                           onPressed: _load,
                           icon: Icon(
                             Icons.refresh_rounded,
@@ -380,7 +384,7 @@ class _PlanScreenState extends State<PlanScreen> with WidgetsBindingObserver {
           children: [
             Icon(Icons.error_outline_rounded, size: 40, color: _accent),
             const SizedBox(height: 12),
-            Text(
+            AppText(
               _loadError!,
               textAlign: TextAlign.center,
               style: TextStyle(color: textColor, fontWeight: FontWeight.w600),
@@ -392,7 +396,7 @@ class _PlanScreenState extends State<PlanScreen> with WidgetsBindingObserver {
                 foregroundColor: Colors.white,
               ),
               onPressed: _load,
-              child: const Text("Retry"),
+              child: const AppText("Retry"),
             ),
           ],
         ),
@@ -432,7 +436,7 @@ class _PlanScreenState extends State<PlanScreen> with WidgetsBindingObserver {
             children: [
               Icon(_kindIcon, size: 38, color: _accent),
               const SizedBox(height: 14),
-              Text(
+              AppText(
                 'Your ${_isWorkoutKind ? 'workout' : 'diet'} plan is in review',
                 textAlign: TextAlign.center,
                 style: TextStyle(
@@ -442,7 +446,7 @@ class _PlanScreenState extends State<PlanScreen> with WidgetsBindingObserver {
                 ),
               ),
               const SizedBox(height: 8),
-              Text(
+              AppText(
                 message,
                 textAlign: TextAlign.center,
                 style: TextStyle(
@@ -455,7 +459,7 @@ class _PlanScreenState extends State<PlanScreen> with WidgetsBindingObserver {
               OutlinedButton.icon(
                 onPressed: _load,
                 icon: const Icon(Icons.refresh_rounded, size: 17),
-                label: const Text('Check status'),
+                label: const AppText('Check status'),
               ),
             ],
           ),
@@ -479,7 +483,7 @@ class _PlanScreenState extends State<PlanScreen> with WidgetsBindingObserver {
             children: [
               Center(child: Icon(_kindIcon, size: 38, color: _accent)),
               const SizedBox(height: 12),
-              Text(
+              AppText(
                 'Confirm AI processing consent',
                 textAlign: TextAlign.center,
                 style: TextStyle(
@@ -489,7 +493,7 @@ class _PlanScreenState extends State<PlanScreen> with WidgetsBindingObserver {
                 ),
               ),
               const SizedBox(height: 8),
-              Text(
+              AppText(
                 disclosure ??
                     'Your company specialist uses AI to prepare a plan from the health and preference information you provide. They review the plan before you can see it.',
                 textAlign: TextAlign.center,
@@ -512,7 +516,7 @@ class _PlanScreenState extends State<PlanScreen> with WidgetsBindingObserver {
                 fontSize: 12.5,
               ),
               if (_generateError != null) ...[
-                Text(
+                AppText(
                   _generateError!,
                   textAlign: TextAlign.center,
                   style: const TextStyle(color: Colors.redAccent, fontSize: 12),
@@ -525,7 +529,7 @@ class _PlanScreenState extends State<PlanScreen> with WidgetsBindingObserver {
                   foregroundColor: Colors.white,
                 ),
                 onPressed: _isGenerating ? null : _grantRenewalConsent,
-                child: Text(_isGenerating ? 'Saving…' : 'Confirm consent'),
+                child: AppText(_isGenerating ? 'Saving…' : 'Confirm consent'),
               ),
             ],
           ),
@@ -569,7 +573,7 @@ class _PlanScreenState extends State<PlanScreen> with WidgetsBindingObserver {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('PDF ready. Choose Save to Files or share it.'),
+            content: AppText('PDF ready. Choose Save to Files or share it.'),
           ),
         );
       }
@@ -577,7 +581,9 @@ class _PlanScreenState extends State<PlanScreen> with WidgetsBindingObserver {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Could not create the PDF report. Please try again.'),
+            content: AppText(
+              'Could not create the PDF report. Please try again.',
+            ),
           ),
         );
       }
@@ -600,7 +606,7 @@ class _PlanScreenState extends State<PlanScreen> with WidgetsBindingObserver {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
+        AppText(
           'Reviewed and approved by your company ${_isWorkoutKind ? 'trainer' : 'dietitian'} · $duration-week plan · active until ${_formatPlanDate(context, active['valid_until'])}',
           style: TextStyle(
             color: secondaryTextColor,
@@ -610,7 +616,7 @@ class _PlanScreenState extends State<PlanScreen> with WidgetsBindingObserver {
         ),
         if (upcoming is Map) ...[
           const SizedBox(height: 6),
-          Text(
+          AppText(
             'Your next reviewed plan is scheduled to begin ${_formatPlanDate(context, upcoming['valid_from'])}.',
             style: TextStyle(
               color: _accent,
@@ -632,7 +638,7 @@ class _PlanScreenState extends State<PlanScreen> with WidgetsBindingObserver {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
+        AppText(
           'PLAN TIMELINE',
           style: TextStyle(
             fontSize: 11,
@@ -653,7 +659,7 @@ class _PlanScreenState extends State<PlanScreen> with WidgetsBindingObserver {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  AppText(
                     'Week ${week['week']}: ${week['focus']}',
                     style: TextStyle(
                       color: textColor,
@@ -663,7 +669,7 @@ class _PlanScreenState extends State<PlanScreen> with WidgetsBindingObserver {
                   ),
                   if (checkpoints.isNotEmpty) ...[
                     const SizedBox(height: 3),
-                    Text(
+                    AppText(
                       checkpoints,
                       style: TextStyle(
                         color: secondaryTextColor,
@@ -707,7 +713,7 @@ class _PlanScreenState extends State<PlanScreen> with WidgetsBindingObserver {
                     Icon(_kindIcon, size: 22, color: _accent),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: Text(
+                      child: AppText(
                         title,
                         style: TextStyle(
                           fontWeight: FontWeight.w900,
@@ -720,7 +726,7 @@ class _PlanScreenState extends State<PlanScreen> with WidgetsBindingObserver {
                 ),
                 if (summary != null && summary.isNotEmpty) ...[
                   const SizedBox(height: 8),
-                  Text(
+                  AppText(
                     summary,
                     style: TextStyle(
                       color: secondaryTextColor,
@@ -754,7 +760,7 @@ class _PlanScreenState extends State<PlanScreen> with WidgetsBindingObserver {
                             ),
                           )
                         : const Icon(Icons.picture_as_pdf_outlined, size: 18),
-                    label: Text(
+                    label: AppText(
                       _isDownloadingReport
                           ? 'Preparing PDF report...'
                           : 'Download PDF report',
@@ -767,7 +773,7 @@ class _PlanScreenState extends State<PlanScreen> with WidgetsBindingObserver {
           const SizedBox(height: 16),
           _buildTimeline(textColor, secondaryTextColor),
           const SizedBox(height: 16),
-          Text(
+          AppText(
             "$days-DAY SCHEDULE",
             style: TextStyle(
               fontSize: 11,
@@ -818,7 +824,7 @@ class _PlanScreenState extends State<PlanScreen> with WidgetsBindingObserver {
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: _accent.withValues(alpha: 0.3)),
       ),
-      child: Text(
+      child: AppText(
         label,
         style: TextStyle(
           fontSize: 10.5,
@@ -862,7 +868,7 @@ class _PlanScreenState extends State<PlanScreen> with WidgetsBindingObserver {
                   Expanded(
                     child: Row(
                       children: [
-                        Text(
+                        AppText(
                           day.day,
                           style: TextStyle(
                             fontWeight: FontWeight.w800,
@@ -878,12 +884,12 @@ class _PlanScreenState extends State<PlanScreen> with WidgetsBindingObserver {
                     ),
                   ),
                   if (day.isRestDay)
-                    Text(
+                    AppText(
                       "Rest day",
                       style: TextStyle(color: secondaryTextColor, fontSize: 12),
                     )
                   else
-                    Text(
+                    AppText(
                       day.focus ?? '${day.exercises.length} exercises',
                       style: TextStyle(
                         color: _accent,
@@ -911,7 +917,7 @@ class _PlanScreenState extends State<PlanScreen> with WidgetsBindingObserver {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
+                        AppText(
                           ex.name,
                           style: TextStyle(
                             fontWeight: FontWeight.w700,
@@ -920,7 +926,7 @@ class _PlanScreenState extends State<PlanScreen> with WidgetsBindingObserver {
                           ),
                         ),
                         if (ex.dosageLabel.isNotEmpty)
-                          Text(
+                          AppText(
                             ex.dosageLabel,
                             style: TextStyle(
                               color: secondaryTextColor,
@@ -928,7 +934,7 @@ class _PlanScreenState extends State<PlanScreen> with WidgetsBindingObserver {
                             ),
                           ),
                         if (ex.targetMuscles.isNotEmpty)
-                          Text(
+                          AppText(
                             'Targets: ${workoutTargetMuscleSummary(ex.targetMuscles)}',
                             style: TextStyle(
                               color: secondaryTextColor,
@@ -936,7 +942,7 @@ class _PlanScreenState extends State<PlanScreen> with WidgetsBindingObserver {
                             ),
                           ),
                         if (ex.notes != null && ex.notes!.isNotEmpty)
-                          Text(
+                          AppText(
                             ex.notes!,
                             style: TextStyle(
                               color: secondaryTextColor,
@@ -989,7 +995,7 @@ class _PlanScreenState extends State<PlanScreen> with WidgetsBindingObserver {
                   Expanded(
                     child: Row(
                       children: [
-                        Text(
+                        AppText(
                           day.day,
                           style: TextStyle(
                             fontWeight: FontWeight.w800,
@@ -1004,7 +1010,7 @@ class _PlanScreenState extends State<PlanScreen> with WidgetsBindingObserver {
                       ],
                     ),
                   ),
-                  Text(
+                  AppText(
                     day.totalCalories != null
                         ? '${day.totalCalories} kcal'
                         : '${day.meals.length} meals',
@@ -1034,7 +1040,7 @@ class _PlanScreenState extends State<PlanScreen> with WidgetsBindingObserver {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
+                        AppText(
                           meal.name,
                           style: TextStyle(
                             fontWeight: FontWeight.w700,
@@ -1042,7 +1048,7 @@ class _PlanScreenState extends State<PlanScreen> with WidgetsBindingObserver {
                             color: textColor,
                           ),
                         ),
-                        Text(
+                        AppText(
                           meal.items,
                           style: TextStyle(
                             color: secondaryTextColor,
@@ -1053,7 +1059,7 @@ class _PlanScreenState extends State<PlanScreen> with WidgetsBindingObserver {
                         if (meal.macrosLabel.isNotEmpty)
                           Padding(
                             padding: const EdgeInsets.only(top: 2),
-                            child: Text(
+                            child: AppText(
                               meal.macrosLabel,
                               style: TextStyle(
                                 color: _accent,
@@ -1093,7 +1099,7 @@ class _PlanScreenState extends State<PlanScreen> with WidgetsBindingObserver {
               children: [
                 Icon(_kindIcon, size: 34, color: _accent),
                 const SizedBox(height: 12),
-                Text(
+                AppText(
                   "Request your $_title",
                   style: TextStyle(
                     fontWeight: FontWeight.w900,
@@ -1102,7 +1108,7 @@ class _PlanScreenState extends State<PlanScreen> with WidgetsBindingObserver {
                   ),
                 ),
                 const SizedBox(height: 6),
-                Text(
+                AppText(
                   "Share your preferences. Your company ${_isWorkoutKind ? 'trainer' : 'dietitian'} will create and approve the plan before it appears here.",
                   textAlign: TextAlign.center,
                   style: TextStyle(
@@ -1124,7 +1130,7 @@ class _PlanScreenState extends State<PlanScreen> with WidgetsBindingObserver {
             padding: const EdgeInsets.all(14),
             child: Column(
               children: [
-                Text(
+                AppText(
                   disclosure ??
                       'AI is used to prepare a draft from the health and preference information you provide. Your company specialist reviews it before approval.',
                   style: TextStyle(
@@ -1148,7 +1154,7 @@ class _PlanScreenState extends State<PlanScreen> with WidgetsBindingObserver {
           ),
           const SizedBox(height: 12),
           if (_generateError != null) ...[
-            Text(
+            AppText(
               _generateError!,
               style: const TextStyle(color: Colors.redAccent, fontSize: 12),
               textAlign: TextAlign.center,
@@ -1174,8 +1180,8 @@ class _PlanScreenState extends State<PlanScreen> with WidgetsBindingObserver {
                       color: Colors.white,
                     ),
                   )
-                : const Text("✨", style: TextStyle(fontSize: 16)),
-            label: Text(
+                : const AppText("✨", style: TextStyle(fontSize: 16)),
+            label: AppText(
               _isGenerating
                   ? "Sending request…"
                   : "Get ${_isWorkoutKind ? 'workout' : 'diet'} plan",
@@ -1189,7 +1195,7 @@ class _PlanScreenState extends State<PlanScreen> with WidgetsBindingObserver {
 
   Widget _sectionLabel(String label, Color? color) => Padding(
     padding: const EdgeInsets.only(bottom: 8, top: 4),
-    child: Text(
+    child: AppText(
       label.toUpperCase(),
       style: TextStyle(
         fontSize: 10.5,
@@ -1230,7 +1236,7 @@ class _PlanScreenState extends State<PlanScreen> with WidgetsBindingObserver {
             children: goals
                 .map(
                   (g) => ChoiceChip(
-                    label: Text(g, style: const TextStyle(fontSize: 11.5)),
+                    label: AppText(g, style: const TextStyle(fontSize: 11.5)),
                     selected: _goal == g,
                     selectedColor: _accent.withValues(alpha: 0.25),
                     onSelected: (_) => setState(() => _goal = g),
@@ -1245,7 +1251,7 @@ class _PlanScreenState extends State<PlanScreen> with WidgetsBindingObserver {
             children: experiences
                 .map(
                   (e) => ChoiceChip(
-                    label: Text(e, style: const TextStyle(fontSize: 11.5)),
+                    label: AppText(e, style: const TextStyle(fontSize: 11.5)),
                     selected: _experience == e,
                     selectedColor: _accent.withValues(alpha: 0.25),
                     onSelected: (_) => setState(() => _experience = e),
@@ -1260,7 +1266,7 @@ class _PlanScreenState extends State<PlanScreen> with WidgetsBindingObserver {
             children: locations
                 .map(
                   (l) => ChoiceChip(
-                    label: Text(l, style: const TextStyle(fontSize: 11.5)),
+                    label: AppText(l, style: const TextStyle(fontSize: 11.5)),
                     selected: _location == l,
                     selectedColor: _accent.withValues(alpha: 0.25),
                     onSelected: (_) => setState(() => _location = l),
@@ -1275,7 +1281,7 @@ class _PlanScreenState extends State<PlanScreen> with WidgetsBindingObserver {
             children: equipmentOptions
                 .map(
                   (eq) => FilterChip(
-                    label: Text(eq, style: const TextStyle(fontSize: 11.5)),
+                    label: AppText(eq, style: const TextStyle(fontSize: 11.5)),
                     selected: _equipment.contains(eq),
                     selectedColor: _accent.withValues(alpha: 0.25),
                     onSelected: (sel) => setState(() {
@@ -1341,7 +1347,7 @@ class _PlanScreenState extends State<PlanScreen> with WidgetsBindingObserver {
             children: dietaryOptions
                 .map(
                   (d) => ChoiceChip(
-                    label: Text(d, style: const TextStyle(fontSize: 11.5)),
+                    label: AppText(d, style: const TextStyle(fontSize: 11.5)),
                     selected: _dietary == d,
                     selectedColor: _accent.withValues(alpha: 0.25),
                     onSelected: (_) => setState(() => _dietary = d),
@@ -1356,8 +1362,8 @@ class _PlanScreenState extends State<PlanScreen> with WidgetsBindingObserver {
                 child: TextField(
                   controller: _allergyCtrl,
                   style: TextStyle(color: textColor, fontSize: 12.5),
-                  decoration: const InputDecoration(
-                    hintText: "e.g. peanuts",
+                  decoration: InputDecoration(
+                    hintText: "e.g. peanuts".localized(context),
                     hintStyle: TextStyle(fontSize: 12),
                     isDense: true,
                   ),
@@ -1377,7 +1383,7 @@ class _PlanScreenState extends State<PlanScreen> with WidgetsBindingObserver {
               children: _allergies
                   .map(
                     (a) => Chip(
-                      label: Text(a, style: const TextStyle(fontSize: 11)),
+                      label: AppText(a, style: const TextStyle(fontSize: 11)),
                       onDeleted: () => setState(() => _allergies.remove(a)),
                     ),
                   )
@@ -1402,7 +1408,7 @@ class _PlanScreenState extends State<PlanScreen> with WidgetsBindingObserver {
                 activeThumbColor: _accent,
                 onChanged: (v) => setState(() => _setCalorieTarget = v),
               ),
-              Text(
+              AppText(
                 _setCalorieTarget
                     ? 'Daily calorie target: ${_calorieTarget.round()} kcal'
                     : 'Set a calorie target',
@@ -1423,8 +1429,8 @@ class _PlanScreenState extends State<PlanScreen> with WidgetsBindingObserver {
           TextField(
             controller: _cuisineCtrl,
             style: TextStyle(color: textColor, fontSize: 12.5),
-            decoration: const InputDecoration(
-              hintText: "e.g. Indian, Mediterranean",
+            decoration: InputDecoration(
+              hintText: "e.g. Indian, Mediterranean".localized(context),
               hintStyle: TextStyle(fontSize: 12),
               isDense: true,
             ),

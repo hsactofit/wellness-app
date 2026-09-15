@@ -1,0 +1,9 @@
+{
+  "@@locale": "hi",
+  "language": "भाषा",
+  "english": "अंग्रेज़ी",
+  "hindi": "हिन्दी",
+  "kannada": "कन्नड़",
+  "chooseLanguage": "भाषा चुनें",
+  "languageSaveFailed": "आपकी भाषा सेव नहीं हो सकी। कृपया फिर से कोशिश करें।"
+}

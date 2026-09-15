@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/care_program.dart';
 import '../theme/app_theme.dart';
 import 'glass_card.dart';
+import '../l10n/app_text.dart';
 
 class WeeklyCareProgressSection extends StatelessWidget {
   const WeeklyCareProgressSection({
@@ -160,7 +161,7 @@ class _ActiveProgress extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  AppText(
                     'Weekly Care Progress',
                     style: TextStyle(
                       color: ink,
@@ -168,7 +169,7 @@ class _ActiveProgress extends StatelessWidget {
                       fontWeight: FontWeight.w800,
                     ),
                   ),
-                  Text(
+                  AppText(
                     totalWeeks == null
                         ? 'Week $week'
                         : 'Week $week of $totalWeeks',
@@ -184,11 +185,11 @@ class _ActiveProgress extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
+            AppText(
               'Care actions completed',
               style: TextStyle(color: muted, fontWeight: FontWeight.w600),
             ),
-            Text(
+            AppText(
               '$completed of $expected',
               style: const TextStyle(
                 color: AppTheme.mednovationsInk,
@@ -227,7 +228,7 @@ class _ActiveProgress extends StatelessWidget {
               ),
               const SizedBox(width: 9),
               Expanded(
-                child: Text(
+                child: AppText(
                   next == null
                       ? 'You are up to date for this week.'
                       : 'Next: ${next.title} · ${_dayLabel(next.occurrenceDate)}',
@@ -243,7 +244,7 @@ class _ActiveProgress extends StatelessWidget {
           child: TextButton.icon(
             onPressed: onOpen,
             icon: const Icon(Icons.arrow_forward_rounded, size: 18),
-            label: const Text('View my program'),
+            label: const AppText('View my program'),
           ),
         ),
       ],
@@ -285,7 +286,7 @@ class _StatusPill extends StatelessWidget {
       color: AppTheme.mednovationsGreenSoft,
       borderRadius: BorderRadius.circular(20),
     ),
-    child: Text(
+    child: AppText(
       text,
       style: const TextStyle(
         color: Color(0xFF347A27),
@@ -331,7 +332,7 @@ class _MessageState extends StatelessWidget {
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: Text(
+              child: AppText(
                 'Weekly Care Progress',
                 style: TextStyle(
                   color: theme.colorScheme.onSurface,
@@ -343,7 +344,7 @@ class _MessageState extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 15),
-        Text(
+        AppText(
           title,
           style: TextStyle(
             color: theme.colorScheme.onSurface,
@@ -352,7 +353,7 @@ class _MessageState extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 4),
-        Text(
+        AppText(
           message,
           style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
         ),
@@ -360,7 +361,7 @@ class _MessageState extends StatelessWidget {
         TextButton.icon(
           onPressed: onAction,
           icon: const Icon(Icons.arrow_forward_rounded, size: 18),
-          label: Text(actionLabel),
+          label: AppText(actionLabel),
         ),
       ],
     );

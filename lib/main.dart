@@ -9,6 +9,8 @@ import 'screens/splash_screen.dart';
 import 'services/body_composition_ocr_service.dart';
 import 'services/push_service.dart';
 import 'theme/app_theme.dart';
+import 'l10n/locale_controller.dart';
+import 'l10n/app_localizations.dart';
 
 final ValueNotifier<ThemeMode> themeNotifier = ValueNotifier(ThemeMode.system);
 
@@ -22,6 +24,7 @@ void main() async {
   );
 
   final prefs = await SharedPreferences.getInstance();
+  await LocaleController.instance.load();
   final themeStr = prefs.getString('theme_mode') ?? 'system';
   if (themeStr == 'light') {
     themeNotifier.value = ThemeMode.light;
@@ -39,18 +42,37 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<ThemeMode>(
-      valueListenable: themeNotifier,
-      builder: (context, currentThemeMode, _) {
-        return MaterialApp(
-          title: AppBrand.wellnessName,
-          debugShowCheckedModeBanner: false,
-          themeMode: currentThemeMode,
-          theme: AppTheme.light(),
-          darkTheme: AppTheme.dark(),
-          home: const SplashScreen(),
+    return ValueListenableBuilder<Locale>(
+      valueListenable: LocaleController.instance,
+      builder: (context, currentLocale, _) {
+        return ValueListenableBuilder<ThemeMode>(
+          valueListenable: themeNotifier,
+          builder: (context, currentThemeMode, _) => MaterialApp(
+            title: AppBrand.wellnessName,
+            debugShowCheckedModeBanner: false,
+            themeMode: currentThemeMode,
+            theme: _localizedTheme(AppTheme.light(), currentLocale),
+            darkTheme: _localizedTheme(AppTheme.dark(), currentLocale),
+            locale: currentLocale,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppBrand.supportedLanguageCodes
+                .map(Locale.new)
+                .toList(growable: false),
+            home: const SplashScreen(),
+          ),
         );
       },
+    );
+  }
+
+  ThemeData _localizedTheme(ThemeData theme, Locale locale) {
+    if (!AppBrand.isMednovations || locale.languageCode == 'en') return theme;
+    final family = locale.languageCode == 'hi'
+        ? 'NotoSansDevanagari'
+        : 'NotoSansKannada';
+    return theme.copyWith(
+      textTheme: theme.textTheme.apply(fontFamily: family),
+      primaryTextTheme: theme.primaryTextTheme.apply(fontFamily: family),
     );
   }
 }

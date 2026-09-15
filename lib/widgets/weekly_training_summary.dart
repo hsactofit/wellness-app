@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/weekly_training.dart';
 import '../services/api_service.dart';
 import 'glass_card.dart';
+import '../l10n/app_text.dart';
 
 const _trainingTypes = <String>[
   'strength',
@@ -49,12 +50,12 @@ class WeeklyTrainingSummarySection extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                const AppText(
                   'Weekly training',
                   style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
                 ),
                 const SizedBox(height: 6),
-                Text(
+                AppText(
                   loading
                       ? 'Loading your plan-aware weekly summary…'
                       : 'Weekly training is unavailable. Your existing health data is still safe.',
@@ -63,7 +64,7 @@ class WeeklyTrainingSummarySection extends StatelessWidget {
                   TextButton.icon(
                     onPressed: onRefresh,
                     icon: const Icon(Icons.refresh),
-                    label: const Text('Retry'),
+                    label: const AppText('Retry'),
                   ),
               ],
             ),
@@ -109,7 +110,7 @@ class _RecentActivityCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            const AppText(
               'Recent activity',
               style: TextStyle(fontSize: 21, fontWeight: FontWeight.w800),
             ),
@@ -135,7 +136,7 @@ class _RecentActivityCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
+                      AppText(
                         activity.activityName,
                         style: const TextStyle(
                           fontSize: 18,
@@ -143,14 +144,14 @@ class _RecentActivityCard extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 2),
-                      Text(
+                      AppText(
                         activity.facilityName,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(color: colors.onSurfaceVariant),
                       ),
                       const SizedBox(height: 4),
-                      Text(
+                      AppText(
                         detail,
                         style: TextStyle(
                           color: colors.onSurfaceVariant,
@@ -215,12 +216,12 @@ class _CardHeading extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
+            AppText(
               title,
               style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 3),
-            Text(
+            AppText(
               subtitle,
               style: TextStyle(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -232,7 +233,7 @@ class _CardHeading extends StatelessWidget {
       Semantics(
         button: true,
         label: 'Edit $title',
-        child: TextButton(onPressed: onEdit, child: const Text('Edit')),
+        child: TextButton(onPressed: onEdit, child: const AppText('Edit')),
       ),
     ],
   );
@@ -300,7 +301,7 @@ class _DayTile extends StatelessWidget {
                   : null,
             ),
             const SizedBox(height: 5),
-            Text(
+            AppText(
               day.weekday.isEmpty ? '?' : day.weekday.substring(0, 1),
               style: const TextStyle(fontWeight: FontWeight.w700),
             ),
@@ -378,7 +379,7 @@ class _MetricRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                AppText(
                   label,
                   style: const TextStyle(
                     fontSize: 17,
@@ -386,7 +387,7 @@ class _MetricRow extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 2),
-                Text(
+                AppText(
                   metric.value == null ? 'No synced data' : metric.displayBasis,
                   style: TextStyle(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -416,14 +417,14 @@ class _MetricRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text(
+                AppText(
                   metric.value == null ? '—' : valueFormatter(metric.value!),
                   style: const TextStyle(
                     fontSize: 19,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
-                Text(
+                AppText(
                   deltaLabel,
                   textAlign: TextAlign.end,
                   style: const TextStyle(fontSize: 11),
@@ -447,7 +448,7 @@ class _MemberEnteredBadge extends StatelessWidget {
       color: Theme.of(context).colorScheme.secondaryContainer,
       borderRadius: BorderRadius.circular(6),
     ),
-    child: Text(
+    child: AppText(
       'Member-entered',
       style: TextStyle(
         fontSize: 10,
@@ -529,12 +530,12 @@ Future<void> _showWorkoutEditor(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                const AppText(
                   'Edit weekly workouts',
                   style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
                 ),
                 const SizedBox(height: 6),
-                const Text(
+                const AppText(
                   'These changes affect only your personal summary. They never change facility attendance, your approved plan, reports, rewards, challenges, or staff metrics.',
                 ),
                 const SizedBox(height: 16),
@@ -553,7 +554,7 @@ Future<void> _showWorkoutEditor(
                       .map(
                         (type) => DropdownMenuItem(
                           value: type,
-                          child: Text(_title(type)),
+                          child: AppText(_title(type)),
                         ),
                       )
                       .toList(),
@@ -628,12 +629,12 @@ Future<void> _showWorkoutEditor(
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Icon(Icons.add),
-                  label: const Text('Add missing workout'),
+                  label: const AppText('Add missing workout'),
                 ),
                 if (error != null)
                   Padding(
                     padding: const EdgeInsets.only(top: 8),
-                    child: Text(
+                    child: AppText(
                       error!,
                       style: TextStyle(
                         color: Theme.of(context).colorScheme.error,
@@ -642,7 +643,7 @@ Future<void> _showWorkoutEditor(
                   ),
                 if (summary.includedSessions.isNotEmpty) ...[
                   const Divider(height: 30),
-                  const Text(
+                  const AppText(
                     'Edit a completed session',
                     style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
                   ),
@@ -686,7 +687,7 @@ class _SessionCorrectionRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('${_title(session.type)} · ${_dateText(session.date)}'),
+                AppText('${_title(session.type)} · ${_dateText(session.date)}'),
                 if (session.memberEntered)
                   const Padding(
                     padding: EdgeInsets.only(top: 3),
@@ -705,10 +706,13 @@ class _SessionCorrectionRow extends StatelessWidget {
                 onRefresh,
               ),
               itemBuilder: (_) => const [
-                PopupMenuItem(value: 'reclassify', child: Text('Change type')),
+                PopupMenuItem(
+                  value: 'reclassify',
+                  child: AppText('Change type'),
+                ),
                 PopupMenuItem(
                   value: 'exclude',
-                  child: Text('Hide from my summary'),
+                  child: AppText('Hide from my summary'),
                 ),
               ],
             )
@@ -718,8 +722,8 @@ class _SessionCorrectionRow extends StatelessWidget {
                   ? _editMemberWorkout(context, session, summary, onRefresh)
                   : _undo(context, session.correctionId!, onRefresh),
               itemBuilder: (_) => const [
-                PopupMenuItem(value: 'edit', child: Text('Edit workout')),
-                PopupMenuItem(value: 'remove', child: Text('Remove')),
+                PopupMenuItem(value: 'edit', child: AppText('Edit workout')),
+                PopupMenuItem(value: 'remove', child: AppText('Remove')),
               ],
             ),
         ],
@@ -746,14 +750,14 @@ Future<void> _correctOfficialSession(
     context: context,
     builder: (dialogContext) => StatefulBuilder(
       builder: (context, setDialogState) => AlertDialog(
-        title: Text(
+        title: AppText(
           action == 'exclude' ? 'Hide this session?' : 'Change session type',
         ),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
+              const AppText(
                 'This affects only your personal weekly summary; the official facility session stays unchanged.',
               ),
               if (action == 'reclassify') ...[
@@ -764,7 +768,7 @@ Future<void> _correctOfficialSession(
                       .map(
                         (entry) => DropdownMenuItem(
                           value: entry,
-                          child: Text(_title(entry)),
+                          child: AppText(_title(entry)),
                         ),
                       )
                       .toList(),
@@ -785,7 +789,7 @@ Future<void> _correctOfficialSession(
               if (error != null)
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
-                  child: Text(
+                  child: AppText(
                     error!,
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.error,
@@ -798,7 +802,7 @@ Future<void> _correctOfficialSession(
         actions: [
           TextButton(
             onPressed: saving ? null : () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: const AppText('Cancel'),
           ),
           FilledButton(
             onPressed: saving
@@ -841,7 +845,7 @@ Future<void> _correctOfficialSession(
                       });
                     }
                   },
-            child: Text(
+            child: AppText(
               action == 'exclude' ? 'Hide from summary' : 'Save type',
             ),
           ),
@@ -869,12 +873,12 @@ Future<void> _editMemberWorkout(
     context: context,
     builder: (dialogContext) => StatefulBuilder(
       builder: (context, setDialogState) => AlertDialog(
-        title: const Text('Edit member-entered workout'),
+        title: const AppText('Edit member-entered workout'),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
+              const AppText(
                 'This replaces only your personal-summary entry. Official attendance remains unchanged.',
               ),
               const SizedBox(height: 12),
@@ -885,7 +889,7 @@ Future<void> _editMemberWorkout(
                     .map(
                       (entry) => DropdownMenuItem(
                         value: entry,
-                        child: Text(_title(entry)),
+                        child: AppText(_title(entry)),
                       ),
                     )
                     .toList(),
@@ -913,7 +917,7 @@ Future<void> _editMemberWorkout(
               if (error != null)
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
-                  child: Text(
+                  child: AppText(
                     error!,
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.error,
@@ -926,7 +930,7 @@ Future<void> _editMemberWorkout(
         actions: [
           TextButton(
             onPressed: saving ? null : () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: const AppText('Cancel'),
           ),
           FilledButton(
             onPressed: saving
@@ -963,7 +967,7 @@ Future<void> _editMemberWorkout(
                       });
                     }
                   },
-            child: const Text('Save workout'),
+            child: const AppText('Save workout'),
           ),
         ],
       ),
@@ -1006,12 +1010,12 @@ Future<void> _showHealthEditor(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  const AppText(
                     'Correct body & recovery data',
                     style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
                   ),
                   const SizedBox(height: 6),
-                  const Text(
+                  const AppText(
                     'Your correction changes this member-facing display and preserves the original synced reading.',
                   ),
                   const SizedBox(height: 14),
@@ -1019,12 +1023,15 @@ Future<void> _showHealthEditor(
                     initialValue: metric,
                     decoration: const InputDecoration(labelText: 'Metric'),
                     items: const [
-                      DropdownMenuItem(value: 'weight', child: Text('Weight')),
+                      DropdownMenuItem(
+                        value: 'weight',
+                        child: AppText('Weight'),
+                      ),
                       DropdownMenuItem(
                         value: 'resting_heart_rate',
-                        child: Text('Resting heart rate'),
+                        child: AppText('Resting heart rate'),
                       ),
-                      DropdownMenuItem(value: 'sleep', child: Text('Sleep')),
+                      DropdownMenuItem(value: 'sleep', child: AppText('Sleep')),
                     ],
                     onChanged: saving
                         ? null
@@ -1042,7 +1049,7 @@ Future<void> _showHealthEditor(
                         setSheetState(() => selectedDate = entry),
                   ),
                   const SizedBox(height: 10),
-                  Text(
+                  AppText(
                     'Current source value: ${sourcePoint == null ? 'No value recorded for this date' : _metricValue(sourcePoint.value, selectedMetric.unit)}',
                   ),
                   const SizedBox(height: 10),
@@ -1126,12 +1133,12 @@ Future<void> _showHealthEditor(
                             dimension: 16,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : const Text('Save correction'),
+                        : const AppText('Save correction'),
                   ),
                   if (error != null)
                     Padding(
                       padding: const EdgeInsets.only(top: 8),
-                      child: Text(
+                      child: AppText(
                         error!,
                         style: TextStyle(
                           color: Theme.of(context).colorScheme.error,
@@ -1172,7 +1179,7 @@ class _DateButton extends StatelessWidget {
       if (selected != null) onSelected(selected);
     },
     icon: const Icon(Icons.calendar_today_outlined),
-    label: Text(_dateText(date)),
+    label: AppText(_dateText(date)),
   );
 }
 
@@ -1197,8 +1204,10 @@ class _ReasonFields extends StatelessWidget {
         decoration: const InputDecoration(labelText: 'Reason'),
         items: _reasons.entries
             .map(
-              (entry) =>
-                  DropdownMenuItem(value: entry.key, child: Text(entry.value)),
+              (entry) => DropdownMenuItem(
+                value: entry.key,
+                child: AppText(entry.value),
+              ),
             )
             .toList(),
         onChanged: enabled ? (value) => onReason(value ?? 'other') : null,
@@ -1231,7 +1240,7 @@ Future<void> _undo(
     if (context.mounted) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(_friendlyError(exception))));
+      ).showSnackBar(SnackBar(content: AppText(_friendlyError(exception))));
     }
   }
 }
