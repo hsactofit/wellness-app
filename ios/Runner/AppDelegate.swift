@@ -1,6 +1,7 @@
 import ActivityKit
 import CoreLocation
 import Flutter
+import HealthKit
 import UIKit
 import UserNotifications
 
@@ -10,6 +11,7 @@ import UserNotifications
     Bundle.main.object(forInfoDictionaryKey: "ProductURLScheme") as? String ?? "medifit"
   }
   private static let channelName = "com.medifit/workout_background"
+  private static let healthAccessChannelName = "com.medifit/health_access"
   private static let hourlyNotificationCategory = "MEDIFIT_WORKOUT_HOURLY_PROMPT"
   private static let departureNotificationCategory = "MEDIFIT_WORKOUT_DEPARTURE_PROMPT"
   private static let slotEndNotificationCategory = "MEDIFIT_WORKOUT_SLOT_END_PROMPT"
@@ -17,6 +19,7 @@ import UserNotifications
   private static let continueAction = "MEDIFIT_WORKOUT_CONTINUE"
 
   private var workoutChannel: FlutterMethodChannel?
+  private var healthAccessChannel: FlutterMethodChannel?
   private var dartReady = false
   private var pendingEvents: [String] = []
   private let locationManager = CLLocationManager()
@@ -45,6 +48,113 @@ import UserNotifications
     )
     workoutChannel?.setMethodCallHandler { [weak self] call, result in
       self?.handleWorkoutMethod(call, result: result)
+    }
+    healthAccessChannel = FlutterMethodChannel(
+      name: Self.healthAccessChannelName,
+      binaryMessenger: registrar.messenger()
+    )
+    healthAccessChannel?.setMethodCallHandler { [weak self] call, result in
+      self?.handleHealthAccessMethod(call, result: result)
+    }
+  }
+
+  // MARK: - Apple Health access recovery
+
+  /// HealthKit shows its permission sheet only while at least one requested
+  /// type is still undecided, and it never reveals denied read access. This
+  /// bridge lets Flutter ask iOS whether another request would actually show
+  /// the sheet, and otherwise jump straight to the Health app, which is the
+  /// only place a person can change a decision they already made.
+  private func handleHealthAccessMethod(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
+    switch call.method {
+    case "authorizationRequestStatus":
+      let values = call.arguments as? [String: Any] ?? [:]
+      let readNames = values["read"] as? [String] ?? []
+      let writeNames = values["write"] as? [String] ?? []
+      healthAuthorizationRequestStatus(readNames: readNames, writeNames: writeNames, result: result)
+    case "openHealthApp":
+      guard let url = URL(string: "x-apple-health://") else {
+        result(false)
+        return
+      }
+      UIApplication.shared.open(url, options: [:]) { opened in
+        result(opened)
+      }
+    default:
+      result(FlutterMethodNotImplemented)
+    }
+  }
+
+  private func healthAuthorizationRequestStatus(
+    readNames: [String],
+    writeNames: [String],
+    result: @escaping FlutterResult
+  ) {
+    guard HKHealthStore.isHealthDataAvailable() else {
+      result("unavailable")
+      return
+    }
+    let read = Set(readNames.flatMap(Self.healthObjectTypes(forDartType:)))
+    let share = Set(
+      writeNames.flatMap(Self.healthObjectTypes(forDartType:)).compactMap { $0 as? HKSampleType }
+    )
+    guard !read.isEmpty || !share.isEmpty else {
+      result("unknown")
+      return
+    }
+    HKHealthStore().getRequestStatusForAuthorization(toShare: share, read: read) { status, error in
+      if let error {
+        NSLog("Health authorization status failed: %@", error.localizedDescription)
+        result("unknown")
+        return
+      }
+      switch status {
+      case .shouldRequest:
+        result("shouldRequest")
+      case .unnecessary:
+        result("unnecessary")
+      case .unknown:
+        result("unknown")
+      @unknown default:
+        result("unknown")
+      }
+    }
+  }
+
+  /// Translates the Dart `HealthDataType` names that `HealthService` requests
+  /// into the HealthKit types the `health` plugin asks for. Names that are not
+  /// listed here are skipped, so this can only under-report, never claim a
+  /// type the plugin does not request.
+  private static func healthObjectTypes(forDartType name: String) -> [HKObjectType] {
+    func quantity(_ identifier: HKQuantityTypeIdentifier) -> [HKObjectType] {
+      HKObjectType.quantityType(forIdentifier: identifier).map { [$0] } ?? []
+    }
+    func category(_ identifier: HKCategoryTypeIdentifier) -> [HKObjectType] {
+      HKObjectType.categoryType(forIdentifier: identifier).map { [$0] } ?? []
+    }
+    switch name {
+    case "STEPS": return quantity(.stepCount)
+    case "DISTANCE_WALKING_RUNNING": return quantity(.distanceWalkingRunning)
+    case "ACTIVE_ENERGY_BURNED": return quantity(.activeEnergyBurned)
+    case "BASAL_ENERGY_BURNED": return quantity(.basalEnergyBurned)
+    case "HEART_RATE": return quantity(.heartRate)
+    case "RESTING_HEART_RATE": return quantity(.restingHeartRate)
+    case "SLEEP_ASLEEP": return category(.sleepAnalysis)
+    case "WEIGHT": return quantity(.bodyMass)
+    case "BODY_MASS_INDEX": return quantity(.bodyMassIndex)
+    case "BODY_FAT_PERCENTAGE": return quantity(.bodyFatPercentage)
+    case "BLOOD_PRESSURE_SYSTOLIC": return quantity(.bloodPressureSystolic)
+    case "BLOOD_PRESSURE_DIASTOLIC": return quantity(.bloodPressureDiastolic)
+    case "BLOOD_GLUCOSE": return quantity(.bloodGlucose)
+    case "BLOOD_OXYGEN": return quantity(.oxygenSaturation)
+    case "WATER": return quantity(.dietaryWater)
+    case "WORKOUT": return [HKObjectType.workoutType()]
+    case "MINDFULNESS": return category(.mindfulSession)
+    case "NUTRITION":
+      return quantity(.dietaryEnergyConsumed) + quantity(.dietaryProtein)
+        + quantity(.dietaryCarbohydrates) + quantity(.dietaryFatTotal)
+    default:
+      return []
     }
   }
 

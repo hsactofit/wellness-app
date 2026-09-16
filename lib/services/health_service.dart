@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:health/health.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -229,6 +230,20 @@ class HealthData {
           [],
     );
   }
+}
+
+/// Whether iOS would still display the HealthKit permission sheet for the
+/// types this app requests. Mirrors `HKAuthorizationRequestStatus`.
+enum HealthAuthorizationRequestStatus {
+  /// At least one requested type is undecided, so the sheet will appear.
+  shouldRequest,
+
+  /// Every requested type has already been answered; iOS will not show the
+  /// sheet again and only the Health app can change the decision.
+  unnecessary,
+
+  /// HealthKit is unavailable or the status could not be determined.
+  unknown,
 }
 
 class HealthService {
@@ -672,6 +687,48 @@ class HealthService {
   /// On first use this presents the Apple Health or Health Connect sheet.
   /// After the member has answered, the operating system keeps that grant
   /// and later calls skip the sheet.
+  static const MethodChannel _accessChannel = MethodChannel(
+    'com.medifit/health_access',
+  );
+
+  /// Asks iOS whether another [requestPermissions] call would actually show
+  /// the HealthKit sheet. HealthKit only shows it while a requested type is
+  /// still undecided; after "Don't Allow" it silently returns instead.
+  Future<HealthAuthorizationRequestStatus>
+  iosAuthorizationRequestStatus() async {
+    if (!Platform.isIOS) return HealthAuthorizationRequestStatus.unknown;
+    try {
+      final status = await _accessChannel
+          .invokeMethod<String>('authorizationRequestStatus', {
+            'read': readTypes.map((type) => type.name).toList(),
+            'write': writeTypes.map((type) => type.name).toList(),
+          });
+      switch (status) {
+        case 'shouldRequest':
+          return HealthAuthorizationRequestStatus.shouldRequest;
+        case 'unnecessary':
+          return HealthAuthorizationRequestStatus.unnecessary;
+        default:
+          return HealthAuthorizationRequestStatus.unknown;
+      }
+    } catch (e) {
+      debugPrint('Unable to read HealthKit authorization request status: $e');
+      return HealthAuthorizationRequestStatus.unknown;
+    }
+  }
+
+  /// Opens the Apple Health app, where a member can turn this app's data
+  /// access back on under Profile → Apps.
+  Future<bool> openAppleHealthApp() async {
+    if (!Platform.isIOS) return false;
+    try {
+      return await _accessChannel.invokeMethod<bool>('openHealthApp') ?? false;
+    } catch (e) {
+      debugPrint('Unable to open the Apple Health app: $e');
+      return false;
+    }
+  }
+
   Future<bool> requestPermissions() async {
     try {
       await initialize();
@@ -1506,7 +1563,8 @@ class HealthService {
             heartRateCount++;
             break;
           case HealthDataType.RESTING_HEART_RATE:
-            if (restingHeartRateAt == null || point.dateFrom.isAfter(restingHeartRateAt)) {
+            if (restingHeartRateAt == null ||
+                point.dateFrom.isAfter(restingHeartRateAt)) {
               restingHeartRate = val;
               restingHeartRateAt = point.dateFrom;
             }
@@ -1759,7 +1817,8 @@ class HealthService {
                 heartRateCount++;
                 break;
               case HealthDataType.RESTING_HEART_RATE:
-                if (restingHeartRateAt == null || point.dateFrom.isAfter(restingHeartRateAt)) {
+                if (restingHeartRateAt == null ||
+                    point.dateFrom.isAfter(restingHeartRateAt)) {
                   restingHeartRate = val;
                   restingHeartRateAt = point.dateFrom;
                 }

@@ -846,6 +846,27 @@ class DashboardScreenState extends State<DashboardScreen>
       _isRequestingHealthPermissions = true;
     });
     try {
+      // HealthKit shows its permission list only while a requested type is
+      // still undecided. After "Don't Allow" it returns silently, so the
+      // shortest honest path is straight into the Health app, where the
+      // member turns this app's access back on under Profile → Apps.
+      if (Platform.isIOS &&
+          await HealthService.instance.iosAuthorizationRequestStatus() ==
+              HealthAuthorizationRequestStatus.unnecessary) {
+        final opened = await HealthService.instance.openAppleHealthApp();
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: AppText(
+              opened
+                  ? 'In Health, tap your profile → Apps → ${AppBrand.wellnessName} to turn on access.'
+                  : 'Open the Health app → profile → Apps → ${AppBrand.wellnessName} to turn on access.',
+            ),
+          ),
+        );
+        return;
+      }
+
       // Do not time out the OS permission sheet. Apple Health and Health
       // Connect wait for the member to choose each data type.
       final success = await HealthService.instance.requestPermissions();
