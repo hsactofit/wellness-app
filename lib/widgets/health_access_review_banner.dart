@@ -52,7 +52,7 @@ class HealthAccessReviewBanner extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   AppText(
-                    'Not seeing health data? Grant permissions again.',
+                    'Review or change permissions in Apple Health.',
                     style: TextStyle(
                       color: isDark ? Colors.grey[400] : Colors.grey[600],
                       fontSize: 11,
@@ -65,7 +65,7 @@ class HealthAccessReviewBanner extends StatelessWidget {
             OutlinedButton(
               key: const Key('requestAppleHealthAccessAgainButton'),
               onPressed: onRequestAgain,
-              child: const AppText('Grant Again'),
+              child: const AppText('Manage Access'),
             ),
           ],
         ),

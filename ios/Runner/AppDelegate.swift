@@ -105,18 +105,20 @@ import UserNotifications
     HKHealthStore().getRequestStatusForAuthorization(toShare: share, read: read) { status, error in
       if let error {
         NSLog("Health authorization status failed: %@", error.localizedDescription)
-        result("unknown")
+        DispatchQueue.main.async { result("unknown") }
         return
       }
-      switch status {
-      case .shouldRequest:
-        result("shouldRequest")
-      case .unnecessary:
-        result("unnecessary")
-      case .unknown:
-        result("unknown")
-      @unknown default:
-        result("unknown")
+      DispatchQueue.main.async {
+        switch status {
+        case .shouldRequest:
+          result("shouldRequest")
+        case .unnecessary:
+          result("unnecessary")
+        case .unknown:
+          result("unknown")
+        @unknown default:
+          result("unknown")
+        }
       }
     }
   }
@@ -150,6 +152,11 @@ import UserNotifications
     case "WATER": return quantity(.dietaryWater)
     case "WORKOUT": return [HKObjectType.workoutType()]
     case "MINDFULNESS": return category(.mindfulSession)
+    case "ELECTROCARDIOGRAM":
+      return [HKObjectType.electrocardiogramType()]
+    case "HIGH_HEART_RATE_EVENT": return category(.highHeartRateEvent)
+    case "LOW_HEART_RATE_EVENT": return category(.lowHeartRateEvent)
+    case "IRREGULAR_HEART_RATE_EVENT": return category(.irregularHeartRhythmEvent)
     case "NUTRITION":
       return quantity(.dietaryEnergyConsumed) + quantity(.dietaryProtein)
         + quantity(.dietaryCarbohydrates) + quantity(.dietaryFatTotal)

@@ -698,11 +698,16 @@ class HealthService {
   iosAuthorizationRequestStatus() async {
     if (!Platform.isIOS) return HealthAuthorizationRequestStatus.unknown;
     try {
-      final status = await _accessChannel
-          .invokeMethod<String>('authorizationRequestStatus', {
-            'read': readTypes.map((type) => type.name).toList(),
-            'write': writeTypes.map((type) => type.name).toList(),
-          });
+      final status = await _accessChannel.invokeMethod<String>(
+        'authorizationRequestStatus',
+        {
+          'read': [
+            ...readTypes,
+            if (_isMedicalConsented) ..._medicalTypes,
+          ].map((type) => type.name).toList(),
+          'write': writeTypes.map((type) => type.name).toList(),
+        },
+      );
       switch (status) {
         case 'shouldRequest':
           return HealthAuthorizationRequestStatus.shouldRequest;

@@ -30,7 +30,7 @@ void main() {
     );
   });
 
-  testWidgets('shows a one-tap retry action without claiming connection', (
+  testWidgets('shows a one-tap management action without claiming connection', (
     tester,
   ) async {
     var requestedAgain = false;
@@ -45,6 +45,7 @@ void main() {
     );
 
     expect(find.text('Apple Health permissions'), findsOneWidget);
+    expect(find.text('Manage Access'), findsOneWidget);
     expect(find.textContaining('connected'), findsNothing);
     await tester.tap(
       find.byKey(const Key('requestAppleHealthAccessAgainButton')),
