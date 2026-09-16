@@ -10,6 +10,7 @@ void main() {
     final theme = AppTheme.light();
 
     if (AppBrand.isMednovations) {
+      expect(AppBrand.supportsFacilityWorkoutDataSharing, isFalse);
       expect(theme.scaffoldBackgroundColor, AppTheme.mednovationsBg);
       expect(theme.colorScheme.primary, AppTheme.mednovationsBlue);
       expect(theme.colorScheme.secondary, AppTheme.mednovationsGreen);
@@ -17,6 +18,7 @@ void main() {
       expect(AppTheme.lightNavColor, AppTheme.mednovationsNav);
       expect(AppTheme.lightBorderColor, AppTheme.mednovationsBorder);
     } else {
+      expect(AppBrand.supportsFacilityWorkoutDataSharing, isTrue);
       expect(theme.scaffoldBackgroundColor, AppTheme.lightBg);
       expect(theme.colorScheme.primary, AppTheme.brandPrimary);
       expect(theme.colorScheme.secondary, const Color(0xFFB89A62));

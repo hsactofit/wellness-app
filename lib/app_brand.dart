@@ -22,6 +22,8 @@ class AppBrand {
 
   static bool get isMednovations => selectedBrand == 'mednovations';
 
+  static bool get supportsFacilityWorkoutDataSharing => !isMednovations;
+
   static List<String> get supportedLanguageCodes =>
       isMednovations ? const ['en', 'hi', 'kn'] : const ['en'];
 
