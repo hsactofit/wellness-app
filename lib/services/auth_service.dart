@@ -57,9 +57,25 @@ class AuthService {
         credential,
       );
       return userCredential.user;
+    } on GoogleSignInException catch (e) {
+      debugPrint("Google Authentication error: $e");
+      if (e.code == GoogleSignInExceptionCode.canceled ||
+          e.code == GoogleSignInExceptionCode.interrupted) {
+        return null;
+      }
+      throw AuthException(
+        'Google Sign-In could not be completed. Please try again.',
+      );
+    } on FirebaseAuthException catch (e) {
+      debugPrint("Firebase Google Authentication error: $e");
+      throw AuthException(
+        'Google Sign-In could not be completed. Please try again.',
+      );
     } catch (e) {
       debugPrint("Google Authentication error: $e");
-      rethrow;
+      throw AuthException(
+        'Google Sign-In could not be completed. Please try again.',
+      );
     }
   }
 

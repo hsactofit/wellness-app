@@ -20,7 +20,7 @@ void main() async {
   await Firebase.initializeApp();
   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
   await GoogleSignIn.instance.initialize(
-    serverClientId: GoogleAuthConfig.webClientId,
+    serverClientId: GoogleAuthConfig.serverClientId,
   );
 
   final prefs = await SharedPreferences.getInstance();
