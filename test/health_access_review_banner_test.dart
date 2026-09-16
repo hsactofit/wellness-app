@@ -30,21 +30,25 @@ void main() {
     );
   });
 
-  testWidgets('shows a persistent review action without claiming connection', (
+  testWidgets('shows a one-tap retry action without claiming connection', (
     tester,
   ) async {
-    var reviewed = false;
+    var requestedAgain = false;
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: HealthAccessReviewBanner(onReviewAccess: () => reviewed = true),
+          body: HealthAccessReviewBanner(
+            onRequestAgain: () => requestedAgain = true,
+          ),
         ),
       ),
     );
 
-    expect(find.text('Apple Health access requested'), findsOneWidget);
+    expect(find.text('Apple Health permissions'), findsOneWidget);
     expect(find.textContaining('connected'), findsNothing);
-    await tester.tap(find.byKey(const Key('reviewAppleHealthAccessButton')));
-    expect(reviewed, isTrue);
+    await tester.tap(
+      find.byKey(const Key('requestAppleHealthAccessAgainButton')),
+    );
+    expect(requestedAgain, isTrue);
   });
 }

@@ -932,33 +932,6 @@ class DashboardScreenState extends State<DashboardScreen>
     }
   }
 
-  Future<void> _reviewAppleHealthAccess() async {
-    if (!mounted) return;
-    final retry = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        icon: const Icon(Icons.health_and_safety_outlined),
-        title: const AppText('Review Apple Health access'),
-        content: const AppText(
-          'iPhone keeps your Health read choices private, so the app cannot confirm which data types you allowed. To change them, open the Health app, tap Summary, tap your picture or initials, then below Privacy tap Apps and choose Mednovations Wellness.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const AppText('Done'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const AppText('Request Again'),
-          ),
-        ],
-      ),
-    );
-    if (retry == true && mounted) {
-      await _connectHealthServices();
-    }
-  }
-
   Future<void> _syncHealthDataInBackground() async {
     try {
       await _fetchRealData(
@@ -4147,7 +4120,7 @@ class DashboardScreenState extends State<DashboardScreen>
                   ))
                     SliverToBoxAdapter(
                       child: HealthAccessReviewBanner(
-                        onReviewAccess: _reviewAppleHealthAccess,
+                        onRequestAgain: _connectHealthServices,
                       ),
                     ),
 

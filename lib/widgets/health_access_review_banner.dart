@@ -4,13 +4,13 @@ import '../l10n/app_text.dart';
 import '../theme/app_theme.dart';
 import 'glass_card.dart';
 
-/// Keeps Apple Health permission recovery visible after the authorization
-/// sheet closes. HealthKit deliberately does not reveal whether read access
-/// was granted, so this banner must not describe that state as "connected".
+/// Keeps a one-tap Apple Health permission retry visible after the
+/// authorization sheet closes. HealthKit deliberately does not reveal whether
+/// read access was granted, so this banner must not claim it is connected.
 class HealthAccessReviewBanner extends StatelessWidget {
-  const HealthAccessReviewBanner({super.key, required this.onReviewAccess});
+  const HealthAccessReviewBanner({super.key, required this.onRequestAgain});
 
-  final VoidCallback onReviewAccess;
+  final VoidCallback onRequestAgain;
 
   static bool shouldShow({
     required bool isIos,
@@ -43,7 +43,7 @@ class HealthAccessReviewBanner extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   AppText(
-                    'Apple Health access requested',
+                    'Apple Health permissions',
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                       fontSize: 15,
@@ -52,7 +52,7 @@ class HealthAccessReviewBanner extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   AppText(
-                    'Review or change what this app can read in Apple Health.',
+                    'Not seeing health data? Grant permissions again.',
                     style: TextStyle(
                       color: isDark ? Colors.grey[400] : Colors.grey[600],
                       fontSize: 11,
@@ -63,9 +63,9 @@ class HealthAccessReviewBanner extends StatelessWidget {
             ),
             const SizedBox(width: 12),
             OutlinedButton(
-              key: const Key('reviewAppleHealthAccessButton'),
-              onPressed: onReviewAccess,
-              child: const AppText('Review Access'),
+              key: const Key('requestAppleHealthAccessAgainButton'),
+              onPressed: onRequestAgain,
+              child: const AppText('Grant Again'),
             ),
           ],
         ),
