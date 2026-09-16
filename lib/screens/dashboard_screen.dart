@@ -37,6 +37,7 @@ import '../models/weekly_training.dart';
 import '../widgets/water/wave_painter.dart';
 import '../widgets/weekly_training_summary.dart';
 import '../widgets/weekly_care_progress.dart';
+import '../widgets/health_access_review_banner.dart';
 import '../theme/app_theme.dart';
 import '../app_brand.dart';
 import '../models/care_program.dart';
@@ -868,21 +869,38 @@ class DashboardScreenState extends State<DashboardScreen>
         }
 
         // HealthKit can take a long time to return several data types on a
-        // simulator (or when it has no sample data).  The permission was
-        // already granted, so let the member continue using the app while
-        // that initial sync completes in the background.
+        // simulator (or when it has no sample data). Let the member continue
+        // using the app while that initial sync completes in the background.
+        // On iOS, `success` only means the authorization flow completed:
+        // HealthKit intentionally does not disclose denied read permissions.
         unawaited(_syncHealthDataInBackground());
 
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: AppText(
-              "Health services connected. Your data will appear shortly.",
+              Platform.isIOS
+                  ? 'Apple Health access request completed. You can review or change access at any time.'
+                  : 'Health services connected. Your data will appear shortly.',
             ),
-            backgroundColor: Colors.green,
+            backgroundColor: Platform.isIOS ? null : Colors.green,
           ),
         );
       } else if (showSnackbarOnFailure) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('health_sync_enabled', false);
+        await prefs.setBool('healthSetupCompleted', false);
+        if (mounted) {
+          setState(() => _healthSetupCompleted = false);
+        }
+        try {
+          await ApiService.instance.updateUserProfile({
+            'permissions': {'health_connect_connected': false},
+          });
+        } catch (error) {
+          debugPrint('Failed to clear health connection status: $error');
+        }
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: AppText(
@@ -911,6 +929,33 @@ class DashboardScreenState extends State<DashboardScreen>
           _isRequestingHealthPermissions = false;
         });
       }
+    }
+  }
+
+  Future<void> _reviewAppleHealthAccess() async {
+    if (!mounted) return;
+    final retry = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        icon: const Icon(Icons.health_and_safety_outlined),
+        title: const AppText('Review Apple Health access'),
+        content: const AppText(
+          'iPhone keeps your Health read choices private, so the app cannot confirm which data types you allowed. To change them, open the Health app, tap Summary, tap your picture or initials, then below Privacy tap Apps and choose Mednovations Wellness.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const AppText('Done'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const AppText('Request Again'),
+          ),
+        ],
+      ),
+    );
+    if (retry == true && mounted) {
+      await _connectHealthServices();
     }
   }
 
@@ -4093,6 +4138,17 @@ class DashboardScreenState extends State<DashboardScreen>
                       child: _healthConnectRequested
                           ? _buildState2Banner(theme, isDark)
                           : _buildState1Banner(theme, isDark),
+                    ),
+
+                  if (HealthAccessReviewBanner.shouldShow(
+                    isIos: Platform.isIOS,
+                    accessRequested: _healthConnectRequested,
+                    syncEnabled: _isConnected,
+                  ))
+                    SliverToBoxAdapter(
+                      child: HealthAccessReviewBanner(
+                        onReviewAccess: _reviewAppleHealthAccess,
+                      ),
                     ),
 
                   // Only show setup guidance until it has been completed.
