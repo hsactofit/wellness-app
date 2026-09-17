@@ -64,7 +64,7 @@ class _SsoAuthScreenState extends State<SsoAuthScreen> {
   InputDecoration _decoration(String hint, {Widget? suffixIcon}) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return InputDecoration(
-      hintText: hint,
+      hintText: hint.localized(context),
       hintStyle: TextStyle(
         color: isDark ? Colors.white30 : Colors.black38,
         fontSize: 14,
@@ -290,8 +290,9 @@ class _SsoAuthScreenState extends State<SsoAuthScreen> {
                         );
                       }).toList(),
                       onChanged: (value) => _selectedCorporateId = value,
-                      validator: (v) =>
-                          v == null ? 'Choose your organization' : null,
+                      validator: (v) => v == null
+                          ? 'Choose your organization'.localized(context)
+                          : null,
                     ),
                   const SizedBox(height: 24),
                   ElevatedButton(

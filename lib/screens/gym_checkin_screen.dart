@@ -1655,10 +1655,10 @@ class _GymCheckinScreenState extends State<GymCheckinScreen>
                 child: TextField(
                   controller: _manualFacilityController,
                   textCapitalization: TextCapitalization.characters,
-                  decoration: const InputDecoration(
-                    labelText: 'Facility code',
+                  decoration: InputDecoration(
+                    labelText: 'Facility code'.localized(context),
                     hintText: 'BLR1',
-                    border: OutlineInputBorder(),
+                    border: const OutlineInputBorder(),
                   ),
                 ),
               ),

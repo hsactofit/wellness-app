@@ -4,34 +4,78 @@ class AppStringCatalog {
   AppStringCatalog._();
 
   static String translate(String source, String languageCode) {
-    if (!AppBrand.isMednovations || languageCode == 'en') return source;
+    if (!AppBrand.isMednovations) return source;
     if (source == 'English' ||
         source == 'हिन्दी (Hindi)' ||
         source == 'ಕನ್ನಡ (Kannada)') {
       return source;
     }
-    final exact = _translations[languageCode]?[source];
-    if (exact != null) return exact;
-    for (final pattern
-        in _patterns[languageCode] ?? const <_LocalizedPattern>[]) {
-      if (pattern.translation
-          .replaceAll(RegExp(r'__ARG\d+__'), '')
-          .trim()
-          .isEmpty) {
-        continue;
+
+    var result = source;
+    if (languageCode != 'en') {
+      final exact = _translations[languageCode]?[source];
+      if (exact != null) {
+        result = exact;
+      } else {
+        for (final pattern
+            in _patterns[languageCode] ?? const <_LocalizedPattern>[]) {
+          if (pattern.translation
+              .replaceAll(RegExp(r'__ARG\d+__'), '')
+              .trim()
+              .isEmpty) {
+            continue;
+          }
+          final match = pattern.expression.firstMatch(source);
+          if (match == null) continue;
+          result = pattern.translation;
+          for (var index = 1; index <= match.groupCount; index++) {
+            result = result.replaceAll(
+              '__ARG${index - 1}__',
+              match.group(index) ?? '',
+            );
+          }
+          break;
+        }
       }
-      final match = pattern.expression.firstMatch(source);
-      if (match == null) continue;
-      var result = pattern.translation;
-      for (var index = 1; index <= match.groupCount; index++) {
-        result = result.replaceAll(
-          '__ARG${index - 1}__',
-          match.group(index) ?? '',
-        );
-      }
-      return result;
     }
-    return source;
+    return _applyClinicTerminology(result, languageCode);
+  }
+
+  static String _applyClinicTerminology(String source, String languageCode) {
+    var result = source;
+    if (languageCode == 'hi') {
+      result = result
+          .replaceAll('सुविधाओं', 'क्लिनिकों')
+          .replaceAll('सुविधाएं', 'क्लिनिक')
+          .replaceAll('संगठनों', 'क्लिनिकों')
+          .replaceAll('सुविधा', 'क्लिनिक')
+          .replaceAll('संगठन', 'क्लिनिक')
+          .replaceAll('संस्था', 'क्लिनिक');
+    } else if (languageCode == 'kn') {
+      result = result
+          .replaceAll('ಸೌಲಭ್ಯ', 'ಕ್ಲಿನಿಕ್')
+          .replaceAll('ಸಂಸ್ಥೆ', 'ಕ್ಲಿನಿಕ್')
+          .replaceAll('ಸಂಘಟನೆ', 'ಕ್ಲಿನಿಕ್');
+    }
+    return result
+        .replaceAll('ORGANIZATIONS', 'CLINICS')
+        .replaceAll('ORGANISATIONS', 'CLINICS')
+        .replaceAll('FACILITIES', 'CLINICS')
+        .replaceAll('Organizations', 'Clinics')
+        .replaceAll('Organisations', 'Clinics')
+        .replaceAll('Facilities', 'Clinics')
+        .replaceAll('organizations', 'clinics')
+        .replaceAll('organisations', 'clinics')
+        .replaceAll('facilities', 'clinics')
+        .replaceAll('ORGANIZATION', 'CLINIC')
+        .replaceAll('ORGANISATION', 'CLINIC')
+        .replaceAll('FACILITY', 'CLINIC')
+        .replaceAll('Organization', 'Clinic')
+        .replaceAll('Organisation', 'Clinic')
+        .replaceAll('Facility', 'Clinic')
+        .replaceAll('organization', 'clinic')
+        .replaceAll('organisation', 'clinic')
+        .replaceAll('facility', 'clinic');
   }
 
   static const Map<String, Map<String, String>> _translations = {
