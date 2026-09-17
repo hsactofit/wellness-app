@@ -31,6 +31,21 @@ void main() {
     );
   });
 
+  test('collects unique target muscles from a reviewed workout day', () {
+    const day = WorkoutPlanDay(
+      day: 'Monday',
+      exercises: [
+        WorkoutExercise(name: 'Curl', targetMuscles: ['biceps', 'forearms']),
+        WorkoutExercise(
+          name: 'Extension',
+          targetMuscles: ['triceps', 'biceps'],
+        ),
+      ],
+    );
+
+    expect(day.targetMuscles, ['biceps', 'triceps', 'forearms']);
+  });
+
   test('parses target muscles from a reviewed workout plan', () {
     final plan = WorkoutPlan.fromReviewedJson({
       'id': 'plan-1',
@@ -90,6 +105,28 @@ void main() {
     await tester.pump();
 
     expect(find.text('Biceps · front upper arms'), findsOneWidget);
+  });
+
+  testWidgets('supports a day-detail heading and semantics label', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: WorkoutMuscleMapCard(
+            targetMuscles: ['quadriceps'],
+            heading: 'Targeted muscles',
+            semanticsPrefix: 'Targeted muscles',
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('Targeted muscles'), findsOneWidget);
+    expect(
+      find.bySemanticsLabel('Targeted muscles: Quadriceps'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('keeps Front and Back labels readable after switching views', (

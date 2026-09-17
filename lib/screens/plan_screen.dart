@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import '../app_brand.dart';
 import '../models/plan_models.dart';
 import '../models/workout_muscles.dart';
 import '../services/api_service.dart';
@@ -8,6 +9,7 @@ import '../services/reviewed_plan_pdf_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/glass_card.dart';
 import '../l10n/app_text.dart';
+import 'workout_plan_day_screen.dart';
 
 String reviewedPlanConsentWarning(String planLabel) =>
     'Please confirm AI processing consent before requesting your $planLabel plan.';
@@ -844,118 +846,140 @@ class _PlanScreenState extends State<PlanScreen> with WidgetsBindingObserver {
     final secondaryTextColor = isDark ? Colors.grey[400] : Colors.grey[600];
     final isExpanded = _expandedDays.contains(index);
     final isToday = day.day.toLowerCase() == currentWeekdayName().toLowerCase();
+    final opensDayPage = AppBrand.isMednovations;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
-      child: GestureDetector(
-        onTap: () => setState(() {
-          if (isExpanded) {
-            _expandedDays.remove(index);
-          } else {
-            _expandedDays.add(index);
-          }
-        }),
-        child: GlassCard(
-          padding: const EdgeInsets.all(16),
-          border: isToday
-              ? Border.all(color: _accent.withValues(alpha: 0.5), width: 1.5)
-              : null,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Row(
-                      children: [
-                        AppText(
-                          day.day,
-                          style: TextStyle(
-                            fontWeight: FontWeight.w800,
-                            fontSize: 13.5,
-                            color: textColor,
+      child: Semantics(
+        button: opensDayPage,
+        label: opensDayPage
+            ? '${day.day} workout: ${day.isRestDay ? 'Rest day' : day.focus ?? '${day.exercises.length} exercises'}'
+            : null,
+        child: GestureDetector(
+          onTap: () {
+            if (opensDayPage) {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => WorkoutPlanDayScreen(day: day),
+                ),
+              );
+              return;
+            }
+            setState(() {
+              if (isExpanded) {
+                _expandedDays.remove(index);
+              } else {
+                _expandedDays.add(index);
+              }
+            });
+          },
+          child: GlassCard(
+            padding: const EdgeInsets.all(16),
+            border: isToday
+                ? Border.all(color: _accent.withValues(alpha: 0.5), width: 1.5)
+                : null,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Row(
+                        children: [
+                          AppText(
+                            day.day,
+                            style: TextStyle(
+                              fontWeight: FontWeight.w800,
+                              fontSize: 13.5,
+                              color: textColor,
+                            ),
                           ),
-                        ),
-                        if (isToday) ...[
-                          const SizedBox(width: 6),
-                          _badge('TODAY'),
+                          if (isToday) ...[
+                            const SizedBox(width: 6),
+                            _badge('TODAY'),
+                          ],
                         ],
-                      ],
-                    ),
-                  ),
-                  if (day.isRestDay)
-                    AppText(
-                      "Rest day",
-                      style: TextStyle(color: secondaryTextColor, fontSize: 12),
-                    )
-                  else
-                    AppText(
-                      day.focus ?? '${day.exercises.length} exercises',
-                      style: TextStyle(
-                        color: _accent,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 12,
                       ),
                     ),
-                  const SizedBox(width: 6),
-                  Icon(
-                    isExpanded
-                        ? Icons.keyboard_arrow_up
-                        : Icons.keyboard_arrow_down,
-                    color: secondaryTextColor,
-                    size: 18,
-                  ),
-                ],
-              ),
-              if (isExpanded && !day.isRestDay) ...[
-                const SizedBox(height: 12),
-                const Divider(height: 1),
-                const SizedBox(height: 10),
-                ...day.exercises.map(
-                  (ex) => Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 6),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        AppText(
-                          ex.name,
-                          style: TextStyle(
-                            fontWeight: FontWeight.w700,
-                            fontSize: 12.5,
-                            color: textColor,
-                          ),
+                    if (day.isRestDay)
+                      AppText(
+                        "Rest day",
+                        style: TextStyle(
+                          color: secondaryTextColor,
+                          fontSize: 12,
                         ),
-                        if (ex.dosageLabel.isNotEmpty)
+                      )
+                    else
+                      AppText(
+                        day.focus ?? '${day.exercises.length} exercises',
+                        style: TextStyle(
+                          color: _accent,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 12,
+                        ),
+                      ),
+                    const SizedBox(width: 6),
+                    Icon(
+                      opensDayPage
+                          ? Icons.chevron_right_rounded
+                          : isExpanded
+                          ? Icons.keyboard_arrow_up
+                          : Icons.keyboard_arrow_down,
+                      color: secondaryTextColor,
+                      size: 18,
+                    ),
+                  ],
+                ),
+                if (!opensDayPage && isExpanded && !day.isRestDay) ...[
+                  const SizedBox(height: 12),
+                  const Divider(height: 1),
+                  const SizedBox(height: 10),
+                  ...day.exercises.map(
+                    (ex) => Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 6),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
                           AppText(
-                            ex.dosageLabel,
+                            ex.name,
                             style: TextStyle(
-                              color: secondaryTextColor,
-                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 12.5,
+                              color: textColor,
                             ),
                           ),
-                        if (ex.targetMuscles.isNotEmpty)
-                          AppText(
-                            'Targets: ${workoutTargetMuscleSummary(ex.targetMuscles)}',
-                            style: TextStyle(
-                              color: secondaryTextColor,
-                              fontSize: 11,
+                          if (ex.dosageLabel.isNotEmpty)
+                            AppText(
+                              ex.dosageLabel,
+                              style: TextStyle(
+                                color: secondaryTextColor,
+                                fontSize: 11,
+                              ),
                             ),
-                          ),
-                        if (ex.notes != null && ex.notes!.isNotEmpty)
-                          AppText(
-                            ex.notes!,
-                            style: TextStyle(
-                              color: secondaryTextColor,
-                              fontSize: 11,
-                              fontStyle: FontStyle.italic,
+                          if (ex.targetMuscles.isNotEmpty)
+                            AppText(
+                              'Targets: ${workoutTargetMuscleSummary(ex.targetMuscles)}',
+                              style: TextStyle(
+                                color: secondaryTextColor,
+                                fontSize: 11,
+                              ),
                             ),
-                          ),
-                      ],
+                          if (ex.notes != null && ex.notes!.isNotEmpty)
+                            AppText(
+                              ex.notes!,
+                              style: TextStyle(
+                                color: secondaryTextColor,
+                                fontSize: 11,
+                                fontStyle: FontStyle.italic,
+                              ),
+                            ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),

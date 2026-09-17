@@ -85,6 +85,10 @@ class WorkoutPlanDay {
           const [],
     );
   }
+
+  List<String> get targetMuscles => normalizeWorkoutTargetMuscles(
+    exercises.expand((exercise) => exercise.targetMuscles),
+  );
 }
 
 class WorkoutPlan {

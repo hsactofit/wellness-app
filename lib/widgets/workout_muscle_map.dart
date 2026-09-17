@@ -19,9 +19,16 @@ Color _targetMuscleColor(ColorScheme colorScheme) =>
 /// target controls are the primary explanation; the detailed front/back view
 /// makes it immediately clear where each target is located.
 class WorkoutMuscleMapCard extends StatefulWidget {
-  const WorkoutMuscleMapCard({super.key, required this.targetMuscles});
+  const WorkoutMuscleMapCard({
+    super.key,
+    required this.targetMuscles,
+    this.heading = 'Today\'s muscle focus',
+    this.semanticsPrefix = 'Target muscles today',
+  });
 
   final Iterable<String> targetMuscles;
+  final String heading;
+  final String semanticsPrefix;
 
   @override
   State<WorkoutMuscleMapCard> createState() => _WorkoutMuscleMapCardState();
@@ -58,7 +65,7 @@ class _WorkoutMuscleMapCardState extends State<WorkoutMuscleMapCard> {
     return Semantics(
       container: true,
       explicitChildNodes: true,
-      label: 'Target muscles today: $summary',
+      label: '${widget.semanticsPrefix}: $summary'.localized(context),
       child: GlassCard(
         margin: EdgeInsets.zero,
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
@@ -76,7 +83,11 @@ class _WorkoutMuscleMapCardState extends State<WorkoutMuscleMapCard> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _MapHeader(isFullBody: isFullBody, targetCount: muscles.length),
+            _MapHeader(
+              heading: widget.heading,
+              isFullBody: isFullBody,
+              targetCount: muscles.length,
+            ),
             const SizedBox(height: 12),
             if (isFullBody)
               _FullBodyCallout(colorScheme: scheme)
@@ -128,8 +139,13 @@ class _WorkoutMuscleMapCardState extends State<WorkoutMuscleMapCard> {
 }
 
 class _MapHeader extends StatelessWidget {
-  const _MapHeader({required this.isFullBody, required this.targetCount});
+  const _MapHeader({
+    required this.heading,
+    required this.isFullBody,
+    required this.targetCount,
+  });
 
+  final String heading;
   final bool isFullBody;
   final int targetCount;
 
@@ -157,7 +173,7 @@ class _MapHeader extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Today\'s muscle focus'.localized(context),
+                heading.localized(context),
                 style: Theme.of(
                   context,
                 ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
