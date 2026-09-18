@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 
 import '../models/care_program.dart';
+import '../services/api_service.dart';
 import '../services/care_program_service.dart';
 import '../services/care_program_pdf_service.dart';
+import '../services/care_program_tracker_destination.dart';
 import '../theme/app_theme.dart';
+import 'face_scan_screen.dart';
+import 'metric_detail_screen.dart';
 import 'nutrition_logging_screen.dart';
-import 'update_health_hub_screen.dart';
 import 'water_logging_screen.dart';
 import '../l10n/app_text.dart';
+import '../app_brand.dart';
 
 class CareProgramsScreen extends StatefulWidget {
   const CareProgramsScreen({super.key});
@@ -198,17 +202,38 @@ class _CareProgramsScreenState extends State<CareProgramsScreen> {
     );
   }
 
-  void _openTracker(CareProgramAction action) {
-    Widget screen;
-    switch (action.type) {
-      case 'hydration':
+  Future<void> _openTracker(CareProgramAction action) async {
+    final destination = careProgramTrackerDestination(action);
+    Widget? screen;
+    switch (destination) {
+      case CareProgramTrackerDestination.hydration:
         screen = const WaterLoggingScreen();
-      case 'meal':
+      case CareProgramTrackerDestination.meal:
         screen = const NutritionLoggingScreen();
-      default:
-        screen = const UpdateHealthHubScreen();
+      case CareProgramTrackerDestination.vitals:
+        if (AppBrand.faceScanEnabled) {
+          screen = const FaceScanScreen();
+        } else {
+          _message('Vital checks are available from Home.');
+        }
+      case CareProgramTrackerDestination.activity:
+        try {
+          final email = await ApiService.instance.getUserEmail();
+          screen = MetricDetailScreen(
+            metric: 'steps',
+            title: 'Steps',
+            icon: 'assets/steps.png',
+            color: const Color(0xFF0B84B3),
+            email: email,
+          );
+        } catch (_) {
+          _message('Could not open the activity tracker. Please try again.');
+        }
+      case null:
+        _message('This action does not have a tracker yet.');
     }
-    Navigator.push(context, MaterialPageRoute(builder: (_) => screen));
+    if (screen == null || !mounted) return;
+    await Navigator.push(context, MaterialPageRoute(builder: (_) => screen!));
   }
 }
 
@@ -369,7 +394,7 @@ class _Actions extends StatelessWidget {
   final CareProgram program;
   final Set<String> saving;
   final Future<void> Function(CareProgram, CareProgramAction) onComplete;
-  final void Function(CareProgramAction) onOpenTracker;
+  final Future<void> Function(CareProgramAction) onOpenTracker;
   @override
   Widget build(BuildContext context) {
     if (program.status != 'active') {
