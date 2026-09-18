@@ -1,6 +1,6 @@
 import '../models/care_program.dart';
 
-enum CareProgramTrackerDestination { hydration, meal, vitals, activity }
+enum CareProgramTrackerDestination { hydration, meal, bloodPressure, activity }
 
 CareProgramTrackerDestination? careProgramTrackerDestination(
   CareProgramAction action,
@@ -12,9 +12,9 @@ CareProgramTrackerDestination? careProgramTrackerDestination(
     case '/nutrition':
     case '/meals':
       return CareProgramTrackerDestination.meal;
-    case '/face-scan':
-    case '/vitals':
-      return CareProgramTrackerDestination.vitals;
+    case '/health/blood-pressure':
+    case '/blood-pressure':
+      return CareProgramTrackerDestination.bloodPressure;
     case '/activity':
     case '/steps':
     case '/progress/steps':
@@ -26,11 +26,15 @@ CareProgramTrackerDestination? careProgramTrackerDestination(
       return CareProgramTrackerDestination.hydration;
     case 'meal':
       return CareProgramTrackerDestination.meal;
-    case 'measurement':
-      return CareProgramTrackerDestination.vitals;
     case 'activity':
       return CareProgramTrackerDestination.activity;
     default:
+      final measurementName = '${action.key} ${action.title}'.toLowerCase();
+      if (action.type == 'measurement' &&
+          (measurementName.contains('blood pressure') ||
+              measurementName.contains('morning-bp'))) {
+        return CareProgramTrackerDestination.bloodPressure;
+      }
       return null;
   }
 }

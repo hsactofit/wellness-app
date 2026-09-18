@@ -6,12 +6,11 @@ import '../services/care_program_service.dart';
 import '../services/care_program_pdf_service.dart';
 import '../services/care_program_tracker_destination.dart';
 import '../theme/app_theme.dart';
-import 'face_scan_screen.dart';
+import 'blood_pressure_tracker_screen.dart';
 import 'metric_detail_screen.dart';
 import 'nutrition_logging_screen.dart';
 import 'water_logging_screen.dart';
 import '../l10n/app_text.dart';
-import '../app_brand.dart';
 
 class CareProgramsScreen extends StatefulWidget {
   const CareProgramsScreen({super.key});
@@ -210,12 +209,8 @@ class _CareProgramsScreenState extends State<CareProgramsScreen> {
         screen = const WaterLoggingScreen();
       case CareProgramTrackerDestination.meal:
         screen = const NutritionLoggingScreen();
-      case CareProgramTrackerDestination.vitals:
-        if (AppBrand.faceScanEnabled) {
-          screen = const FaceScanScreen();
-        } else {
-          _message('Vital checks are available from Home.');
-        }
+      case CareProgramTrackerDestination.bloodPressure:
+        screen = const BloodPressureTrackerScreen();
       case CareProgramTrackerDestination.activity:
         try {
           final email = await ApiService.instance.getUserEmail();
@@ -234,6 +229,7 @@ class _CareProgramsScreenState extends State<CareProgramsScreen> {
     }
     if (screen == null || !mounted) return;
     await Navigator.push(context, MaterialPageRoute(builder: (_) => screen!));
+    if (mounted) _refresh();
   }
 }
 

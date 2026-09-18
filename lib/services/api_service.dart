@@ -199,6 +199,42 @@ class ApiService {
     }
   }
 
+  Future<Map<String, dynamic>> recordBloodPressure({
+    required double systolic,
+    required double diastolic,
+  }) async {
+    final response = await _post(
+      '/api/health/blood-pressure-readings',
+      body: {'systolic_bp_mmhg': systolic, 'diastolic_bp_mmhg': diastolic},
+    );
+    if (response.statusCode != 201) {
+      throw Exception(
+        'Failed to save blood pressure: ${response.statusCode} - ${response.body}',
+      );
+    }
+    return Map<String, dynamic>.from(jsonDecode(response.body) as Map);
+  }
+
+  Future<List<Map<String, dynamic>>> fetchBloodPressureReadings({
+    int limit = 30,
+  }) async {
+    final response = await _get(
+      '/api/health/blood-pressure-readings?limit=$limit',
+    );
+    if (response.statusCode != 200) {
+      throw Exception(
+        'Failed to load blood pressure readings: ${response.statusCode} - ${response.body}',
+      );
+    }
+    final decoded = jsonDecode(response.body);
+    if (decoded is! List) {
+      throw Exception('Unexpected blood pressure response format');
+    }
+    return decoded
+        .map((item) => Map<String, dynamic>.from(item as Map))
+        .toList();
+  }
+
   /// GET /api/health/graph — member is identified by the Bearer token, not
   /// an email path segment; `email` is kept as a parameter (unused) so
   /// existing call sites don't need to change.

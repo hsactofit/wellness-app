@@ -3,9 +3,14 @@ import 'package:wellnessconnect/models/care_program.dart';
 import 'package:wellnessconnect/services/care_program_tracker_destination.dart';
 
 void main() {
-  CareProgramAction action(String type, {String? route}) => CareProgramAction(
-    key: type,
-    title: type,
+  CareProgramAction action(
+    String type, {
+    String? route,
+    String? key,
+    String? title,
+  }) => CareProgramAction(
+    key: key ?? type,
+    title: title ?? type,
     type: type,
     recurrence: 'daily',
     weekdays: const [],
@@ -14,8 +19,10 @@ void main() {
 
   test('opens every tracker action in its matching member workflow', () {
     expect(
-      careProgramTrackerDestination(action('measurement')),
-      CareProgramTrackerDestination.vitals,
+      careProgramTrackerDestination(
+        action('measurement', title: 'Record morning blood pressure'),
+      ),
+      CareProgramTrackerDestination.bloodPressure,
     );
     expect(
       careProgramTrackerDestination(action('activity')),
@@ -37,6 +44,12 @@ void main() {
       CareProgramTrackerDestination.hydration,
     );
     expect(
+      careProgramTrackerDestination(
+        action('measurement', route: '/health/blood-pressure'),
+      ),
+      CareProgramTrackerDestination.bloodPressure,
+    );
+    expect(
       careProgramTrackerDestination(action('measurement', route: '/steps')),
       CareProgramTrackerDestination.activity,
     );
@@ -45,5 +58,6 @@ void main() {
   test('does not send non-tracker actions to an unrelated screen', () {
     expect(careProgramTrackerDestination(action('checklist')), isNull);
     expect(careProgramTrackerDestination(action('guidance')), isNull);
+    expect(careProgramTrackerDestination(action('measurement')), isNull);
   });
 }
