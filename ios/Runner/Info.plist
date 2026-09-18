@@ -46,7 +46,7 @@
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>
-	<string>Allow camera access to scan $(APP_DISPLAY_NAME) facility QR codes and gym body-composition reports.</string>
+	<string>Allow camera access to scan $(APP_DISPLAY_NAME) facility QR codes, gym body-composition reports, and Face Scan vitals.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Allow photo access to choose a screenshot of your gym body-composition report.</string>
 	<key>NSHealthShareUsageDescription</key>
