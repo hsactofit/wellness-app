@@ -107,6 +107,13 @@ class AppStringCatalog {
       'No Face Scan reports yet.': 'अभी तक कोई फेस स्कैन रिपोर्ट नहीं है।',
       'Leave a correction blank to use the original scan estimate.':
           'मूल स्कैन अनुमान रखने के लिए सुधार खाली छोड़ें।',
+      'Check your vitals': 'अपने जीवन संकेत जांचें',
+      'Hold still for 30 seconds to estimate heart rate, breathing, oxygen and blood pressure.':
+          'हृदय गति, श्वसन, ऑक्सीजन और रक्तचाप का अनुमान लगाने के लिए 30 सेकंड स्थिर रहें।',
+      'Start Face Scan': 'फेस स्कैन शुरू करें',
+      'View past reports': 'पिछली रिपोर्ट देखें',
+      'Oxygen': 'ऑक्सीजन',
+      'Blood pressure': 'रक्तचाप',
       'Use the front camera to estimate core vitals.':
           'मुख्य जीवन संकेतों का अनुमान लगाने के लिए फ्रंट कैमरा उपयोग करें।',
       'View, edit, download, share, or delete reports.':
@@ -2090,6 +2097,13 @@ class AppStringCatalog {
       'No Face Scan reports yet.': 'ಇನ್ನೂ ಮುಖ ಸ್ಕ್ಯಾನ್ ವರದಿಗಳಿಲ್ಲ.',
       'Leave a correction blank to use the original scan estimate.':
           'ಮೂಲ ಸ್ಕ್ಯಾನ್ ಅಂದಾಜನ್ನು ಬಳಸಲು ತಿದ್ದುಪಡಿಯನ್ನು ಖಾಲಿ ಬಿಡಿ.',
+      'Check your vitals': 'ನಿಮ್ಮ ಜೀವಸೂಚಕಗಳನ್ನು ಪರಿಶೀಲಿಸಿ',
+      'Hold still for 30 seconds to estimate heart rate, breathing, oxygen and blood pressure.':
+          'ಹೃದಯ ಬಡಿತ, ಉಸಿರಾಟ, ಆಮ್ಲಜನಕ ಮತ್ತು ರಕ್ತದೊತ್ತಡವನ್ನು ಅಂದಾಜಿಸಲು 30 ಸೆಕೆಂಡು ಸ್ಥಿರವಾಗಿರಿ.',
+      'Start Face Scan': 'ಮುಖ ಸ್ಕ್ಯಾನ್ ಪ್ರಾರಂಭಿಸಿ',
+      'View past reports': 'ಹಿಂದಿನ ವರದಿಗಳನ್ನು ನೋಡಿ',
+      'Oxygen': 'ಆಮ್ಲಜನಕ',
+      'Blood pressure': 'ರಕ್ತದೊತ್ತಡ',
       'Use the front camera to estimate core vitals.':
           'ಮುಖ್ಯ ಜೀವಸೂಚಕಗಳನ್ನು ಅಂದಾಜಿಸಲು ಮುಂಭಾಗದ ಕ್ಯಾಮೆರಾ ಬಳಸಿ.',
       'View, edit, download, share, or delete reports.':

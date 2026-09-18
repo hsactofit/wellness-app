@@ -44,6 +44,8 @@ import '../models/care_program.dart';
 import '../services/care_program_service.dart';
 import 'care_programs_screen.dart';
 import 'face_scan_screen.dart';
+import 'face_scan_reports_screen.dart';
+import '../widgets/face_scan_home_card.dart';
 import '../l10n/app_text.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -4162,6 +4164,9 @@ class DashboardScreenState extends State<DashboardScreen>
                     child: _buildTodayPlansSection(theme, isDark),
                   ),
 
+                  if (AppBrand.faceScanEnabled)
+                    SliverToBoxAdapter(child: _buildFaceScanCard()),
+
                   // Update your health
                   SliverToBoxAdapter(
                     child: _buildUpdateYourHealthBanner(theme, isDark),
@@ -4679,6 +4684,25 @@ class DashboardScreenState extends State<DashboardScreen>
     );
   }
 
+  void _openFaceScan() {
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const FaceScanScreen()));
+  }
+
+  void _openFaceScanReports() {
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const FaceScanReportsScreen()));
+  }
+
+  Widget _buildFaceScanCard() {
+    return FaceScanHomeCard(
+      onStartScan: _openFaceScan,
+      onViewReports: _openFaceScanReports,
+    );
+  }
+
   Widget _buildUpdateYourHealthBanner(ThemeData theme, bool isDark) {
     final textColor = isDark ? Colors.white : Colors.black87;
     final secondaryTextColor = isDark ? Colors.grey[400] : Colors.grey[600];
@@ -4910,20 +4934,6 @@ class DashboardScreenState extends State<DashboardScreen>
               // conspicuous amount of empty space beneath each shortcut.
               childAspectRatio: 1.25,
               children: [
-                if (AppBrand.faceScanEnabled)
-                  _buildQuickAccessItem(
-                    Icons.face_retouching_natural,
-                    "Face Scan",
-                    const Color(0xFF168B72),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const FaceScanScreen(),
-                        ),
-                      );
-                    },
-                  ),
                 _buildQuickAccessItem(
                   Icons.description_outlined,
                   "Health Reports",

@@ -14,12 +14,13 @@ void main() {
       expect(find.text('Import PDF'), findsOneWidget);
       expect(find.text('Import Screenshot'), findsOneWidget);
       expect(find.text('Compare Reports'), findsOneWidget);
+      expect(find.byType(ListTile), findsNWidgets(4));
       expect(
-        find.byType(ListTile),
-        findsNWidgets(AppBrand.faceScanEnabled ? 6 : 4),
+        find.text('Start Face Scan'),
+        AppBrand.faceScanEnabled ? findsOneWidget : findsNothing,
       );
       expect(
-        find.text('Face Scan'),
+        find.text('Check your vitals'),
         AppBrand.faceScanEnabled ? findsOneWidget : findsNothing,
       );
       expect(find.byTooltip('Report Library'), findsOneWidget);
