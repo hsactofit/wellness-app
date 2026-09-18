@@ -6,12 +6,21 @@ import '../services/body_composition_pdf_service.dart';
 import 'body_composition_comparison_screen.dart';
 import 'body_composition_report_review_screen.dart';
 import '../l10n/app_text.dart';
+import '../app_brand.dart';
+import 'face_scan_reports_screen.dart';
 
 /// Report Library: member-approved reports and persistent comparisons are
 /// deliberately separate tabs so the source transcript is never confused
 /// with a derived comparison.
 class BodyCompositionReportsScreen extends StatefulWidget {
-  const BodyCompositionReportsScreen({super.key});
+  const BodyCompositionReportsScreen({
+    super.key,
+    this.loadReports,
+    this.loadComparisons,
+  });
+
+  final Future<List<BodyCompositionReport>> Function()? loadReports;
+  final Future<List<BodyCompositionComparison>> Function()? loadComparisons;
 
   @override
   State<BodyCompositionReportsScreen> createState() =>
@@ -30,8 +39,12 @@ class _BodyCompositionReportsScreenState
   }
 
   void _load() {
-    _reportsFuture = ApiService.instance.fetchBodyCompositionReports();
-    _comparisonsFuture = ApiService.instance.fetchBodyCompositionComparisons();
+    _reportsFuture =
+        widget.loadReports?.call() ??
+        ApiService.instance.fetchBodyCompositionReports();
+    _comparisonsFuture =
+        widget.loadComparisons?.call() ??
+        ApiService.instance.fetchBodyCompositionComparisons();
   }
 
   Future<void> _refresh() async {
@@ -42,21 +55,61 @@ class _BodyCompositionReportsScreenState
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 2,
+      length: AppBrand.faceScanEnabled ? 3 : 2,
       child: Scaffold(
         appBar: AppBar(
           title: const AppText('Report Library'),
-          bottom: const TabBar(
+          bottom: TabBar(
             tabs: [
-              Tab(text: 'Health Reports'),
-              Tab(text: 'Comparisons'),
+              const Tab(text: 'Health Reports'),
+              if (AppBrand.faceScanEnabled)
+                const Tab(text: 'Face Scan Reports'),
+              const Tab(text: 'Comparisons'),
             ],
           ),
         ),
-        body: TabBarView(children: [_reportsTab(), _comparisonsTab()]),
+        body: TabBarView(
+          children: [
+            _reportsTab(),
+            if (AppBrand.faceScanEnabled) _faceScanTab(),
+            _comparisonsTab(),
+          ],
+        ),
       ),
     );
   }
+
+  Widget _faceScanTab() => Center(
+    child: Padding(
+      padding: const EdgeInsets.all(24),
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.face_retouching_natural, size: 52),
+              const SizedBox(height: 12),
+              const AppText(
+                'View saved camera-derived vital estimates, processing status, corrections, PDFs, and clinic sharing.',
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              FilledButton.icon(
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const FaceScanReportsScreen(),
+                  ),
+                ),
+                icon: const Icon(Icons.folder_copy_outlined),
+                label: const AppText('Open Face Scan Reports'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
 
   Widget _reportsTab() => FutureBuilder<List<BodyCompositionReport>>(
     future: _reportsFuture,

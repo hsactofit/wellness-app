@@ -22,6 +22,13 @@ class AppBrand {
 
   static bool get isMednovations => selectedBrand == 'mednovations';
 
+  static const bool _faceScanFlag = bool.fromEnvironment(
+    'FACE_SCAN_ENABLED',
+    defaultValue: false,
+  );
+
+  static bool get faceScanEnabled => isMednovations && _faceScanFlag;
+
   static bool get supportsFacilityWorkoutDataSharing => !isMednovations;
 
   static List<String> get supportedLanguageCodes =>

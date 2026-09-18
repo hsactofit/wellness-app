@@ -80,6 +80,44 @@ class AppStringCatalog {
 
   static const Map<String, Map<String, String>> _translations = {
     'hi': {
+      'Face Scan': 'फेस स्कैन',
+      'Face Scan Reports': 'फेस स्कैन रिपोर्ट',
+      'Face Scan consent': 'फेस स्कैन सहमति',
+      'Start 30-second scan': '30 सेकंड का स्कैन शुरू करें',
+      'Keep your face inside the guide. Use even lighting and hold still.':
+          'अपना चेहरा गाइड के अंदर रखें। समान रोशनी रखें और स्थिर रहें।',
+      'I consent to temporary video processing for Face Scan.':
+          'मैं फेस स्कैन के लिए अस्थायी वीडियो प्रोसेसिंग की सहमति देता/देती हूं।',
+      'Allow camera access to start Face Scan.':
+          'फेस स्कैन शुरू करने के लिए कैमरा एक्सेस दें।',
+      'Preparing camera…': 'कैमरा तैयार हो रहा है…',
+      'Uploading securely…': 'सुरक्षित रूप से अपलोड हो रहा है…',
+      'Creating your report…': 'आपकी रिपोर्ट बन रही है…',
+      'Face Scan report ready': 'फेस स्कैन रिपोर्ट तैयार है',
+      'Your report has been saved.': 'आपकी रिपोर्ट सहेज ली गई है।',
+      'View Report': 'रिपोर्ट देखें',
+      'Face Scan could not finish': 'फेस स्कैन पूरा नहीं हो सका',
+      'Face Scan did not complete': 'फेस स्कैन पूरा नहीं हुआ',
+      'Creating your Face Scan report…': 'आपकी फेस स्कैन रिपोर्ट बन रही है…',
+      'Share Face Scan reports with my clinic':
+          'मेरी क्लिनिक के साथ फेस स्कैन रिपोर्ट साझा करें',
+      'Edited by member': 'सदस्य द्वारा संपादित',
+      'Edit Face Scan report': 'फेस स्कैन रिपोर्ट संपादित करें',
+      'Delete Face Scan report?': 'फेस स्कैन रिपोर्ट हटाएं?',
+      'No Face Scan reports yet.': 'अभी तक कोई फेस स्कैन रिपोर्ट नहीं है।',
+      'Leave a correction blank to use the original scan estimate.':
+          'मूल स्कैन अनुमान रखने के लिए सुधार खाली छोड़ें।',
+      'Use the front camera to estimate core vitals.':
+          'मुख्य जीवन संकेतों का अनुमान लगाने के लिए फ्रंट कैमरा उपयोग करें।',
+      'View, edit, download, share, or delete reports.':
+          'रिपोर्ट देखें, संपादित करें, डाउनलोड करें, साझा करें या हटाएं।',
+      'Heart rate': 'हृदय गति',
+      'Breathing': 'श्वसन',
+      'Systolic BP': 'सिस्टोलिक रक्तचाप',
+      'Diastolic BP': 'डायस्टोलिक रक्तचाप',
+      'Report title': 'रिपोर्ट का शीर्षक',
+      'Notes': 'टिप्पणियां',
+      'Reason for value corrections': 'मान सुधारने का कारण',
       ').replaceAll(': ').replaceAll(',
       ', member-entered': ', सदस्य द्वारा दर्ज किया गया',
       '-W': 'डब्ल्यू',
@@ -2024,6 +2062,45 @@ class AppStringCatalog {
       '🚶 Steps': '🚶 सीढ़ियाँ',
     },
     'kn': {
+      'Face Scan': 'ಮುಖ ಸ್ಕ್ಯಾನ್',
+      'Face Scan Reports': 'ಮುಖ ಸ್ಕ್ಯಾನ್ ವರದಿಗಳು',
+      'Face Scan consent': 'ಮುಖ ಸ್ಕ್ಯಾನ್ ಸಮ್ಮತಿ',
+      'Start 30-second scan': '30 ಸೆಕೆಂಡಿನ ಸ್ಕ್ಯಾನ್ ಪ್ರಾರಂಭಿಸಿ',
+      'Keep your face inside the guide. Use even lighting and hold still.':
+          'ಮುಖವನ್ನು ಮಾರ್ಗದರ್ಶಿಯೊಳಗೆ ಇಡಿ. ಸಮ ಬೆಳಕಿನಲ್ಲಿ ಸ್ಥಿರವಾಗಿರಿ.',
+      'I consent to temporary video processing for Face Scan.':
+          'ಮುಖ ಸ್ಕ್ಯಾನ್‌ಗಾಗಿ ತಾತ್ಕಾಲಿಕ ವೀಡಿಯೊ ಸಂಸ್ಕರಣೆಗೆ ನಾನು ಸಮ್ಮತಿಸುತ್ತೇನೆ.',
+      'Allow camera access to start Face Scan.':
+          'ಮುಖ ಸ್ಕ್ಯಾನ್ ಪ್ರಾರಂಭಿಸಲು ಕ್ಯಾಮೆರಾ ಪ್ರವೇಶ ನೀಡಿ.',
+      'Preparing camera…': 'ಕ್ಯಾಮೆರಾ ಸಿದ್ಧವಾಗುತ್ತಿದೆ…',
+      'Uploading securely…': 'ಸುರಕ್ಷಿತವಾಗಿ ಅಪ್‌ಲೋಡ್ ಆಗುತ್ತಿದೆ…',
+      'Creating your report…': 'ನಿಮ್ಮ ವರದಿ ಸಿದ್ಧವಾಗುತ್ತಿದೆ…',
+      'Face Scan report ready': 'ಮುಖ ಸ್ಕ್ಯಾನ್ ವರದಿ ಸಿದ್ಧವಾಗಿದೆ',
+      'Your report has been saved.': 'ನಿಮ್ಮ ವರದಿಯನ್ನು ಉಳಿಸಲಾಗಿದೆ.',
+      'View Report': 'ವರದಿ ನೋಡಿ',
+      'Face Scan could not finish': 'ಮುಖ ಸ್ಕ್ಯಾನ್ ಪೂರ್ಣಗೊಳ್ಳಲಿಲ್ಲ',
+      'Face Scan did not complete': 'ಮುಖ ಸ್ಕ್ಯಾನ್ ಪೂರ್ಣವಾಗಲಿಲ್ಲ',
+      'Creating your Face Scan report…':
+          'ನಿಮ್ಮ ಮುಖ ಸ್ಕ್ಯಾನ್ ವರದಿ ಸಿದ್ಧವಾಗುತ್ತಿದೆ…',
+      'Share Face Scan reports with my clinic':
+          'ನನ್ನ ಕ್ಲಿನಿಕ್‌ನೊಂದಿಗೆ ಮುಖ ಸ್ಕ್ಯಾನ್ ವರದಿಗಳನ್ನು ಹಂಚಿಕೊಳ್ಳಿ',
+      'Edited by member': 'ಸದಸ್ಯರು ಸಂಪಾದಿಸಿದ್ದಾರೆ',
+      'Edit Face Scan report': 'ಮುಖ ಸ್ಕ್ಯಾನ್ ವರದಿ ಸಂಪಾದಿಸಿ',
+      'Delete Face Scan report?': 'ಮುಖ ಸ್ಕ್ಯಾನ್ ವರದಿಯನ್ನು ಅಳಿಸಬೇಕೆ?',
+      'No Face Scan reports yet.': 'ಇನ್ನೂ ಮುಖ ಸ್ಕ್ಯಾನ್ ವರದಿಗಳಿಲ್ಲ.',
+      'Leave a correction blank to use the original scan estimate.':
+          'ಮೂಲ ಸ್ಕ್ಯಾನ್ ಅಂದಾಜನ್ನು ಬಳಸಲು ತಿದ್ದುಪಡಿಯನ್ನು ಖಾಲಿ ಬಿಡಿ.',
+      'Use the front camera to estimate core vitals.':
+          'ಮುಖ್ಯ ಜೀವಸೂಚಕಗಳನ್ನು ಅಂದಾಜಿಸಲು ಮುಂಭಾಗದ ಕ್ಯಾಮೆರಾ ಬಳಸಿ.',
+      'View, edit, download, share, or delete reports.':
+          'ವರದಿಗಳನ್ನು ನೋಡಿ, ಸಂಪಾದಿಸಿ, ಡೌನ್‌ಲೋಡ್ ಮಾಡಿ, ಹಂಚಿಕೊಳ್ಳಿ ಅಥವಾ ಅಳಿಸಿ.',
+      'Heart rate': 'ಹೃದಯ ಬಡಿತ',
+      'Breathing': 'ಉಸಿರಾಟ',
+      'Systolic BP': 'ಸಿಸ್ಟಾಲಿಕ್ ರಕ್ತದೊತ್ತಡ',
+      'Diastolic BP': 'ಡಯಾಸ್ಟಾಲಿಕ್ ರಕ್ತದೊತ್ತಡ',
+      'Report title': 'ವರದಿ ಶೀರ್ಷಿಕೆ',
+      'Notes': 'ಟಿಪ್ಪಣಿಗಳು',
+      'Reason for value corrections': 'ಮೌಲ್ಯ ತಿದ್ದುಪಡಿಗೆ ಕಾರಣ',
       ').replaceAll(': ').ಎಲ್ಲವನ್ನೂ ಬದಲಾಯಿಸಿ(',
       ', member-entered': ', ಸದಸ್ಯ-ನಮೂದಿಸಲಾಗಿದೆ',
       '-W': '-ಡಬ್ಲ್ಯೂ',

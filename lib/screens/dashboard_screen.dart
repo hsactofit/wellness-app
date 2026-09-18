@@ -43,6 +43,7 @@ import '../app_brand.dart';
 import '../models/care_program.dart';
 import '../services/care_program_service.dart';
 import 'care_programs_screen.dart';
+import 'face_scan_screen.dart';
 import '../l10n/app_text.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -4909,6 +4910,20 @@ class DashboardScreenState extends State<DashboardScreen>
               // conspicuous amount of empty space beneath each shortcut.
               childAspectRatio: 1.25,
               children: [
+                if (AppBrand.faceScanEnabled)
+                  _buildQuickAccessItem(
+                    Icons.face_retouching_natural,
+                    "Face Scan",
+                    const Color(0xFF168B72),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const FaceScanScreen(),
+                        ),
+                      );
+                    },
+                  ),
                 _buildQuickAccessItem(
                   Icons.description_outlined,
                   "Health Reports",

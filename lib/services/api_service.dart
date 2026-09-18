@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'auth_service.dart';
@@ -6,6 +7,7 @@ import '../screens/challenges_screen.dart';
 import '../models/meal_analysis.dart';
 import '../models/body_composition_report.dart';
 import '../models/mood_checkin.dart';
+import '../models/face_scan.dart';
 
 class ApiService {
   ApiService._privateConstructor();
@@ -1088,5 +1090,157 @@ class ApiService {
     if (response.statusCode != 204) {
       throw Exception(_aiErrorDetail(response));
     }
+  }
+
+  // ── Mednovations Face Scan ─────────────────────────────────────
+
+  Future<FaceScanConsent> fetchFaceScanConsent() async {
+    final response = await _get('/api/v1/health/face-scan-consent');
+    if (response.statusCode != 200) {
+      throw Exception('Could not load Face Scan consent: ${response.body}');
+    }
+    return FaceScanConsent.fromJson(
+      Map<String, dynamic>.from(jsonDecode(response.body) as Map),
+    );
+  }
+
+  Future<FaceScanConsent> updateFaceScanConsent(
+    String kind,
+    bool granted,
+  ) async {
+    final response = await _put(
+      '/api/v1/health/face-scan-consent/$kind',
+      body: {'granted': granted},
+    );
+    if (response.statusCode != 200) {
+      throw Exception('Could not update Face Scan consent: ${response.body}');
+    }
+    return FaceScanConsent.fromJson(
+      Map<String, dynamic>.from(jsonDecode(response.body) as Map),
+    );
+  }
+
+  Future<FaceScanJob> uploadFaceScan({
+    required String videoPath,
+    required String clientSubmissionId,
+    required DateTime capturedAt,
+  }) async {
+    Future<http.StreamedResponse> send(String? token) async {
+      final request = http.MultipartRequest(
+        'POST',
+        AuthService.apiUrl('/api/v1/health/face-scans'),
+      );
+      if (token != null) request.headers['Authorization'] = 'Bearer $token';
+      request.fields['client_submission_id'] = clientSubmissionId;
+      request.fields['captured_at'] = capturedAt.toUtc().toIso8601String();
+      request.files.add(await http.MultipartFile.fromPath('video', videoPath));
+      return request.send();
+    }
+
+    var response = await send(await AuthService.instance.getAccessToken());
+    if (response.statusCode == 401) {
+      await AuthService.instance.refreshSessionToken();
+      response = await send(await AuthService.instance.getAccessToken());
+    }
+    final body = await response.stream.bytesToString();
+    if (response.statusCode != 200 && response.statusCode != 201) {
+      throw Exception('Could not upload Face Scan: $body');
+    }
+    return FaceScanJob.fromJson(
+      Map<String, dynamic>.from(jsonDecode(body) as Map),
+    );
+  }
+
+  Future<FaceScanJob> fetchFaceScanJob(String jobId) async {
+    final response = await _get('/api/v1/health/face-scans/$jobId');
+    if (response.statusCode != 200) {
+      throw Exception('Could not load Face Scan status: ${response.body}');
+    }
+    return FaceScanJob.fromJson(
+      Map<String, dynamic>.from(jsonDecode(response.body) as Map),
+    );
+  }
+
+  Future<FaceScanJob> cancelFaceScanJob(String jobId) async {
+    final response = await _post('/api/v1/health/face-scans/$jobId/cancel');
+    if (response.statusCode != 200) {
+      throw Exception('Could not cancel Face Scan: ${response.body}');
+    }
+    return FaceScanJob.fromJson(
+      Map<String, dynamic>.from(jsonDecode(response.body) as Map),
+    );
+  }
+
+  Future<List<FaceScanJob>> fetchFaceScanJobs() async {
+    final response = await _get('/api/v1/health/face-scans');
+    if (response.statusCode != 200) {
+      throw Exception('Could not load Face Scan history: ${response.body}');
+    }
+    return (jsonDecode(response.body) as List)
+        .map(
+          (item) =>
+              FaceScanJob.fromJson(Map<String, dynamic>.from(item as Map)),
+        )
+        .toList();
+  }
+
+  Future<List<FaceScanReport>> fetchFaceScanReports() async {
+    final response = await _get('/api/v1/health/face-scan-reports');
+    if (response.statusCode != 200) {
+      throw Exception('Could not load Face Scan reports: ${response.body}');
+    }
+    return (jsonDecode(response.body) as List)
+        .map(
+          (item) =>
+              FaceScanReport.fromJson(Map<String, dynamic>.from(item as Map)),
+        )
+        .toList();
+  }
+
+  Future<FaceScanReport> updateFaceScanReport({
+    required FaceScanReport report,
+    required String title,
+    required String? notes,
+    required FaceScanValues correctedValues,
+    required String? correctionReason,
+  }) async {
+    final response = await _put(
+      '/api/v1/health/face-scan-reports/${report.id}',
+      body: {
+        'expected_revision': report.revision,
+        'title': title,
+        'notes': notes,
+        'corrected_values': correctedValues.toJson(),
+        'correction_reason': correctionReason,
+      },
+    );
+    if (response.statusCode == 409) {
+      throw Exception('This report changed. Reload it before saving.');
+    }
+    if (response.statusCode != 200) {
+      throw Exception('Could not update Face Scan report: ${response.body}');
+    }
+    return FaceScanReport.fromJson(
+      Map<String, dynamic>.from(jsonDecode(response.body) as Map),
+    );
+  }
+
+  Future<void> deleteFaceScanReport(String reportId) async {
+    final response = await _delete(
+      '/api/v1/health/face-scan-reports/$reportId',
+    );
+    if (response.statusCode != 204) {
+      throw Exception('Could not delete Face Scan report: ${response.body}');
+    }
+  }
+
+  Future<Uint8List> downloadFaceScanPdf(String reportId) async {
+    final response = await _get(
+      '/api/v1/health/face-scan-reports/$reportId/pdf',
+    );
+    if (response.statusCode != 200) {
+      throw Exception('Could not create Face Scan PDF: ${response.body}');
+    }
+    return response.bodyBytes;
   }
 }

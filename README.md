@@ -1,16 +1,21 @@
-# wellnessconnect
+# WellnessConnect
 
-A new Flutter project.
+Shared Flutter member app for Medifit and Mednovations.
 
-## Getting Started
+## Mednovations Face Scan pilot
 
-This project is a starting point for a Flutter application.
+Face Scan is excluded from normal builds. To compile the pilot UI explicitly:
 
-A few resources to get you started if this is your first Flutter project:
+```bash
+flutter run --flavor mednovations \
+  --dart-define=APP_BRAND=mednovations \
+  --dart-define=FACE_SCAN_ENABLED=true
+```
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+The runtime API must independently enable the same Mednovations pilot. Camera
+permission is separate from explicit video-processing consent. Recordings use
+the front camera for 30 seconds with audio disabled and are deleted locally
+after upload or cancellation.
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+Use the project-local Flutter SDK at `../.tools/flutter/bin/flutter`. Do not use
+Homebrew or add global dependencies.

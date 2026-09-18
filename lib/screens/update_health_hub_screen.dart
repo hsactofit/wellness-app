@@ -8,6 +8,9 @@ import 'body_composition_report_review_screen.dart';
 import 'body_composition_comparison_screen.dart';
 import 'update_health_camera_screen.dart';
 import '../l10n/app_text.dart';
+import '../app_brand.dart';
+import 'face_scan_screen.dart';
+import 'face_scan_reports_screen.dart';
 
 /// The single entry point for report updates. Every source ends at the same
 /// member review screen before anything is saved.
@@ -123,6 +126,32 @@ class _UpdateHealthHubScreenState extends State<UpdateHealthHubScreen> {
               style: theme.textTheme.bodyMedium,
             ),
             const SizedBox(height: 22),
+            if (AppBrand.faceScanEnabled)
+              _Option(
+                icon: Icons.face_retouching_natural,
+                title: 'Face Scan',
+                subtitle: 'Use the front camera to estimate core vitals.',
+                onTap: _busy
+                    ? null
+                    : () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const FaceScanScreen(),
+                        ),
+                      ),
+              ),
+            if (AppBrand.faceScanEnabled)
+              _Option(
+                icon: Icons.monitor_heart_outlined,
+                title: 'Face Scan Reports',
+                subtitle: 'View, edit, download, share, or delete reports.',
+                onTap: _busy
+                    ? null
+                    : () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const FaceScanReportsScreen(),
+                        ),
+                      ),
+              ),
             _Option(
               icon: Icons.document_scanner_outlined,
               title: 'Scan Report',
