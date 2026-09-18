@@ -129,7 +129,6 @@ class _FaceScanReportsScreenState extends State<FaceScanReportsScreen> {
   @override
   Widget build(BuildContext context) {
     final activeJobs = _jobs.where((job) => !job.terminal).toList();
-    final failedJobs = _jobs.where((job) => job.status == 'failed').take(3);
     return Scaffold(
       appBar: AppBar(title: const AppText('Face Scan Reports')),
       body: RefreshIndicator(
@@ -176,19 +175,6 @@ class _FaceScanReportsScreenState extends State<FaceScanReportsScreen> {
                   title: AppText('Creating your Face Scan report…'),
                   subtitle: AppText(
                     'Processing continues securely. Pull down to refresh.',
-                  ),
-                ),
-              ),
-            ],
-            for (final job in failedJobs) ...[
-              const SizedBox(height: 12),
-              Card(
-                child: ListTile(
-                  leading: const Icon(Icons.error_outline, color: Colors.red),
-                  title: const AppText('Face Scan did not complete'),
-                  subtitle: AppText(
-                    job.errorMessage ??
-                        'Try again with even lighting and keep your face still.',
                   ),
                 ),
               ),

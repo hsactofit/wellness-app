@@ -44,4 +44,26 @@ void main() {
 
     expect(job.terminal, isTrue);
   });
+
+  test('failed jobs stay off the Face Scan reports library', () {
+    final jobs = [
+      FaceScanJob.fromJson({
+        'id': 'failed',
+        'status': 'failed',
+        'error_message':
+            'Processing is temporarily unavailable. Please try the scan again.',
+        'created_at': '2026-09-18T08:00:00Z',
+      }),
+      FaceScanJob.fromJson({
+        'id': 'processing',
+        'status': 'processing',
+        'created_at': '2026-09-18T08:01:00Z',
+      }),
+    ];
+    final listed = jobs.where((job) => !job.terminal).toList();
+
+    expect(listed, hasLength(1));
+    expect(listed.single.id, 'processing');
+    expect(jobs.any((job) => job.status == 'failed' && !job.terminal), isFalse);
+  });
 }
