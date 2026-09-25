@@ -325,9 +325,20 @@ class ApiService {
   // `{'amount': ...}` bodies or reads `decoded['amount']`, those will come
   // back null/absent until reconciled. See medifit-kb/MEDIFIT_KB.md §5/§6.
 
+  Map<String, String> _localDayQuery() {
+    final now = DateTime.now();
+    return {
+      'local_date': now.toIso8601String().substring(0, 10),
+      'utc_offset_minutes': '${now.timeZoneOffset.inMinutes}',
+    };
+  }
+
   /// GET /water/logs (current member, via Bearer token)
   Future<Map<String, dynamic>> fetchWaterLogs(String email) async {
-    final response = await _get('/api/water/logs');
+    final response = await _get(
+      '/api/water/logs',
+      queryParams: _localDayQuery(),
+    );
 
     if (response.statusCode == 200) {
       final decoded = jsonDecode(response.body);
@@ -606,8 +617,14 @@ class ApiService {
 
   /// GET /health/dashboard (current member, via Bearer token).
   Future<Map<String, dynamic>> getDashboard(String email) async {
-    final localDay = DateTime.now().toIso8601String().substring(0, 10);
-    final response = await _get('/api/health/dashboard?day=$localDay');
+    final local = _localDayQuery();
+    final response = await _get(
+      '/api/health/dashboard',
+      queryParams: {
+        'day': local['local_date']!,
+        'utc_offset_minutes': local['utc_offset_minutes']!,
+      },
+    );
     if (response.statusCode == 200) {
       return Map<String, dynamic>.from(jsonDecode(response.body));
     } else {

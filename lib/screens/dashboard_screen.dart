@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:health/health.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/health_service.dart';
+import '../services/health_connect_restore.dart';
 import '../services/api_service.dart';
 import '../services/push_service.dart';
 import '../services/workout_session_service.dart';
@@ -69,6 +70,7 @@ class DashboardScreenState extends State<DashboardScreen>
   bool _isConnected = false;
   bool _isSyncing = false;
   bool _isRequestingHealthPermissions = false;
+  bool _healthStatusChecked = false;
   bool _hasUnreadNotifications = false;
   HealthData _healthData = HealthData();
   // ignore: unused_field
@@ -213,9 +215,9 @@ class DashboardScreenState extends State<DashboardScreen>
         _handleSessionRefresh,
       );
     }
-    // Do not read HealthKit/Health Connect until this member has connected
-    // it. In particular, a fresh SSO session on iOS has no HealthKit grant
-    // yet, and eager reads produce platform errors while the dashboard opens.
+    // Restore a previous HealthKit/Health Connect decision before reading
+    // samples. Logout clears local flags, so Home must recover the saved
+    // connection instead of prompting Connect/Grant again.
     _checkStatusAndSync();
 
     _waterWaveController = AnimationController(
@@ -705,8 +707,10 @@ class DashboardScreenState extends State<DashboardScreen>
       await _loadSetupState();
 
       final prefs = await SharedPreferences.getInstance();
-      final bool healthSyncEnabled =
-          prefs.getBool('health_sync_enabled') ?? false;
+      var healthSyncEnabled = prefs.getBool('health_sync_enabled') ?? false;
+      if (!healthSyncEnabled) {
+        healthSyncEnabled = await _restoreHealthConnection(prefs);
+      }
 
       if (healthSyncEnabled) {
         // HealthKit intentionally does not reveal read authorization status
@@ -734,7 +738,7 @@ class DashboardScreenState extends State<DashboardScreen>
         if (!mounted) return;
         setState(() {
           _isConnected = hasPerms;
-          if (Platform.isIOS && hasPerms) {
+          if (hasPerms) {
             _healthSetupCompleted = true;
           }
         });
@@ -747,7 +751,77 @@ class DashboardScreenState extends State<DashboardScreen>
     } catch (error) {
       debugPrint('Unable to check health service status: $error');
     } finally {
-      if (mounted) setState(() => _isSyncing = false);
+      if (mounted) {
+        setState(() {
+          _isSyncing = false;
+          _healthStatusChecked = true;
+        });
+      }
+    }
+  }
+
+  /// Logout clears local health flags. Recover a previous connection from
+  /// the member profile, or from an already-answered HealthKit decision,
+  /// so Home does not ask to Connect again.
+  Future<bool> _restoreHealthConnection(SharedPreferences prefs) async {
+    try {
+      final profile = await ApiService.instance.fetchUserProfile();
+      final profileConnected =
+          profile['permissions']?['health_connect_connected'] == true;
+      if (HealthConnectRestore.shouldRestoreFromProfile(
+        profileConnected: profileConnected,
+        localSyncEnabled: false,
+      )) {
+        await _saveHealthConnected(prefs, persistToServer: false);
+        return true;
+      }
+    } catch (error) {
+      debugPrint('Unable to restore health connection from profile: $error');
+    }
+
+    if (Platform.isIOS) {
+      final status = await HealthService.instance
+          .iosAuthorizationRequestStatus();
+      if (HealthConnectRestore.shouldRestoreFromIosAuthorization(
+        isIos: true,
+        localSyncEnabled: false,
+        authorizationStatus: status,
+      )) {
+        await _saveHealthConnected(prefs);
+        return true;
+      }
+      return false;
+    }
+
+    try {
+      final hasPerms = await HealthService.instance.checkPermissions().timeout(
+        const Duration(seconds: 10),
+        onTimeout: () => false,
+      );
+      if (hasPerms) {
+        await _saveHealthConnected(prefs);
+        return true;
+      }
+    } catch (error) {
+      debugPrint('Unable to restore Android health permissions: $error');
+    }
+    return false;
+  }
+
+  Future<void> _saveHealthConnected(
+    SharedPreferences prefs, {
+    bool persistToServer = true,
+  }) async {
+    await prefs.setBool('health_sync_enabled', true);
+    await prefs.setBool('healthSetupCompleted', true);
+    if (persistToServer) {
+      try {
+        await ApiService.instance.updateUserProfile({
+          "permissions": {"health_connect_connected": true},
+        });
+      } catch (error) {
+        debugPrint('Failed to persist health connection status: $error');
+      }
     }
   }
 
@@ -850,24 +924,33 @@ class DashboardScreenState extends State<DashboardScreen>
     });
     try {
       // HealthKit shows its permission list only while a requested type is
-      // still undecided. After "Don't Allow" it returns silently, so the
-      // shortest honest path is straight into the Health app, where the
-      // member turns this app's access back on under Profile → Apps.
-      if (Platform.isIOS &&
-          await HealthService.instance.iosAuthorizationRequestStatus() ==
-              HealthAuthorizationRequestStatus.unnecessary) {
-        final opened = await HealthService.instance.openAppleHealthApp();
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: AppText(
-              opened
-                  ? 'In Health, tap your profile → Apps → ${AppBrand.wellnessName} to turn on access.'
-                  : 'Open the Health app → profile → Apps → ${AppBrand.wellnessName} to turn on access.',
+      // still undecided. After that, Connect/Grant should finish in-app
+      // the same way Medifit always did. Manage Access is the explicit
+      // path into the Health app.
+      if (Platform.isIOS) {
+        final status = await HealthService.instance
+            .iosAuthorizationRequestStatus();
+        if (HealthConnectRestore.shouldFinishConnectWithoutOsPrompt(
+          isIos: true,
+          authorizationStatus: status,
+        )) {
+          final prefs = await SharedPreferences.getInstance();
+          await _saveHealthConnected(prefs);
+          if (!mounted) return;
+          setState(() {
+            _isConnected = true;
+            _healthSetupCompleted = true;
+          });
+          unawaited(_syncHealthDataInBackground());
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: AppText(
+                'Apple Health access request completed. You can review or change access at any time.',
+              ),
             ),
-          ),
-        );
-        return;
+          );
+          return;
+        }
       }
 
       // Do not time out the OS permission sheet. Apple Health and Health
@@ -954,6 +1037,20 @@ class DashboardScreenState extends State<DashboardScreen>
         });
       }
     }
+  }
+
+  Future<void> _openAppleHealthAccess() async {
+    final opened = await HealthService.instance.openAppleHealthApp();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: AppText(
+          opened
+              ? 'In Health, tap your profile → Apps → ${AppBrand.wellnessName} to turn on access.'
+              : 'Open the Health app → profile → Apps → ${AppBrand.wellnessName} to turn on access.',
+        ),
+      ),
+    );
   }
 
   Future<void> _syncHealthDataInBackground() async {
@@ -2900,7 +2997,11 @@ class DashboardScreenState extends State<DashboardScreen>
   }
 
   Widget _buildWaterIntakeSliver(ThemeData theme, bool isDark) {
-    final double currentWater = _apiWaterValue ?? _healthData.waterIntake;
+    final double currentWater = [
+      _apiWaterValue ?? 0,
+      HealthService.instance.localWaterIntake,
+      _healthData.waterIntake,
+    ].reduce((a, b) => a > b ? a : b);
     final double targetWater = _apiWaterTarget ?? _waterGoal;
     final progress = (currentWater / targetWater).clamp(0.0, 1.0);
     return SliverToBoxAdapter(
@@ -4130,7 +4231,7 @@ class DashboardScreenState extends State<DashboardScreen>
                   ),
 
                   // Health Connect status banner
-                  if (!_isConnected)
+                  if (_healthStatusChecked && !_isConnected)
                     SliverToBoxAdapter(
                       child: _healthConnectRequested
                           ? _buildState2Banner(theme, isDark)
@@ -4144,7 +4245,7 @@ class DashboardScreenState extends State<DashboardScreen>
                   ))
                     SliverToBoxAdapter(
                       child: HealthAccessReviewBanner(
-                        onRequestAgain: _connectHealthServices,
+                        onRequestAgain: _openAppleHealthAccess,
                       ),
                     ),
 

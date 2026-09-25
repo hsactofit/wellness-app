@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../models/meal_analysis.dart';
 import '../services/api_service.dart';
+import '../services/nutrition_log_day.dart';
 import '../widgets/glass_card.dart';
 import '../l10n/app_text.dart';
 
@@ -114,26 +115,17 @@ class _NutritionLoggingScreenState extends State<NutritionLoggingScreen> {
       final log = await ApiService.instance.commitMealAnalysis(analysis.id);
       if (!mounted) return;
       widget.onFoodLogged?.call();
+      _descriptionController.clear();
+      setState(() => _analysis = null);
       await _load();
       if (!mounted) return;
-      setState(() {
-        _analysis = MealAnalysis(
-          id: analysis.id,
-          description: analysis.description,
-          mealName: analysis.mealName,
-          items: analysis.items,
-          calories: analysis.calories,
-          proteinG: analysis.proteinG,
-          carbsG: analysis.carbsG,
-          fatsG: analysis.fatsG,
-          assumptions: analysis.assumptions,
-          needsClarification: false,
-          clarificationQuestion: null,
-          status: 'logged',
-          mealLogId: log['id']?.toString(),
-        );
-      });
       final logId = log['id']?.toString();
+      if (logId != null &&
+          !_logs.any((item) => item['id']?.toString() == logId)) {
+        setState(() {
+          _logs = [Map<String, dynamic>.from(log), ..._logs];
+        });
+      }
       _mealSavedSnackBarTimer?.cancel();
       final messenger = ScaffoldMessenger.of(context);
       messenger.hideCurrentSnackBar();
@@ -204,7 +196,7 @@ class _NutritionLoggingScreenState extends State<NutritionLoggingScreen> {
                   const SizedBox(height: 20),
                   _quickPrefills(foreground),
                   const SizedBox(height: 24),
-                  _recentMeals(isDark, foreground),
+                  _recentMeals(foreground),
                   const SizedBox(height: 24),
                   _trendSection(isDark, foreground),
                 ],
@@ -570,11 +562,9 @@ class _NutritionLoggingScreenState extends State<NutritionLoggingScreen> {
     );
   }
 
-  Widget _recentMeals(bool isDark, Color foreground) {
-    final date = DateTime.now().toIso8601String().substring(0, 10);
-    final today = _logs
-        .where((log) => (log['logged_at']?.toString() ?? '').startsWith(date))
-        .toList();
+  Widget _recentMeals(Color foreground) {
+    final today = NutritionLogDay.todaysLogs(_logs);
+    if (today.isEmpty) return const SizedBox.shrink();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -587,20 +577,7 @@ class _NutritionLoggingScreenState extends State<NutritionLoggingScreen> {
           ),
         ),
         const SizedBox(height: 10),
-        if (today.isEmpty)
-          GlassCard(
-            padding: const EdgeInsets.all(24),
-            child: Center(
-              child: AppText(
-                'Your first meal will appear here.',
-                style: TextStyle(
-                  color: isDark ? Colors.white54 : Colors.black54,
-                ),
-              ),
-            ),
-          )
-        else
-          ...today.map(_mealTile),
+        ...today.map(_mealTile),
       ],
     );
   }

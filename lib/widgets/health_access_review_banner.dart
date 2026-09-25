@@ -4,9 +4,10 @@ import '../l10n/app_text.dart';
 import '../theme/app_theme.dart';
 import 'glass_card.dart';
 
-/// Keeps a one-tap Apple Health permission retry visible after the
+/// Keeps a one-tap Apple Health management action visible after the
 /// authorization sheet closes. HealthKit deliberately does not reveal whether
 /// read access was granted, so this banner must not claim it is connected.
+/// The action opens the Health app; Connect/Grant stay in-app.
 class HealthAccessReviewBanner extends StatelessWidget {
   const HealthAccessReviewBanner({super.key, required this.onRequestAgain});
 

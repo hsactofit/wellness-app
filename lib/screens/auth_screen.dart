@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../services/api_service.dart';
 import '../services/auth_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/onboarding/signup_step.dart';
@@ -130,10 +131,25 @@ class _AuthScreenState extends State<AuthScreen>
     await prefs.setString('user_provider', provider);
 
     if (isCompleted) {
-      final permissions = backendUser['permissions'] ?? {};
-      final bool healthSyncEnabled =
-          permissions['health_connect_connected'] ?? false;
+      var permissions = Map<String, dynamic>.from(
+        backendUser['permissions'] ?? {},
+      );
+      var healthSyncEnabled = permissions['health_connect_connected'] == true;
+      if (!healthSyncEnabled) {
+        try {
+          final profile = await ApiService.instance.fetchUserProfile();
+          permissions = Map<String, dynamic>.from(
+            profile['permissions'] ?? permissions,
+          );
+          healthSyncEnabled = permissions['health_connect_connected'] == true;
+        } catch (error) {
+          debugPrint('Unable to restore health connection on login: $error');
+        }
+      }
       await prefs.setBool('health_sync_enabled', healthSyncEnabled);
+      if (healthSyncEnabled) {
+        await prefs.setBool('healthSetupCompleted', true);
+      }
 
       if (backendUser['last_sync_date'] != null) {
         await prefs.setString(
@@ -156,7 +172,7 @@ class _AuthScreenState extends State<AuthScreen>
           },
           'profile': backendUser['profile'] ?? {},
           'goals': backendUser['goals'] ?? [],
-          'permissions': backendUser['permissions'] ?? {},
+          'permissions': permissions,
         }),
       );
       await prefs.setBool('onboarding_completed', true);

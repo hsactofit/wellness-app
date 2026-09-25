@@ -875,7 +875,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             title: 'Email',
                             value: _email.isEmpty ? 'Not set' : _email,
                           ),
-                          if (_checkinCode != null) ...[
+                          if (_checkinCode != null &&
+                              !AppBrand.isMednovations) ...[
                             _divider(isDark),
                             _infoRow(
                               isDark: isDark,
