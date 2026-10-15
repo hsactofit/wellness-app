@@ -10,6 +10,7 @@ import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
 import '../app_brand.dart';
 import 'health_service.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 import '../models/gender.dart';
 
 class AuthService {
@@ -702,6 +703,24 @@ class AuthService {
 
   /// Sign out from Firebase, Google Sign-In, and clear backend tokens
   Future<void> signOut() async {
+    if (AppBrand.faceScanEnabled) {
+      // Revoke all browser capabilities before removing the app login token.
+      try {
+        final token = await getAccessToken();
+        if (token != null) {
+          await http
+              .delete(
+                apiUrl('/api/v1/health/face-scan-web-sessions'),
+                headers: {'Authorization': 'Bearer $token'},
+              )
+              .timeout(const Duration(seconds: 8));
+        }
+        await WebViewController().clearLocalStorage();
+        await WebViewCookieManager().clearCookies();
+      } catch (_) {
+        // Offline browser capabilities remain bounded by their server expiry.
+      }
+    }
     await _auth.signOut();
     try {
       await GoogleSignIn.instance.disconnect();

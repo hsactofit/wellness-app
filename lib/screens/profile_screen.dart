@@ -13,6 +13,7 @@ import '../l10n/locale_controller.dart';
 import 'welcome_screen.dart';
 import 'goals_configuration_screen.dart';
 import 'notification_settings_screen.dart';
+import 'face_scan_contact_screen.dart';
 import '../l10n/app_text.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -892,6 +893,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                     ),
                     const SizedBox(height: 22),
+
+                    if (AppBrand.faceScanEnabled) ...[
+                      ListTile(
+                        leading: const Icon(Icons.contact_page_outlined),
+                        title: const AppText('Face Scan contact details'),
+                        subtitle: const AppText('Phone number and address'),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () async {
+                          await Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => const FaceScanContactScreen(),
+                            ),
+                          );
+                          if (mounted) await _loadProfileData();
+                        },
+                      ),
+                      const SizedBox(height: 22),
+                    ],
 
                     // Health
                     _sectionLabel('HEALTH', theme),

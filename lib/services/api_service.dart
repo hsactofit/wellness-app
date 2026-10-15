@@ -1147,6 +1147,50 @@ class ApiService {
 
   // ── Mednovations Face Scan ─────────────────────────────────────
 
+  Future<Map<String, dynamic>> createFaceScanWebSession(
+    String submissionId,
+  ) async {
+    final response = await _post(
+      '/api/v1/health/face-scan-web-sessions',
+      body: {'client_submission_id': submissionId},
+    );
+    if (response.statusCode != 200) throw Exception(_aiErrorDetail(response));
+    return Map<String, dynamic>.from(jsonDecode(response.body) as Map);
+  }
+
+  Future<void> revokeFaceScanWebSession(String id) async {
+    final response = await _delete('/api/v1/health/face-scan-web-sessions/$id');
+    if (response.statusCode != 204) throw Exception(_aiErrorDetail(response));
+  }
+
+  Future<Map<String, dynamic>> fetchFaceScanPatient() async {
+    final response = await _get('/api/v1/health/face-scan-patient');
+    if (response.statusCode != 200) throw Exception(_aiErrorDetail(response));
+    return Map<String, dynamic>.from(jsonDecode(response.body) as Map);
+  }
+
+  Future<void> updateFaceScanContact({
+    required String version,
+    required String phone,
+    required String address,
+  }) async {
+    Future<http.Response> send() async => http.patch(
+      AuthService.apiUrl('/api/v1/health/face-scan-patient'),
+      headers: await _getHeaders(),
+      body: jsonEncode({
+        'expected_version': version,
+        'phone': phone,
+        'address': address,
+      }),
+    );
+    var response = await send();
+    if (response.statusCode == 401) {
+      await AuthService.instance.refreshSessionToken();
+      response = await send();
+    }
+    if (response.statusCode != 200) throw Exception(_aiErrorDetail(response));
+  }
+
   Future<FaceScanConsent> fetchFaceScanConsent() async {
     final response = await _get('/api/v1/health/face-scan-consent');
     if (response.statusCode != 200) {

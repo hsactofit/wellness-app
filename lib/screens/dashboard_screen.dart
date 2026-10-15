@@ -4785,10 +4785,11 @@ class DashboardScreenState extends State<DashboardScreen>
     );
   }
 
-  void _openFaceScan() {
-    Navigator.of(
+  Future<void> _openFaceScan() async {
+    await Navigator.of(
       context,
     ).push(MaterialPageRoute(builder: (_) => const FaceScanScreen()));
+    if (mounted) await _fetchRealData(syncHealth: false);
   }
 
   void _openFaceScanReports() {

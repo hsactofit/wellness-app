@@ -1,0 +1,4 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Local demo only: honor a user-installed development CA. Release builds use system trust. -->
+    <application android:networkSecurityConfig="@xml/mednovations_debug_network_security" />
+</manifest>

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:printing/printing.dart';
 
@@ -12,7 +13,9 @@ class FaceScanReportsScreen extends StatefulWidget {
   State<FaceScanReportsScreen> createState() => _FaceScanReportsScreenState();
 }
 
-class _FaceScanReportsScreenState extends State<FaceScanReportsScreen> {
+class _FaceScanReportsScreenState extends State<FaceScanReportsScreen>
+    with WidgetsBindingObserver {
+  Timer? _refreshTimer;
   bool _loading = true;
   bool _sharing = false;
   String? _clinicName;
@@ -23,11 +26,13 @@ class _FaceScanReportsScreenState extends State<FaceScanReportsScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _load();
   }
 
-  Future<void> _load() async {
-    if (mounted) {
+  Future<void> _load({bool silent = false}) async {
+    _refreshTimer?.cancel();
+    if (mounted && !silent) {
       setState(() {
         _loading = true;
         _error = null;
@@ -50,8 +55,32 @@ class _FaceScanReportsScreenState extends State<FaceScanReportsScreen> {
     } catch (error) {
       if (mounted) setState(() => _error = error.toString());
     } finally {
-      if (mounted) setState(() => _loading = false);
+      if (mounted) {
+        setState(() => _loading = false);
+        if (_jobs.isNotEmpty) {
+          _refreshTimer = Timer(
+            const Duration(seconds: 3),
+            () => _load(silent: true),
+          );
+        }
+      }
     }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _load(silent: true);
+    } else {
+      _refreshTimer?.cancel();
+    }
+  }
+
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
   }
 
   Future<void> _toggleSharing(bool value) async {

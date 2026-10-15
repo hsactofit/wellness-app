@@ -1,27 +1,19 @@
 import 'dart:async';
-import 'dart:io';
+import 'dart:convert';
 
-import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
+import 'package:webview_flutter/webview_flutter.dart';
+import 'package:webview_flutter_wkwebview/webview_flutter_wkwebview.dart';
 
+import '../app_brand.dart';
+import '../config/face_scan_web_config.dart';
 import '../l10n/app_text.dart';
-import '../models/face_scan.dart';
 import '../services/api_service.dart';
 import '../services/camera_permission_gate.dart';
 import 'face_scan_reports_screen.dart';
 
-enum _FaceScanState {
-  preparing,
-  ready,
-  recording,
-  uploading,
-  processing,
-  success,
-  denied,
-  error,
-}
-
+/// Only the browser captures the video. App credentials never enter web content.
 class FaceScanScreen extends StatefulWidget {
   const FaceScanScreen({super.key});
 
@@ -31,107 +23,42 @@ class FaceScanScreen extends StatefulWidget {
 
 class _FaceScanScreenState extends State<FaceScanScreen>
     with WidgetsBindingObserver {
-  CameraController? _controller;
-  Timer? _recordTimer;
-  Timer? _pollTimer;
-  _FaceScanState _state = _FaceScanState.preparing;
-  int _secondsRemaining = 30;
+  final _submissionId = const Uuid().v4();
+  WebViewController? _controller;
+  String? _sessionId;
   String? _error;
-  String? _localVideoPath;
-  String? _jobId;
+  String _stage = 'loading';
+  bool _loading = true;
+  bool _closing = false;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _prepareCamera();
+    _open();
   }
 
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed && _state == _FaceScanState.ready) {
-      _prepareCamera(requestPermission: false);
-      return;
-    }
-    if (state != AppLifecycleState.resumed &&
-        _state == _FaceScanState.recording) {
-      _abortRecording();
-    }
-  }
-
-  Future<void> _prepareCamera({bool requestPermission = true}) async {
-    if (!mounted) return;
-    setState(() {
-      _state = _FaceScanState.preparing;
-      _error = null;
-    });
-    final result = await CameraPermissionGate().ensure(
-      requestIfNeeded: requestPermission,
-    );
-    if (!mounted) return;
-    if (result != CameraPermissionResult.granted) {
-      setState(() => _state = _FaceScanState.denied);
-      return;
-    }
-    try {
-      final cameras = await availableCameras();
-      final front = cameras.where(
-        (camera) => camera.lensDirection == CameraLensDirection.front,
-      );
-      if (front.isEmpty) throw StateError('No front camera is available.');
-      await _controller?.dispose();
-      final controller = CameraController(
-        front.first,
-        ResolutionPreset.medium,
-        enableAudio: false,
-        imageFormatGroup: ImageFormatGroup.yuv420,
-      );
-      await controller.initialize();
-      if (!mounted) {
-        await controller.dispose();
-        return;
-      }
-      setState(() {
-        _controller = controller;
-        _state = _FaceScanState.ready;
-      });
-    } catch (error) {
-      if (!mounted) return;
-      setState(() {
-        _error = error.toString();
-        _state = _FaceScanState.error;
-      });
-    }
-  }
-
-  Future<bool> _ensureProcessingConsent() async {
-    try {
-      final current = await ApiService.instance.fetchFaceScanConsent();
-      if (current.processingGranted) return true;
-    } catch (error) {
-      if (mounted) setState(() => _error = error.toString());
-      return false;
-    }
+  Future<bool> _consent() async {
+    final consent = await ApiService.instance.fetchFaceScanConsent();
+    if (consent.processingGranted) return true;
     if (!mounted) return false;
     var accepted = false;
     final confirmed = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
-      builder: (dialogContext) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, update) => AlertDialog(
           title: const AppText('Face Scan consent'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               const AppText(
-                'Mednovations will securely upload a 30-second face video to estimate core vitals. The temporary video is deleted after processing and is not included in your report.',
+                'Mednovations will temporarily process a 30-second face video to estimate core vitals. Your confirmed details and report are saved to Mednovations. The temporary video is deleted after processing.',
               ),
-              const SizedBox(height: 12),
               CheckboxListTile(
                 contentPadding: EdgeInsets.zero,
                 value: accepted,
-                onChanged: (value) =>
-                    setDialogState(() => accepted = value ?? false),
+                onChanged: (value) => update(() => accepted = value ?? false),
                 title: const AppText(
                   'I consent to temporary video processing for Face Scan.',
                 ),
@@ -140,13 +67,11 @@ class _FaceScanScreenState extends State<FaceScanScreen>
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(dialogContext, false),
+              onPressed: () => Navigator.pop(ctx, false),
               child: const AppText('Cancel'),
             ),
             FilledButton(
-              onPressed: accepted
-                  ? () => Navigator.pop(dialogContext, true)
-                  : null,
+              onPressed: accepted ? () => Navigator.pop(ctx, true) : null,
               child: const AppText('Continue'),
             ),
           ],
@@ -158,336 +83,251 @@ class _FaceScanScreenState extends State<FaceScanScreen>
     return true;
   }
 
-  Future<void> _startScan() async {
-    if (!await _ensureProcessingConsent() || !mounted) return;
-    final controller = _controller;
-    if (controller == null || !controller.value.isInitialized) return;
-    try {
-      await controller.startVideoRecording();
-      if (!mounted) return;
+  Future<void> _open() async {
+    if (!AppBrand.faceScanEnabled) {
       setState(() {
-        _state = _FaceScanState.recording;
-        _secondsRemaining = 30;
-        _error = null;
+        _loading = false;
+        _error = 'Face Scan is not enabled for this app.';
       });
-      _recordTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-        if (!mounted) return;
-        setState(() => _secondsRemaining--);
-        if (_secondsRemaining <= 0) _finishRecording();
-      });
-    } catch (error) {
-      if (mounted) {
-        setState(() {
-          _error = error.toString();
-          _state = _FaceScanState.error;
-        });
-      }
+      return;
     }
-  }
-
-  Future<void> _finishRecording() async {
-    _recordTimer?.cancel();
-    final controller = _controller;
-    if (controller == null || !controller.value.isRecordingVideo) return;
-    try {
-      final video = await controller.stopVideoRecording();
-      _localVideoPath = video.path;
-      if (!mounted) return;
-      setState(() => _state = _FaceScanState.uploading);
-      final job = await ApiService.instance.uploadFaceScan(
-        videoPath: video.path,
-        clientSubmissionId: const Uuid().v4(),
-        capturedAt: DateTime.now(),
-      );
-      await File(video.path).delete().catchError((_) => File(video.path));
-      _localVideoPath = null;
-      _jobId = job.id;
-      if (!mounted) return;
-      setState(() {
-        _state = job.status == 'completed'
-            ? _FaceScanState.success
-            : _FaceScanState.processing;
-      });
-      if (!job.terminal) _beginPolling(job.id);
-      if (job.status == 'failed') _showJobFailure(job);
-    } catch (error) {
-      await _deleteLocalVideo();
-      if (mounted) {
-        setState(() {
-          _error = error.toString();
-          _state = _FaceScanState.error;
-        });
-      }
-    }
-  }
-
-  void _beginPolling(String jobId) {
-    _pollTimer?.cancel();
-    _pollTimer = Timer.periodic(const Duration(seconds: 3), (_) async {
-      try {
-        final job = await ApiService.instance.fetchFaceScanJob(jobId);
-        if (!mounted) return;
-        if (!job.terminal) return;
-        _pollTimer?.cancel();
-        if (job.status == 'completed') {
-          setState(() => _state = _FaceScanState.success);
-        } else {
-          _showJobFailure(job);
-        }
-      } catch (_) {
-        // The durable job remains visible in the report library. Keep polling.
-      }
-    });
-  }
-
-  Future<void> _cancelProcessing() async {
-    final jobId = _jobId;
-    if (jobId == null) return;
-    try {
-      await ApiService.instance.cancelFaceScanJob(jobId);
-      _pollTimer?.cancel();
-      if (!mounted) return;
-      setState(() {
-        _jobId = null;
-        _error = 'The Face Scan was cancelled. You can record a new scan.';
-        _state = _FaceScanState.error;
-      });
-    } catch (error) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: AppText(error.toString())));
-    }
-  }
-
-  void _showJobFailure(FaceScanJob job) {
     setState(() {
-      _error =
-          job.errorMessage ??
-          'The scan could not be processed. Please try again.';
-      _state = _FaceScanState.error;
+      _loading = true;
+      _error = null;
     });
+    try {
+      if (!await _consent()) {
+        if (mounted) Navigator.pop(context);
+        return;
+      }
+      final launch = await ApiService.instance.createFaceScanWebSession(
+        _submissionId,
+      );
+      _sessionId = launch['id'] as String;
+      if (!mounted) {
+        await ApiService.instance.revokeFaceScanWebSession(_sessionId!);
+        return;
+      }
+      final uri = Uri.parse(launch['launch_url'] as String);
+      if (!FaceScanWebConfig.allows(uri)) {
+        throw StateError(
+          'The scanner address does not match this app configuration.',
+        );
+      }
+      final PlatformWebViewControllerCreationParams params;
+      if (WebViewPlatform.instance is WebKitWebViewPlatform) {
+        params = WebKitWebViewControllerCreationParams(
+          allowsInlineMediaPlayback: true,
+        );
+      } else {
+        params = const PlatformWebViewControllerCreationParams();
+      }
+      final controller = WebViewController.fromPlatformCreationParams(
+        params,
+        onPermissionRequest: (request) async {
+          final current = await _controller?.currentUrl();
+          final trusted =
+              current != null && FaceScanWebConfig.allows(Uri.parse(current));
+          if (!trusted ||
+              request.types.isEmpty ||
+              request.types.any(
+                (type) => type != WebViewPermissionResourceType.camera,
+              )) {
+            await request.deny();
+            return;
+          }
+          final result = await CameraPermissionGate().ensure();
+          if (mounted &&
+              !_closing &&
+              result == CameraPermissionResult.granted) {
+            await request.grant();
+          } else {
+            await request.deny();
+          }
+        },
+      );
+      await controller.setJavaScriptMode(JavaScriptMode.unrestricted);
+      await controller.setNavigationDelegate(
+        NavigationDelegate(
+          onNavigationRequest: (request) =>
+              FaceScanWebConfig.allows(Uri.parse(request.url))
+              ? NavigationDecision.navigate
+              : NavigationDecision.prevent,
+          onPageFinished: (_) {
+            if (mounted) setState(() => _loading = false);
+          },
+          onWebResourceError: (error) {
+            if (error.isForMainFrame == true && mounted && !_closing) {
+              setState(() {
+                _loading = false;
+                _error =
+                    'The secure scanner could not load. Check your connection and, for the local demo, the device certificate trust.';
+              });
+            }
+          },
+          // Certificate errors retain the system's default rejection behavior.
+        ),
+      );
+      await controller.addJavaScriptChannel(
+        'MednovationsScanner',
+        onMessageReceived: (message) async {
+          if (!mounted || _closing) return;
+          final current = await controller.currentUrl();
+          if (current == null ||
+              !FaceScanWebConfig.allows(Uri.parse(current))) {
+            return;
+          }
+          try {
+            final data = jsonDecode(message.message) as Map<String, dynamic>;
+            if (data['version'] != 1) return;
+            if (data['type'] == 'state' && data['stage'] is String) {
+              _stage = data['stage'] as String;
+            }
+            if (data['type'] == 'close') await _close();
+            // Saved messages are hints only; reports are fetched from the authenticated API.
+          } on FormatException {
+            // Unrecognized browser messages have no effect on app data.
+          } on TypeError {
+            // Reject messages that do not follow the integration contract.
+          }
+        },
+      );
+      _controller = controller;
+      await controller.clearLocalStorage();
+      await controller.loadRequest(uri);
+      if (mounted) setState(() {});
+    } catch (error) {
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _error = error.toString();
+        });
+      }
+    }
   }
 
-  Future<void> _abortRecording() async {
-    _recordTimer?.cancel();
+  Future<void> _clearBrowser() async {
     final controller = _controller;
-    if (controller?.value.isRecordingVideo == true) {
-      try {
-        final video = await controller!.stopVideoRecording();
-        await File(video.path).delete();
-      } catch (_) {}
-    }
-    if (mounted) {
-      setState(() {
-        _error = 'The scan was interrupted. Please start again.';
-        _state = _FaceScanState.error;
-      });
+    if (controller == null) return;
+    try {
+      await controller.runJavaScript(
+        "window.dispatchEvent(new Event('mednovations-close')); window.dispatchEvent(new Event('pagehide')); sessionStorage.clear();",
+      );
+      await controller.clearLocalStorage();
+      await controller.clearCache();
+    } catch (_) {
+      // The page may already be closed; the server capability is also revoked.
     }
   }
 
-  Future<void> _deleteLocalVideo() async {
-    final path = _localVideoPath;
-    _localVideoPath = null;
-    if (path != null) {
+  Future<void> _close() async {
+    if (_closing) return;
+    if (const {'recording', 'uploading'}.contains(_stage)) {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const AppText('Leave Face Scan?'),
+          content: const AppText(
+            'Recording or upload may be interrupted. Any scan already uploaded will continue processing.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const AppText('Stay'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const AppText('Leave'),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true) return;
+    }
+    _closing = true;
+    await _clearBrowser();
+    final id = _sessionId;
+    if (id != null) {
       try {
-        await File(path).delete();
-      } catch (_) {}
+        await ApiService.instance.revokeFaceScanWebSession(id);
+      } catch (_) {
+        /* Offline capabilities expire after 30 minutes. */
+      }
+      _sessionId = null;
+    }
+    if (!mounted) return;
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (_) => const FaceScanReportsScreen()),
+    );
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && mounted && !_closing) {
+      unawaited(
+        ApiService.instance.fetchUserProfile().catchError(
+          (_) => <String, dynamic>{},
+        ),
+      );
     }
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _recordTimer?.cancel();
-    _pollTimer?.cancel();
-    _controller?.dispose();
-    _deleteLocalVideo();
+    unawaited(_clearBrowser());
+    final id = _sessionId;
+    if (id != null) {
+      unawaited(
+        ApiService.instance.revokeFaceScanWebSession(id).catchError((_) {}),
+      );
+    }
     super.dispose();
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
+  Widget build(BuildContext context) => PopScope(
+    canPop: _closing,
+    onPopInvokedWithResult: (didPop, result) {
+      if (!didPop) unawaited(_close());
+    },
+    child: Scaffold(
       appBar: AppBar(
         title: const AppText('Face Scan'),
-        actions: [
-          IconButton(
-            tooltip: 'Face Scan Reports'.localized(context),
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const FaceScanReportsScreen()),
+        leading: IconButton(
+          tooltip: 'Close Face Scan',
+          icon: const Icon(Icons.close),
+          onPressed: _close,
+        ),
+      ),
+      body: Stack(
+        children: [
+          if (_controller != null && _error == null)
+            WebViewWidget(controller: _controller!),
+          if (_loading) const Center(child: CircularProgressIndicator()),
+          if (_error != null)
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    AppText(_error!, textAlign: TextAlign.center),
+                    const SizedBox(height: 16),
+                    FilledButton(
+                      onPressed: _open,
+                      child: const AppText('Try again'),
+                    ),
+                    TextButton(
+                      onPressed: _close,
+                      child: const AppText('View reports'),
+                    ),
+                  ],
+                ),
+              ),
             ),
-            icon: const Icon(Icons.folder_copy_outlined),
-          ),
         ],
       ),
-      body: SafeArea(child: _body()),
-    );
-  }
-
-  Widget _body() {
-    if (_state == _FaceScanState.denied) {
-      return _message(
-        Icons.camera_alt_outlined,
-        'Camera permission required',
-        'Allow camera access to start Face Scan.',
-        action: () async {
-          final gate = CameraPermissionGate();
-          final result = await gate.ensure();
-          if (result == CameraPermissionResult.permanentlyDenied) {
-            await gate.openSettings();
-          }
-          if (mounted) _prepareCamera(requestPermission: false);
-        },
-      );
-    }
-    if (_state == _FaceScanState.error) {
-      return _message(
-        Icons.error_outline,
-        'Face Scan could not finish',
-        _error ?? 'Please try again in steady, even lighting.',
-        action: _prepareCamera,
-      );
-    }
-    if (_state == _FaceScanState.uploading ||
-        _state == _FaceScanState.processing ||
-        _state == _FaceScanState.preparing) {
-      final text = _state == _FaceScanState.uploading
-          ? 'Uploading securely…'
-          : _state == _FaceScanState.processing
-          ? 'Creating your report…'
-          : 'Preparing camera…';
-      return _message(
-        Icons.monitor_heart_outlined,
-        text,
-        _state == _FaceScanState.processing
-            ? 'You can leave this screen. Processing will continue and appear in Face Scan Reports.'
-            : 'Please wait.',
-        loading: true,
-        actionLabel: 'Cancel Scan',
-        action: _state == _FaceScanState.processing ? _cancelProcessing : null,
-      );
-    }
-    if (_state == _FaceScanState.success) {
-      return _message(
-        Icons.check_circle_outline,
-        'Face Scan report ready',
-        'Your report has been saved.',
-        actionLabel: 'View Report',
-        action: () => Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const FaceScanReportsScreen()),
-        ),
-      );
-    }
-    final controller = _controller;
-    return Column(
-      children: [
-        Expanded(
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              if (controller != null) CameraPreview(controller),
-              Center(
-                child: Container(
-                  width: 245,
-                  height: 320,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(130),
-                    border: Border.all(
-                      color: _state == _FaceScanState.recording
-                          ? Colors.greenAccent
-                          : Colors.white,
-                      width: 4,
-                    ),
-                  ),
-                ),
-              ),
-              Positioned(
-                left: 20,
-                right: 20,
-                top: 20,
-                child: Card(
-                  color: Colors.black.withValues(alpha: .65),
-                  child: const Padding(
-                    padding: EdgeInsets.all(12),
-                    child: AppText(
-                      'Keep your face inside the guide. Use even lighting and hold still.',
-                      style: TextStyle(color: Colors.white),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                ),
-              ),
-              if (_state == _FaceScanState.recording)
-                Center(
-                  child: Text(
-                    '$_secondsRemaining',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 48,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.all(20),
-          child: SizedBox(
-            width: double.infinity,
-            child: FilledButton.icon(
-              onPressed: _state == _FaceScanState.ready ? _startScan : null,
-              icon: const Icon(Icons.face_retouching_natural),
-              label: const AppText('Start 30-second scan'),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _message(
-    IconData icon,
-    String title,
-    String body, {
-    bool loading = false,
-    String actionLabel = 'Try Again',
-    FutureOr<void> Function()? action,
-  }) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(28),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 64, color: Theme.of(context).colorScheme.primary),
-            const SizedBox(height: 18),
-            AppText(
-              title,
-              style: Theme.of(
-                context,
-              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 10),
-            AppText(body, textAlign: TextAlign.center),
-            if (loading) ...[
-              const SizedBox(height: 22),
-              const CircularProgressIndicator(),
-            ],
-            if (action != null) ...[
-              const SizedBox(height: 22),
-              FilledButton(
-                onPressed: () => action(),
-                child: AppText(actionLabel),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
+    ),
+  );
 }
